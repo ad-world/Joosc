@@ -1,0 +1,10 @@
+joosc
+*.d
+*.o
+.DS_Store
+build
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+*.log
+*.zip
