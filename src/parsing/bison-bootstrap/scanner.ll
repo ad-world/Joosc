@@ -3,7 +3,7 @@
 # include <climits>
 # include <cstdlib>
 # include <string>
-# include "driver.hh"
+# include "driver.h"
 # include "parser.hh"
 
 // Work around an incompatibility in flex (at least versions

@@ -1,4 +1,4 @@
-#include "driver.hh"
+#include "driver.h"
 #include "parser.hh"
 
 driver::driver ()

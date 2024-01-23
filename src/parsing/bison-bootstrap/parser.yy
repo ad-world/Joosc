@@ -1,5 +1,5 @@
 %skeleton "lalr1.cc" /* -*- C++ -*- */
-%require "3.1"
+%require "3.2"
 %defines
 
 %define api.token.constructor
@@ -20,7 +20,7 @@
 %define parse.error verbose
 
 %code {
-# include "driver.hh"
+# include "driver.h"
 }
 
 %define api.token.prefix {TOK_}

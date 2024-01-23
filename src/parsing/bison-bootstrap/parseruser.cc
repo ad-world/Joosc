@@ -1,5 +1,5 @@
 #include <iostream>
-#include "driver.hh"
+#include "driver.h"
 
 int
 parsemain (int argc, char *argv[])
