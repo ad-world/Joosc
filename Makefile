@@ -1,7 +1,7 @@
 all: build test
 
 generate-parser:
-	(cd src/parsing/bison-bootstrap && flex -o scanner.cc scanner.ll && bison -d -o parser.cc parser.yy)
+	(cd src/parsing/bison && flex -o scanner.cc scanner.ll && bison -d -o parser.cc parser.yy)
 
 build: generate-parser
 	(mkdir -p build && cd build && cmake .. && make && cp joosc ../joosc)
@@ -11,7 +11,7 @@ test: build
 
 clean:
 	rm -f joosc && rm -f *.log && rm -f *.zip
-	(cd src/parsing/bison-bootstrap && rm -f parser.hh parser.cc scanner.cc location.hh) 
+	(cd src/parsing/bison && rm -f parser.hh parser.cc scanner.cc location.hh) 
 	rm -r -f ./build
 
 submission: build test
