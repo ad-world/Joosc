@@ -76,7 +76,7 @@ Float {Digit}+"."{Digit}+
 [a-zA-Z_][a-zA-Z0-9_]*              { return Token(IDENTIFIER, yytext(), yylineno, yyleng); }
 
 [ \t\n]+            ; // Ignore whitespace
-.                                   { std::cerr << "Error: Unrecognized character '" << yytext << "' at line " << yylineno << ", column " << yyleng << std::endl; }
+.                                   { std::cerr << "Error: Unrecognized character '" << yytext() << "' at line " << yylineno << ", column " << yyleng << std::endl; }
 %%
 
 int main() {
