@@ -3,6 +3,8 @@
 ## Setup
 
 - Install CMake version 3.16 or later with `sudo apt-get install cmake`
+- Install Bison version 3.51 or later with `sudo apt-get install bison`
+- Install Flex version 3.51 or later with `sudo apt-get install flex`
 
 ## Usage
 

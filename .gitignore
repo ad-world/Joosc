@@ -8,3 +8,10 @@ CMakeCache.txt
 cmake_install.cmake
 *.log
 *.zip
+parser.hh
+parser.h
+parser.cc
+scanner.cc
+location.hh
+location.h
+.vscode
