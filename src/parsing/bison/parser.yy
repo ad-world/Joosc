@@ -6,66 +6,40 @@
 %define api.value.type variant
 %define parse.assert
 
+// Includes and forward declarations
 %code requires {
   # include <string>
-  class driver;
+  # include "../../AST/ASTNode.h"
+  class Driver;
 }
 
-// The parsing context.
-%param { driver& drv }
+// The parsing context
+%param { Driver& driver }
 
 %locations
-
 %define parse.trace
 %define parse.error verbose
+%define parse.lac full
 
+// Code inserted in generated .cc file
 %code {
-# include "driver.h"
+  # include "driver.h"
 }
 
 %define api.token.prefix {TOK_}
-%token
-  END  0  "end of file"
-  ASSIGN  ":="
-  MINUS   "-"
-  PLUS    "+"
-  STAR    "*"
-  SLASH   "/"
-  LPAREN  "("
-  RPAREN  ")"
-;
+%token <std::string> IDENTIFIER
+%token END 0
 
-%token <std::string> IDENTIFIER "identifier"
-%token <int> NUMBER "number"
-%type  <int> exp
+%type <ASTNode> program
 
-%printer { yyoutput << $$; } <*>;
-
+// Grammar
 %%
-%start unit;
-unit: assignments exp  { drv.result = $2; };
+%start program;
 
-assignments:
-  %empty                 {}
-| assignments assignment {};
-
-assignment:
-  "identifier" ":=" exp { drv.variables[$1] = $3; };
-
-%left "+" "-";
-%left "*" "/";
-exp:
-  exp "+" exp   { $$ = $1 + $3; }
-| exp "-" exp   { $$ = $1 - $3; }
-| exp "*" exp   { $$ = $1 * $3; }
-| exp "/" exp   { $$ = $1 / $3; }
-| "(" exp ")"   { std::swap ($$, $2); }
-| "identifier"  { $$ = drv.variables[$1]; }
-| "number"      { std::swap ($$, $1); };
+program:
+  IDENTIFIER { driver.ast = Expression(); }
 %%
 
-void
-yy::parser::error (const location_type& l, const std::string& m)
-{
+void yy::parser::error (const location_type& l, const std::string& m) {
   std::cerr << l << ": " << m << '\n';
 }

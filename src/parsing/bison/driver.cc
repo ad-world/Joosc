@@ -1,22 +1,16 @@
 #include "driver.h"
 #include "parser.hh"
 
-driver::driver ()
-  : trace_parsing (false), trace_scanning (false)
-{
-  variables["one"] = 1;
-  variables["two"] = 2;
-}
+Driver::Driver()
+  : trace_parsing (false), trace_scanning (false) {}
 
-int
-driver::parse (const std::string &f)
-{
+int Driver::parse(const std::string &f) {
   file = f;
-  location.initialize (&file);
-  scan_begin ();
-  yy::parser parser (*this);
-  parser.set_debug_level (trace_parsing);
-  int res = parser.parse ();
-  scan_end ();
-  return res;
+  location.initialize(&file);
+  scan_begin();
+  yy::parser parser(*this);
+  parser.set_debug_level(trace_parsing);
+  result = parser.parse();
+  scan_end();
+  return result;
 }

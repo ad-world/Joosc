@@ -14,3 +14,4 @@ parser.cc
 scanner.cc
 location.hh
 location.h
+.vscode

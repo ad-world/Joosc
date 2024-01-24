@@ -1,38 +1,38 @@
 #ifndef DRIVER_HH
 # define DRIVER_HH
 # include <string>
-# include <map>
 # include "parser.hh"
+# include "../../AST/ASTNode.h"
 
-// Tell Flex the lexer's prototype ...
+// Define lexer prototype
 # define YY_DECL \
-  yy::parser::symbol_type yylex (driver& drv)
-// ... and declare it for the parser's sake.
+  yy::parser::symbol_type yylex(Driver& drv)
 YY_DECL;
 
-// Conducting the whole scanning and parsing of Calc++.
-class driver
-{
+// Class to drive parsing and scanning
+class Driver {
 public:
-  driver ();
+  Driver();
 
-  std::map<std::string, int> variables;
-
+  // Return code from last parse; 0 if success and non-zero otherwise
   int result;
+  // AST From last parse
+  ASTNode ast;
 
-  // Run the parser on file F.  Return 0 on success.
-  int parse (const std::string& f);
-  // The name of the file being parsed.
+  // Run the parser on file F. Return 0 on success
+  int parse(const std::string& f);
+  // The name of the file being parsed
   std::string file;
-  // Whether to generate parser debug traces.
+  // Whether to generate parser debug traces
   bool trace_parsing;
-
-  // Handling the scanner.
-  void scan_begin ();
-  void scan_end ();
-  // Whether to generate scanner debug traces.
+  // Whether to generate scanner debug traces
   bool trace_scanning;
-  // The token's location used by the scanner.
+
+  // Handling the scanner
+  void scan_begin();
+  void scan_end();
+
+  // The token's location used by the scanner
   yy::location location;
 };
 #endif // ! DRIVER_HH

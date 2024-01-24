@@ -23,7 +23,6 @@
 %option noyywrap nounput batch debug noinput
 
 id    [a-zA-Z][a-zA-Z_0-9]*
-int   [0-9]+
 blank [ \t]
 
 %{
@@ -40,22 +39,6 @@ blank [ \t]
 {blank}+   loc.step ();
 [\n]+      loc.lines (yyleng); loc.step ();
 
-"-"      return yy::parser::make_MINUS  (loc);
-"+"      return yy::parser::make_PLUS   (loc);
-"*"      return yy::parser::make_STAR   (loc);
-"/"      return yy::parser::make_SLASH  (loc);
-"("      return yy::parser::make_LPAREN (loc);
-")"      return yy::parser::make_RPAREN (loc);
-":="     return yy::parser::make_ASSIGN (loc);
-
-{int}      {
-  errno = 0;
-  long n = strtol (yytext, NULL, 10);
-  if (! (INT_MIN <= n && n <= INT_MAX && errno != ERANGE))
-    throw yy::parser::syntax_error (loc, "integer is out of range: "
-                                    + std::string(yytext));
-  return yy::parser::make_NUMBER (n, loc);
-}
 {id}       return yy::parser::make_IDENTIFIER (yytext, loc);
 .          {
              throw yy::parser::syntax_error
@@ -64,11 +47,9 @@ blank [ \t]
 <<EOF>>    return yy::parser::make_END (loc);
 %%
 
-void
-driver::scan_begin ()
-{
+void Driver::scan_begin() {
   yy_flex_debug = trace_scanning;
-  if (file.empty () || file == "-")
+  if (file.empty()|| file == "-")
     yyin = stdin;
   else if (!(yyin = fopen (file.c_str (), "r")))
     {
@@ -77,8 +58,6 @@ driver::scan_begin ()
     }
 }
 
-void
-driver::scan_end ()
-{
-  fclose (yyin);
+void Driver::scan_end() {
+  fclose(yyin);
 }

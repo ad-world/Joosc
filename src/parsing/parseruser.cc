@@ -2,19 +2,18 @@
 #include "bison/driver.h"
 #include "parseuser.h"
 
-int
-parsemain (int argc, char *argv[])
-{
+int parsemain(int argc, char *argv[]) {
   int res = 0;
-  driver drv;
-  for (int i = 1; i < argc; ++i)
-    if (argv[i] == std::string ("-p"))
-      drv.trace_parsing = true;
-    else if (argv[i] == std::string ("-s"))
-      drv.trace_scanning = true;
-    else if (!drv.parse (argv[i]))
-      std::cout << drv.result << '\n';
+  Driver driver;
+  driver.trace_parsing = true;
+  driver.trace_scanning = true;
+
+  for (int i = 1; i < argc; ++i) {
+    if (!driver.parse(argv[i]))
+      std::cout << driver.result << '\n';
     else
       res = 1;
+  }
+
   return res;
 }
