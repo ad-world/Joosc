@@ -1,0 +1,173 @@
+Terminals unused in grammar
+
+    IF
+    WHILE
+    FOR
+    EXTENDS
+    IMPLEMENTS
+    PUBLIC
+    PROTECTED
+    PRIVATE
+    STATIC
+    ABSTRACT
+    THIS
+    VOID
+    FINAL
+    IMPORT
+    CLASS
+    IMPORTED_PACKAGE
+    COMPOUND_NAME
+    PACKAGE
+    INTERFACE
+    OPENING_BRACE
+    CLOSING_BRACE
+    OPENING_PAREN
+    CLOSING_PAREN
+    OPENING_BRACKET
+    CLOSING_BRACKET
+    SEMI_COLON
+    DOT
+    NATIVE
+    ASSIGNMENT
+    RETURN
+    INT
+    BOOLEAN
+    CHAR
+    BYTE
+    SHORT
+    ARRAY
+    TRUE
+    FALSE
+    STRING_LITERAL
+    INTEGER
+    NULL_TOKEN
+    CHAR_LITERAL
+    MULTI_LINE_COMMENT
+    SINGLE_LINE_COMMENT
+    JAVADOC_COMMENT
+    NEGATE
+    PLUS
+    MINUS
+    MULTIPLY
+    DIVIDE
+    MODULO
+    LESS_THAN
+    GREATER_THAN
+    LESS_THAN_EQUAL
+    GREATER_THAN_EQUAL
+    BOOLEAN_EQUAL
+    NOT_EQUAL
+    AMPERSAND
+    PIPE
+
+
+Grammar
+
+    0 $accept: program EOF
+
+    1 program: IDENTIFIER
+
+
+Terminals, with rules where they appear
+
+    EOF (0) 0
+    error (256)
+    IF (258)
+    WHILE (259)
+    FOR (260)
+    EXTENDS (261)
+    IMPLEMENTS (262)
+    PUBLIC (263)
+    PROTECTED (264)
+    PRIVATE (265)
+    STATIC (266)
+    ABSTRACT (267)
+    THIS (268)
+    VOID (269)
+    FINAL (270)
+    IMPORT (271)
+    CLASS (272)
+    IMPORTED_PACKAGE (273)
+    COMPOUND_NAME (274)
+    PACKAGE (275)
+    INTERFACE (276)
+    OPENING_BRACE (277)
+    CLOSING_BRACE (278)
+    OPENING_PAREN (279)
+    CLOSING_PAREN (280)
+    OPENING_BRACKET (281)
+    CLOSING_BRACKET (282)
+    SEMI_COLON (283)
+    DOT (284)
+    IDENTIFIER <std::string> (285) 1
+    NATIVE (286)
+    ASSIGNMENT (287)
+    RETURN (288)
+    INT (289)
+    BOOLEAN (290)
+    CHAR (291)
+    BYTE (292)
+    SHORT (293)
+    ARRAY (294)
+    TRUE (295)
+    FALSE (296)
+    STRING_LITERAL (297)
+    INTEGER (298)
+    NULL_TOKEN (299)
+    CHAR_LITERAL (300)
+    MULTI_LINE_COMMENT (301)
+    SINGLE_LINE_COMMENT (302)
+    JAVADOC_COMMENT (303)
+    NEGATE (304)
+    PLUS (305)
+    MINUS (306)
+    MULTIPLY (307)
+    DIVIDE (308)
+    MODULO (309)
+    LESS_THAN (310)
+    GREATER_THAN (311)
+    LESS_THAN_EQUAL (312)
+    GREATER_THAN_EQUAL (313)
+    BOOLEAN_EQUAL (314)
+    NOT_EQUAL (315)
+    AMPERSAND (316)
+    PIPE (317)
+
+
+Nonterminals, with rules where they appear
+
+    $accept (63)
+        on left: 0
+    program <ASTNode> (64)
+        on left: 1
+        on right: 0
+
+
+State 0
+
+    0 $accept: • program EOF
+
+    IDENTIFIER  shift, and go to state 1
+
+    program  go to state 2
+
+
+State 1
+
+    1 program: IDENTIFIER •
+
+    $default  reduce using rule 1 (program)
+
+
+State 2
+
+    0 $accept: program • EOF
+
+    EOF  shift, and go to state 3
+
+
+State 3
+
+    0 $accept: program EOF •
+
+    $default  accept
