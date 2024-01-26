@@ -44,7 +44,7 @@ blank [ \t]
              throw yy::parser::syntax_error
                (loc, "invalid character: " + std::string(yytext));
 }
-<<EOF>>    return yy::parser::make_END (loc);
+<<EOF>>    return yy::parser::make_EOF (loc);
 %%
 
 void Driver::scan_begin() {

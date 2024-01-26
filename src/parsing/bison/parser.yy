@@ -26,9 +26,8 @@
   # include "driver.h"
 }
 
+// TODO: not sure if this is necessary
 %define api.token.prefix {TOK_}
-%token <std::string> IDENTIFIER
-%token END 0
 
 %type <ASTNode> program
 
@@ -64,7 +63,7 @@
 %token CLOSING_BRACKET
 %token SEMI_COLON
 %token DOT
-%token IDENTIFIER
+%token <std::string> IDENTIFIER
 %token NATIVE
 %token ASSIGNMENT
 %token RETURN
@@ -103,6 +102,9 @@
 %token NOT_EQUAL
 %token AMPERSAND
 %token PIPE
+
+// END OF FILE TOKEN
+%token EOF 0
 /*****************************************************************************/
 
 
