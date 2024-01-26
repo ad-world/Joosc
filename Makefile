@@ -9,6 +9,9 @@ build: generate-parser
 test: build
 	(cd build && ctest)
 
+integration-test:
+	python3 tests/src/integration/valid_invalid_prog_test.py
+
 clean:
 	rm -f joosc && rm -f *.log && rm -f *.zip
 	(cd src/parsing/bison && rm -f parser.hh parser.cc scanner.cc location.hh) 
