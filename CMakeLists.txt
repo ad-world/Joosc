@@ -9,7 +9,7 @@ include(FetchContent)
 FetchContent_Declare(
   googletest
   # Latest commit from v1.8.x
-  URL https://github.com/google/googletest/archive/dea0216d0c6bc5e63cf5f6c8651cd268668032ec.zip
+  URL https://github.com/google/googletest/archive/f8d7d77c06936315286eb55f8de22cd23c188571.zip
 )
 FetchContent_MakeAvailable(googletest)
 
