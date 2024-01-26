@@ -22,8 +22,12 @@
 
 %option noyywrap nounput batch debug noinput
 
-id    [a-zA-Z][a-zA-Z_0-9]*
-blank [ \t]
+Whitespace [ \t\f\r]
+Letter [a-zA-Z]
+Digit [0-9]
+Identifier {Letter}({Digit}|{Letter}|_)*
+Integer "0" | "-"?[1-9]{Digit}*
+Float {Digit}+"."{Digit}+
 
 %{
   // Code run each time a pattern is matched.
@@ -36,15 +40,83 @@ blank [ \t]
   // Code run each time yylex is called.
   loc.step ();
 %}
-{blank}+   loc.step ();
-[\n]+      loc.lines (yyleng); loc.step ();
 
-{id}       return yy::parser::make_IDENTIFIER (yytext, loc);
+%{ // Keywords %}
+if      return yy::parser::make_IF(loc);
+while     return yy::parser::make_WHILE(loc);
+for     return yy::parser::make_FOR(loc);
+extends     return yy::parser::make_EXTENDS(loc);
+implements    return yy::parser::make_PUBLIC(loc);
+protected     return yy::parser::make_PROTECTED(loc);
+private     return yy::parser::make_PRIVATE(loc);
+static    return yy::parser::make_STATIC(loc);
+abstract      return yy::parser::make_ABSTRACT(loc);
+this      return yy::parser::make_THIS(loc);
+void      return yy::parser::make_ABSTRACT(loc);
+final     return yy::parser::make_FINAL(loc);
+import      return yy::parser::make_FINAL(loc);
+class      return yy::parser::make_CLASS(loc);
+package     return yy::parser::make_PACKAGE(loc);
+interface     return yy::parser::make_INTERFACE(loc);
+native    return yy::parser::make_NATIVE(loc);
+return    return yy::parser::make_RETURN(loc);
+
+%{ // Brackets / Parenthesis %}
+"{"       return yy::parser::make_OPENING_BRACE(loc);
+"}"       return yy::parser::make_CLOSING_BRACE(loc);
+"["       return yy::parser::make_OPENING_BRACKET(loc);
+"]"       return yy::parser::make_CLOSING_BRACKET(loc);
+"("       return yy::parser::make_OPENING_PAREN(loc);
+")"       return yy::parser::make_CLOSING_PAREN(loc);
+
+%{ // Types %}
+int     return yy::parser::make_INT(loc);
+bool    return yy::parser::make_BOOLEAN(loc);
+char    return yy::parser::make_CHAR(loc); 
+byte    return yy::parser::make_BYTE(loc);
+short   return yy::parser::make_SHORT(loc);
+"int\[\]"   return yy::parser::make_ARRAY(loc);
+
+%{ // Literals %}
+true    return yy::parser::make_TRUE(loc);
+false   return yy::parser::make_FALSE(loc);
+"\"{Letter}*\""     return yy::parser::make_STRING_LITERAL(loc);
+"{Integer}"          return yy::parser::make_INTEGER(loc);
+null                return yy::parser::make_NULL_TOKEN(loc);
+"\'{Letter}\'"      return yy::parser::make_CHAR_LITERAL(loc);
+
+%{ // Comments %}
+"/\*\*.*\*/"    return yy::parser::make_JAVADOC_COMMENT(loc);
+"//.*$"         return yy::parser::make_SINGLE_LINE_COMMENT(loc);
+"/\*.*\*/"      return yy::parser::make_MULTI_LINE_COMMENT(loc);
+
+%{ // Operators %}
+"!"     return yy::parser::make_NEGATE(loc);
+"+"     return yy::parser::make_PLUS(loc);
+"-"     return yy::parser::make_MINUS(loc);
+"*"     return yy::parser::make_MULTIPLY(loc);
+"/"     return yy::parser::make_DIVIDE(loc);
+"%"     return yy::parser::make_MODULO(loc);
+"<"     return yy::parser::make_LESS_THAN(loc);
+">"     return yy::parser::make_GREATER_THAN(loc);
+"<="    return yy::parser::make_LESS_THAN_EQUAL(loc);
+">="    return yy::parser::make_GREATER_THAN_EQUAL(loc);
+"=="    return yy::parser::make_BOOLEAN_EQUAL(loc);
+"!="    return yy::parser::make_NOT_EQUAL(loc);
+"&"     return yy::parser::make_AMPERSAND(loc);
+"|"     return yy::parser::make_PIPE(loc);
+";"     return yy::parser::make_SEMI_COLON(loc);
+"."     return yy::parser::make_DOT(loc);
+"="     return yy::parser::make_ASSIGNMENT(loc);
+
+{Whitespace}+   loc.step ();
+{Identifier}       return yy::parser::make_IDENTIFIER (yytext, loc);
 .          {
              throw yy::parser::syntax_error
                (loc, "invalid character: " + std::string(yytext));
 }
 <<EOF>>    return yy::parser::make_EOF (loc);
+[\n]+      loc.lines (yyleng); loc.step ();
 %%
 
 void Driver::scan_begin() {
