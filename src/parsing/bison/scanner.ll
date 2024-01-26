@@ -22,7 +22,7 @@
 
 %option noyywrap nounput batch debug noinput
 
-Whitespace [ \t\f\r\n]
+Whitespace [ \t\f\r]
 Letter [a-zA-Z]
 Digit [0-9]
 Identifier {Letter}({Digit}|{Letter}|_)*
@@ -68,6 +68,43 @@ return    return yy::parser::make_RETURN(loc);
 ";"       return yy::parser::make_SEMI_COLON(loc);
 "."     return yy::parser::make_DOT(loc);
 "="     return yy::parser::make_ASSIGNMENT(loc);
+
+%{ // Types %}
+int     return yy::parser::make_INT(loc);
+bool    return yy::parser::make_BOOLEAN(loc);
+char    return yy::parser::make_CHAR(loc); 
+byte    return yy::parser::make_BYTE(loc);
+short   return yy::parser::make_SHORT(loc);
+"int\[\]"   return yy::parser::make_ARRAY(loc);
+
+%{ // Literals %}
+true    return yy::parser::make_TRUE(loc);
+false   return yy::parser::make_FALSE(loc);
+"\"{Letter}*\""     return yy::parser::make_STRING_LITERAL(loc);
+"{Integer}"          return yy::parser::make_INTEGER(loc);
+null                return yy::parser::make_NULL_TOKEN(loc);
+"\'{Letter}\'"      return yy::parser::make_CHAR_LITERAL(loc);
+
+%{ // Comments %}
+"/\*\*.*\*/"    return yy::parser::make_JAVADOC_COMMENT(loc);
+"//.*$"         return yy::parser::make_SINGLE_LINE_COMMENT(loc);
+"/\*.*\*/"      return yy::parser::make_MULTI_LINE_COMMENT(loc);
+
+%{ // Operators %}
+"!"     return yy::parser::make_NEGATE(loc);
+"+"     return yy::parser::make_PLUS(loc);
+"-"     return yy::parser::make_MINUS(loc);
+"*"     return yy::parser::make_MULTIPLY(loc);
+"/"     return yy::parser::make_DIVIDE(loc);
+"%"     return yy::parser::make_MODULO(loc);
+"<"     return yy::parser::make_LESS_THAN(loc);
+">"     return yy::parser::make_GREATER_THAN(loc);
+"<="    return yy::parser::make_LESS_THAN_EQUAL(loc);
+">="    return yy::parser::make_GREATER_THAN_EQUAL(loc);
+"=="    return yy::parser::make_BOOLEAN_EQUAL(loc);
+"!="    return yy::parser::make_NOT_EQUAL(loc);
+"&"     return yy::parser::make_AMPERSAND(loc);
+"|"     return yy::parser::make_PIPE(loc);
 
 {Whitespace}+   loc.step ();
 {Identifier}       return yy::parser::make_IDENTIFIER (yytext, loc);
