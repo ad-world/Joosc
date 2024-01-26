@@ -9,7 +9,10 @@
 // Includes and forward declarations
 %code requires {
   # include <string>
-  # include "../../AST/ASTNode.h"
+  # include <memory>
+  # include <vector>
+  # include "../parsetree/parsetreenode.h"
+  # include "../parsetree/parsetreenode_t.h"
   class Driver;
 }
 
@@ -30,14 +33,18 @@
 %token <std::string> IDENTIFIER
 %token END 0
 
-%type <ASTNode> program
+%type <ParseTreeNode> program
 
 // Grammar
 %%
 %start program;
 
 program:
-  IDENTIFIER { driver.ast = Expression(); }
+  IDENTIFIER { // Placeholder example
+    driver.parse_tree = ParseTreeNode(ParseTreeNode_t::Identifier, 1);
+    auto child = ParseTreeNode(ParseTreeNode_t::Identifier);
+    driver.parse_tree.addChild(child);
+  }
 %%
 
 void yy::parser::error (const location_type& l, const std::string& m) {
