@@ -54,8 +54,6 @@
 %token CLASS
 
 // might need to look at this again
-%token IMPORTED_PACKAGE
-%token COMPOUND_NAME
 %token PACKAGE
 %token INTERFACE
 %token OPENING_BRACE

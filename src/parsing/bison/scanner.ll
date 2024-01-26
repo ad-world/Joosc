@@ -22,8 +22,12 @@
 
 %option noyywrap nounput batch debug noinput
 
-id    [a-zA-Z][a-zA-Z_0-9]*
-blank [ \t]
+Whitespace [ \t\f\r\n]
+Letter [a-zA-Z]
+Digit [0-9]
+Identifier {Letter}({Digit}|{Letter}|_)*
+Integer "0" | "-"?[1-9]{Digit}*
+Float {Digit}+"."{Digit}+
 
 %{
   // Code run each time a pattern is matched.
@@ -36,15 +40,43 @@ blank [ \t]
   // Code run each time yylex is called.
   loc.step ();
 %}
-{blank}+   loc.step ();
-[\n]+      loc.lines (yyleng); loc.step ();
 
-{id}       return yy::parser::make_IDENTIFIER (yytext, loc);
+if    return yy::parser::make_IF(loc);
+while     return yy::parser::make_WHILE(loc);
+for     return yy::parser::make_FOR(loc);
+extends     return yy::parser::make_EXTENDS(loc);
+implements    return yy::parser::make_PUBLIC(loc);
+protected     return yy::parser::make_PROTECTED(loc);
+private     return yy::parser::make_PRIVATE(loc);
+static    return yy::parser::make_STATIC(loc);
+abstract      return yy::parser::make_ABSTRACT(loc);
+this      return yy::parser::make_THIS(loc);
+void      return yy::parser::make_ABSTRACT(loc);
+final     return yy::parser::make_FINAL(loc);
+import      return yy::parser::make_FINAL(loc);
+class      return yy::parser::make_CLASS(loc);
+package     return yy::parser::make_PACKAGE(loc);
+interface     return yy::parser::make_INTERFACE(loc);
+native    return yy::parser::make_NATIVE(loc);
+return    return yy::parser::make_RETURN(loc);
+"{"       return yy::parser::make_OPENING_BRACE(loc);
+"}"       return yy::parser::make_CLOSING_BRACE(loc);
+"["       return yy::parser::make_OPENING_BRACKET(loc);
+"]"       return yy::parser::make_CLOSING_BRACKET(loc);
+"("       return yy::parser::make_OPENING_PAREN(loc);
+")"       return yy::parser::make_CLOSING_PAREN(loc);
+";"       return yy::parser::make_SEMI_COLON(loc);
+"."     return yy::parser::make_DOT(loc);
+"="     return yy::parser::make_ASSIGNMENT(loc);
+
+{Whitespace}+   loc.step ();
+{Identifier}       return yy::parser::make_IDENTIFIER (yytext, loc);
 .          {
              throw yy::parser::syntax_error
                (loc, "invalid character: " + std::string(yytext));
 }
 <<EOF>>    return yy::parser::make_EOF (loc);
+[\n]+      loc.lines (yyleng); loc.step ();
 %%
 
 void Driver::scan_begin() {
