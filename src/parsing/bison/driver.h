@@ -2,7 +2,8 @@
 # define DRIVER_HH
 # include <string>
 # include "parser.hh"
-# include "../../AST/ASTNode.h"
+# include "../parsetree/parsetreenode.h"
+# include <memory>
 
 // Define lexer prototype
 # define YY_DECL \
@@ -16,8 +17,8 @@ public:
 
   // Return code from last parse; 0 if success and non-zero otherwise
   int result;
-  // AST From last parse
-  ASTNode ast;
+  // Parse tree from last parse
+  ParseTreeNode parse_tree;
 
   // Run the parser on file F. Return 0 on success
   int parse(const std::string& f);
