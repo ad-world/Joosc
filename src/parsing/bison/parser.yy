@@ -40,8 +40,10 @@
 %start program;
 
 program:
-  IDENTIFIER {
-    driver.parse_tree = ParseTreeNode(ParseTreeNode_t::Identifier); 
+  IDENTIFIER { // Placeholder example
+    driver.parse_tree = ParseTreeNode(ParseTreeNode_t::Identifier, 1);
+    auto child = ParseTreeNode(ParseTreeNode_t::Identifier);
+    driver.parse_tree.addChild(child);
   }
 %%
 
