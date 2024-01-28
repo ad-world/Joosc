@@ -32,12 +32,18 @@
 // TODO: not sure if this is necessary
 %define api.token.prefix {TOK_}
 
-%type <ParseTreeNode> program
+%union {
+  std::string str;
+  std::unique_ptr<ParseTreeNode> node;
+}
+
+%type <node> CompilationUnit
 
 /*=============================================================================
                               Token Definitions
 =============================================================================*/
 %token IF
+%token ELSE
 %token WHILE
 %token FOR
 %token EXTENDS
@@ -63,10 +69,14 @@
 %token OPENING_BRACKET
 %token CLOSING_BRACKET
 %token SEMI_COLON
+%token COLON
+%token COMMA
+%token STAR
 %token DOT
-%token <std::string> IDENTIFIER
+%token <str> IDENTIFIER
 %token NATIVE
 %token ASSIGNMENT
+%token INSTANCEOF
 %token RETURN
 
 // types
@@ -103,6 +113,8 @@
 %token NOT_EQUAL
 %token AMPERSAND
 %token PIPE
+%token BOOLEAN_AND
+%token BOOLEAN_OR
 
 // END OF FILE TOKEN
 %token EOF 0
@@ -111,14 +123,559 @@
 
 // Grammar
 %%
-%start program;
+%start CompilationUnit;
 
-program:
-  IDENTIFIER { // Placeholder example
-    driver.parse_tree = ParseTreeNode(ParseTreeNode_t::Identifier, 1);
-    auto child = ParseTreeNode(ParseTreeNode_t::Identifier);
-    driver.parse_tree.addChild(child);
-  }
+CompilationUnit:
+    PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
+    ;
+
+PackageDeclarationOpt:
+    /* Empty - no package declaration */
+    | PACKAGE QualifiedIdentifier SEMI_COLON
+    ;
+
+ImportDeclarationsOpt:
+    /* Empty - represents zero import declarations */
+    | ImportDeclarationsOpt ImportDeclaration
+    ;
+
+ImportDeclaration:
+    IMPORT Identifier DottedIdentifiers OptionalWildcard SEMI_COLON
+    ;
+
+DottedIdentifiers:
+    /* Empty - no additional identifiers */
+    | DottedIdentifiers DOT Identifier
+    ;
+
+OptionalWildcard:
+    /* Empty - no wildcard */
+    | DOT STAR
+    ;
+
+TypeDeclarationsOpt:
+    /* Empty - represents zero type declarations */
+    | TypeDeclarationsOpt TypeDeclaration
+    ;
+
+TypeDeclaration:
+    ClassOrInterfaceDeclaration
+    | SEMI_COLON /* Empty */
+    ;
+
+ClassOrInterfaceDeclaration: 
+    ModifiersOpt ClassDeclaration 
+    | ModifiersOpt InterfaceDeclaration
+    ;
+
+ModifiersOpt: 
+    /* Empty - represents zero type declarations */
+    | Modifier
+    ;
+
+Modifier:
+    PUBLIC 
+    | PROTECTED 
+    | PRIVATE 
+    | STATIC 
+    | ABSTRACT 
+    | FINAL 
+    | NATIVE
+    ;
+
+ClassDeclaration:
+    CLASS Identifier ExtendsOpt ImplementsOpt ClassBody
+    ;
+
+Identifier:
+    IDENTIFIER { 
+      $$ = new ParseTreeNode(parsetreenode_t::IDENTIFIER, $1);
+    }
+    ;
+
+ExtendsOpt:
+    /* Empty - represents zero type declarations */
+    | EXTENDS Type
+    ;
+
+ImplementsOpt:
+    /* Empty - represents zero type declarations */
+    | IMPLEMENTS TypeList
+    ;
+
+ClassBody:
+    OPENING_BRACE ClassBodyDeclarationsOpt CLOSING_BRACE
+    ;
+
+ClassBodyDeclarationsOpt:
+    /* Empty - represents zero ClassBodyDeclarations */
+    | ClassBodyDeclarationsOpt ClassBodyDeclaration
+    ;
+
+ClassBodyDeclaration:
+    SEMI_COLON /* Empty declaration */
+    | StaticOpt Block
+    | ModifiersOpt MemberDecl
+    ;
+
+StaticOpt:
+    /* Empty declaration */
+    | STATIC
+    ;
+
+Block:
+    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE
+    ;
+
+BlockStatementsOpt:
+    /* Empty - represents zero BlockStatements */
+    | BlockStatements
+    ;
+
+BlockStatements:
+    BlockStatement
+    | BlockStatements BlockStatement
+    ;
+
+BlockStatement:
+    LocalVariableDeclarationStatement
+    | ClassOrInterfaceDeclaration
+    | LabeledStatementOpt
+    ;
+
+LocalVariableDeclarationStatement:
+    FinalOpt Type VariableDeclarators SEMI_COLON
+    ;
+
+VariableDeclarators:
+    VariableDeclarator
+    | VariableDeclarators COMMA VariableDeclarator
+    ;
+
+VariableDeclarator:
+    Identifier VariableDeclaratorRest
+    ;
+
+VariableDeclaratorRest:
+    BracketsOpt VariableInitializerOpt
+    ;
+
+VariableInitializerOpt:
+    /* Empty - No variable initializer */
+    | ASSIGNMENT VariableInitializer
+    ;
+
+BracketsOpt:
+    /* Empty - No brackets */
+    | BracketsOpt OPENING_BRACKET CLOSING_BRACKET
+    ;
+
+VariableInitializer:
+    ArrayInitializer
+    | Expression
+    ;
+
+ArrayInitializer:
+    OPENING_BRACE VariableInitializersOpt CLOSING_BRACE
+    ;
+
+VariableInitializersOpt:
+    /* Empty - No variable initializers */
+    | VariableInitializerList OptionalComma
+    ;
+
+VariableInitializerList:
+    VariableInitializer
+    | VariableInitializerList COMMA VariableInitializer
+    ;
+
+OptionalComma:
+    /* Empty - No comma */
+    | COMMA
+    ;
+
+Expression:
+    Expression1 AssignmentOperatorOpt Expression1
+    ;
+
+AssignmentOperatorOpt:
+    /* Empty - No assignment operator */
+    | AssignmentOperator
+    ;
+
+AssignmentOperator: 
+	  | ASSIGNMENT 
+    ; 
+
+Expression1:
+    Expression2
+    ;
+
+
+
+Expression2:
+    Expression3 Expression2RestOpt
+    ;
+
+Expression2RestOpt:
+    /* Empty - represents no additional expression */
+    | Expression2Rest
+    ;
+
+Expression2Rest:
+    InfixExpression
+    | InstanceofExpression
+    ;
+
+InfixExpression:
+    Infixop Expression3
+    | InfixExpression Infixop Expression3
+    ;
+
+InstanceofExpression:
+    Expression3 INSTANCEOF Type
+    ;
+
+Infixop:
+    | BOOLEAN_OR 
+    | BOOLEAN_AND 
+    | PIPE 
+    | AMPERSAND 
+    | BOOLEAN_EQUAL 
+    | NOT_EQUAL 
+    | LESS_THAN 
+    | GREATER_THAN 
+    | LESS_THAN_EQUAL 
+    | GREATER_THAN_EQUAL 
+    | PLUS 
+    | MINUS 
+    | MULTIPLY 
+    | DIVIDE 
+    | MODULO 
+    ;
+
+Expression3:
+    PrefixOp Expression3
+    | Expr Expression3
+    | Type Expression3
+    | Primary SelectorOpt
+    ;
+
+PrefixOp:
+    | NEGATE 
+    | ~ 
+    | + 
+    | - 
+    ;
+
+SelectorOpt:
+    /* Empty - No selector */
+    | SelectorOpt Selector
+    ;
+
+Primary:
+    OPENING_PAREN Expression CLOSING_PAREN
+    | THIS ArgumentsOpt
+    | Literal
+    | NEW Creator
+    | QualifiedIdentifier IdentifierSuffixOpt
+    | BasicType BracketsOpt DOT CLASS
+    | VOID DOT CLASS
+    ;
+
+Creator:
+    QualifiedIdentifier ArrayCreatorRest
+    | QualifiedIdentifier ClassCreatorRest
+    ;
+
+IdentifierSuffixOpt:
+    /* Empty - No IdentifierSuffix */
+    | IdentifierSuffix
+    ;
+
+IdentifierSuffix:
+    BracketsOpt DOT CLASS
+    | OPENING_PAREN Expression CLOSING_PAREN
+    | Arguments
+    | DOT CLASS
+    | DOT THIS
+    | DOT NEW InnerCreator
+    ;
+
+ArrayInitializerOpt:
+    /* Empty - No ArrayInitializer */
+    | ArrayInitializer
+    ;
+
+Selector:
+    DOT Identifier ArgumentsOpt
+    | DOT THIS
+    | DOT NEW InnerCreator
+    | ExpressionOpt
+    ;
+
+ExpressionOpt:
+    /* Empty - No Expressions */
+    | Expression
+    ;
+
+ArgumentsOpt:
+    /* Empty - No Arguments */
+    | Arguments
+    ;
+
+Arguments:
+    OPENING_PAREN ExpressionListOpt CLOSING_PAREN
+    ;
+
+ExpressionListOpt:
+    /* Empty - No Expressions */
+    | ExpressionList
+    ;
+
+ExpressionList:
+    Expression
+    | ExpressionList COMMA Expression
+    ;
+
+InnerCreator:
+    Identifier ClassCreatorRest
+    ;
+
+ClassCreatorRest:
+    Arguments ClassBodyOpt
+    ;
+
+ClassBodyOpt:
+    /* Empty - No ClassBody */
+    | ClassBody
+    ;
+
+FinalOpt:
+    /* Empty - No final keyword */
+    | FINAL
+    ;
+
+LabeledStatementOpt:
+    /* Empty - No label */
+    | Identifier COLON Statement
+    ;
+
+Statement:
+    Block
+    | IF ParExpression Statement ElseOpt
+    | FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
+    | WHILE ParExpression Statement
+    | RETURN ExpressionOpt SEMI_COLON
+    | SEMI_COLON /* Empty statement */
+    | ExpressionStatement
+    | Identifier COLON Statement
+    ;
+
+ElseOpt:
+    /* Empty - No else part */
+    | ELSE Statement
+    ;
+
+ForInitOpt:
+    /* Empty - No initialization */
+    | ForInit
+    ;
+
+ForInit:
+    StatementExpression MoreStatementExpressions
+    | FinalOpt Type VariableDeclarators
+    ;
+
+MoreStatementExpressions:
+    /* Empty - No more expressions */
+    | MoreStatementExpressions COMMA StatementExpression
+    ;
+
+ForUpdateOpt:
+    /* Empty - No update */
+    | ForUpdate
+    ;
+
+ForUpdate:
+    StatementExpression MoreStatementExpressions
+    ;
+
+MemberDecl:
+    | MethodOrFieldDecl
+    | VOID Identifier MethodDeclaratorRest
+    | Identifier ConstructorDeclaratorRest
+    | ClassOrInterfaceDeclaration
+    ;
+
+MethodOrFieldDecl:
+	  Type Identifier MethodOrFieldRest
+    ;
+
+MethodOrFieldRest:
+    VariableDeclaratorRest
+    MethodDeclaratorRest
+    ;
+
+Type:
+    QualifiedIdentifier BracketsOpt
+    | BasicType
+    ;
+
+QualifiedIdentifierList:
+    QualifiedIdentifier
+    | QualifiedIdentifierList COMMA QualifiedIdentifier
+    ;
+    
+QualifiedIdentifier:
+    Identifier
+    | QualifiedIdentifier DOT Identifier
+    ;
+
+BasicType:
+    BYTE
+    | SHORT
+    | CHAR
+    | INT
+    | BOOLEAN
+    ;
+
+TypeList:
+    Type
+    | TypeList COMMA Type
+    ;
+
+StatementExpression: 
+	  Expression
+    ;
+
+ConstantExpression: 
+	  Expression
+    ;
+
+ParExpression: 
+	  OPENING_PAREN Expression CLOSING_PAREN
+    ;
+
+VariableDeclaratorsRest:
+    VariableDeclaratorRest
+    | VariableDeclaratorsRest COMMA VariableDeclarator
+    ;
+
+ConstantDeclaratorsRest:
+    ConstantDeclaratorRest
+    | ConstantDeclaratorsRest COMMA ConstantDeclarator
+    ;
+
+ConstantDeclaratorRest:
+    BracketsOpt ASSIGNMENT VariableInitializer
+    ;
+
+ConstantDeclarator:
+    Identifier ConstantDeclaratorRest
+    ;
+
+VariableDeclaratorId: 
+	  Identifier BracketsOpt
+    ;
+
+Literal:
+    | INTEGER 	
+    | CHAR_LITERAL 	
+    | STRING_LITERAL 	
+    | BOOLEAN
+    | NULL_TOKEN
+    ;
+
+InterfaceDeclaration:
+    INTERFACE Identifier ExtendsTypeListOpt InterfaceBody
+    ;
+
+ExtendsTypeListOpt:
+    /* Empty - No extends clause */
+    | EXTENDS TypeList
+    ;
+
+InterfaceBody:
+    OPENING_BRACE InterfaceBodyDeclarationsOpt CLOSING_BRACE
+    ;
+
+InterfaceBodyDeclarationsOpt:
+    /* Empty - No interface body declarations */
+    | InterfaceBodyDeclarations
+    ;
+
+InterfaceBodyDeclarations:
+    InterfaceBodyDeclaration
+    | InterfaceBodyDeclarations InterfaceBodyDeclaration
+    ;
+
+InterfaceBodyDeclaration:
+    SEMI_COLON 
+    | ModifiersOpt InterfaceMemberDecl
+    ;
+
+InterfaceMemberDecl:
+    InterfaceMethodOrFieldDecl
+    | VOID Identifier VoidInterfaceMethodDeclaratorRest
+    | ClassOrInterfaceDeclaration
+    ;
+
+InterfaceMethodOrFieldDecl:
+	  Type Identifier InterfaceMethodOrFieldRest
+    ;
+
+InterfaceMethodOrFieldRest:
+    ConstantDeclaratorsRest SEMI_COLON
+    | InterfaceMethodDeclaratorRest
+    ;
+
+VoidMethodDeclaratorRest:
+    FormalParameters MethodBodyOrSemi
+    ;
+
+MethodDeclaratorRest:
+    FormalParameters BracketsOpt MethodBodyOrSemi
+    ;
+
+MethodBodyOrSemi:
+    MethodBody
+    | SEMI_COLON
+    ;
+
+InterfaceMethodDeclaratorRest:
+	  FormalParameters BracketsOpt SEMI_COLON
+    ; 
+
+VoidInterfaceMethodDeclaratorRest:
+	  FormalParameters SEMI_COLON
+    ; 
+
+ConstructorDeclaratorRest:
+	  FormalParameters MethodBody
+    ;
+
+FormalParameters:
+    OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
+    ;
+
+FormalParameterListOpt:
+    /* Empty - No formal parameters */
+    | FormalParameterList
+    ;
+
+FormalParameterList:
+    FormalParameter
+    | FormalParameterList COMMA FormalParameter
+    ;
+
+FormalParameter:
+    FinalOpt Type VariableDeclaratorId
+    ;
+
+MethodBody:
+	  Block
+    ;
 %%
 
 void yy::parser::error (const location_type& l, const std::string& m) {
