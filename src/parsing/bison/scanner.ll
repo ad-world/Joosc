@@ -23,7 +23,7 @@
 %option noyywrap nounput batch noinput
 /* %option debug */
 
-Whitespace      [ \t\f\r]
+Whitespace      [ \b\t\f\r]
 Letter          [a-zA-Z]
 Digit           [0-9]
 Identifier      {Letter}({Digit}|{Letter}|_)*
@@ -81,7 +81,7 @@ short   return yy::parser::make_SHORT(loc);
 %{ // Literals %}
 true    return yy::parser::make_TRUE(loc);
 false   return yy::parser::make_FALSE(loc);
-"\"{Letter}*\""     return yy::parser::make_STRING_LITERAL(loc);
+\"({Letter}|{Whitespace}|{Digit}|[\n\"\'\\\0])*\"     return yy::parser::make_STRING_LITERAL(loc);
 {Integer}           return yy::parser::make_INTEGER(loc);
 null                return yy::parser::make_NULL_TOKEN(loc);
 "\'{Letter}\'"      return yy::parser::make_CHAR_LITERAL(loc);
