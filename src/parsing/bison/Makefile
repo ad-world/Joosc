@@ -17,13 +17,14 @@ OBJECTS = lex_tester.o driver.o scanner.o parser.o					# object files forming ex
 DEPENDS = ${OBJECTS:.o=.d}			# substitute ".o" with ".d"
 EXEC = lex_tester					# executable name
 
+LEX_TESTING_DIR = ../../../tests/lexing
+
 ########## Targets ##########
 
 .PHONY : clean					# not file names
 
 ${EXEC} : ${OBJECTS}				# link step
-	${CXX} ${CXXFLAGS} $^ -o $@
-
+	${CXX} ${CXXFLAGS} $^ -o $@ && mv ${EXEC} ${LEX_TESTING_DIR}
 ${SCANNER_FILES} : scanner.ll
 	flex -o scanner.cc scanner.ll
 
