@@ -40,6 +40,7 @@
 %token IF
 %token WHILE
 %token FOR
+%token ELSE
 %token EXTENDS
 %token IMPLEMENTS
 %token PUBLIC 
@@ -93,7 +94,7 @@
 %token NEGATE
 %token PLUS
 %token MINUS
-%token MULTIPLY
+%token ASTERISK
 %token DIVIDE
 %token MODULO
 %token LESS_THAN

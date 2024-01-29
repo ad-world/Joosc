@@ -45,6 +45,7 @@ Float           {Digit}+"."{Digit}+
 if    return yy::parser::make_IF(loc);
 while     return yy::parser::make_WHILE(loc);
 for     return yy::parser::make_FOR(loc);
+else    return yy::parser::make_ELSE(loc);
 extends     return yy::parser::make_EXTENDS(loc);
 new     return yy::parser::make_NEW(loc);
 public    return yy::parser::make_PUBLIC(loc);
@@ -54,9 +55,9 @@ private     return yy::parser::make_PRIVATE(loc);
 static    return yy::parser::make_STATIC(loc);
 abstract      return yy::parser::make_ABSTRACT(loc);
 this      return yy::parser::make_THIS(loc);
-void      return yy::parser::make_ABSTRACT(loc);
+void      return yy::parser::make_VOID(loc);
 final     return yy::parser::make_FINAL(loc);
-import      return yy::parser::make_FINAL(loc);
+import      return yy::parser::make_IMPORT(loc);
 class      return yy::parser::make_CLASS(loc);
 package     return yy::parser::make_PACKAGE(loc);
 interface     return yy::parser::make_INTERFACE(loc);
@@ -74,7 +75,7 @@ return    return yy::parser::make_RETURN(loc);
 
 %{ // Types %}
 int     return yy::parser::make_INT(loc);
-bool    return yy::parser::make_BOOLEAN(loc);
+boolean    return yy::parser::make_BOOLEAN(loc);
 char    return yy::parser::make_CHAR(loc); 
 byte    return yy::parser::make_BYTE(loc);
 short   return yy::parser::make_SHORT(loc);
@@ -97,7 +98,7 @@ null                return yy::parser::make_NULL_TOKEN(loc);
 "!"     return yy::parser::make_NEGATE(loc);
 "+"     return yy::parser::make_PLUS(loc);
 "-"     return yy::parser::make_MINUS(loc);
-"*"     return yy::parser::make_MULTIPLY(loc);
+"*"     return yy::parser::make_ASTERISK(loc);
 "/"     return yy::parser::make_DIVIDE(loc);
 "%"     return yy::parser::make_MODULO(loc);
 "<"     return yy::parser::make_LESS_THAN(loc);
