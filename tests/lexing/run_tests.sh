@@ -1,12 +1,13 @@
 #!/bin/bash
 
-DIR_NAME=tests
+INPUT_DIR_NAME=tests/input
+OUTPUT_DIR_NAME=tests/output
 BINARY=lex_tester
 
-for file in $(ls tests/*.in); do
-    TEST_NAME=$(basename -s .in $file)
-    IN_FILE="${DIR_NAME}/${TEST_NAME}.in"
-    OUT_FILE="${DIR_NAME}/${TEST_NAME}.out"
+for file in $(ls tests/input/*.java); do
+    TEST_NAME=$(basename -s .java $file)
+    IN_FILE="${INPUT_DIR_NAME}/${TEST_NAME}.java"
+    OUT_FILE="${OUTPUT_DIR_NAME}/${TEST_NAME}.out"
 
     diff <(./${BINARY} < ${IN_FILE}) <(cat ${OUT_FILE})
     DIFF_CODE=$?
