@@ -32,11 +32,6 @@
 // TODO: not sure if this is necessary
 %define api.token.prefix {TOK_}
 
-%union {
-  std::string str;
-  std::unique_ptr<ParseTreeNode> node;
-}
-
 /*=============================================================================
                               Token Definitions
 =============================================================================*/
@@ -118,7 +113,10 @@
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
-
+%token InterfaceDeclaration LabeledStatementOpt
+%token MemberDecl 
+%token Expression3
+// %token SelectorOpt Primary
 
 // Grammar
 %%
@@ -138,6 +136,20 @@ ImportDeclarationsOpt:
     | ImportDeclarationsOpt ImportDeclaration
     ;
 
+TypeDeclarationsOpt:
+    /* Empty - represents zero type declarations */
+    | TypeDeclarationsOpt TypeDeclaration
+    ;
+
+QualifiedIdentifier:
+    Identifier
+    | QualifiedIdentifier DOT Identifier
+    ;
+
+Identifier:
+    IDENTIFIER
+    ;
+
 ImportDeclaration:
     IMPORT Identifier DottedIdentifiers OptionalWildcard SEMI_COLON
     ;
@@ -150,11 +162,6 @@ DottedIdentifiers:
 OptionalWildcard:
     /* Empty - no wildcard */
     | DOT STAR
-    ;
-
-TypeDeclarationsOpt:
-    /* Empty - represents zero type declarations */
-    | TypeDeclarationsOpt TypeDeclaration
     ;
 
 TypeDeclaration:
@@ -184,10 +191,6 @@ Modifier:
 
 ClassDeclaration:
     CLASS Identifier ExtendsOpt ImplementsOpt ClassBody
-    ;
-
-Identifier:
-    IDENTIFIER
     ;
 
 ExtendsOpt:
@@ -292,23 +295,21 @@ OptionalComma:
     ;
 
 Expression:
-    Expression1 AssignmentOperatorOpt Expression1
+    Expression1 AssignmentOperatorOpt
     ;
 
 AssignmentOperatorOpt:
     /* Empty - No assignment operator */
-    | AssignmentOperator
+    | AssignmentOperator Expression1
     ;
 
 AssignmentOperator: 
-	  | ASSIGNMENT 
+	ASSIGNMENT 
     ; 
 
 Expression1:
     Expression2
     ;
-
-
 
 Expression2:
     Expression3 Expression2RestOpt
@@ -334,7 +335,7 @@ InstanceofExpression:
     ;
 
 Infixop:
-    | BOOLEAN_OR 
+    BOOLEAN_OR 
     | BOOLEAN_AND 
     | PIPE 
     | AMPERSAND 
@@ -351,180 +352,173 @@ Infixop:
     | MODULO 
     ;
 
-Expression3:
-    PrefixOp Expression3
-    | Expression Expression3
-    | Type Expression3
-    | Primary SelectorOpt
-    ;
+// Expression3:
+//     PrefixOp Expression3
+//     | Expression Expression3
+//     | Type Expression3
+//     | Primary SelectorOpt
+//     ;
 
-PrefixOp:
-    | NEGATE 
-    | MINUS
-    ;
+// PrefixOp:
+//     NEGATE 
+//     | MINUS
+//     ;
 
-SelectorOpt:
-    /* Empty - No selector */
-    | SelectorOpt Selector
-    ;
+// SelectorOpt:
+//     /* Empty - No selector */
+//     | SelectorOpt Selector
+//     ;
 
-Primary:
-    OPENING_PAREN Expression CLOSING_PAREN
-    | THIS ArgumentsOpt
-    | Literal
-    | NEW Creator
-    | QualifiedIdentifier IdentifierSuffixOpt
-    | BasicType BracketsOpt DOT CLASS
-    | VOID DOT CLASS
-    ;
+// Primary:
+//     OPENING_PAREN Expression CLOSING_PAREN
+//     | THIS ArgumentsOpt
+//     | Literal
+//     | NEW Creator
+//     | QualifiedIdentifier IdentifierSuffixOpt
+//     | BasicType BracketsOpt DOT CLASS
+//     | VOID DOT CLASS
+//     ;
 
-Creator:
-    QualifiedIdentifier ArrayCreatorRest
-    | QualifiedIdentifier ClassCreatorRest
-    ;
+// Creator:
+//     QualifiedIdentifier ArrayCreatorRest
+//     | QualifiedIdentifier ClassCreatorRest
+//     ;
 
-IdentifierSuffixOpt:
-    /* Empty - No IdentifierSuffix */
-    | IdentifierSuffix
-    ;
+// ArrayCreatorRest:
+//     OPENING_BRACKET CLOSING_BRACKET BracketsOpt ArrayInitializer
+//     | OPENING_BRACKET Expression CLOSING_BRACKET BracketExpressionOpt BracketsOpt
 
-IdentifierSuffix:
-    BracketsOpt DOT CLASS
-    | OPENING_PAREN Expression CLOSING_PAREN
-    | Arguments
-    | DOT CLASS
-    | DOT THIS
-    | DOT NEW InnerCreator
-    ;
+// BracketExpressionOpt:
+//     /* Empty - No BracketExpression */
+//     | BracketExpressionOpt OPENING_BRACKET Expression CLOSING_BRACKET
 
-ArrayInitializerOpt:
-    /* Empty - No ArrayInitializer */
-    | ArrayInitializer
-    ;
+// IdentifierSuffixOpt:
+//     /* Empty - No IdentifierSuffix */
+//     | IdentifierSuffix
+//     ;
 
-Selector:
-    DOT Identifier ArgumentsOpt
-    | DOT THIS
-    | DOT NEW InnerCreator
-    | ExpressionOpt
-    ;
+// IdentifierSuffix:
+//     BracketsOpt DOT CLASS
+//     | OPENING_PAREN Expression CLOSING_PAREN
+//     | Arguments
+//     | DOT CLASS
+//     | DOT THIS
+//     | DOT NEW InnerCreator
+//     ;
 
-ExpressionOpt:
-    /* Empty - No Expressions */
-    | Expression
-    ;
+// Selector:
+//     DOT Identifier ArgumentsOpt
+//     | DOT THIS
+//     | DOT NEW InnerCreator
+//     | ExpressionOpt
+//     ;
 
-ArgumentsOpt:
-    /* Empty - No Arguments */
-    | Arguments
-    ;
+// ExpressionOpt:
+//     /* Empty - No Expressions */
+//     | Expression
+//     ;
 
-Arguments:
-    OPENING_PAREN ExpressionListOpt CLOSING_PAREN
-    ;
+// ArgumentsOpt:
+//     /* Empty - No Arguments */
+//     | Arguments
+//     ;
 
-ExpressionListOpt:
-    /* Empty - No Expressions */
-    | ExpressionList
-    ;
+// Arguments:
+//     OPENING_PAREN ExpressionListOpt CLOSING_PAREN
+//     ;
 
-ExpressionList:
-    Expression
-    | ExpressionList COMMA Expression
-    ;
+// ExpressionListOpt:
+//     /* Empty - No Expressions */
+//     | ExpressionList
+//     ;
 
-InnerCreator:
-    Identifier ClassCreatorRest
-    ;
+// ExpressionList:
+//     Expression
+//     | ExpressionList COMMA Expression
+//     ;
 
-ClassCreatorRest:
-    Arguments ClassBodyOpt
-    ;
+// InnerCreator:
+//     Identifier ClassCreatorRest
+//     ;
 
-ClassBodyOpt:
-    /* Empty - No ClassBody */
-    | ClassBody
-    ;
+// ClassCreatorRest:
+//     Arguments ClassBodyOpt
+//     ;
+
+// ClassBodyOpt:
+//     /* Empty - No ClassBody */
+//     | ClassBody
+//     ;
 
 FinalOpt:
     /* Empty - No final keyword */
     | FINAL
     ;
 
-LabeledStatementOpt:
-    /* Empty - No label */
-    | Identifier COLON Statement
-    ;
+// LabeledStatementOpt:
+//     /* Empty - No label */
+//     | Identifier COLON Statement
+//     ;
 
-Statement:
-    Block
-    | IF ParExpression Statement ElseOpt
-    | FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
-    | WHILE ParExpression Statement
-    | RETURN ExpressionOpt SEMI_COLON
-    | SEMI_COLON /* Empty statement */
-    | Expression Statement
-    | Identifier COLON Statement
-    ;
+// Statement:
+//     Block
+//     | IF ParExpression Statement ElseOpt
+//     | FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
+//     | WHILE ParExpression Statement
+//     | RETURN ExpressionOpt SEMI_COLON
+//     | SEMI_COLON /* Empty statement */
+//     | Expression Statement
+//     | Identifier COLON Statement
+//     ;
 
-ElseOpt:
-    /* Empty - No else part */
-    | ELSE Statement
-    ;
+// ElseOpt:
+//     /* Empty - No else part */
+//     | ELSE Statement
+//     ;
 
-ForInitOpt:
-    /* Empty - No initialization */
-    | ForInit
-    ;
+// ForInitOpt:
+//     /* Empty - No initialization */
+//     | ForInit
+//     ;
 
-ForInit:
-    StatementExpression MoreStatementExpressions
-    | FinalOpt Type VariableDeclarators
-    ;
+// ForInit:
+//     StatementExpression MoreStatementExpressions
+//     | FinalOpt Type VariableDeclarators
+//     ;
 
-MoreStatementExpressions:
-    /* Empty - No more expressions */
-    | MoreStatementExpressions COMMA StatementExpression
-    ;
+// MoreStatementExpressions:
+//     /* Empty - No more expressions */
+//     | MoreStatementExpressions COMMA StatementExpression
+//     ;
 
-ForUpdateOpt:
-    /* Empty - No update */
-    | ForUpdate
-    ;
+// ForUpdateOpt:
+//     /* Empty - No update */
+//     | ForUpdate
+//     ;
 
-ForUpdate:
-    StatementExpression MoreStatementExpressions
-    ;
+// ForUpdate:
+//     StatementExpression MoreStatementExpressions
+//     ;
 
-MemberDecl:
-    | MethodOrFieldDecl
-    | VOID Identifier MethodDeclaratorRest
-    | Identifier ConstructorDeclaratorRest
-    | ClassOrInterfaceDeclaration
-    ;
+// MemberDecl:
+//     | MethodOrFieldDecl
+//     | VOID Identifier MethodDeclaratorRest
+//     | Identifier ConstructorDeclaratorRest
+//     | ClassOrInterfaceDeclaration
+//     ;
 
-MethodOrFieldDecl:
-	  Type Identifier MethodOrFieldRest
-    ;
+// MethodOrFieldDecl:
+// 	  Type Identifier MethodOrFieldRest
+//     ;
 
-MethodOrFieldRest:
-    VariableDeclaratorRest
-    MethodDeclaratorRest
-    ;
+// MethodOrFieldRest:
+//     VariableDeclaratorRest
+//     MethodDeclaratorRest
+//     ;
 
 Type:
     QualifiedIdentifier BracketsOpt
     | BasicType
-    ;
-
-QualifiedIdentifierList:
-    QualifiedIdentifier
-    | QualifiedIdentifierList COMMA QualifiedIdentifier
-    ;
-    
-QualifiedIdentifier:
-    Identifier
-    | QualifiedIdentifier DOT Identifier
     ;
 
 BasicType:
@@ -540,137 +534,124 @@ TypeList:
     | TypeList COMMA Type
     ;
 
-StatementExpression: 
-	  Expression
-    ;
+// StatementExpression: 
+// 	  Expression
+//     ;
 
-ConstantExpression: 
-	  Expression
-    ;
+// ParExpression: 
+// 	  OPENING_PAREN Expression CLOSING_PAREN
+//     ;
 
-ParExpression: 
-	  OPENING_PAREN Expression CLOSING_PAREN
-    ;
+// ConstantDeclaratorsRest:
+//     ConstantDeclaratorRest
+//     | ConstantDeclaratorsRest COMMA ConstantDeclarator
+//     ;
 
-VariableDeclaratorsRest:
-    VariableDeclaratorRest
-    | VariableDeclaratorsRest COMMA VariableDeclarator
-    ;
+// ConstantDeclaratorRest:
+//     BracketsOpt ASSIGNMENT VariableInitializer
+//     ;
 
-ConstantDeclaratorsRest:
-    ConstantDeclaratorRest
-    | ConstantDeclaratorsRest COMMA ConstantDeclarator
-    ;
+// ConstantDeclarator:
+//     Identifier ConstantDeclaratorRest
+//     ;
 
-ConstantDeclaratorRest:
-    BracketsOpt ASSIGNMENT VariableInitializer
-    ;
+// VariableDeclaratorId: 
+// 	  Identifier BracketsOpt
+//     ;
 
-ConstantDeclarator:
-    Identifier ConstantDeclaratorRest
-    ;
+// Literal:
+//     | INTEGER 	
+//     | CHAR_LITERAL 	
+//     | STRING_LITERAL 	
+//     | BOOLEAN
+//     | NULL_TOKEN
+//     ;
 
-VariableDeclaratorId: 
-	  Identifier BracketsOpt
-    ;
+// InterfaceDeclaration:
+//     INTERFACE Identifier ExtendsTypeListOpt InterfaceBody
+//     ;
 
-Literal:
-    | INTEGER 	
-    | CHAR_LITERAL 	
-    | STRING_LITERAL 	
-    | BOOLEAN
-    | NULL_TOKEN
-    ;
+// ExtendsTypeListOpt:
+//     /* Empty - No extends clause */
+//     | EXTENDS TypeList
+//     ;
 
-InterfaceDeclaration:
-    INTERFACE Identifier ExtendsTypeListOpt InterfaceBody
-    ;
+// InterfaceBody:
+//     OPENING_BRACE InterfaceBodyDeclarationsOpt CLOSING_BRACE
+//     ;
 
-ExtendsTypeListOpt:
-    /* Empty - No extends clause */
-    | EXTENDS TypeList
-    ;
+// InterfaceBodyDeclarationsOpt:
+//     /* Empty - No interface body declarations */
+//     | InterfaceBodyDeclarations
+//     ;
 
-InterfaceBody:
-    OPENING_BRACE InterfaceBodyDeclarationsOpt CLOSING_BRACE
-    ;
+// InterfaceBodyDeclarations:
+//     InterfaceBodyDeclaration
+//     | InterfaceBodyDeclarations InterfaceBodyDeclaration
+//     ;
 
-InterfaceBodyDeclarationsOpt:
-    /* Empty - No interface body declarations */
-    | InterfaceBodyDeclarations
-    ;
+// InterfaceBodyDeclaration:
+//     SEMI_COLON 
+//     | ModifiersOpt InterfaceMemberDecl
+//     ;
 
-InterfaceBodyDeclarations:
-    InterfaceBodyDeclaration
-    | InterfaceBodyDeclarations InterfaceBodyDeclaration
-    ;
+// InterfaceMemberDecl:
+//     InterfaceMethodOrFieldDecl
+//     | VOID Identifier VoidInterfaceMethodDeclaratorRest
+//     | ClassOrInterfaceDeclaration
+//     ;
 
-InterfaceBodyDeclaration:
-    SEMI_COLON 
-    | ModifiersOpt InterfaceMemberDecl
-    ;
+// InterfaceMethodOrFieldDecl:
+// 	  Type Identifier InterfaceMethodOrFieldRest
+//     ;
 
-InterfaceMemberDecl:
-    InterfaceMethodOrFieldDecl
-    | VOID Identifier VoidInterfaceMethodDeclaratorRest
-    | ClassOrInterfaceDeclaration
-    ;
+// InterfaceMethodOrFieldRest:
+//     ConstantDeclaratorsRest SEMI_COLON
+//     | InterfaceMethodDeclaratorRest
+//     ;
 
-InterfaceMethodOrFieldDecl:
-	  Type Identifier InterfaceMethodOrFieldRest
-    ;
+// MethodDeclaratorRest:
+//     FormalParameters BracketsOpt MethodBodyOrSemi
+//     ;
 
-InterfaceMethodOrFieldRest:
-    ConstantDeclaratorsRest SEMI_COLON
-    | InterfaceMethodDeclaratorRest
-    ;
+// MethodBodyOrSemi:
+//     MethodBody
+//     | SEMI_COLON
+//     ;
 
-VoidMethodDeclaratorRest:
-    FormalParameters MethodBodyOrSemi
-    ;
+// InterfaceMethodDeclaratorRest:
+// 	  FormalParameters BracketsOpt SEMI_COLON
+//     ; 
 
-MethodDeclaratorRest:
-    FormalParameters BracketsOpt MethodBodyOrSemi
-    ;
+// VoidInterfaceMethodDeclaratorRest:
+// 	  FormalParameters SEMI_COLON
+//     ; 
 
-MethodBodyOrSemi:
-    MethodBody
-    | SEMI_COLON
-    ;
+// ConstructorDeclaratorRest:
+// 	  FormalParameters MethodBody
+//     ;
 
-InterfaceMethodDeclaratorRest:
-	  FormalParameters BracketsOpt SEMI_COLON
-    ; 
+// FormalParameters:
+//     OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
+//     ;
 
-VoidInterfaceMethodDeclaratorRest:
-	  FormalParameters SEMI_COLON
-    ; 
+// FormalParameterListOpt:
+//     /* Empty - No formal parameters */
+//     | FormalParameterList
+//     ;
 
-ConstructorDeclaratorRest:
-	  FormalParameters MethodBody
-    ;
+// FormalParameterList:
+//     FormalParameter
+//     | FormalParameterList COMMA FormalParameter
+//     ;
 
-FormalParameters:
-    OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
-    ;
+// FormalParameter:
+//     FinalOpt Type VariableDeclaratorId
+//     ;
 
-FormalParameterListOpt:
-    /* Empty - No formal parameters */
-    | FormalParameterList
-    ;
-
-FormalParameterList:
-    FormalParameter
-    | FormalParameterList COMMA FormalParameter
-    ;
-
-FormalParameter:
-    FinalOpt Type VariableDeclaratorId
-    ;
-
-MethodBody:
-	  Block
-    ;
+// MethodBody:
+// 	  Block
+//     ;
 %%
 
 void yy::parser::error (const location_type& l, const std::string& m) {
