@@ -1,0 +1,1 @@
+volatile hello = class int

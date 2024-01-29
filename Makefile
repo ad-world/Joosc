@@ -11,6 +11,9 @@ test: build
 
 scanner-test: build
 	(./tests/lexing/run_tests.sh)
+	
+integration-test:
+	python3 tests/src/integration/valid_invalid_prog_test.py
 
 clean:
 	rm -f joosc && rm -f *.log && rm -f *.zip

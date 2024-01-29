@@ -42,7 +42,8 @@ Float           {Digit}+"."{Digit}+
   loc.step ();
 %}
 
-if    return yy::parser::make_IF(loc);
+%{ // Keywords %}
+if      return yy::parser::make_IF(loc);
 while     return yy::parser::make_WHILE(loc);
 for     return yy::parser::make_FOR(loc);
 else    return yy::parser::make_ELSE(loc);
@@ -63,15 +64,14 @@ package     return yy::parser::make_PACKAGE(loc);
 interface     return yy::parser::make_INTERFACE(loc);
 native    return yy::parser::make_NATIVE(loc);
 return    return yy::parser::make_RETURN(loc);
+
+%{ // Brackets / Parenthesis %}
 "{"       return yy::parser::make_OPENING_BRACE(loc);
 "}"       return yy::parser::make_CLOSING_BRACE(loc);
 "["       return yy::parser::make_OPENING_BRACKET(loc);
 "]"       return yy::parser::make_CLOSING_BRACKET(loc);
 "("       return yy::parser::make_OPENING_PAREN(loc);
 ")"       return yy::parser::make_CLOSING_PAREN(loc);
-";"       return yy::parser::make_SEMI_COLON(loc);
-"."     return yy::parser::make_DOT(loc);
-"="     return yy::parser::make_ASSIGNMENT(loc);
 
 %{ // Types %}
 int     return yy::parser::make_INT(loc);
@@ -109,6 +109,9 @@ null                return yy::parser::make_NULL_TOKEN(loc);
 "!="    return yy::parser::make_NOT_EQUAL(loc);
 "&"     return yy::parser::make_AMPERSAND(loc);
 "|"     return yy::parser::make_PIPE(loc);
+";"     return yy::parser::make_SEMI_COLON(loc);
+"."     return yy::parser::make_DOT(loc);
+"="     return yy::parser::make_ASSIGNMENT(loc);
 
 {Whitespace}+   loc.step ();
 {Identifier}       return yy::parser::make_IDENTIFIER (yytext, loc);
