@@ -1,4 +1,4 @@
-all: build test
+all: build test scanner-test
 
 generate-parser:
 	(cd src/parsing/bison && flex -o scanner.cc scanner.ll && bison -dv -o parser.cc parser.yy)
@@ -8,6 +8,9 @@ build: generate-parser
 
 test: build
 	(cd build && ctest)
+
+scanner-test: build
+	(./tests/lexing/run_tests.sh)
 
 clean:
 	rm -f joosc && rm -f *.log && rm -f *.zip
