@@ -91,7 +91,7 @@ null                return yy::parser::make_NULL_TOKEN(loc);
 
 %{ // Comments %}
 "/\*\*.*\*/"    return yy::parser::make_JAVADOC_COMMENT(loc);
-"//.*$"         return yy::parser::make_SINGLE_LINE_COMMENT(loc);
+\/\/.*$      return yy::parser::make_SINGLE_LINE_COMMENT(loc);
 "/\*.*\*/"      return yy::parser::make_MULTI_LINE_COMMENT(loc);
 
 %{ // Operators %}
