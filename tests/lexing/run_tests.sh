@@ -4,7 +4,15 @@ cd "$(dirname "$0")"
 
 INPUT_DIR_NAME=tests/input
 OUTPUT_DIR_NAME=tests/output
-BINARY=lex_tester
+BINARY=../../build/lex_tester
+
+NCOLORS=$(tput colors)
+
+if [ $NCOLORS -ge 8 ]; then
+    normal=$(tput sgr0)
+    red=$(tput setaf 1)
+    green=$(tput setaf 2)
+fi
 
 echo "Lexer Tests Starting"
 
@@ -15,12 +23,12 @@ for file in $(ls tests/input/*.java); do
     IN_FILE="${INPUT_DIR_NAME}/${TEST_NAME}.java"
     OUT_FILE="${OUTPUT_DIR_NAME}/${TEST_NAME}.out"
 
-    diff <(./${BINARY} < ${IN_FILE}) <(cat ${OUT_FILE})
+    diff --strip-trailing-cr <(./${BINARY} < ${IN_FILE}) <(cat ${OUT_FILE})
     DIFF_CODE=$?
     if [ ${DIFF_CODE} -eq 0 ]; then
-        echo "Test $count: ${TEST_NAME} passed"
+        echo "${green}Test $count: ${TEST_NAME} passed${normal}"
     else
-        echo "Test $count: ${TEST_NAME} failed"
+        echo "${red}Test $count: ${TEST_NAME} failed${normal}"
         exit $DIFF_CODE
     fi
 
