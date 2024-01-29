@@ -37,8 +37,6 @@
   std::unique_ptr<ParseTreeNode> node;
 }
 
-%type <node> CompilationUnit
-
 /*=============================================================================
                               Token Definitions
 =============================================================================*/
@@ -58,6 +56,7 @@
 %token FINAL
 %token IMPORT
 %token CLASS
+%token NEW
 
 // might need to look at this again
 %token PACKAGE
@@ -188,9 +187,7 @@ ClassDeclaration:
     ;
 
 Identifier:
-    IDENTIFIER { 
-      $$ = new ParseTreeNode(parsetreenode_t::IDENTIFIER, $1);
-    }
+    IDENTIFIER
     ;
 
 ExtendsOpt:
@@ -356,16 +353,14 @@ Infixop:
 
 Expression3:
     PrefixOp Expression3
-    | Expr Expression3
+    | Expression Expression3
     | Type Expression3
     | Primary SelectorOpt
     ;
 
 PrefixOp:
     | NEGATE 
-    | ~ 
-    | + 
-    | - 
+    | MINUS
     ;
 
 SelectorOpt:
@@ -468,7 +463,7 @@ Statement:
     | WHILE ParExpression Statement
     | RETURN ExpressionOpt SEMI_COLON
     | SEMI_COLON /* Empty statement */
-    | ExpressionStatement
+    | Expression Statement
     | Identifier COLON Statement
     ;
 
