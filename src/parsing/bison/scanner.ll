@@ -29,6 +29,7 @@ Digit           [0-9]
 Identifier      {Letter}({Digit}|{Letter}|_)*
 Integer         0|-?[1-9]{Digit}*
 Float           {Digit}+"."{Digit}+
+Ascii           [ -~]
 
 %{
   // Code run each time a pattern is matched.
@@ -82,12 +83,12 @@ short   return yy::parser::make_SHORT(loc);
 "int\[\]"   return yy::parser::make_ARRAY(loc);
 
 %{ // Literals %}
-true    return yy::parser::make_TRUE(loc);
-false   return yy::parser::make_FALSE(loc);
-\"({Letter}|{Whitespace}|{Digit}|[\n\"\'\\\0])*\"     return yy::parser::make_STRING_LITERAL(loc);
+true                return yy::parser::make_TRUE(loc);
+false               return yy::parser::make_FALSE(loc);
+\"({Ascii}|{Whitespace}|[\n\"\'\\\0])*\"     return yy::parser::make_STRING_LITERAL(loc);
 {Integer}           return yy::parser::make_INTEGER(loc);
 null                return yy::parser::make_NULL_TOKEN(loc);
-"\'{Letter}\'"      return yy::parser::make_CHAR_LITERAL(loc);
+\'{Ascii}\'         return yy::parser::make_CHAR_LITERAL(loc);
 
 %{ // Comments %}
 "/\*\*.*\*/"    return yy::parser::make_JAVADOC_COMMENT(loc);
