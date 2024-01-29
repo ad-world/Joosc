@@ -21,7 +21,10 @@ LEX_TESTING_DIR = ../../../tests/lexing
 
 ########## Targets ##########
 
-.PHONY : clean					# not file names
+.PHONY : clean test					# not file names
+
+test :
+	make -C ../../../	# make root project
 
 ${EXEC} : ${OBJECTS}				# link step
 	${CXX} ${CXXFLAGS} $^ -o $@ && mv ${EXEC} ${LEX_TESTING_DIR}
