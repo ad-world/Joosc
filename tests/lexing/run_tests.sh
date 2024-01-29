@@ -21,6 +21,7 @@ for file in $(ls tests/input/*.java); do
         echo "Test $count: ${TEST_NAME} passed"
     else
         echo "Test $count: ${TEST_NAME} failed"
+        exit $DIFF_CODE
     fi
 
     count=$((count+1))
