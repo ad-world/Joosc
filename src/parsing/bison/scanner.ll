@@ -46,6 +46,7 @@ if    return yy::parser::make_IF(loc);
 while     return yy::parser::make_WHILE(loc);
 for     return yy::parser::make_FOR(loc);
 extends     return yy::parser::make_EXTENDS(loc);
+new     return yy::parser::make_NEW(loc);
 public    return yy::parser::make_PUBLIC(loc);
 implements    return yy::parser::make_IMPLEMENTS(loc);
 protected     return yy::parser::make_PROTECTED(loc);
