@@ -115,8 +115,7 @@
 /*****************************************************************************/
 %token InterfaceDeclaration LabeledStatementOpt
 %token MemberDecl 
-%token Expression3
-// %token SelectorOpt Primary
+%token Primary InnerCreator
 
 // Grammar
 %%
@@ -294,35 +293,44 @@ OptionalComma:
     | COMMA
     ;
 
+// SHOULD BE EQUIVALENT 2
 Expression:
-    Expression1 AssignmentOperatorOpt
+    Expression1 ASSIGNMENT Expression1
+    | Expression1
     ;
 
-AssignmentOperatorOpt:
-    /* Empty - No assignment operator */
-    | AssignmentOperator Expression1
-    ;
+// SHOULD BE EQUIVALENT 2
+// Expression:
+//     Expression1 AssignmentOperatorOpt
+//     ;
 
-AssignmentOperator: 
-	ASSIGNMENT 
-    ; 
+// AssignmentOperatorOpt:
+//     /* Empty - No assignment operator */
+//     | ASSIGNMENT Expression1
+//     ;
+// SHOULD BE EQUIVALENT 2
+
+// SHOULD BE EQUIVALENT 1
+// Expression1:
+//     Expression3
+//     | Expression3 Expression1Rest
+//     ;
+
+// SHOULD BE EQUIVALENT 1
+// Expression1:
+//     Expression3 Expression1RestOpt
+//     ;
+
+// Expression1RestOpt:
+//     /* Empty - represents no additional expression */
+//     | Expression1Rest
+//     ;
+// SHOULD BE EQUIVALENT 1
 
 Expression1:
-    Expression2
-    ;
-
-Expression2:
-    Expression3 Expression2RestOpt
-    ;
-
-Expression2RestOpt:
-    /* Empty - represents no additional expression */
-    | Expression2Rest
-    ;
-
-Expression2Rest:
-    InfixExpression
-    | InstanceofExpression
+    Expression3
+    | Expression3 InfixExpression
+    | Expression3 InstanceofExpression
     ;
 
 InfixExpression:
@@ -331,7 +339,7 @@ InfixExpression:
     ;
 
 InstanceofExpression:
-    Expression3 INSTANCEOF Type
+    INSTANCEOF Type
     ;
 
 Infixop:
@@ -352,22 +360,22 @@ Infixop:
     | MODULO 
     ;
 
-// Expression3:
-//     PrefixOp Expression3
-//     | Expression Expression3
-//     | Type Expression3
-//     | Primary SelectorOpt
-//     ;
+Expression3:
+    PrefixOp Expression3
+    | OPENING_PAREN Type CLOSING_PAREN Expression3 // Primitive cast
+    | OPENING_PAREN Expression CLOSING_PAREN Expression3 // Reference cast
+    | Primary SelectorOpt
+    ;
 
-// PrefixOp:
-//     NEGATE 
-//     | MINUS
-//     ;
+PrefixOp:
+    NEGATE 
+    | MINUS
+    ;
 
-// SelectorOpt:
-//     /* Empty - No selector */
-//     | SelectorOpt Selector
-//     ;
+SelectorOpt:
+    /* Empty - No selector */
+    | SelectorOpt Selector
+    ;
 
 // Primary:
 //     OPENING_PAREN Expression CLOSING_PAREN
@@ -406,36 +414,31 @@ Infixop:
 //     | DOT NEW InnerCreator
 //     ;
 
-// Selector:
-//     DOT Identifier ArgumentsOpt
-//     | DOT THIS
-//     | DOT NEW InnerCreator
-//     | ExpressionOpt
-//     ;
+Selector:
+    DOT Identifier ArgumentsOpt
+    | DOT THIS
+    | DOT NEW InnerCreator
+    | OPENING_BRACKET Expression CLOSING_BRACKET
+    ;
 
-// ExpressionOpt:
-//     /* Empty - No Expressions */
-//     | Expression
-//     ;
+ArgumentsOpt:
+    /* Empty - No Arguments */
+    | Arguments
+    ;
 
-// ArgumentsOpt:
-//     /* Empty - No Arguments */
-//     | Arguments
-//     ;
+Arguments:
+    OPENING_PAREN ExpressionListOpt CLOSING_PAREN
+    ;
 
-// Arguments:
-//     OPENING_PAREN ExpressionListOpt CLOSING_PAREN
-//     ;
+ExpressionListOpt:
+    /* Empty - No Expressions */
+    | ExpressionList
+    ;
 
-// ExpressionListOpt:
-//     /* Empty - No Expressions */
-//     | ExpressionList
-//     ;
-
-// ExpressionList:
-//     Expression
-//     | ExpressionList COMMA Expression
-//     ;
+ExpressionList:
+    Expression
+    | ExpressionList COMMA Expression
+    ;
 
 // InnerCreator:
 //     Identifier ClassCreatorRest
@@ -518,7 +521,7 @@ FinalOpt:
 
 Type:
     QualifiedIdentifier BracketsOpt
-    | BasicType
+    | BasicType BracketsOpt
     ;
 
 BasicType:

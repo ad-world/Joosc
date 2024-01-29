@@ -1,7 +1,7 @@
 all: build test
 
 generate-parser:
-	(cd src/parsing/bison && flex -o scanner.cc scanner.ll && bison -dv -o parser.cc parser.yy)
+	(cd src/parsing/bison && flex -o scanner.cc scanner.ll && bison -dv -Wcounterexamples -o parser.cc parser.yy)
 
 build: generate-parser
 	(mkdir -p build && cd build && cmake .. && make && cp joosc ../joosc)
