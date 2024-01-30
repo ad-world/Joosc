@@ -40,6 +40,7 @@
 %token IF
 %token WHILE
 %token FOR
+%token ELSE
 %token EXTENDS
 %token IMPLEMENTS
 %token PUBLIC 
@@ -52,6 +53,8 @@
 %token FINAL
 %token IMPORT
 %token CLASS
+%token NEW
+%token INSTANCEOF
 
 // might need to look at this again
 %token PACKAGE
@@ -92,7 +95,7 @@
 %token NEGATE
 %token PLUS
 %token MINUS
-%token MULTIPLY
+%token ASTERISK
 %token DIVIDE
 %token MODULO
 %token LESS_THAN

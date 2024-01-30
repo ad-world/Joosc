@@ -29,3 +29,9 @@ target_link_libraries(unit_tests gtest_main)
 enable_testing()
 include(GoogleTest)
 gtest_discover_tests(unit_tests)
+
+# ---- Target lex_tester ----
+# file(READ "tests/lexing/lex_tester.cpp" LEX_TESTER)
+add_executable(lex_tester)
+target_sources(lex_tester PRIVATE ${SOURCES} "tests/lexing/lex_tester.cc")
+target_include_directories(lex_tester PRIVATE src)
