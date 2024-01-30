@@ -115,11 +115,13 @@
 /*****************************************************************************/
 %token InterfaceDeclaration LabeledStatementOpt
 %token MemberDecl 
-%token Creator IdentifierSuffixOpt Literal
+%token IdentifierSuffixOpt BracketExpressionOpt
 
 // Grammar
 %%
-%start CompilationUnit;
+// %start CompilationUnit;
+
+%start ArrayCreatorRest;
 
 CompilationUnit:
     PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
@@ -362,8 +364,12 @@ Infixop:
 
 Expression3:
     PrefixOp Expression3
-    | OPENING_PAREN Type CLOSING_PAREN Expression3 // Primitive cast
-    | OPENING_PAREN Expression CLOSING_PAREN Expression3 // Reference cast
+    | NoPrefixExpression3
+    ;
+
+NoPrefixExpression3:
+    OPENING_PAREN Type CLOSING_PAREN Expression3 // Primitive cast
+    | OPENING_PAREN Expression CLOSING_PAREN NoPrefixExpression3 // Reference cast
     | Primary SelectorOpt
     ;
 
@@ -387,14 +393,14 @@ Primary:
     | VOID DOT CLASS
     ;
 
-// Creator:
-//     QualifiedIdentifier ArrayCreatorRest
-//     | QualifiedIdentifier ClassCreatorRest
-//     ;
+Creator:
+    QualifiedIdentifier ArrayCreatorRest
+    | QualifiedIdentifier ClassCreatorRest
+    ;
 
-// ArrayCreatorRest:
-//     OPENING_BRACKET CLOSING_BRACKET BracketsOpt ArrayInitializer
-//     | OPENING_BRACKET Expression CLOSING_BRACKET BracketExpressionOpt BracketsOpt
+ArrayCreatorRest:
+    OPENING_BRACKET CLOSING_BRACKET BracketsOpt ArrayInitializer
+    | OPENING_BRACKET Expression CLOSING_BRACKET BracketExpressionOpt BracketsOpt
 
 // BracketExpressionOpt:
 //     /* Empty - No BracketExpression */
@@ -562,13 +568,14 @@ TypeList:
 // 	  Identifier BracketsOpt
 //     ;
 
-// Literal:
-//     | INTEGER 	
-//     | CHAR_LITERAL 	
-//     | STRING_LITERAL 	
-//     | BOOLEAN
-//     | NULL_TOKEN
-//     ;
+Literal:
+    INTEGER 	
+    | CHAR_LITERAL 	
+    | STRING_LITERAL 	
+    | TRUE
+    | FALSE
+    | NULL_TOKEN
+    ;
 
 // InterfaceDeclaration:
 //     INTERFACE Identifier ExtendsTypeListOpt InterfaceBody
