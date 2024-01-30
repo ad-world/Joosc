@@ -115,7 +115,7 @@
 /*****************************************************************************/
 %token InterfaceDeclaration LabeledStatementOpt
 %token MemberDecl 
-%token Primary InnerCreator
+%token Creator IdentifierSuffixOpt Literal
 
 // Grammar
 %%
@@ -377,15 +377,15 @@ SelectorOpt:
     | SelectorOpt Selector
     ;
 
-// Primary:
-//     OPENING_PAREN Expression CLOSING_PAREN
-//     | THIS ArgumentsOpt
-//     | Literal
-//     | NEW Creator
-//     | QualifiedIdentifier IdentifierSuffixOpt
-//     | BasicType BracketsOpt DOT CLASS
-//     | VOID DOT CLASS
-//     ;
+Primary:
+    OPENING_PAREN Expression CLOSING_PAREN
+    | THIS ArgumentsOpt
+    | Literal
+    | NEW Creator
+    | QualifiedIdentifier IdentifierSuffixOpt
+    | BasicType BracketsOpt DOT CLASS
+    | VOID DOT CLASS
+    ;
 
 // Creator:
 //     QualifiedIdentifier ArrayCreatorRest
@@ -440,18 +440,18 @@ ExpressionList:
     | ExpressionList COMMA Expression
     ;
 
-// InnerCreator:
-//     Identifier ClassCreatorRest
-//     ;
+InnerCreator:
+    Identifier ClassCreatorRest
+    ;
 
-// ClassCreatorRest:
-//     Arguments ClassBodyOpt
-//     ;
+ClassCreatorRest:
+    Arguments ClassBodyOpt
+    ;
 
-// ClassBodyOpt:
-//     /* Empty - No ClassBody */
-//     | ClassBody
-//     ;
+ClassBodyOpt:
+    /* Empty - No ClassBody */
+    | ClassBody
+    ;
 
 FinalOpt:
     /* Empty - No final keyword */
