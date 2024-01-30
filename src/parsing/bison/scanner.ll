@@ -92,9 +92,9 @@ null                return yy::parser::make_NULL_TOKEN(loc);
 \'{Ascii}\'         return yy::parser::make_CHAR_LITERAL(loc);
 
 %{ // Comments %}
-"/\*\*.*\*/"    return yy::parser::make_JAVADOC_COMMENT(loc);
-\/\/.*$      return yy::parser::make_SINGLE_LINE_COMMENT(loc);
-"/\*.*\*/"      return yy::parser::make_MULTI_LINE_COMMENT(loc);
+"//".*     { }
+[/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]      { }
+\/\*\*.*\*\/    { } 
 
 %{ // Operators %}
 "!"     return yy::parser::make_NEGATE(loc);
@@ -136,3 +136,4 @@ void Driver::scan_begin() {
 void Driver::scan_end() {
   fclose(yyin);
 }
+
