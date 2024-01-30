@@ -17,6 +17,7 @@ fi
 echo "Lexer Tests Starting"
 
 count=1
+failed_tests=0
 
 for file in $(ls tests/input/*.java); do
     TEST_NAME=$(basename -s .java $file)
@@ -29,10 +30,17 @@ for file in $(ls tests/input/*.java); do
         echo "${green}Test $count: ${TEST_NAME} passed${normal}"
     else
         echo "${red}Test $count: ${TEST_NAME} failed${normal}"
-        exit $DIFF_CODE
+        failed_tests=$((failed_tests+1))
     fi
 
     count=$((count+1))
 done
 
 echo "Lexer Tests Finished"
+if [ ${failed_tests} -eq 0 ]; then
+    exit 0
+else
+    exit 1
+fi
+
+
