@@ -54,6 +54,7 @@
 %token IMPORT
 %token CLASS
 %token NEW
+%token INSTANCEOF
 
 // might need to look at this again
 %token PACKAGE

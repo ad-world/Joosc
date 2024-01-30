@@ -64,6 +64,7 @@ package     return yy::parser::make_PACKAGE(loc);
 interface     return yy::parser::make_INTERFACE(loc);
 native    return yy::parser::make_NATIVE(loc);
 return    return yy::parser::make_RETURN(loc);
+instanceof return yy::parser::make_INSTANCEOF(loc);
 "{"       return yy::parser::make_OPENING_BRACE(loc);
 "}"       return yy::parser::make_CLOSING_BRACE(loc);
 "["       return yy::parser::make_OPENING_BRACKET(loc);
