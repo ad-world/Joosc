@@ -116,10 +116,160 @@
 %token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl StatementExpression
 %token MemberDecl InterfaceBodyDeclarations ParExpression ForUpdateOpt ExpressionOpt ElseOpt ForInitOpt
 
+%token PostfixExpression ClassInstanceCreationExpression
+
 // Grammar
 %%
 // %start CompilationUnit;
-%start Statement;
+%start Expression;
+
+
+/* Expressions */
+Expression:
+    AssignmentExpression
+    ;
+
+AssignmentExpression:
+    LeftHandSide ASSIGNMENT AssignmentExpression
+    | ConditionalOrExpression
+    ;
+
+LeftHandSide:
+    QualifiedIdentifier
+    | FieldAccess
+    | ArrayAccess
+    ;
+
+ConditionalOrExpression:
+    ConditionalAndExpression
+    | ConditionalOrExpression BOOLEAN_OR ConditionalAndExpression
+    ;
+
+ConditionalAndExpression:
+    EqualityExpression
+    | ConditionalAndExpression BOOLEAN_AND EqualityExpression
+    ;
+
+EqualityExpression:
+    RelationalExpression
+    | EqualityExpression BOOLEAN_EQUAL RelationalExpression
+    | EqualityExpression NOT_EQUAL RelationalExpression
+    ;
+
+RelationalExpression:
+    AdditiveExpression
+    | RelationalExpression LESS_THAN AdditiveExpression
+    | RelationalExpression GREATER_THAN AdditiveExpression
+    | RelationalExpression LESS_THAN_EQUAL AdditiveExpression
+    | RelationalExpression GREATER_THAN_EQUAL AdditiveExpression
+    | RelationalExpression INSTANCEOF QualifiedIdentifier
+    ;
+
+AdditiveExpression:
+    MultiplicativeExpression
+    | AdditiveExpression PLUS MultiplicativeExpression
+    | AdditiveExpression MINUS MultiplicativeExpression
+    ;
+
+MultiplicativeExpression:
+    UnaryExpression
+    | MultiplicativeExpression STAR UnaryExpression
+    | MultiplicativeExpression DIVIDE UnaryExpression
+    | MultiplicativeExpression MODULO UnaryExpression
+    ;
+
+UnaryExpression:
+    MINUS UnaryExpression
+    | UnaryExpressionNotPlusMinus
+    ;
+
+UnaryExpressionNotPlusMinus:
+    NEGATE UnaryExpression
+    | CastExpression
+    | PrimaryOrExpressionName
+    ;
+
+CastExpression:
+    OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
+    | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus
+    ;
+
+PrimaryOrExpressionName:
+    Primary
+    | QualifiedIdentifier
+    ;
+
+Primary:
+    PrimaryNoNewArray
+    | ArrayCreationExpression
+    ;
+
+ArrayCreationExpression:
+    NEW PrimitiveType OPENING_BRACKET CLOSING_BRACKET
+    | NEW PrimitiveType OPENING_BRACKET Expression CLOSING_BRACKET
+    | NEW QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET
+    | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET
+    ;
+
+PrimaryNoNewArray:
+    Literal
+    | THIS
+    | QualifiedIdentifier DOT THIS
+    | OPENING_PAREN Expression CLOSING_PAREN
+    | ClassInstanceCreationExpression
+    | FieldAccess
+    | MethodInvocation
+    | ArrayAccess
+    ;
+
+Literal:
+    INTEGER
+    | TRUE
+    | FALSE
+    | CHAR_LITERAL
+    | STRING_LITERAL
+    | NULL_TOKEN
+    ;
+
+ArrayAccess:
+    QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET
+    | PrimaryNoNewArray OPENING_BRACKET Expression CLOSING_BRACKET
+    ;
+
+FieldAccess:
+    Primary DOT Identifier
+    ;
+
+ArgumentListOpt:
+    /* Empty - No arguments */
+    | Expression
+    | ArgumentListOpt COMMA Expression
+    ;
+
+Arguments:
+    OPENING_PAREN ArgumentListOpt CLOSING_PAREN
+    ;
+
+MethodInvocation:
+    QualifiedIdentifier Arguments
+    | Primary DOT IDENTIFIER Arguments
+    ;
+
+
+
+
+
+PrimitiveType:
+    BasicType
+    ;
+
+Type:
+    QualifiedIdentifier
+    | BasicType
+    ;
+
+/*----------------------*/
+
 
 CompilationUnit:
     PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
@@ -288,10 +438,10 @@ OptionalComma:
     | COMMA
     ;
 
-Expression: // Not sure about this
-    Expression3 ASSIGNMENT Expression1
-    | Expression3
-    ;
+// Expression: // Not sure about this
+//     Expression3 ASSIGNMENT Expression1
+//     | Expression3
+//     ;
 
 Expression1:
     Expression3
@@ -347,14 +497,17 @@ SelectorOpt:
     | SelectorOpt Selector
     ;
 
-Primary:
-    OPENING_PAREN Expression CLOSING_PAREN
-    | THIS ArgumentsOpt
-    | Literal
-    | NEW Creator
-    | Identifier // Following SelectorOpt can be equivalent to QualifiedIdentifier
-    | BasicType BracketsOpt DOT CLASS
-    ;
+// Primary:
+//     OPENING_PAREN Expression CLOSING_PAREN
+//     | THIS ArgumentsOpt
+//     | Literal
+//     | ClassInstanceCreationExpression
+//     | Identifier // Following SelectorOpt can be equivalent to QualifiedIdentifier
+//     | BasicType BracketsOpt DOT CLASS
+//     ;
+
+// ClassInstanceCreationExpression:
+//     NEW Creator
 
 Creator:
     QualifiedIdentifier ClassCreatorRest
@@ -378,9 +531,9 @@ ArgumentsOpt:
     | Arguments
     ;
 
-Arguments:
-    OPENING_PAREN ExpressionListOpt CLOSING_PAREN
-    ;
+// Arguments:
+//     OPENING_PAREN ExpressionListOpt CLOSING_PAREN
+//     ;
 
 ExpressionListOpt:
     /* Empty - No Expressions */
@@ -483,8 +636,13 @@ TypeList:
     | TypeList COMMA Type
     ;
 
-// StatementExpression: 
-// 	  Expression
+ExpressionStatement:
+    StatementExpression SEMI_COLON
+
+// StatementExpression: // Expressions that can be used as statements when followed by semicolon
+// 	Assignment
+// 	MethodInvocation
+// 	ClassInstanceCreationExpression
 //     ;
 
 // ParExpression: 
@@ -508,14 +666,14 @@ TypeList:
 // 	  Identifier BracketsOpt
 //     ;
 
-Literal:
-    INTEGER 	
-    | CHAR_LITERAL 	
-    | STRING_LITERAL 	
-    | TRUE
-    | FALSE
-    | NULL_TOKEN
-    ;
+// Literal:
+//     INTEGER 	
+//     | CHAR_LITERAL 	
+//     | STRING_LITERAL 	
+//     | TRUE
+//     | FALSE
+//     | NULL_TOKEN
+//     ;
 
 InterfaceDeclaration:
     INTERFACE Identifier ExtendsTypeListOpt InterfaceBody
