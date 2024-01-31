@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
     Driver drv;
 
     try {
+        drv.trace_scanning = trace_scanning;
         drv.trace_parsing = trace_parsing;
         rc = drv.parse(infile);
     } catch ( ... ) {
