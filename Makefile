@@ -17,7 +17,7 @@ integration-test:
 
 clean:
 	rm -f joosc && rm -f *.log && rm -f *.zip
-	(cd src/parsing/bison && rm -f parser.hh parser.cc scanner.cc location.hh) 
+	make clean -C src/parsing/bison
 	rm -r -f ./build
 
 submission: build test
