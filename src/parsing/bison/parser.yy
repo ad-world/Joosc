@@ -36,7 +36,6 @@
                               Token Definitions
 =============================================================================*/
 %token IF
-%token ELSE
 %token WHILE
 %token FOR
 %token ELSE
@@ -67,12 +66,11 @@
 %token SEMI_COLON
 %token COLON
 %token COMMA
-%token STAR
+%token ASTERISK
 %token DOT
 %token <std::string> IDENTIFIER
 %token NATIVE
 %token ASSIGNMENT
-%token INSTANCEOF
 %token RETURN
 
 // types
@@ -175,7 +173,7 @@ AdditiveExpression:
 
 MultiplicativeExpression:
     UnaryExpression
-    | MultiplicativeExpression STAR UnaryExpression
+    | MultiplicativeExpression ASTERISK UnaryExpression
     | MultiplicativeExpression DIVIDE UnaryExpression
     | MultiplicativeExpression MODULO UnaryExpression
     ;
@@ -312,7 +310,7 @@ DottedIdentifiers:
 
 OptionalWildcard:
     /* Empty - no wildcard */
-    | DOT STAR
+    | DOT ASTERISK
     ;
 
 TypeDeclaration:
@@ -473,7 +471,7 @@ Infixop:
     | GREATER_THAN_EQUAL 
     | PLUS 
     | MINUS 
-    | MULTIPLY 
+    | ASTERISK 
     | DIVIDE 
     | MODULO 
     ;
