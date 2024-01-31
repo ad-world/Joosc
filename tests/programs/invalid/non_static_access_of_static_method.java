@@ -1,4 +1,4 @@
-public class A {
+public class non_static_access_of_static_method {
   public static int m1() {
     return 42;
   }

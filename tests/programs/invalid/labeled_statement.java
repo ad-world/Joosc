@@ -1,4 +1,4 @@
-public class A {
+public class labeled_statement {
   public int m(int x) {
     loop:
     while (x>0) {

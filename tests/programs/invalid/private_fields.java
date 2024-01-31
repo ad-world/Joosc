@@ -1,3 +1,3 @@
-public class A {
+public class private_fields {
   private int x;
 }

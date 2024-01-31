@@ -1,4 +1,4 @@
-public class A {
+public class throw {
   public int m(int x) throws java.lang.Exception {
     if (x==42)
       throw new java.lang.Exception();

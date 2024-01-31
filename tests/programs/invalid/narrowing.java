@@ -1,4 +1,4 @@
-public class A {
+public class narrowing {
   public A() {}
   public void m(int i) {
     char c = 'a';

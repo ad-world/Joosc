@@ -1,4 +1,4 @@
-public class A {
+public class super_field_access {
   public A() {}
   public int f;
 }

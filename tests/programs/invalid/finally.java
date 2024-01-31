@@ -1,4 +1,4 @@
-public class A {
+public class finally {
   public int m(java.io.FileInputStream x) throws java.io.IOException{
     int y;
     try {

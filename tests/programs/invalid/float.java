@@ -1,3 +1,3 @@
-public class A {
+public class float {
   protected float x;
 }

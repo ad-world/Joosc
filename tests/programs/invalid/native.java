@@ -1,3 +1,3 @@
-public class A {
+public class native {
     public native int m();
 }

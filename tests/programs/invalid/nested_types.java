@@ -1,3 +1,3 @@
-public class A {
+public class nested_types {
   public class B {}
 }

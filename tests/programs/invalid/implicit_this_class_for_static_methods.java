@@ -1,4 +1,4 @@
-public class A {
+public class implicit_this_class_for_static_methods {
   public static int m1() {
     return 42;
   }

@@ -1,4 +1,4 @@
-public class A {
+public class synchronized_statement {
   public int x;
   public void m() {
     synchronized(x) {

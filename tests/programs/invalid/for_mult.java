@@ -1,4 +1,4 @@
-public class A {
+public class for_mult {
   public A() {}
   public int m(int x) {
     int y = 0;

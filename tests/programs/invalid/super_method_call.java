@@ -1,4 +1,4 @@
-public class A {
+public class super_method_call {
   public String m() {
     return super.toString();
   }

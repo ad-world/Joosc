@@ -1,3 +1,3 @@
-public class A {
+public class omitted_constructor {
     /* public A() {} */
 }
