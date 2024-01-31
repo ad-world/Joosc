@@ -113,7 +113,7 @@
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
-%token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl Assignment MethodInvocation ClassInstanceCreationExpression
+%token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl Assignment
 %token MemberDecl InterfaceBodyDeclarations ParExpression ReturnStatement ExpressionOpt LocalVariableDeclaration
 
 %token PostfixExpression ClassInstanceCreationExpression
