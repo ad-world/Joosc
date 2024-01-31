@@ -13,33 +13,25 @@ MAKEFILE_NAME = ${firstword ${MAKEFILE_LIST}}	# makefile name
 
 PARSER_FILES = parser.cc parser.hh parser.output location.hh
 SCANNER_FILES = scanner.cc
-OBJECTS = lex_tester.o driver.o scanner.o parser.o					# object files forming executable
-DEPENDS = ${OBJECTS:.o=.d}			# substitute ".o" with ".d"
-EXEC = lex_tester					# executable name
-
-LEX_TESTING_DIR = ../../../tests/lexing
 
 ########## Targets ##########
 
-.PHONY : clean test					# not file names
+.PHONY : all clean test					# not file names
 
-test :
-	make -C ../../../	# make root project
+all : ${SCANNER_FILES} ${PARSER_FILES}
 
-${EXEC} : ${OBJECTS}				# link step
-	${CXX} ${CXXFLAGS} $^ -o $@ && mv ${EXEC} ${LEX_TESTING_DIR}
 ${SCANNER_FILES} : scanner.ll
 	flex -o scanner.cc scanner.ll
 
 ${PARSER_FILES} : parser.yy
-	bison -dv parser.yy -o parser.cc
+	bison --report=itemsets -Wcex -dv parser.yy -o parser.cc
 
-${OBJECTS} : ${SCANNER_FILES} ${PARSER_FILES}
-${OBJECTS} : ${MAKEFILE_NAME}			# OPTIONAL : changes to this file => recompile
+${SCANNER_FILES} ${PARSER_FILES} : ${MAKEFILE_NAME}			# OPTIONAL : changes to this file => recompile
 
 # make implicitly generates rules to compile C++ files that generate .o files
 
--include ${DEPENDS}				# include *.d files containing program dependences
-
 clean :						# remove files that can be regenerated
 	rm -f ${DEPENDS} ${OBJECTS} ${EXEC} ${PARSER_FILES} ${SCANNER_FILES}
+
+test :
+	make -C ../../../	# make root project
