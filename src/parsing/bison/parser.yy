@@ -113,12 +113,13 @@
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
-%token Statement VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl
-%token MemberDecl InterfaceBodyDeclarations
+%token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl StatementExpression
+%token MemberDecl InterfaceBodyDeclarations ParExpression ForUpdateOpt ExpressionOpt ElseOpt ForInitOpt
 
 // Grammar
 %%
-%start CompilationUnit;
+// %start CompilationUnit;
+%start Statement;
 
 CompilationUnit:
     PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
@@ -233,6 +234,7 @@ BlockStatementsOpt:
 BlockStatement:
     LocalVariableDeclarationStatement
     | ClassOrInterfaceDeclaration
+    | Statement
     ;
 
 LocalVariableDeclarationStatement:
@@ -286,9 +288,9 @@ OptionalComma:
     | COMMA
     ;
 
-Expression:
-    Expression1 ASSIGNMENT Expression1
-    | Expression1
+Expression: // Not sure about this
+    Expression3 ASSIGNMENT Expression1
+    | Expression3
     ;
 
 Expression1:
@@ -408,16 +410,15 @@ FinalOpt:
     | FINAL
     ;
 
-// Statement:
-//     Block
-//     | IF ParExpression Statement ElseOpt
-//     | FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
-//     | WHILE ParExpression Statement
-//     | RETURN ExpressionOpt SEMI_COLON
-//     | SEMI_COLON /* Empty statement */
-//     | Expression Statement
-//     | Identifier COLON Statement
-//     ;
+Statement:
+    Block
+    | IF ParExpression Statement ElseOpt
+    | FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
+    | WHILE ParExpression Statement
+    | RETURN ExpressionOpt SEMI_COLON
+    | SEMI_COLON /* Empty statement */
+    | StatementExpression
+    ;
 
 // ElseOpt:
 //     /* Empty - No else part */
