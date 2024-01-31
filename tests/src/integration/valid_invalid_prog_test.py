@@ -1,6 +1,18 @@
 import os, subprocess, sys
 from pathlib import Path
 
+# Imported from Blender
+class colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 def resolve_path(path1, path2):
     return str(Path(os.path.join(path1, path2)).resolve())
 
@@ -24,12 +36,12 @@ def valid_invalid_prog_test():
             program_path = resolve_path(directory, program)
             result = subprocess.run([joosc_executable, program_path])
             if result.returncode == expected_code:
-                print(f"Running joosc on {program} successfully returned {expected_code}")
+                print(colors.OKGREEN + f"Running joosc on {program} successfully returned {expected_code}" + colors.ENDC)
             else:
-                print(f"FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}")
+                print(colors.FAIL + f"FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}" + colors.ENDC)
                 failures = True
     
-    print("Tests had failures." if failures else "All tests succeeded!")
+    print(colors.FAIL + "Tests had failures." + colors.ENDC if failures else colors.OKGREEN + "All tests succeeded!" + colors.ENDC)
     return 1 if failures else 0
 
 if __name__ == "__main__":
