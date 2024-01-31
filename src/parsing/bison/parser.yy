@@ -113,8 +113,8 @@
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
-%token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl StatementExpression
-%token MemberDecl InterfaceBodyDeclarations ParExpression ForUpdateOpt ExpressionOpt ElseOpt ForInitOpt
+%token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl Assignment MethodInvocation ClassInstanceCreationExpression
+%token MemberDecl InterfaceBodyDeclarations ParExpression ReturnStatement ExpressionOpt LocalVariableDeclaration
 
 %token PostfixExpression ClassInstanceCreationExpression
 
@@ -564,14 +564,91 @@ FinalOpt:
     ;
 
 Statement:
-    Block
-    | IF ParExpression Statement ElseOpt
-    | FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
-    | WHILE ParExpression Statement
-    | RETURN ExpressionOpt SEMI_COLON
-    | SEMI_COLON /* Empty statement */
-    | StatementExpression
+	StatementWithoutTrailingSubstatement
+	| IfThenStatement
+	| IfThenElseStatement
+	| WhileStatement
+	| ForStatement
     ;
+
+StatementWithoutTrailingSubstatement:
+	Block
+	| EmptyStatement
+	| ExpressionStatement
+	| ReturnStatement
+    ;
+
+ExpressionStatement:
+    StatementExpression
+    ;
+
+StatementExpression:
+    Assignment
+    | MethodInvocation
+    | ClassInstanceCreationExpression
+    ;
+
+StatementNoShortIf:
+	StatementWithoutTrailingSubstatement
+	| IfThenElseStatementNoShortIf
+	| WhileStatementNoShortIf
+	| ForStatementNoShortIf
+    ;
+
+EmptyStatement:
+    SEMI_COLON
+	;
+
+IfThenStatement:
+	IF ParExpression Statement
+    ;
+
+IfThenElseStatement:
+	IF ParExpression StatementNoShortIf ELSE Statement
+    ;
+
+IfThenElseStatementNoShortIf:
+	IF ParExpression StatementNoShortIf ELSE StatementNoShortIf
+    ;
+
+WhileStatement:
+	WHILE ParExpression Statement
+    ;
+
+WhileStatementNoShortIf:
+	WHILE ParExpression StatementNoShortIf
+    ;
+
+ForStatement:
+	FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
+
+ForStatementNoShortIf:
+	FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN StatementNoShortIf
+    ;
+		
+ForInitOpt:
+    /* No init */
+    | ForInit
+    ;
+
+ForInit:
+    StatementExpression
+    | LocalVariableDeclaration
+    ;
+
+ForUpdateOpt:
+    StatementExpression
+    ;
+
+// Statement:
+//   Block
+//   | IF ParExpression Statement ElseOpt
+//    | FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
+//    | WHILE ParExpression Statement
+//    | RETURN ExpressionOpt SEMI_COLON
+//    | SEMI_COLON /* Empty statement */
+//    | StatementExpression
+//   ;
 
 // ElseOpt:
 //     /* Empty - No else part */
