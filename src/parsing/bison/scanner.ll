@@ -42,6 +42,7 @@ Ascii           [ -~]
   // Code run each time yylex is called.
   loc.step ();
 %}
+volatile|super|long|float|double|throws|throw|try|catch|finally|do|switch|break|continue|synchronized  { fprintf(stderr, "Invalid input: %s is not a valid keyword in Joosc, only in Java.\n", yytext); YY_FATAL_ERROR("Scanning error");  }
 
 if    return yy::parser::make_IF(loc);
 while     return yy::parser::make_WHILE(loc);
