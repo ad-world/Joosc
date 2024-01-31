@@ -113,10 +113,8 @@
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
-%token InterfaceDeclaration LabeledStatementOpt
-%token MemberDecl IdentifierSuffixOpt
-%token BracketExpressionOpt
-// %token ArrayCreatorRest
+%token LabeledStatementOpt VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl
+%token MemberDecl InterfaceBodyDeclarations
 
 // Grammar
 %%
@@ -294,39 +292,10 @@ OptionalComma:
     | COMMA
     ;
 
-// SHOULD BE EQUIVALENT 2
 Expression:
     Expression1 ASSIGNMENT Expression1
     | Expression1
     ;
-
-// SHOULD BE EQUIVALENT 2
-// Expression:
-//     Expression1 AssignmentOperatorOpt
-//     ;
-
-// AssignmentOperatorOpt:
-//     /* Empty - No assignment operator */
-//     | ASSIGNMENT Expression1
-//     ;
-// SHOULD BE EQUIVALENT 2
-
-// SHOULD BE EQUIVALENT 1
-// Expression1:
-//     Expression3
-//     | Expression3 Expression1Rest
-//     ;
-
-// SHOULD BE EQUIVALENT 1
-// Expression1:
-//     Expression3 Expression1RestOpt
-//     ;
-
-// Expression1RestOpt:
-//     /* Empty - represents no additional expression */
-//     | Expression1Rest
-//     ;
-// SHOULD BE EQUIVALENT 1
 
 Expression1:
     Expression3
@@ -367,7 +336,7 @@ Expression3:
     ;
 
 NoPrefixExpression3:
-    OPENING_PAREN Type CLOSING_PAREN Expression3 // Primitive cast
+    OPENING_PAREN BasicType CLOSING_PAREN Expression3 // Primitive cast
     | OPENING_PAREN Expression CLOSING_PAREN NoPrefixExpression3 // Reference cast
     | Primary SelectorOpt
     ;
@@ -387,9 +356,8 @@ Primary:
     | THIS ArgumentsOpt
     | Literal
     | NEW Creator
-    | QualifiedIdentifier IdentifierSuffixOpt
+    | Identifier // Following SelectorOpt can be equivalent to QualifiedIdentifier
     | BasicType BracketsOpt DOT CLASS
-    | VOID DOT CLASS
     ;
 
 Creator:
@@ -402,18 +370,14 @@ ArrayCreatorRest:
     OPENING_BRACKET CLOSING_BRACKET ArrayInitializer
     | OPENING_BRACKET Expression CLOSING_BRACKET
 
-// BracketExpressionOpt:
-//     /* Empty - No BracketExpression */
-//     | BracketExpressionOpt OPENING_BRACKET Expression CLOSING_BRACKET
-
 // IdentifierSuffixOpt:
 //     /* Empty - No IdentifierSuffix */
 //     | IdentifierSuffix
 //     ;
 
 // IdentifierSuffix:
-//     BracketsOpt DOT CLASS
-//     | OPENING_PAREN Expression CLOSING_PAREN
+//     OPENING_BRACKET CLOSING_BRACKET DOT CLASS
+//     | OPENING_BRACKET Expression CLOSING_BRACKET
 //     | Arguments
 //     | DOT CLASS
 //     | DOT THIS
@@ -577,23 +541,23 @@ Literal:
     | NULL_TOKEN
     ;
 
-// InterfaceDeclaration:
-//     INTERFACE Identifier ExtendsTypeListOpt InterfaceBody
-//     ;
+InterfaceDeclaration:
+    INTERFACE Identifier ExtendsTypeListOpt InterfaceBody
+    ;
 
-// ExtendsTypeListOpt:
-//     /* Empty - No extends clause */
-//     | EXTENDS TypeList
-//     ;
+ExtendsTypeListOpt:
+    /* Empty - No extends clause */
+    | EXTENDS TypeList
+    ;
 
-// InterfaceBody:
-//     OPENING_BRACE InterfaceBodyDeclarationsOpt CLOSING_BRACE
-//     ;
+InterfaceBody:
+    OPENING_BRACE InterfaceBodyDeclarationsOpt CLOSING_BRACE
+    ;
 
-// InterfaceBodyDeclarationsOpt:
-//     /* Empty - No interface body declarations */
-//     | InterfaceBodyDeclarations
-//     ;
+InterfaceBodyDeclarationsOpt:
+    /* Empty - No interface body declarations */
+    | InterfaceBodyDeclarations
+    ;
 
 // InterfaceBodyDeclarations:
 //     InterfaceBodyDeclaration
