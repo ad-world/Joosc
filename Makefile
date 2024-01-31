@@ -1,9 +1,9 @@
 all: build test scanner-test
 
 generate-parser:
-	(cd src/parsing/bison && flex -o scanner.cc scanner.ll && bison -dv -o parser.cc parser.yy)
+	make -C src/parsing/bison
 
-build: generate-parser
+build: | generate-parser
 	(mkdir -p build && cd build && cmake .. && make && cp joosc ../joosc)
 
 test: build
@@ -23,4 +23,4 @@ clean:
 submission: build test
 	git log > a${anum}.log && zip a${anum}.zip -r src/ tests/ CMakeLists.txt Makefile a${anum}.log && rm a${anum}.log
 
-.PHONY: all build test clean submission generate-parser
+.PHONY: all build test clean submission generate-parser integration-test
