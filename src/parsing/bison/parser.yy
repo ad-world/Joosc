@@ -114,14 +114,13 @@
 %token EOF 0
 /*****************************************************************************/
 %token InterfaceDeclaration LabeledStatementOpt
-%token MemberDecl 
-%token IdentifierSuffixOpt BracketExpressionOpt
+%token MemberDecl IdentifierSuffixOpt
+%token BracketExpressionOpt
+// %token ArrayCreatorRest
 
 // Grammar
 %%
-// %start CompilationUnit;
-
-%start ArrayCreatorRest;
+%start CompilationUnit;
 
 CompilationUnit:
     PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
@@ -394,13 +393,14 @@ Primary:
     ;
 
 Creator:
-    QualifiedIdentifier ArrayCreatorRest
-    | QualifiedIdentifier ClassCreatorRest
+    QualifiedIdentifier ClassCreatorRest
+    | QualifiedIdentifier ArrayCreatorRest
+    | BasicType ArrayCreatorRest
     ;
 
 ArrayCreatorRest:
-    OPENING_BRACKET CLOSING_BRACKET BracketsOpt ArrayInitializer
-    | OPENING_BRACKET Expression CLOSING_BRACKET BracketExpressionOpt BracketsOpt
+    OPENING_BRACKET CLOSING_BRACKET ArrayInitializer
+    | OPENING_BRACKET Expression CLOSING_BRACKET
 
 // BracketExpressionOpt:
 //     /* Empty - No BracketExpression */
