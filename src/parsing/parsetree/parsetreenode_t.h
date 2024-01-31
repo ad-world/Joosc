@@ -99,7 +99,6 @@ enum ParseTreeNode_t {
     SelectorOpt,
     PostfixOpOpt,
     OptionalComma,
-    Expression1RestOpt,
     InfixExpression,
     InstanceofExpression,
 };

@@ -67,7 +67,7 @@
 %token COMMA
 %token STAR
 %token DOT
-%token <str> IDENTIFIER
+%token <std::string> IDENTIFIER
 %token NATIVE
 %token ASSIGNMENT
 %token INSTANCEOF
