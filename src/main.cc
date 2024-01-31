@@ -16,14 +16,18 @@ struct cmd_error {};
 
 int main(int argc, char *argv[]) {
     string infile;
-    bool trace_parsing = false;
-    bool trace_scanning = false;
+    bool trace_parsing = false,
+        trace_scanning = false,
+        output_rc = false;
 
     try {
         // Handle optional arguments (eg. enable parse debugging)
         int opt;
-        while ((opt = getopt(argc, argv, "ps")) != -1) {
+        while ((opt = getopt(argc, argv, "psr")) != -1) {
             switch (opt) {
+                case 'r':
+                    output_rc = true;
+                    break;
                 case 'p':
                     trace_parsing = true;
                     break;
@@ -68,6 +72,6 @@ int main(int argc, char *argv[]) {
 
     int parsing_rc = ((rc == 0) ? PARSING_SUCCESS : PARSING_FAILURE);
 
-    cerr << "RETURN CODE " << parsing_rc << endl;
+    if ( output_rc ) { cerr << "RETURN CODE " << parsing_rc << endl; }
     return parsing_rc;
 }
