@@ -113,7 +113,7 @@
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
-%token LabeledStatementOpt VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl
+%token Statement VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl
 %token MemberDecl InterfaceBodyDeclarations
 
 // Grammar
@@ -227,18 +227,12 @@ Block:
 
 BlockStatementsOpt:
     /* Empty - represents zero BlockStatements */
-    | BlockStatements
-    ;
-
-BlockStatements:
-    BlockStatement
-    | BlockStatements BlockStatement
+    | BlockStatementsOpt BlockStatement
     ;
 
 BlockStatement:
     LocalVariableDeclarationStatement
     | ClassOrInterfaceDeclaration
-    | LabeledStatementOpt
     ;
 
 LocalVariableDeclarationStatement:
@@ -370,20 +364,6 @@ ArrayCreatorRest:
     OPENING_BRACKET CLOSING_BRACKET ArrayInitializer
     | OPENING_BRACKET Expression CLOSING_BRACKET
 
-// IdentifierSuffixOpt:
-//     /* Empty - No IdentifierSuffix */
-//     | IdentifierSuffix
-//     ;
-
-// IdentifierSuffix:
-//     OPENING_BRACKET CLOSING_BRACKET DOT CLASS
-//     | OPENING_BRACKET Expression CLOSING_BRACKET
-//     | Arguments
-//     | DOT CLASS
-//     | DOT THIS
-//     | DOT NEW InnerCreator
-//     ;
-
 Selector:
     DOT Identifier ArgumentsOpt
     | DOT THIS
@@ -427,11 +407,6 @@ FinalOpt:
     /* Empty - No final keyword */
     | FINAL
     ;
-
-// LabeledStatementOpt:
-//     /* Empty - No label */
-//     | Identifier COLON Statement
-//     ;
 
 // Statement:
 //     Block
