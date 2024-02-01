@@ -383,12 +383,17 @@ BlockStatementsOpt:
 
 BlockStatement:
     LocalVariableDeclarationStatement
-    | ClassOrInterfaceDeclaration
+    | ClassDeclaration
     | Statement
     ;
 
 LocalVariableDeclarationStatement:
-    FinalOpt Type VariableDeclarators SEMI_COLON
+    LocalVariableDeclaration
+    //FinalOpt Type VariableDeclarators SEMI_COLON
+    ;
+
+LocalVariableDeclaration:
+    FinalOpt Type VariableDeclarators
     ;
 
 VariableDeclarators:
@@ -397,7 +402,8 @@ VariableDeclarators:
     ;
 
 VariableDeclarator:
-    Identifier VariableDeclaratorRest
+    VariableDeclaratorId
+    //Identifier VariableDeclaratorRest
     ;
 
 VariableDeclaratorRest:
@@ -563,6 +569,10 @@ FinalOpt:
     | FINAL
     ;
 
+
+
+// -------------------------------------------------------------
+
 Statement:
 	StatementWithoutTrailingSubstatement
 	| IfThenStatement
@@ -578,9 +588,9 @@ StatementWithoutTrailingSubstatement:
 	| ReturnStatement
     ;
 
-ExpressionStatement:
+/* ExpressionStatement:
     StatementExpression
-    ;
+    ; */
 
 StatementExpression:
     Assignment
@@ -640,6 +650,9 @@ ForUpdateOpt:
     StatementExpression
     ;
 
+// -------------------------------------------------------------
+
+
 // Statement:
 //   Block
 //   | IF ParExpression Statement ElseOpt
@@ -695,10 +708,10 @@ ForUpdateOpt:
 //     MethodDeclaratorRest
 //     ;
 
-Type:
+/* Type:
     QualifiedIdentifier BracketsOpt
     | BasicType BracketsOpt
-    ;
+    ; */
 
 BasicType:
     BYTE
@@ -715,6 +728,15 @@ TypeList:
 
 ExpressionStatement:
     StatementExpression SEMI_COLON
+<<<<<<< Updated upstream
+
+// StatementExpression: // Expressions that can be used as statements when followed by semicolon
+// 	Assignment
+// 	MethodInvocation
+// 	ClassInstanceCreationExpression
+//     ;
+=======
+>>>>>>> Stashed changes
 
 // StatementExpression: // Expressions that can be used as statements when followed by semicolon
 // 	Assignment
@@ -722,9 +744,9 @@ ExpressionStatement:
 // 	ClassInstanceCreationExpression
 //     ;
 
-// ParExpression: 
-// 	  OPENING_PAREN Expression CLOSING_PAREN
-//     ;
+ParExpression: 
+	  OPENING_PAREN Expression CLOSING_PAREN
+    ;
 
 // ConstantDeclaratorsRest:
 //     ConstantDeclaratorRest
