@@ -119,7 +119,49 @@
 
 // Grammar
 %%
-%start Type;
+%start CompilationUnit;
+
+/*---------------------- Packages ----------------------*/
+CompilationUnit:
+    PackageDeclaration ImportDeclarations TypeDeclarations
+    | ImportDeclarations TypeDeclarations   // No PackageDeclaration
+    | PackageDeclaration TypeDeclarations   // No ImportDeclarations
+    | PackageDeclaration ImportDeclarations // No TypeDeclarations
+    |                                       // Empty
+    ;
+
+PackageDeclaration:
+    PACKAGE QualifiedIdentifier SEMI_COLON
+    ;
+
+ImportDeclarations:
+    ImportDeclaration
+    | ImportDeclarations ImportDeclaration
+    ;
+
+TypeDeclarations:
+    TypeDeclaration
+    | TypeDeclarations TypeDeclaration
+    ;
+
+ImportDeclaration:
+	SingleTypeImportDeclaration
+	| TypeImportOnDemandDeclaration
+    ;
+
+SingleTypeImportDeclaration:
+    IMPORT QualifiedIdentifier SEMI_COLON // TypeName
+    ;
+
+TypeImportOnDemandDeclaration:
+    IMPORT QualifiedIdentifier DOT ASTERISK SEMI_COLON // PackageOrTypeName
+    ;
+
+TypeDeclaration:
+    ClassDeclaration
+    | InterfaceDeclaration
+    | SEMI_COLON
+    ;
 
 /*---------------------- Expressions ----------------------*/
 Expression:
@@ -295,24 +337,24 @@ ReferenceType: // Done this way to disallow multidimensional arrays
 
 /* OLD CODE - CAN MODIFY/REMOVE */   
 
-CompilationUnit:
-    PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
-    ;
+// CompilationUnit:
+//     PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
+//     ;
 
-PackageDeclarationOpt:
-    /* Empty - no package declaration */
-    | PACKAGE QualifiedIdentifier SEMI_COLON
-    ;
+// PackageDeclarationOpt:
+//     /* Empty - no package declaration */
+//     | PACKAGE QualifiedIdentifier SEMI_COLON
+//     ;
 
-ImportDeclarationsOpt:
-    /* Empty - represents zero import declarations */
-    | ImportDeclarationsOpt ImportDeclaration
-    ;
+// ImportDeclarationsOpt:
+//     /* Empty - represents zero import declarations */
+//     | ImportDeclarationsOpt ImportDeclaration
+//     ;
 
-TypeDeclarationsOpt:
-    /* Empty - represents zero type declarations */
-    | TypeDeclarationsOpt TypeDeclaration
-    ;
+// TypeDeclarationsOpt:
+//     /* Empty - represents zero type declarations */
+//     | TypeDeclarationsOpt TypeDeclaration
+//     ;
 
 QualifiedIdentifier:
     Identifier
@@ -323,24 +365,24 @@ Identifier:
     IDENTIFIER
     ;
 
-ImportDeclaration:
-    IMPORT Identifier DottedIdentifiers OptionalWildcard SEMI_COLON
-    ;
+// ImportDeclaration:
+//     IMPORT Identifier DottedIdentifiers OptionalWildcard SEMI_COLON
+//     ;
 
-DottedIdentifiers:
-    /* Empty - no additional identifiers */
-    | DottedIdentifiers DOT Identifier
-    ;
+// DottedIdentifiers:
+//     /* Empty - no additional identifiers */
+//     | DottedIdentifiers DOT Identifier
+//     ;
 
-OptionalWildcard:
-    /* Empty - no wildcard */
-    | DOT ASTERISK
-    ;
+// OptionalWildcard:
+//     /* Empty - no wildcard */
+//     | DOT ASTERISK
+//     ;
 
-TypeDeclaration:
-    ClassOrInterfaceDeclaration
-    | SEMI_COLON /* Empty */
-    ;
+// TypeDeclaration:
+//     ClassOrInterfaceDeclaration
+//     | SEMI_COLON /* Empty */
+//     ;
 
 ClassOrInterfaceDeclaration: 
     ModifiersOpt ClassDeclaration 
