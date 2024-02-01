@@ -38,7 +38,7 @@ CI_TESTING:
   script:
     - make test
     - make scanner-test
-    - make integration test
+    - make integration-test
 
 
 
