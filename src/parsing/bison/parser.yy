@@ -115,10 +115,6 @@
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
-%token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl
-%token MemberDecl InterfaceBodyDeclarations ClassInstanceCreationExpression
-
-%token ClassBodyOpt
 
 // Grammar
 %%
@@ -259,6 +255,9 @@ ArrayCreationExpression:
     | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // TypeName
     ;
 
+ClassInstanceCreationExpression:
+    NEW QualifiedIdentifier OPENING_PAREN ArgumentListOpt CLOSING_PAREN
+
 PrimaryNoNewArray:
     Literal
     | THIS
@@ -337,22 +336,23 @@ InterfaceDeclaration:
     InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfacesOpt InterfaceBody
     ;
 
-InterfaceModifiers:
-    InterfaceModifier 
-    | InterfaceModifiers InterfaceModifier
+Modifiers:
+    Modifier 
+    | Modifiers Modifier
     ;
 
-InterfaceModifier:  
+Modifier:  
     PUBLIC
     | PROTECTED
     | PRIVATE
     | ABSTRACT
     | STATIC
+    | NATIVE
     ;
 
 InterfaceModifiersOpt:
     /* Empty - optional */
-    | InterfaceModifiers
+    | Modifiers
     ;
 
 InterfaceType:
@@ -401,23 +401,116 @@ AbstractMethodModifiers:
     | AbstractMethodModifiers AbstractMethodModifier
     ;
 
-AbstractMethodModifier:
-    PUBLIC
-    | ABSTRACT
+/*---------------------- Classes ----------------------*/
+
+// weeder: make sure at most one of implements and extends is present
+// weeder: modifier can only be abstract, final, public
+// weeder: max one of abstract/final
+// weeder: must contain public?
+ClassDeclaration: 
+    CLASS Identifier ExtendsOpt InterfacesOpt ClassBody   
+    | Modifiers CLASS Identifier ExtendsOpt InterfacesOpt ClassBody 
+    ;
+
+/* Class interfaces */
+InterfacesOpt:
+    | Interfaces
+    ;
+
+Interfaces: 
+    IMPLEMENTS InterfaceTypeList
+    ;
+
+InterfaceTypeList:
+    InterfaceType
+    | InterfaceTypeList COMMA InterfaceType
+    ;
+
+/* Class Extends */
+ExtendsOpt:
+    /* Empty - No extends */
+    | EXTENDS QualifiedIdentifier // ClassType
+    ;
+
+/* Class body */
+ClassBodyDeclarationsOpt:
+    /* Empty */
+    | ClassBodyDeclarations
+    ;
+
+ClassBodyDeclarations: 
+    ClassBodyDeclaration
+    | ClassBodyDeclarations ClassBodyDeclaration
+    ;
+
+ClassBodyDeclaration: 
+    ClassMemberDeclaration
+    ;               
+    // ensure there is at least one constructor
+    // | InstanceInitializer: omitted from joos
+    // | StaticInitializer: omitted from joos
+
+ClassMemberDeclaration:
+    FieldDeclaration
+    | MethodDeclaration
+    | SEMI_COLON
+    ;
+    // | ClassDeclaration: omitted for joos
+    // | InterfaceDeclaration: NOT SURE IF THIS SHOULD BE OMITTED FOR JOOS
+
+ClassBody:
+    OPENING_BRACE ClassBodyDeclarationsOpt CLOSING_BRACE
+    ;
+
+/* Fields */
+// Only one variable declaration is allowed at a time
+FieldDeclaration: 
+    Type VariableDeclarator SEMI_COLON
+    | Modifiers Type VariableDeclarator SEMI_COLON
+    ;
+
+VariableInitializer:
+    Expression
+    ;
+
+/* Methods */
+// weeder: methodbody exists if neither abstract nor native
+MethodDeclaration: // One of these must be constructor
+    MethodHeader MethodBody
+    ;
+
+// weeder: allow static native int m(int)
+// weeder: see A1 specs for weeding modifiers
+MethodHeader: 
+    Type MethodDeclarator
+    | Modifiers Type MethodDeclarator
+    | VOID MethodDeclarator
+    | Modifiers VOID MethodDeclarator
     ;
 
 MethodDeclarator: 
     Identifier OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
     ;
 
+MethodBody: 
+    SEMI_COLON
+    | Block
+    ;
+
+/* Formal parameters */
 FormalParameterListOpt:
-    /* Empty - optional */
     | FormalParameterList
     ;
 
-FormalParameterList:
-	FormalParameter
-	| FormalParameterList COMMA FormalParameter
+FormalParameterList: 
+    FormalParameter
+    | FormalParameterList COMMA FormalParameter
+    ;
+/*-----------------------*/
+
+AbstractMethodModifier:
+    PUBLIC
+    | ABSTRACT
     ;
 
 FinalOpt:
@@ -540,65 +633,10 @@ Identifier:
 // Delay Type reduce due to conflict
 LocalVariableDeclaration:
     // Type VariableDeclarators
-    QualifiedIdentifier VariableDeclarators // ClassOrInterfaceType VariableDeclarators
-    | QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET VariableDeclarators // ClassOrInterfaceTypeArray VariableDeclarators
-    | PrimitiveType OPENING_BRACKET CLOSING_BRACKET VariableDeclarators // PrimitiveArray VariableDeclarators
-    | PrimitiveType VariableDeclarators
-    ;
-
-
-// -------------------------------------------------------------
-
-/* OLD CODE - CAN MODIFY/REMOVE */   
-
-
-ModifiersOpt: 
-    /* Empty - represents zero type declarations */
-    | Modifier
-    ;
-
-Modifier:
-    PUBLIC 
-    | PROTECTED 
-    | PRIVATE 
-    | STATIC 
-    | ABSTRACT 
-    | FINAL 
-    | NATIVE
-    ;
-
-ClassDeclaration:
-    CLASS Identifier ExtendsOpt ImplementsOpt ClassBody
-    ;
-
-ExtendsOpt:
-    /* Empty - represents zero type declarations */
-    | EXTENDS Type
-    ;
-
-ImplementsOpt:
-    /* Empty - represents zero type declarations */
-    | IMPLEMENTS TypeList
-    ;
-
-ClassBody:
-    OPENING_BRACE ClassBodyDeclarationsOpt CLOSING_BRACE
-    ;
-
-ClassBodyDeclarationsOpt:
-    /* Empty - represents zero ClassBodyDeclarations */
-    | ClassBodyDeclarationsOpt ClassBodyDeclaration
-    ;
-
-ClassBodyDeclaration:
-    SEMI_COLON /* Empty declaration */
-    | StaticOpt Block
-    | ModifiersOpt MemberDecl
-    ;
-
-StaticOpt:
-    /* Empty declaration */
-    | STATIC
+    QualifiedIdentifier VariableDeclarator // ClassOrInterfaceType VariableDeclarators
+    | QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // ClassOrInterfaceTypeArray VariableDeclarators
+    | PrimitiveType OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // PrimitiveArray VariableDeclarators
+    | PrimitiveType VariableDeclarator
     ;
 
 Block:
@@ -625,44 +663,13 @@ LocalVariableDeclarationStatement:
     LocalVariableDeclaration SEMI_COLON
     ;
 
-VariableDeclarators:
-    VariableDeclarator
-    | VariableDeclarators COMMA VariableDeclarator
-    ;
-
 VariableDeclarator:
     VariableDeclaratorId
     | VariableDeclaratorId ASSIGNMENT VariableInitializer
     ;
 
-VariableInitializer:
-    ArrayInitializer
-    | Expression
-    ;
+// -------------------------------------------------------------
 
-ArrayInitializer:
-    OPENING_BRACE VariableInitializersOpt CLOSING_BRACE
-    ;
-
-VariableInitializersOpt:
-    /* Empty - No variable initializers */
-    | VariableInitializerList OptionalComma
-    ;
-
-VariableInitializerList:
-    VariableInitializer
-    | VariableInitializerList COMMA VariableInitializer
-    ;
-
-OptionalComma:
-    /* Empty - No comma */
-    | COMMA
-    ;
-
-TypeList:
-    Type
-    | TypeList COMMA Type
-    ;
 %%
 
 void yy::parser::error (const location_type& l, const std::string& m) {

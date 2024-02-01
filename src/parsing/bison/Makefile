@@ -11,6 +11,7 @@ CXX = g++					# compiler
 CXXFLAGS = -g -Wall -MMD			# compiler flags
 MAKEFILE_NAME = ${firstword ${MAKEFILE_LIST}}	# makefile name
 
+BISONFLAGS = --report=itemsets -Wcex -Werror=cex -dv
 PARSER_FILES = parser.cc parser.hh parser.output location.hh
 SCANNER_FILES = scanner.cc
 
@@ -24,7 +25,7 @@ ${SCANNER_FILES} : scanner.ll
 	flex -o scanner.cc scanner.ll
 
 ${PARSER_FILES} : parser.yy
-	bison --report=itemsets -Wcex -dv parser.yy -o parser.cc
+	bison ${BISONFLAGS} parser.yy -o parser.cc
 
 ${SCANNER_FILES} ${PARSER_FILES} : ${MAKEFILE_NAME}			# OPTIONAL : changes to this file => recompile
 
