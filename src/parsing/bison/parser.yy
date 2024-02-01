@@ -109,9 +109,6 @@
 %token BOOLEAN_AND
 %token BOOLEAN_OR
 
-// REMOVE THESE
-%token ResultType
-
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
@@ -391,7 +388,8 @@ InterfaceMemberDeclaration: // Nested types and interface constants not supporte
     ;
 
 AbstractMethodDeclaration:
-    AbstractMethodModifiersOpt ResultType MethodDeclarator SEMI_COLON
+    AbstractMethodModifiersOpt Type MethodDeclarator SEMI_COLON
+    | AbstractMethodModifiersOpt VOID MethodDeclarator SEMI_COLON
     ;
 
 AbstractMethodModifiersOpt:
