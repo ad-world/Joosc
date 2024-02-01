@@ -114,6 +114,7 @@
 /*****************************************************************************/
 %token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl Assignment
 %token MemberDecl InterfaceBodyDeclarations ParExpression ReturnStatement ExpressionOpt LocalVariableDeclaration
+%token InterfaceType ClassType SimpleTypeName
 
 %token ClassOrInterfaceType ClassBodyOpt
 
@@ -289,16 +290,17 @@ Type:
 
 /*       Classes       */
 
+// weeder: make sure at most one of implements and extends is present
+ClassDeclaration: ClassModifier CLASS IDENTIFIER SuperOpt InterfacesOpt ClassBody   
+
+
 /* Class modifiers */
-ClassModifiersOpt:
-                 | ClassModifiers
-
-ClassModifiers: ClassModifier
-              | ClassModifiers
-
+// weeder: max one of abstract/final
+//         must contain public?
 ClassModifier: PUBLIC
              | ABSTRACT
              | FINAL
+
 
 /* Class interfaces */
 InterfacesOpt:
@@ -309,13 +311,116 @@ Interfaces: IMPLEMENTS InterfaceTypeList
 InterfaceTypeList: InterfaceType
                  | InterfaceTypeList COMMA InterfaceType
 
+
 /* Class super */
 SuperOpt:
         | Super
 
 Super: EXTENDS ClassType
 
-ClassDeclaration: ClassModifiersOpt CLASS IDENTIFIER SuperOpt InterfacesOpt ClassBody
+
+/* Class body */
+
+ClassBodyDeclarationsOpt:
+                        | ClassBodyDeclarations
+
+ClassBodyDeclarations: ClassBodyDeclaration
+                     | ClassBodyDeclarations ClassBodyDeclaration
+
+ClassBodyDeclaration: ClassMemberDeclaration
+                    | ConstructorDeclaration    // ensure there is at least one constructor
+                    // | InstanceInitializer: omitted from joos
+                    // | StaticInitializer: omitted from joos
+
+ClassMemberDeclaration: FieldDeclaration
+                      | MethodDeclaration
+                      | SEMI_COLON
+                      // | ClassDeclaration: omitted for joos
+                      // | InterfaceDeclaration: NOT SURE IF THIS SHOULD BE OMITTED FOR JOOS
+
+ClassBody: ClassBodyDeclarationsOpt
+
+
+/* Fields */
+
+// Only one variable declaration is allowed at a time
+FieldDeclaration: FieldModifiersOpt Type VariableDeclarator SEMI_COLON
+
+FieldModifiersOpt:
+                 | FieldModifiers
+
+FieldModifiers: FieldModifier
+              | FieldModifiers FieldModifier
+
+FieldModifier: PUBLIC
+             | PROTECTED
+             | STATIC
+             // | PRIVATE: omitted for joos
+             // | FINAL: omitted for joos
+
+VariableDeclarator: VariableDeclaratorId
+                  | VariableDeclaratorId ASSIGNMENT VariableInitializer
+
+VariableDeclaratorId: Identifier
+                    | VariableDeclaratorId OPENING_BRACKET CLOSING_BRACKET
+
+VariableInitializer: Expression
+                   | ArrayInitializer
+
+
+/* Constructor */
+
+ConstructorDeclaration: ConstructorModifierOpt ConstructorDeclarator
+
+ConstructorModifierOpt:
+                       | ConstructorModifier
+
+ConstructorModifier: PUBLIC
+                   | PROTECTED
+
+ConstructorDeclarator: SimpleTypeName OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
+
+
+/* Methods */
+
+MethodDeclaration: MethodHeader MethodBody
+
+// TODO: allow static native int m(int)
+MethodHeader: MethodModifiersOpt ResultType MethodDeclarator
+
+ResultType: Type
+          | VOID
+
+MethodDeclarator: IDENTIFIER OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
+
+MethodModifiersOpt:
+                  | MethodModifiers
+
+MethodModifiers: MethodModifier
+               | MethodModifiers MethodModifier
+
+MethodModifier: PUBLIC
+              | PROTECTED
+              | ABSTRACT
+              | STATIC
+              | FINAL
+              | NATIVE
+              // | PRIVATE: omitted for joos
+              // | SYNCHRONIZED: omitted for joos
+              // | STRICTFP: omitted for joos
+
+MethodBody: Block
+          | SEMI_COLON
+
+/* Formal parameters */
+
+FormalParameterListOpt:
+                      | FormalParameterList
+
+FormalParameterList: FormalParameter
+                   | FormalParameterList COMMA FormalParameter
+
+FormalParameter: Type VariableDeclaratorId
 
 /*-----------------------*/
 
@@ -386,9 +491,9 @@ Modifier:
     | NATIVE
     ;
 
-ClassDeclaration:
-    CLASS Identifier ExtendsOpt ImplementsOpt ClassBody
-    ;
+// ClassDeclaration:
+    // CLASS Identifier ExtendsOpt ImplementsOpt ClassBody
+    // ;
 
 ExtendsOpt:
     /* Empty - represents zero type declarations */
@@ -400,20 +505,20 @@ ImplementsOpt:
     | IMPLEMENTS TypeList
     ;
 
-ClassBody:
-    OPENING_BRACE ClassBodyDeclarationsOpt CLOSING_BRACE
-    ;
+// ClassBody:
+    // OPENING_BRACE ClassBodyDeclarationsOpt CLOSING_BRACE
+    // ;
 
-ClassBodyDeclarationsOpt:
+// ClassBodyDeclarationsOpt:
     /* Empty - represents zero ClassBodyDeclarations */
-    | ClassBodyDeclarationsOpt ClassBodyDeclaration
-    ;
+    // | ClassBodyDeclarationsOpt ClassBodyDeclaration
+    // ;
 
-ClassBodyDeclaration:
-    SEMI_COLON /* Empty declaration */
-    | StaticOpt Block
-    | ModifiersOpt MemberDecl
-    ;
+// ClassBodyDeclaration:
+    // SEMI_COLON /* Empty declaration */
+    // | StaticOpt Block
+    // | ModifiersOpt MemberDecl
+    // ;
 
 StaticOpt:
     /* Empty declaration */
@@ -436,36 +541,36 @@ BlockStatement:
     ;
 
 LocalVariableDeclarationStatement:
-    FinalOpt Type VariableDeclarators SEMI_COLON
+    FinalOpt Type VariableDeclarator SEMI_COLON
     ;
 
-VariableDeclarators:
-    VariableDeclarator
-    | VariableDeclarators COMMA VariableDeclarator
-    ;
+// VariableDeclarators:
+    // VariableDeclarator
+    // | VariableDeclarators COMMA VariableDeclarator
+    // ;
 
-VariableDeclarator:
-    Identifier VariableDeclaratorRest
-    ;
+// VariableDeclarator:
+    // Identifier VariableDeclaratorRest
+    // ;
 
-VariableDeclaratorRest:
-    BracketsOpt VariableInitializerOpt
-    ;
+// VariableDeclaratorRest:
+    // BracketsOpt VariableInitializerOpt
+    // ;
 
-VariableInitializerOpt:
-    /* Empty - No variable initializer */
-    | ASSIGNMENT VariableInitializer
-    ;
+// VariableInitializerOpt:
+    // /* Empty - No variable initializer */
+    // | ASSIGNMENT VariableInitializer
+    // ;
 
 BracketsOpt:
     /* Empty - No brackets */
     | BracketsOpt OPENING_BRACKET CLOSING_BRACKET
     ;
 
-VariableInitializer:
-    ArrayInitializer
-    | Expression
-    ;
+// VariableInitializer:
+    // ArrayInitializer
+    // | Expression
+    // ;
 
 ArrayInitializer:
     OPENING_BRACE VariableInitializersOpt CLOSING_BRACE
@@ -473,13 +578,13 @@ ArrayInitializer:
 
 VariableInitializersOpt:
     /* Empty - No variable initializers */
-    | VariableInitializerList OptionalComma
+    | VariableInitializer OptionalComma
     ;
 
-VariableInitializerList:
-    VariableInitializer
-    | VariableInitializerList COMMA VariableInitializer
-    ;
+// VariableInitializerList:
+    // VariableInitializer
+    // | VariableInitializerList COMMA VariableInitializer
+    // ;
 
 OptionalComma:
     /* Empty - No comma */
