@@ -115,13 +115,13 @@
 %token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl Assignment
 %token MemberDecl InterfaceBodyDeclarations ParExpression ReturnStatement ExpressionOpt LocalVariableDeclaration
 
-%token ClassOrInterfaceType ClassBodyOpt
+%token ClassBodyOpt
 
 // Grammar
 %%
-%start Statement;
+%start Type;
 
-/* Expressions */
+/*---------------------- Expressions ----------------------*/
 Expression:
     AssignmentExpression
     ;
@@ -132,7 +132,7 @@ AssignmentExpression:
     ;
 
 LeftHandSide:
-    QualifiedIdentifier
+    QualifiedIdentifier // ExpressionName
     | FieldAccess
     | ArrayAccess
     ;
@@ -159,7 +159,7 @@ RelationalExpression:
     | RelationalExpression GREATER_THAN AdditiveExpression
     | RelationalExpression LESS_THAN_EQUAL AdditiveExpression
     | RelationalExpression GREATER_THAN_EQUAL AdditiveExpression
-    | RelationalExpression INSTANCEOF QualifiedIdentifier
+    | RelationalExpression INSTANCEOF ReferenceType // ReferenceType 
     ;
 
 AdditiveExpression:
@@ -186,14 +186,18 @@ UnaryExpressionNotPlusMinus:
     | PrimaryOrExpressionName
     ;
 
-CastExpression:
+CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
-    | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus
+    | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
+    | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
+    | OPENING_PAREN 
+        PrimitiveType OPENING_BRACKET CLOSING_BRACKET // ReferenceType as PrimitiveType with array
+            CLOSING_PAREN UnaryExpressionNotPlusMinus
     ;
 
 PrimaryOrExpressionName:
     Primary
-    | QualifiedIdentifier
+    | QualifiedIdentifier // ExpressionName
     ;
 
 Primary:
@@ -204,14 +208,14 @@ Primary:
 ArrayCreationExpression:
     NEW PrimitiveType OPENING_BRACKET CLOSING_BRACKET
     | NEW PrimitiveType OPENING_BRACKET Expression CLOSING_BRACKET
-    | NEW QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET
-    | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET
+    | NEW QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET // TypeName
+    | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // TypeName
     ;
 
 PrimaryNoNewArray:
     Literal
     | THIS
-    | QualifiedIdentifier DOT THIS
+    | QualifiedIdentifier DOT THIS // ClassName
     | OPENING_PAREN Expression CLOSING_PAREN
     | ClassInstanceCreationExpression
     | FieldAccess
@@ -229,7 +233,7 @@ Literal:
     ;
 
 ArrayAccess:
-    QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET
+    QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // ExpressionName
     | PrimaryNoNewArray OPENING_BRACKET Expression CLOSING_BRACKET
     ;
 
@@ -247,8 +251,8 @@ Arguments:
     ;
 
 MethodInvocation:
-    QualifiedIdentifier Arguments
-    | Primary DOT IDENTIFIER Arguments
+    QualifiedIdentifier Arguments // MethodName
+    | Primary DOT Identifier Arguments
     ;
 
 ClassInstanceCreationExpression:
@@ -256,35 +260,40 @@ ClassInstanceCreationExpression:
     | Primary DOT NEW Identifier Arguments ClassBodyOpt
     ;
 
-/*----------------------*/
+/*---------------------- Types ----------------------*/
+Type:
+    PrimitiveType
+    | ReferenceType
+    ;
 
+PrimitiveType:
+    IntegralType
+    | BooleanType
+    ;
 
+IntegralType:
+    BYTE
+    | SHORT
+    | INT
+    ;
 
+BooleanType:
+    BOOLEAN
+    ;
 
+ClassOrInterfaceType:
+    QualifiedIdentifier // ClassType, InterfaceType -> TypeName
 
+ReferenceType: // Done this way to disallow multidimensional arrays
+    ClassOrInterfaceType
+    | ClassOrInterfaceType OPENING_BRACKET CLOSING_BRACKET
+    | PrimitiveType OPENING_BRACKET CLOSING_BRACKET
+    ;
 
-
-
-
-
-
-
-
-
-
+/*---------------------- ----------------------*/
 
 
 /* OLD CODE - CAN MODIFY/REMOVE */   
-
-PrimitiveType:
-    BasicType
-    ;
-
-Type:
-    QualifiedIdentifier
-    | BasicType
-    ;
-
 
 CompilationUnit:
     PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
