@@ -109,6 +109,9 @@
 %token BOOLEAN_AND
 %token BOOLEAN_OR
 
+// REMOVE THESE
+%token ResultType
+
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
@@ -324,6 +327,124 @@ ReferenceType: // Done this way to disallow multidimensional arrays
     ClassOrInterfaceType
     | ClassOrInterfaceType OPENING_BRACKET CLOSING_BRACKET
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET
+    ;
+
+/*---------------------- Interfaces ----------------------*/
+
+InterfaceDeclaration:
+    InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfacesOpt InterfaceBody
+    ;
+
+InterfaceModifiers:
+    InterfaceModifier 
+    | InterfaceModifiers InterfaceModifier
+    ;
+
+InterfaceModifier:  
+    PUBLIC
+    | PROTECTED
+    | PRIVATE
+    | ABSTRACT
+    | STATIC
+    ;
+
+InterfaceModifiersOpt:
+    /* Empty - optional */
+    | InterfaceModifiers
+    ;
+
+InterfaceType:
+    QualifiedIdentifier
+    ;
+
+ExtendsInterfaces:
+    EXTENDS InterfaceType
+    | ExtendsInterfaces COMMA InterfaceType
+    ;
+
+ExtendsInterfacesOpt:
+    /* Empty - optional interface */
+    | ExtendsInterfaces
+    ;
+
+InterfaceBody:
+    OPENING_BRACE InterfaceMemberDeclarationsOpt CLOSING_BRACE
+    ;
+
+InterfaceMemberDeclarationsOpt:
+    /* Empty - No interface body declarations */
+    | InterfaceMemberDeclarations
+    ;
+
+InterfaceMemberDeclarations:
+    InterfaceMemberDeclaration
+    | InterfaceMemberDeclarations InterfaceMemberDeclaration
+    ;
+
+InterfaceMemberDeclaration: // Nested types and interface constants not supported
+    AbstractMethodDeclaration
+    ;
+
+ConstantDeclaration: 
+    ConstantModifiersOpt Type VariableDeclarators
+    ;
+
+ConstantModifiersOpt:
+    /* Empty - optional */
+    | ConstantModifiers
+    ;
+  
+ConstantModifiers: 
+    ConstantModifier
+	| ConstantModifiers ConstantModifier
+    ;
+
+ConstantModifier:
+    PUBLIC
+    | STATIC
+    | FINAL
+    ;
+
+AbstractMethodDeclaration:
+    AbstractMethodModifiersOpt ResultType MethodDeclarator SEMI_COLON
+    ;
+
+AbstractMethodModifiersOpt:
+    /* Empty - optional */
+    | AbstractMethodModifiers
+    ;
+
+AbstractMethodModifiers:
+    AbstractMethodModifier
+    | AbstractMethodModifiers AbstractMethodModifier
+    ;
+
+AbstractMethodModifier:
+    PUBLIC
+    | ABSTRACT
+    ;
+
+MethodDeclarator: 
+    Identifier OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
+    ;
+
+FormalParameterListOpt:
+    /* Empty - optional */
+    | FormalParameterList
+    ;
+
+FormalParameterList:
+	FormalParameter
+	| FormalParameterList COMMA FormalParameter
+    ;
+
+FormalParameter:
+	FinalOpt Type VariableDeclaratorId
+    ;
+
+VariableDeclaratorId:
+    Identifier
+    | VariableDeclaratorId OPENING_BRACKET CLOSING_BRACKET
     ;
 
 /*---------------------- ----------------------*/
@@ -792,89 +913,6 @@ ParExpression:
 //     | FALSE
 //     | NULL_TOKEN
 //     ;
-
-InterfaceDeclaration:
-    INTERFACE Identifier ExtendsTypeListOpt InterfaceBody
-    ;
-
-ExtendsTypeListOpt:
-    /* Empty - No extends clause */
-    | EXTENDS TypeList
-    ;
-
-InterfaceBody:
-    OPENING_BRACE InterfaceBodyDeclarationsOpt CLOSING_BRACE
-    ;
-
-InterfaceBodyDeclarationsOpt:
-    /* Empty - No interface body declarations */
-    | InterfaceBodyDeclarations
-    ;
-
-// InterfaceBodyDeclarations:
-//     InterfaceBodyDeclaration
-//     | InterfaceBodyDeclarations InterfaceBodyDeclaration
-//     ;
-
-// InterfaceBodyDeclaration:
-//     SEMI_COLON 
-//     | ModifiersOpt InterfaceMemberDecl
-//     ;
-
-// InterfaceMemberDecl:
-//     InterfaceMethodOrFieldDecl
-//     | VOID Identifier VoidInterfaceMethodDeclaratorRest
-//     | ClassOrInterfaceDeclaration
-//     ;
-
-// InterfaceMethodOrFieldDecl:
-// 	  Type Identifier InterfaceMethodOrFieldRest
-//     ;
-
-// InterfaceMethodOrFieldRest:
-//     ConstantDeclaratorsRest SEMI_COLON
-//     | InterfaceMethodDeclaratorRest
-//     ;
-
-// MethodDeclaratorRest:
-//     FormalParameters BracketsOpt MethodBodyOrSemi
-//     ;
-
-// MethodBodyOrSemi:
-//     MethodBody
-//     | SEMI_COLON
-//     ;
-
-// InterfaceMethodDeclaratorRest:
-// 	  FormalParameters BracketsOpt SEMI_COLON
-//     ; 
-
-// VoidInterfaceMethodDeclaratorRest:
-// 	  FormalParameters SEMI_COLON
-//     ; 
-
-// ConstructorDeclaratorRest:
-// 	  FormalParameters MethodBody
-//     ;
-
-// FormalParameters:
-//     OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
-//     ;
-
-// FormalParameterListOpt:
-//     /* Empty - No formal parameters */
-//     | FormalParameterList
-//     ;
-
-// FormalParameterList:
-//     FormalParameter
-//     | FormalParameterList COMMA FormalParameter
-//     ;
-
-// FormalParameter:
-//     FinalOpt Type VariableDeclaratorId
-//     ;
-
 // MethodBody:
 // 	  Block
 //     ;
