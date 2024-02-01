@@ -109,9 +109,6 @@
 %token BOOLEAN_AND
 %token BOOLEAN_OR
 
-// REMOVE THESE
-%token ResultType
-
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
@@ -127,7 +124,10 @@ CompilationUnit:
     | ImportDeclarations TypeDeclarations   // No PackageDeclaration
     | PackageDeclaration TypeDeclarations   // No ImportDeclarations
     | PackageDeclaration ImportDeclarations // No TypeDeclarations
-    |                                       // Empty
+    | PackageDeclaration
+    | ImportDeclaration
+    | TypeDeclaration
+    | /* Empty */
     ;
 
 PackageDeclaration:
@@ -289,7 +289,12 @@ FieldAccess:
 
 ArgumentListOpt:
     /* Empty - No arguments */
-    | ArgumentListOpt COMMA Expression
+    | ArgumentList
+    ;
+
+ArgumentList:
+    Expression
+    | Expression COMMA ArgumentList
     ;
 
 Arguments:
@@ -388,7 +393,8 @@ InterfaceMemberDeclaration: // Nested types and interface constants not supporte
     ;
 
 AbstractMethodDeclaration:
-    AbstractMethodModifiersOpt ResultType MethodDeclarator SEMI_COLON
+    AbstractMethodModifiersOpt Type MethodDeclarator SEMI_COLON
+    | AbstractMethodModifiersOpt VOID MethodDeclarator SEMI_COLON
     ;
 
 AbstractMethodModifiersOpt:
