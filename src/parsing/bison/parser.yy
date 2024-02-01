@@ -270,6 +270,37 @@ Type:
 
 /*----------------------*/
 
+/*       Classes       */
+
+/* Class modifiers */
+ClassModifiersOpt:
+                 | ClassModifiers
+
+ClassModifiers: ClassModifier
+              | ClassModifiers
+
+ClassModifier: PUBLIC
+             | ABSTRACT
+             | FINAL
+
+/* Class interfaces */
+InterfacesOpt:
+             | Interfaces
+
+Interfaces: IMPLEMENTS InterfaceTypeList
+
+InterfaceTypeList: InterfaceType
+                 | InterfaceTypeList COMMA InterfaceType
+
+/* Class super */
+SuperOpt:
+        | Super
+
+Super: EXTENDS ClassType
+
+ClassDeclaration: ClassModifiersOpt CLASS IDENTIFIER SuperOpt InterfacesOpt ClassBody
+
+/*-----------------------*/
 
 CompilationUnit:
     PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
