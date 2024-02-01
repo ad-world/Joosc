@@ -66,7 +66,6 @@
 %token SEMI_COLON
 %token COLON
 %token COMMA
-%token ASTERISK
 %token DOT
 %token <std::string> IDENTIFIER
 %token NATIVE
@@ -116,13 +115,11 @@
 %token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl Assignment
 %token MemberDecl InterfaceBodyDeclarations ParExpression ReturnStatement ExpressionOpt LocalVariableDeclaration
 
-%token PostfixExpression ClassInstanceCreationExpression
+%token ClassOrInterfaceType ClassBodyOpt
 
 // Grammar
 %%
-// %start CompilationUnit;
-%start Expression;
-
+%start Statement;
 
 /* Expressions */
 Expression:
@@ -242,7 +239,6 @@ FieldAccess:
 
 ArgumentListOpt:
     /* Empty - No arguments */
-    | Expression
     | ArgumentListOpt COMMA Expression
     ;
 
@@ -255,9 +251,30 @@ MethodInvocation:
     | Primary DOT IDENTIFIER Arguments
     ;
 
+ClassInstanceCreationExpression:
+    NEW ClassOrInterfaceType Arguments ClassBodyOpt
+    | Primary DOT NEW Identifier Arguments ClassBodyOpt
+    ;
+
+/*----------------------*/
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* OLD CODE - CAN MODIFY/REMOVE */   
 
 PrimitiveType:
     BasicType
@@ -584,10 +601,10 @@ ClassCreatorRest:
     Arguments ClassBodyOpt
     ;
 
-ClassBodyOpt:
-    /* Empty - No ClassBody */
-    | ClassBody
-    ;
+// /* ClassBodyOpt:
+//     /* Empty - No ClassBody */
+//     | ClassBody
+//     ; */
 
 FinalOpt:
     /* Empty - No final keyword */
@@ -726,10 +743,10 @@ ForUpdateOpt:
 //     MethodDeclaratorRest
 //     ;
 
-Type:
-    QualifiedIdentifier BracketsOpt
-    | BasicType BracketsOpt
-    ;
+// Type:
+//     QualifiedIdentifier BracketsOpt
+//     | BasicType BracketsOpt
+//     ;
 
 BasicType:
     BYTE
