@@ -726,27 +726,13 @@ TypeList:
     | TypeList COMMA Type
     ;
 
-ExpressionStatement:
-    StatementExpression SEMI_COLON
-<<<<<<< Updated upstream
-
-// StatementExpression: // Expressions that can be used as statements when followed by semicolon
-// 	Assignment
-// 	MethodInvocation
-// 	ClassInstanceCreationExpression
-//     ;
-=======
->>>>>>> Stashed changes
-
-// StatementExpression: // Expressions that can be used as statements when followed by semicolon
-// 	Assignment
-// 	MethodInvocation
-// 	ClassInstanceCreationExpression
+// StatementExpression: 
+// 	  Expression
 //     ;
 
-ParExpression: 
-	  OPENING_PAREN Expression CLOSING_PAREN
-    ;
+// ParExpression: 
+// 	  OPENING_PAREN Expression CLOSING_PAREN
+//     ;
 
 // ConstantDeclaratorsRest:
 //     ConstantDeclaratorRest
