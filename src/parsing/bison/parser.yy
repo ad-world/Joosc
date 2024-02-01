@@ -109,6 +109,9 @@
 %token BOOLEAN_AND
 %token BOOLEAN_OR
 
+// REMOVE THESE
+%token ResultType
+
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
@@ -818,87 +821,129 @@ ExpressionStatement:
 //     | NULL_TOKEN
 //     ;
 
-InterfaceDeclaration:
-    INTERFACE Identifier ExtendsTypeListOpt InterfaceBody
-    ;
+/* INTERFACES */
 
-ExtendsTypeListOpt:
-    /* Empty - No extends clause */
-    | EXTENDS TypeList
-    ;
+InterfaceModifiers:
+  InterfaceModifier 
+  | InterfaceModifiers InterfaceModifier
+  ;
+
+InterfaceModifier:
+  PUBLIC
+  | PROTECTED
+  | PRIVATE
+  | ABSTRACT
+  | STATIC
+  ;
+
+InterfaceModifiersOpt:
+  /* Empty - optional */
+  | InterfaceModifiers
+  ;
+
+InterfaceDeclaration:
+  InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfacesOpt InterfaceBody
+  ;
+
+InterfaceType:
+  QualifiedIdentifier
+  ;
+
+ExtendsInterfaces:
+  EXTENDS InterfaceType
+  | ExtendsInterfaces COMMA InterfaceType
+  ;
+
+ExtendsInterfacesOpt:
+  /* Empty - optional interface */
+  | ExtendsInterfaces
+  ;
 
 InterfaceBody:
-    OPENING_BRACE InterfaceBodyDeclarationsOpt CLOSING_BRACE
+  OPENING_BRACE InterfaceMemberDeclarationsOpt CLOSING_BRACE
+  ;
+
+InterfaceMemberDeclarationsOpt:
+  /* Empty - No interface body declarations */
+  | InterfaceMemberDeclarations
+  ;
+
+InterfaceMemberDeclarations:
+  InterfaceMemberDeclaration
+  | InterfaceMemberDeclarations InterfaceMemberDeclaration
+  ;
+
+InterfaceMemberDeclaration: 
+    InterfaceDeclaration
+    /* TODO: uncomment this, can't figure out how to resolve this conflict
+    | ConstantDeclaration
+    | AbstractMethodDeclaration
+    | ClassDeclaration 
+    */
     ;
 
-InterfaceBodyDeclarationsOpt:
-    /* Empty - No interface body declarations */
-    | InterfaceBodyDeclarations
+ConstantDeclaration: 
+  ConstantModifiersOpt Type VariableDeclarators
+  ;
+
+ConstantModifiersOpt:
+  /* Empty - optional */
+  | ConstantModifiers
+  ;
+  
+ConstantModifiers: 
+	ConstantModifier
+	| ConstantModifiers ConstantModifier
+  ;
+  
+
+ConstantModifier:
+  PUBLIC
+  | STATIC
+  | FINAL
+  ;
+
+AbstractMethodDeclaration:
+  AbstractMethodModifiersOpt ResultType MethodDeclarator SEMI_COLON
+  ;
+
+AbstractMethodModifiersOpt:
+  /* Empty - optional */
+  | AbstractMethodModifiers
+  ;
+
+AbstractMethodModifiers:
+  AbstractMethodModifier
+  | AbstractMethodModifiers AbstractMethodModifier
+  ;
+
+AbstractMethodModifier:
+  PUBLIC
+  | ABSTRACT
+  ;
+
+MethodDeclarator: 
+  Identifier OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
+  ;
+
+FormalParameterListOpt:
+  /* Empty - optional */
+  | FormalParameterListOpt
+  ;
+
+FormalParameterList:
+	FormalParameter
+	| FormalParameterList COMMA FormalParameter
     ;
 
-// InterfaceBodyDeclarations:
-//     InterfaceBodyDeclaration
-//     | InterfaceBodyDeclarations InterfaceBodyDeclaration
-//     ;
+FormalParameter:
+	FinalOpt Type VariableDeclaratorId
+    ;
 
-// InterfaceBodyDeclaration:
-//     SEMI_COLON 
-//     | ModifiersOpt InterfaceMemberDecl
-//     ;
-
-// InterfaceMemberDecl:
-//     InterfaceMethodOrFieldDecl
-//     | VOID Identifier VoidInterfaceMethodDeclaratorRest
-//     | ClassOrInterfaceDeclaration
-//     ;
-
-// InterfaceMethodOrFieldDecl:
-// 	  Type Identifier InterfaceMethodOrFieldRest
-//     ;
-
-// InterfaceMethodOrFieldRest:
-//     ConstantDeclaratorsRest SEMI_COLON
-//     | InterfaceMethodDeclaratorRest
-//     ;
-
-// MethodDeclaratorRest:
-//     FormalParameters BracketsOpt MethodBodyOrSemi
-//     ;
-
-// MethodBodyOrSemi:
-//     MethodBody
-//     | SEMI_COLON
-//     ;
-
-// InterfaceMethodDeclaratorRest:
-// 	  FormalParameters BracketsOpt SEMI_COLON
-//     ; 
-
-// VoidInterfaceMethodDeclaratorRest:
-// 	  FormalParameters SEMI_COLON
-//     ; 
-
-// ConstructorDeclaratorRest:
-// 	  FormalParameters MethodBody
-//     ;
-
-// FormalParameters:
-//     OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
-//     ;
-
-// FormalParameterListOpt:
-//     /* Empty - No formal parameters */
-//     | FormalParameterList
-//     ;
-
-// FormalParameterList:
-//     FormalParameter
-//     | FormalParameterList COMMA FormalParameter
-//     ;
-
-// FormalParameter:
-//     FinalOpt Type VariableDeclaratorId
-//     ;
+VariableDeclaratorId:
+	Identifier
+  | VariableDeclaratorId OPENING_BRACKET CLOSING_BRACKET
+  ;
 
 // MethodBody:
 // 	  Block
