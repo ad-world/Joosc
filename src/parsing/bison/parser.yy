@@ -259,9 +259,47 @@ ClassInstanceCreationExpression:
 /*----------------------*/
 
 
+/* Types */
 
+Type:
+    PrimitiveType
+    | ReferenceType
+    ;
 
+PrimitiveType:
+    IntegralType
+    | BooleanType
+    ;
 
+BooleanType:
+    TRUE
+    | FALSE
+    ;
+
+IntegralType:
+    BYTE
+    | SHORT
+    | INTEGER
+    ;
+
+ReferenceType:
+    ClassOrInterfaceType
+    | ArrayType
+    ;
+
+ClassOrInterfaceType:
+    ClassType
+    | InterfaceType
+    ;
+
+ClassType:
+    QualifiedIdentifier
+
+InterfaceType:
+    QualifiedIdentifier
+
+ArrayType:
+    Type OPENING_BRACKET CLOSING_BRACKET
 
 
 
@@ -276,14 +314,14 @@ ClassInstanceCreationExpression:
 
 /* OLD CODE - CAN MODIFY/REMOVE */   
 
-PrimitiveType:
-    BasicType
-    ;
+// PrimitiveType:
+//     BasicType
+//     ;
 
-Type:
-    QualifiedIdentifier
-    | BasicType
-    ;
+// Type:
+//     QualifiedIdentifier
+//     | BasicType
+//     ;
 
 
 CompilationUnit:
