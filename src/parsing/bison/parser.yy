@@ -119,7 +119,7 @@
 
 // Grammar
 %%
-%start CompilationUnit;
+%start ForInit;
 
 /*---------------------- Packages ----------------------*/
 CompilationUnit:
@@ -456,8 +456,13 @@ LocalVariableDeclarationStatement:
     LocalVariableDeclaration SEMI_COLON
     ;
 
+// Delay Type reduce due to conflict
 LocalVariableDeclaration:
-    Type VariableDeclarators
+    // Type VariableDeclarators
+    QualifiedIdentifier VariableDeclarators // ClassOrInterfaceType VariableDeclarators
+    | QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET VariableDeclarators // ClassOrInterfaceTypeArray VariableDeclarators
+    | PrimitiveType OPENING_BRACKET CLOSING_BRACKET VariableDeclarators // PrimitiveArray VariableDeclarators
+    | PrimitiveType VariableDeclarators
     ;
 
 VariableDeclarators:
