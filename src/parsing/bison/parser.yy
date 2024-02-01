@@ -113,14 +113,13 @@
 %token EOF 0
 /*****************************************************************************/
 %token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl
-%token MemberDecl InterfaceBodyDeclarations ReturnStatement
+%token MemberDecl InterfaceBodyDeclarations
 
 %token ClassInstanceCreationExpression
 
 // Grammar
 %%
-// %start CompilationUnit;
-%start ForStatement;
+%start CompilationUnit;
 
 
 /* Expressions */
@@ -611,18 +610,18 @@ StatementNoShortIf:
 
 EmptyStatement:
     SEMI_COLON
-	  ;
+	;
 
 IfThenStatement:
-	  IF ParExpression Statement
+	IF ParExpression Statement
     ;
 
 IfThenElseStatement:
-	  IF ParExpression StatementNoShortIf ELSE Statement
+	IF ParExpression StatementNoShortIf ELSE Statement
     ;
 
 IfThenElseStatementNoShortIf:
-	  IF ParExpression StatementNoShortIf ELSE StatementNoShortIf
+	IF ParExpression StatementNoShortIf ELSE StatementNoShortIf
     ;
 
 WhileStatement:
@@ -661,9 +660,9 @@ ExpressionOpt:
     | Expression
     ;
 
-/* ReturnStatement:
-    RETURN ExpressionOpt
-    ; */
+ReturnStatement:
+    RETURN ExpressionOpt SEMI_COLON
+    ;
 
 // -------------------------------------------------------------
 
