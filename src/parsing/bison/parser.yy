@@ -96,7 +96,6 @@
 %token NEGATE
 %token PLUS
 %token MINUS
-%token ASTERISK
 %token DIVIDE
 %token MODULO
 %token LESS_THAN
@@ -113,15 +112,15 @@
 // END OF FILE TOKEN
 %token EOF 0
 /*****************************************************************************/
-%token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl Assignment
-%token MemberDecl InterfaceBodyDeclarations ParExpression ReturnStatement ExpressionOpt LocalVariableDeclaration
+%token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl
+%token MemberDecl InterfaceBodyDeclarations
 
-%token PostfixExpression ClassInstanceCreationExpression
+%token ClassInstanceCreationExpression ExpressionOpt
 
 // Grammar
 %%
 // %start CompilationUnit;
-%start Expression;
+%start Statement;
 
 
 /* Expressions */
@@ -388,7 +387,7 @@ BlockStatement:
     ;
 
 LocalVariableDeclarationStatement:
-    LocalVariableDeclaration
+    LocalVariableDeclaration SEMI_COLON
     //FinalOpt Type VariableDeclarators SEMI_COLON
     ;
 
@@ -403,12 +402,17 @@ VariableDeclarators:
 
 VariableDeclarator:
     VariableDeclaratorId
-    //Identifier VariableDeclaratorRest
+    | VariableDeclaratorId ASSIGNMENT VariableInitializer
     ;
 
-VariableDeclaratorRest:
-    BracketsOpt VariableInitializerOpt
+VariableDeclaratorId:
+    Identifier
+    | VariableDeclaratorId OPENING_BRACKET CLOSING_BRACKET
     ;
+
+/* VariableDeclaratorRest:
+    BracketsOpt VariableInitializerOpt
+    ; */
 
 VariableInitializerOpt:
     /* Empty - No variable initializer */
@@ -574,66 +578,67 @@ FinalOpt:
 // -------------------------------------------------------------
 
 Statement:
-	StatementWithoutTrailingSubstatement
-	| IfThenStatement
-	| IfThenElseStatement
-	| WhileStatement
-	| ForStatement
+    StatementWithoutTrailingSubstatement
+    | IfThenStatement
+    | IfThenElseStatement
+    | WhileStatement
+    | ForStatement
     ;
 
 StatementWithoutTrailingSubstatement:
-	Block
-	| EmptyStatement
-	| ExpressionStatement
-	| ReturnStatement
+    Block
+    | EmptyStatement
+    | ExpressionStatement
+    | ReturnStatement
     ;
 
-/* ExpressionStatement:
+ExpressionStatement:
     StatementExpression
-    ; */
+    ;
 
 StatementExpression:
-    Assignment
+    ASSIGNMENT
     | MethodInvocation
     | ClassInstanceCreationExpression
     ;
 
 StatementNoShortIf:
-	StatementWithoutTrailingSubstatement
-	| IfThenElseStatementNoShortIf
-	| WhileStatementNoShortIf
-	| ForStatementNoShortIf
+    StatementWithoutTrailingSubstatement
+    | IfThenElseStatementNoShortIf
+    | WhileStatementNoShortIf
+    | ForStatementNoShortIf
     ;
 
 EmptyStatement:
     SEMI_COLON
-	;
+	  ;
 
 IfThenStatement:
-	IF ParExpression Statement
+	  IF ParExpression Statement
     ;
 
 IfThenElseStatement:
-	IF ParExpression StatementNoShortIf ELSE Statement
+	  IF ParExpression StatementNoShortIf ELSE Statement
     ;
 
 IfThenElseStatementNoShortIf:
-	IF ParExpression StatementNoShortIf ELSE StatementNoShortIf
+	  IF ParExpression StatementNoShortIf ELSE StatementNoShortIf
     ;
 
 WhileStatement:
-	WHILE ParExpression Statement
+	  WHILE ParExpression Statement
     ;
 
 WhileStatementNoShortIf:
-	WHILE ParExpression StatementNoShortIf
+	  WHILE ParExpression StatementNoShortIf
     ;
 
 ForStatement:
-	FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
+	  FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
+    ;
 
 ForStatementNoShortIf:
-	FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN StatementNoShortIf
+	  FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN StatementNoShortIf
     ;
 		
 ForInitOpt:
@@ -648,6 +653,14 @@ ForInit:
 
 ForUpdateOpt:
     StatementExpression
+    ;
+
+/* ExpressionOpt:
+    Expression
+    ; */
+
+ReturnStatement:
+    RETURN ExpressionOpt
     ;
 
 // -------------------------------------------------------------
@@ -730,9 +743,9 @@ TypeList:
 // 	  Expression
 //     ;
 
-// ParExpression: 
-// 	  OPENING_PAREN Expression CLOSING_PAREN
-//     ;
+ParExpression: 
+    OPENING_PAREN Expression CLOSING_PAREN
+    ;
 
 // ConstantDeclaratorsRest:
 //     ConstantDeclaratorRest
