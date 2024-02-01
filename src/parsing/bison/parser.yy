@@ -335,6 +335,124 @@ ReferenceType: // Done this way to disallow multidimensional arrays
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET
     ;
 
+/*---------------------- Interfaces ----------------------*/
+
+InterfaceDeclaration:
+    InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfacesOpt InterfaceBody
+    ;
+
+InterfaceModifiers:
+    InterfaceModifier 
+    | InterfaceModifiers InterfaceModifier
+    ;
+
+InterfaceModifier:  
+    PUBLIC
+    | PROTECTED
+    | PRIVATE
+    | ABSTRACT
+    | STATIC
+    ;
+
+InterfaceModifiersOpt:
+    /* Empty - optional */
+    | InterfaceModifiers
+    ;
+
+InterfaceType:
+    QualifiedIdentifier
+    ;
+
+ExtendsInterfaces:
+    EXTENDS InterfaceType
+    | ExtendsInterfaces COMMA InterfaceType
+    ;
+
+ExtendsInterfacesOpt:
+    /* Empty - optional interface */
+    | ExtendsInterfaces
+    ;
+
+InterfaceBody:
+    OPENING_BRACE InterfaceMemberDeclarationsOpt CLOSING_BRACE
+    ;
+
+InterfaceMemberDeclarationsOpt:
+    /* Empty - No interface body declarations */
+    | InterfaceMemberDeclarations
+    ;
+
+InterfaceMemberDeclarations:
+    InterfaceMemberDeclaration
+    | InterfaceMemberDeclarations InterfaceMemberDeclaration
+    ;
+
+InterfaceMemberDeclaration: // Nested types and interface constants not supported
+    AbstractMethodDeclaration
+    ;
+
+ConstantDeclaration: 
+    ConstantModifiersOpt Type VariableDeclarators
+    ;
+
+ConstantModifiersOpt:
+    /* Empty - optional */
+    | ConstantModifiers
+    ;
+  
+ConstantModifiers: 
+    ConstantModifier
+	| ConstantModifiers ConstantModifier
+    ;
+
+ConstantModifier:
+    PUBLIC
+    | STATIC
+    | FINAL
+    ;
+
+AbstractMethodDeclaration:
+    AbstractMethodModifiersOpt ResultType MethodDeclarator SEMI_COLON
+    ;
+
+AbstractMethodModifiersOpt:
+    /* Empty - optional */
+    | AbstractMethodModifiers
+    ;
+
+AbstractMethodModifiers:
+    AbstractMethodModifier
+    | AbstractMethodModifiers AbstractMethodModifier
+    ;
+
+AbstractMethodModifier:
+    PUBLIC
+    | ABSTRACT
+    ;
+
+MethodDeclarator: 
+    Identifier OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
+    ;
+
+FormalParameterListOpt:
+    /* Empty - optional */
+    | FormalParameterList
+    ;
+
+FormalParameterList:
+	FormalParameter
+	| FormalParameterList COMMA FormalParameter
+    ;
+
+FormalParameter:
+	FinalOpt Type VariableDeclaratorId
+    ;
+
+VariableDeclaratorId:
+    Identifier
+    | VariableDeclaratorId OPENING_BRACKET CLOSING_BRACKET
+    ;
+
 /*---------------------- ----------------------*/
 
 
@@ -820,126 +938,6 @@ ExpressionStatement:
 //     | FALSE
 //     | NULL_TOKEN
 //     ;
-
-/* INTERFACES */
-
-InterfaceModifiers:
-  InterfaceModifier 
-  | InterfaceModifiers InterfaceModifier
-  ;
-
-InterfaceModifier:
-  PUBLIC
-  | PROTECTED
-  | PRIVATE
-  | ABSTRACT
-  | STATIC
-  ;
-
-InterfaceModifiersOpt:
-  /* Empty - optional */
-  | InterfaceModifiers
-  ;
-
-InterfaceDeclaration:
-  InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfacesOpt InterfaceBody
-  ;
-
-InterfaceType:
-  QualifiedIdentifier
-  ;
-
-ExtendsInterfaces:
-  EXTENDS InterfaceType
-  | ExtendsInterfaces COMMA InterfaceType
-  ;
-
-ExtendsInterfacesOpt:
-  /* Empty - optional interface */
-  | ExtendsInterfaces
-  ;
-
-InterfaceBody:
-  OPENING_BRACE InterfaceMemberDeclarationsOpt CLOSING_BRACE
-  ;
-
-InterfaceMemberDeclarationsOpt:
-  /* Empty - No interface body declarations */
-  | InterfaceMemberDeclarations
-  ;
-
-InterfaceMemberDeclarations:
-  InterfaceMemberDeclaration
-  | InterfaceMemberDeclarations InterfaceMemberDeclaration
-  ;
-
-InterfaceMemberDeclaration: // Nested types and interface constants not supported
-    AbstractMethodDeclaration
-    ;
-
-ConstantDeclaration: 
-  ConstantModifiersOpt Type VariableDeclarators
-  ;
-
-ConstantModifiersOpt:
-  /* Empty - optional */
-  | ConstantModifiers
-  ;
-  
-ConstantModifiers: 
-	ConstantModifier
-	| ConstantModifiers ConstantModifier
-  ;
-  
-
-ConstantModifier:
-  PUBLIC
-  | STATIC
-  | FINAL
-  ;
-
-AbstractMethodDeclaration:
-  AbstractMethodModifiersOpt ResultType MethodDeclarator SEMI_COLON
-  ;
-
-AbstractMethodModifiersOpt:
-  /* Empty - optional */
-  | AbstractMethodModifiers
-  ;
-
-AbstractMethodModifiers:
-  AbstractMethodModifier
-  | AbstractMethodModifiers AbstractMethodModifier
-  ;
-
-AbstractMethodModifier:
-  PUBLIC
-  | ABSTRACT
-  ;
-
-MethodDeclarator: 
-  Identifier OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
-  ;
-
-FormalParameterListOpt:
-  /* Empty - optional */
-  | FormalParameterList
-  ;
-
-FormalParameterList:
-	FormalParameter
-	| FormalParameterList COMMA FormalParameter
-    ;
-
-FormalParameter:
-	FinalOpt Type VariableDeclaratorId
-    ;
-
-VariableDeclaratorId:
-	Identifier
-  | VariableDeclaratorId OPENING_BRACKET CLOSING_BRACKET
-  ;
-
 // MethodBody:
 // 	  Block
 //     ;
