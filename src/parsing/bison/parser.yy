@@ -120,7 +120,7 @@
 
 // Grammar
 %%
-%start Statement;
+%start ClassDeclaration;
 
 /* Expressions */
 Expression:
@@ -288,18 +288,32 @@ Type:
 
 /*----------------------*/
 
+/* Modifiers */
+
+// access and non-access split up for easier weeding
+AccessModifier: PUBLIC
+              | PROTECTED
+
+NonAccessModifier: STATIC
+                 | ABSTRACT
+                 | FINAL
+                 | NATIVE
+
+// weeder: only one access modifier permitted
+// weeder: exactly one?
+Modifiers: AccessModifier
+         | NonAccessModifier
+         | Modifiers AccessModifier
+         | Modifiers NonAccessModifier
+
 /*       Classes       */
 
 // weeder: make sure at most one of implements and extends is present
-ClassDeclaration: ClassModifier CLASS IDENTIFIER SuperOpt InterfacesOpt ClassBody   
-
-
-/* Class modifiers */
+// weeder: modifier can only be abstract, final, public
 // weeder: max one of abstract/final
-//         must contain public?
-ClassModifier: PUBLIC
-             | ABSTRACT
-             | FINAL
+// weeder: must contain public?
+ClassDeclaration: CLASS IDENTIFIER SuperOpt InterfacesOpt ClassBody   
+                | Modifiers CLASS IDENTIFIER SuperOpt InterfacesOpt ClassBody   
 
 
 /* Class interfaces */
@@ -344,24 +358,13 @@ ClassBody: ClassBodyDeclarationsOpt
 /* Fields */
 
 // Only one variable declaration is allowed at a time
-FieldDeclaration: FieldModifiersOpt Type VariableDeclarator SEMI_COLON
-
-FieldModifiersOpt:
-                 | FieldModifiers
-
-FieldModifiers: FieldModifier
-              | FieldModifiers FieldModifier
-
-FieldModifier: PUBLIC
-             | PROTECTED
-             | STATIC
-             // | PRIVATE: omitted for joos
-             // | FINAL: omitted for joos
+FieldDeclaration: Type VariableDeclarator SEMI_COLON
+                | Modifiers Type VariableDeclarator SEMI_COLON
 
 VariableDeclarator: VariableDeclaratorId
                   | VariableDeclaratorId ASSIGNMENT VariableInitializer
 
-VariableDeclaratorId: Identifier
+VariableDeclaratorId: IDENTIFIER
                     | VariableDeclaratorId OPENING_BRACKET CLOSING_BRACKET
 
 VariableInitializer: Expression
@@ -383,34 +386,20 @@ ConstructorDeclarator: SimpleTypeName OPENING_PAREN FormalParameterListOpt CLOSI
 
 /* Methods */
 
+// weeder: methodbody exists if neither abstract nor native
 MethodDeclaration: MethodHeader MethodBody
 
-// TODO: allow static native int m(int)
-MethodHeader: MethodModifiersOpt ResultType MethodDeclarator
-
-ResultType: Type
-          | VOID
+// weeder: allow static native int m(int)
+// weeder: see A1 specs for weeding modifiers
+MethodHeader: Type MethodDeclarator
+            | Modifiers Type MethodDeclarator
+            | VOID MethodDeclarator
+            | Modifiers VOID MethodDeclarator
 
 MethodDeclarator: IDENTIFIER OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
 
-MethodModifiersOpt:
-                  | MethodModifiers
-
-MethodModifiers: MethodModifier
-               | MethodModifiers MethodModifier
-
-MethodModifier: PUBLIC
-              | PROTECTED
-              | ABSTRACT
-              | STATIC
-              | FINAL
-              | NATIVE
-              // | PRIVATE: omitted for joos
-              // | SYNCHRONIZED: omitted for joos
-              // | STRICTFP: omitted for joos
-
-MethodBody: Block
-          | SEMI_COLON
+MethodBody: SEMI_COLON
+          // | Block
 
 /* Formal parameters */
 
