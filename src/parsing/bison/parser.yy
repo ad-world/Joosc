@@ -122,9 +122,10 @@
 
 // Grammar
 %%
-%start ForInit;
+%start CompilationUnit;
 
 /*---------------------- Packages ----------------------*/
+
 CompilationUnit:
     PackageDeclaration ImportDeclarations TypeDeclarations
     | ImportDeclarations TypeDeclarations   // No PackageDeclaration
@@ -167,6 +168,7 @@ TypeDeclaration:
     ;
 
 /*---------------------- Expressions ----------------------*/
+
 Expression:
     AssignmentExpression
     ;
@@ -385,26 +387,6 @@ InterfaceMemberDeclaration: // Nested types and interface constants not supporte
     AbstractMethodDeclaration
     ;
 
-ConstantDeclaration: 
-    ConstantModifiersOpt Type VariableDeclarators
-    ;
-
-ConstantModifiersOpt:
-    /* Empty - optional */
-    | ConstantModifiers
-    ;
-  
-ConstantModifiers: 
-    ConstantModifier
-	| ConstantModifiers ConstantModifier
-    ;
-
-ConstantModifier:
-    PUBLIC
-    | STATIC
-    | FINAL
-    ;
-
 AbstractMethodDeclaration:
     AbstractMethodModifiersOpt ResultType MethodDeclarator SEMI_COLON
     ;
@@ -438,331 +420,21 @@ FormalParameterList:
 	| FormalParameterList COMMA FormalParameter
     ;
 
+FinalOpt:
+    /* Empty - No final keyword */
+    | FINAL
+    ;
+
 FormalParameter:
 	FinalOpt Type VariableDeclaratorId
     ;
 
 VariableDeclaratorId:
     Identifier
-    | VariableDeclaratorId OPENING_BRACKET CLOSING_BRACKET
+    | Identifier OPENING_BRACKET CLOSING_BRACKET
     ;
 
-/*---------------------- ----------------------*/
-
-
-/* OLD CODE - CAN MODIFY/REMOVE */   
-
-// CompilationUnit:
-//     PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
-//     ;
-
-// PackageDeclarationOpt:
-//     /* Empty - no package declaration */
-//     | PACKAGE QualifiedIdentifier SEMI_COLON
-//     ;
-
-// ImportDeclarationsOpt:
-//     /* Empty - represents zero import declarations */
-//     | ImportDeclarationsOpt ImportDeclaration
-//     ;
-
-// TypeDeclarationsOpt:
-//     /* Empty - represents zero type declarations */
-//     | TypeDeclarationsOpt TypeDeclaration
-//     ;
-
-QualifiedIdentifier:
-    Identifier
-    | QualifiedIdentifier DOT Identifier
-    ;
-
-Identifier:
-    IDENTIFIER
-    ;
-
-// ImportDeclaration:
-//     IMPORT Identifier DottedIdentifiers OptionalWildcard SEMI_COLON
-//     ;
-
-// DottedIdentifiers:
-//     /* Empty - no additional identifiers */
-//     | DottedIdentifiers DOT Identifier
-//     ;
-
-// OptionalWildcard:
-//     /* Empty - no wildcard */
-//     | DOT ASTERISK
-//     ;
-
-// TypeDeclaration:
-//     ClassOrInterfaceDeclaration
-//     | SEMI_COLON /* Empty */
-//     ;
-
-ClassOrInterfaceDeclaration: 
-    ModifiersOpt ClassDeclaration 
-    | ModifiersOpt InterfaceDeclaration
-    ;
-
-ModifiersOpt: 
-    /* Empty - represents zero type declarations */
-    | Modifier
-    ;
-
-Modifier:
-    PUBLIC 
-    | PROTECTED 
-    | PRIVATE 
-    | STATIC 
-    | ABSTRACT 
-    | FINAL 
-    | NATIVE
-    ;
-
-ClassDeclaration:
-    CLASS Identifier ExtendsOpt ImplementsOpt ClassBody
-    ;
-
-ExtendsOpt:
-    /* Empty - represents zero type declarations */
-    | EXTENDS Type
-    ;
-
-ImplementsOpt:
-    /* Empty - represents zero type declarations */
-    | IMPLEMENTS TypeList
-    ;
-
-ClassBody:
-    OPENING_BRACE ClassBodyDeclarationsOpt CLOSING_BRACE
-    ;
-
-ClassBodyDeclarationsOpt:
-    /* Empty - represents zero ClassBodyDeclarations */
-    | ClassBodyDeclarationsOpt ClassBodyDeclaration
-    ;
-
-ClassBodyDeclaration:
-    SEMI_COLON /* Empty declaration */
-    | StaticOpt Block
-    | ModifiersOpt MemberDecl
-    ;
-
-StaticOpt:
-    /* Empty declaration */
-    | STATIC
-    ;
-
-Block:
-    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE
-    ;
-
-BlockStatementsOpt:
-    /* Empty - represents zero BlockStatements */
-    | BlockStatements
-    ;
-
-BlockStatements:
-    BlockStatement
-    | BlockStatements BlockStatement
-    ;
-
-BlockStatement:
-    LocalVariableDeclarationStatement 
-    | ClassDeclaration
-    | Statement
-    ;
-
-LocalVariableDeclarationStatement:
-    LocalVariableDeclaration SEMI_COLON
-    ;
-
-// Delay Type reduce due to conflict
-LocalVariableDeclaration:
-    // Type VariableDeclarators
-    QualifiedIdentifier VariableDeclarators // ClassOrInterfaceType VariableDeclarators
-    | QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET VariableDeclarators // ClassOrInterfaceTypeArray VariableDeclarators
-    | PrimitiveType OPENING_BRACKET CLOSING_BRACKET VariableDeclarators // PrimitiveArray VariableDeclarators
-    | PrimitiveType VariableDeclarators
-    ;
-
-VariableDeclarators:
-    VariableDeclarator
-    | VariableDeclarators COMMA VariableDeclarator
-    ;
-
-VariableDeclarator:
-    VariableDeclaratorId
-    | VariableDeclaratorId ASSIGNMENT VariableInitializer
-    ;
-
-VariableDeclaratorId:
-    Identifier
-    | VariableDeclaratorId OPENING_BRACKET CLOSING_BRACKET
-    ;
-
-VariableInitializerOpt:
-    /* Empty - No variable initializer */
-    | ASSIGNMENT VariableInitializer
-    ;
-
-BracketsOpt:
-    /* Empty - No brackets */
-    | BracketsOpt OPENING_BRACKET CLOSING_BRACKET
-    ;
-
-VariableInitializer:
-    ArrayInitializer
-    | Expression
-    ;
-
-ArrayInitializer:
-    OPENING_BRACE VariableInitializersOpt CLOSING_BRACE
-    ;
-
-VariableInitializersOpt:
-    /* Empty - No variable initializers */
-    | VariableInitializerList OptionalComma
-    ;
-
-VariableInitializerList:
-    VariableInitializer
-    | VariableInitializerList COMMA VariableInitializer
-    ;
-
-OptionalComma:
-    /* Empty - No comma */
-    | COMMA
-    ;
-
-// Expression: // Not sure about this
-//     Expression3 ASSIGNMENT Expression1
-//     | Expression3
-//     ;
-
-Expression1:
-    Expression3
-    | Expression3 InfixExpression
-    | Expression3 InstanceofExpression
-    ;
-
-InfixExpression:
-    Infixop Expression3
-    | InfixExpression Infixop Expression3
-    ;
-
-InstanceofExpression:
-    INSTANCEOF Type
-    ;
-
-Infixop:
-    BOOLEAN_OR 
-    | BOOLEAN_AND 
-    | PIPE 
-    | AMPERSAND 
-    | BOOLEAN_EQUAL 
-    | NOT_EQUAL 
-    | LESS_THAN 
-    | GREATER_THAN 
-    | LESS_THAN_EQUAL 
-    | GREATER_THAN_EQUAL 
-    | PLUS 
-    | MINUS 
-    | ASTERISK 
-    | DIVIDE 
-    | MODULO 
-    ;
-
-Expression3:
-    PrefixOp Expression3
-    | NoPrefixExpression3
-    ;
-
-NoPrefixExpression3:
-    OPENING_PAREN BasicType CLOSING_PAREN Expression3 // Primitive cast
-    | OPENING_PAREN Expression CLOSING_PAREN NoPrefixExpression3 // Reference cast
-    | Primary SelectorOpt
-    ;
-
-PrefixOp:
-    NEGATE 
-    | MINUS
-    ;
-
-SelectorOpt:
-    /* Empty - No selector */
-    | SelectorOpt Selector
-    ;
-
-// Primary:
-//     OPENING_PAREN Expression CLOSING_PAREN
-//     | THIS ArgumentsOpt
-//     | Literal
-//     | ClassInstanceCreationExpression
-//     | Identifier // Following SelectorOpt can be equivalent to QualifiedIdentifier
-//     | BasicType BracketsOpt DOT CLASS
-//     ;
-
-// ClassInstanceCreationExpression:
-//     NEW Creator
-
-Creator:
-    QualifiedIdentifier ClassCreatorRest
-    | QualifiedIdentifier ArrayCreatorRest
-    | BasicType ArrayCreatorRest
-    ;
-
-ArrayCreatorRest:
-    OPENING_BRACKET CLOSING_BRACKET ArrayInitializer
-    | OPENING_BRACKET Expression CLOSING_BRACKET
-
-Selector:
-    DOT Identifier ArgumentsOpt
-    | DOT THIS
-    | DOT NEW InnerCreator
-    | OPENING_BRACKET Expression CLOSING_BRACKET
-    ;
-
-ArgumentsOpt:
-    /* Empty - No Arguments */
-    | Arguments
-    ;
-
-// Arguments:
-//     OPENING_PAREN ExpressionListOpt CLOSING_PAREN
-//     ;
-
-ExpressionListOpt:
-    /* Empty - No Expressions */
-    | ExpressionList
-    ;
-
-ExpressionList:
-    Expression
-    | ExpressionList COMMA Expression
-    ;
-
-InnerCreator:
-    Identifier ClassCreatorRest
-    ;
-
-ClassCreatorRest:
-    Arguments ClassBodyOpt
-    ;
-
-// /* ClassBodyOpt:
-//     /* Empty - No ClassBody */
-//     | ClassBody
-//     ; */
-
-FinalOpt:
-    /* Empty - No final keyword */
-    | FINAL
-    ;
-
-
-
-// -------------------------------------------------------------
+/*---------------------- Statements ----------------------*/
 
 Statement:
     StatementWithoutTrailingSubstatement
@@ -852,70 +524,145 @@ ReturnStatement:
     RETURN ExpressionOpt SEMI_COLON
     ;
 
+ParExpression: 
+    OPENING_PAREN Expression CLOSING_PAREN
+    ;
+
+QualifiedIdentifier:
+    Identifier
+    | QualifiedIdentifier DOT Identifier
+    ;
+
+Identifier:
+    IDENTIFIER
+    ;
+
+// Delay Type reduce due to conflict
+LocalVariableDeclaration:
+    // Type VariableDeclarators
+    QualifiedIdentifier VariableDeclarators // ClassOrInterfaceType VariableDeclarators
+    | QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET VariableDeclarators // ClassOrInterfaceTypeArray VariableDeclarators
+    | PrimitiveType OPENING_BRACKET CLOSING_BRACKET VariableDeclarators // PrimitiveArray VariableDeclarators
+    | PrimitiveType VariableDeclarators
+    ;
+
+
 // -------------------------------------------------------------
 
-// MemberDecl:
-//     | MethodOrFieldDecl
-//     | VOID Identifier MethodDeclaratorRest
-//     | Identifier ConstructorDeclaratorRest
-//     | ClassOrInterfaceDeclaration
-//     ;
+/* OLD CODE - CAN MODIFY/REMOVE */   
 
-// MethodOrFieldDecl:
-// 	  Type Identifier MethodOrFieldRest
-//     ;
 
-// MethodOrFieldRest:
-//     VariableDeclaratorRest
-//     MethodDeclaratorRest
-//     ;
+ModifiersOpt: 
+    /* Empty - represents zero type declarations */
+    | Modifier
+    ;
 
-// Type:
-//     QualifiedIdentifier BracketsOpt
-//     | BasicType BracketsOpt
-//     ;
+Modifier:
+    PUBLIC 
+    | PROTECTED 
+    | PRIVATE 
+    | STATIC 
+    | ABSTRACT 
+    | FINAL 
+    | NATIVE
+    ;
 
-BasicType:
-    BYTE
-    | SHORT
-    | CHAR
-    | INT
-    | BOOLEAN
+ClassDeclaration:
+    CLASS Identifier ExtendsOpt ImplementsOpt ClassBody
+    ;
+
+ExtendsOpt:
+    /* Empty - represents zero type declarations */
+    | EXTENDS Type
+    ;
+
+ImplementsOpt:
+    /* Empty - represents zero type declarations */
+    | IMPLEMENTS TypeList
+    ;
+
+ClassBody:
+    OPENING_BRACE ClassBodyDeclarationsOpt CLOSING_BRACE
+    ;
+
+ClassBodyDeclarationsOpt:
+    /* Empty - represents zero ClassBodyDeclarations */
+    | ClassBodyDeclarationsOpt ClassBodyDeclaration
+    ;
+
+ClassBodyDeclaration:
+    SEMI_COLON /* Empty declaration */
+    | StaticOpt Block
+    | ModifiersOpt MemberDecl
+    ;
+
+StaticOpt:
+    /* Empty declaration */
+    | STATIC
+    ;
+
+Block:
+    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE
+    ;
+
+BlockStatementsOpt:
+    /* Empty - represents zero BlockStatements */
+    | BlockStatements
+    ;
+
+BlockStatements:
+    BlockStatement
+    | BlockStatements BlockStatement
+    ;
+
+BlockStatement:
+    LocalVariableDeclarationStatement 
+    | ClassDeclaration
+    | Statement
+    ;
+
+LocalVariableDeclarationStatement:
+    LocalVariableDeclaration SEMI_COLON
+    ;
+
+VariableDeclarators:
+    VariableDeclarator
+    | VariableDeclarators COMMA VariableDeclarator
+    ;
+
+VariableDeclarator:
+    VariableDeclaratorId
+    | VariableDeclaratorId ASSIGNMENT VariableInitializer
+    ;
+
+VariableInitializer:
+    ArrayInitializer
+    | Expression
+    ;
+
+ArrayInitializer:
+    OPENING_BRACE VariableInitializersOpt CLOSING_BRACE
+    ;
+
+VariableInitializersOpt:
+    /* Empty - No variable initializers */
+    | VariableInitializerList OptionalComma
+    ;
+
+VariableInitializerList:
+    VariableInitializer
+    | VariableInitializerList COMMA VariableInitializer
+    ;
+
+OptionalComma:
+    /* Empty - No comma */
+    | COMMA
     ;
 
 TypeList:
     Type
     | TypeList COMMA Type
     ;
-
-ParExpression: 
-    OPENING_PAREN Expression CLOSING_PAREN
-    ;
-
-// ConstantDeclaratorsRest:
-//     ConstantDeclaratorRest
-//     | ConstantDeclaratorsRest COMMA ConstantDeclarator
-//     ;
-
-// ConstantDeclaratorRest:
-//     BracketsOpt ASSIGNMENT VariableInitializer
-//     ;
-
-// ConstantDeclarator:
-//     Identifier ConstantDeclaratorRest
-//     ;
-
-// Literal:
-//     INTEGER 	
-//     | CHAR_LITERAL 	
-//     | STRING_LITERAL 	
-//     | TRUE
-//     | FALSE
-//     | NULL_TOKEN
-//     ;
-// MethodBody:
-// 	  Block
-//     ;
 %%
 
 void yy::parser::error (const location_type& l, const std::string& m) {
