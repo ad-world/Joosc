@@ -31,17 +31,17 @@ def valid_invalid_prog_test():
 
     failures = False
     for directory, expected_code in ((valid_programs, 0), (invalid_programs, 42)):
-        print(f"Testing all programs in {resolve_path(directory, '')}:")
+        print(colors.HEADER + colors.BOLD + colors.UNDERLINE + f"\nTesting all programs in {resolve_path(directory, '')}:" + colors.ENDC)
         for program in os.listdir(directory):
             program_path = resolve_path(directory, program)
             result = subprocess.run([joosc_executable, program_path])
             if result.returncode == expected_code:
-                print(colors.OKGREEN + f"Running joosc on {program} successfully returned {expected_code}" + colors.ENDC)
+                      print(colors.OKGREEN + f"SUCCESS: Running joosc on {program} successfully returned {expected_code}" + colors.ENDC)
             else:
                 print(colors.FAIL + f"FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}" + colors.ENDC)
                 failures = True
     
-    print(colors.FAIL + "Tests had failures." + colors.ENDC if failures else colors.OKGREEN + "All tests succeeded!" + colors.ENDC)
+    print(colors.FAIL + "\nERROR: Tests had failures." + colors.ENDC if failures else colors.OKGREEN + "All tests succeeded!" + colors.ENDC)
     return 1 if failures else 0
 
 if __name__ == "__main__":
