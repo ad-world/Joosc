@@ -873,13 +873,8 @@ InterfaceMemberDeclarations:
   | InterfaceMemberDeclarations InterfaceMemberDeclaration
   ;
 
-InterfaceMemberDeclaration: 
-    InterfaceDeclaration
-    /* TODO: uncomment this, can't figure out how to resolve this conflict
-    | ConstantDeclaration
-    | AbstractMethodDeclaration
-    | ClassDeclaration 
-    */
+InterfaceMemberDeclaration: // Nested types and interface constants not supported
+    AbstractMethodDeclaration
     ;
 
 ConstantDeclaration: 
@@ -928,7 +923,7 @@ MethodDeclarator:
 
 FormalParameterListOpt:
   /* Empty - optional */
-  | FormalParameterListOpt
+  | FormalParameterList
   ;
 
 FormalParameterList:
