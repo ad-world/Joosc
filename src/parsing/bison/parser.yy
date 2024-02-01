@@ -66,7 +66,6 @@
 %token SEMI_COLON
 %token COLON
 %token COMMA
-%token ASTERISK
 %token DOT
 %token <std::string> IDENTIFIER
 %token NATIVE
@@ -94,6 +93,7 @@
 
 // operators
 %token NEGATE
+%token ASTERISK
 %token PLUS
 %token MINUS
 %token DIVIDE
@@ -113,16 +113,57 @@
 %token EOF 0
 /*****************************************************************************/
 %token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl
-%token MemberDecl InterfaceBodyDeclarations
+%token MemberDecl InterfaceBodyDeclarations ClassInstanceCreationExpression
 
-%token ClassInstanceCreationExpression
+%token ClassBodyOpt
 
 // Grammar
 %%
 %start CompilationUnit;
 
+/*---------------------- Packages ----------------------*/
+CompilationUnit:
+    PackageDeclaration ImportDeclarations TypeDeclarations
+    | ImportDeclarations TypeDeclarations   // No PackageDeclaration
+    | PackageDeclaration TypeDeclarations   // No ImportDeclarations
+    | PackageDeclaration ImportDeclarations // No TypeDeclarations
+    |                                       // Empty
+    ;
 
-/* Expressions */
+PackageDeclaration:
+    PACKAGE QualifiedIdentifier SEMI_COLON
+    ;
+
+ImportDeclarations:
+    ImportDeclaration
+    | ImportDeclarations ImportDeclaration
+    ;
+
+TypeDeclarations:
+    TypeDeclaration
+    | TypeDeclarations TypeDeclaration
+    ;
+
+ImportDeclaration:
+	SingleTypeImportDeclaration
+	| TypeImportOnDemandDeclaration
+    ;
+
+SingleTypeImportDeclaration:
+    IMPORT QualifiedIdentifier SEMI_COLON // TypeName
+    ;
+
+TypeImportOnDemandDeclaration:
+    IMPORT QualifiedIdentifier DOT ASTERISK SEMI_COLON // PackageOrTypeName
+    ;
+
+TypeDeclaration:
+    ClassDeclaration
+    | InterfaceDeclaration
+    | SEMI_COLON
+    ;
+
+/*---------------------- Expressions ----------------------*/
 Expression:
     AssignmentExpression
     ;
@@ -133,7 +174,7 @@ AssignmentExpression:
     ;
 
 LeftHandSide:
-    QualifiedIdentifier
+    QualifiedIdentifier // ExpressionName
     | FieldAccess
     | ArrayAccess
     ;
@@ -160,7 +201,7 @@ RelationalExpression:
     | RelationalExpression GREATER_THAN AdditiveExpression
     | RelationalExpression LESS_THAN_EQUAL AdditiveExpression
     | RelationalExpression GREATER_THAN_EQUAL AdditiveExpression
-    | RelationalExpression INSTANCEOF QualifiedIdentifier
+    | RelationalExpression INSTANCEOF ReferenceType // ReferenceType 
     ;
 
 AdditiveExpression:
@@ -187,14 +228,18 @@ UnaryExpressionNotPlusMinus:
     | PrimaryOrExpressionName
     ;
 
-CastExpression:
+CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
-    | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus
+    | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
+    | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
+    | OPENING_PAREN 
+        PrimitiveType OPENING_BRACKET CLOSING_BRACKET // ReferenceType as PrimitiveType with array
+            CLOSING_PAREN UnaryExpressionNotPlusMinus
     ;
 
 PrimaryOrExpressionName:
     Primary
-    | QualifiedIdentifier
+    | QualifiedIdentifier // ExpressionName
     ;
 
 Primary:
@@ -205,14 +250,14 @@ Primary:
 ArrayCreationExpression:
     NEW PrimitiveType OPENING_BRACKET CLOSING_BRACKET
     | NEW PrimitiveType OPENING_BRACKET Expression CLOSING_BRACKET
-    | NEW QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET
-    | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET
+    | NEW QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET // TypeName
+    | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // TypeName
     ;
 
 PrimaryNoNewArray:
     Literal
     | THIS
-    | QualifiedIdentifier DOT THIS
+    | QualifiedIdentifier DOT THIS // ClassName
     | OPENING_PAREN Expression CLOSING_PAREN
     | ClassInstanceCreationExpression
     | FieldAccess
@@ -230,7 +275,7 @@ Literal:
     ;
 
 ArrayAccess:
-    QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET
+    QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // ExpressionName
     | PrimaryNoNewArray OPENING_BRACKET Expression CLOSING_BRACKET
     ;
 
@@ -240,7 +285,6 @@ FieldAccess:
 
 ArgumentListOpt:
     /* Empty - No arguments */
-    | Expression
     | ArgumentListOpt COMMA Expression
     ;
 
@@ -249,44 +293,62 @@ Arguments:
     ;
 
 MethodInvocation:
-    QualifiedIdentifier Arguments
-    | Primary DOT IDENTIFIER Arguments
-    ;
-
-
-
-
-
-PrimitiveType:
-    BasicType
+    QualifiedIdentifier Arguments // MethodName
+    | Primary DOT Identifier Arguments
     ;
 
 Type:
-    QualifiedIdentifier
-    | BasicType
+    PrimitiveType
+    | ReferenceType
     ;
 
-/*----------------------*/
-
-
-CompilationUnit:
-    PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
+PrimitiveType:
+    IntegralType
+    | BooleanType
     ;
 
-PackageDeclarationOpt:
-    /* Empty - no package declaration */
-    | PACKAGE QualifiedIdentifier SEMI_COLON
+IntegralType:
+    BYTE
+    | SHORT
+    | INT
     ;
 
-ImportDeclarationsOpt:
-    /* Empty - represents zero import declarations */
-    | ImportDeclarationsOpt ImportDeclaration
+BooleanType:
+    BOOLEAN
     ;
 
-TypeDeclarationsOpt:
-    /* Empty - represents zero type declarations */
-    | TypeDeclarationsOpt TypeDeclaration
+ClassOrInterfaceType:
+    QualifiedIdentifier // ClassType, InterfaceType -> TypeName
+
+ReferenceType: // Done this way to disallow multidimensional arrays
+    ClassOrInterfaceType
+    | ClassOrInterfaceType OPENING_BRACKET CLOSING_BRACKET
+    | PrimitiveType OPENING_BRACKET CLOSING_BRACKET
     ;
+
+/*---------------------- ----------------------*/
+
+
+/* OLD CODE - CAN MODIFY/REMOVE */   
+
+// CompilationUnit:
+//     PackageDeclarationOpt ImportDeclarationsOpt TypeDeclarationsOpt
+//     ;
+
+// PackageDeclarationOpt:
+//     /* Empty - no package declaration */
+//     | PACKAGE QualifiedIdentifier SEMI_COLON
+//     ;
+
+// ImportDeclarationsOpt:
+//     /* Empty - represents zero import declarations */
+//     | ImportDeclarationsOpt ImportDeclaration
+//     ;
+
+// TypeDeclarationsOpt:
+//     /* Empty - represents zero type declarations */
+//     | TypeDeclarationsOpt TypeDeclaration
+//     ;
 
 QualifiedIdentifier:
     Identifier
@@ -297,24 +359,24 @@ Identifier:
     IDENTIFIER
     ;
 
-ImportDeclaration:
-    IMPORT Identifier DottedIdentifiers OptionalWildcard SEMI_COLON
-    ;
+// ImportDeclaration:
+//     IMPORT Identifier DottedIdentifiers OptionalWildcard SEMI_COLON
+//     ;
 
-DottedIdentifiers:
-    /* Empty - no additional identifiers */
-    | DottedIdentifiers DOT Identifier
-    ;
+// DottedIdentifiers:
+//     /* Empty - no additional identifiers */
+//     | DottedIdentifiers DOT Identifier
+//     ;
 
-OptionalWildcard:
-    /* Empty - no wildcard */
-    | DOT ASTERISK
-    ;
+// OptionalWildcard:
+//     /* Empty - no wildcard */
+//     | DOT ASTERISK
+//     ;
 
-TypeDeclaration:
-    ClassOrInterfaceDeclaration
-    | SEMI_COLON /* Empty */
-    ;
+// TypeDeclaration:
+//     ClassOrInterfaceDeclaration
+//     | SEMI_COLON /* Empty */
+//     ;
 
 ClassOrInterfaceDeclaration: 
     ModifiersOpt ClassDeclaration 
@@ -562,10 +624,10 @@ ClassCreatorRest:
     Arguments ClassBodyOpt
     ;
 
-ClassBodyOpt:
-    /* Empty - No ClassBody */
-    | ClassBody
-    ;
+// /* ClassBodyOpt:
+//     /* Empty - No ClassBody */
+//     | ClassBody
+//     ; */
 
 FinalOpt:
     /* Empty - No final keyword */
@@ -680,6 +742,11 @@ ReturnStatement:
 // MethodOrFieldRest:
 //     VariableDeclaratorRest
 //     MethodDeclaratorRest
+//     ;
+
+// Type:
+//     QualifiedIdentifier BracketsOpt
+//     | BasicType BracketsOpt
 //     ;
 
 BasicType:
