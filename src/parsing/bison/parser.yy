@@ -289,7 +289,12 @@ FieldAccess:
 
 ArgumentListOpt:
     /* Empty - No arguments */
-    | ArgumentListOpt COMMA Expression
+    | ArgumentList
+    ;
+
+ArgumentList:
+    Expression
+    | Expression COMMA ArgumentList
     ;
 
 Arguments:
