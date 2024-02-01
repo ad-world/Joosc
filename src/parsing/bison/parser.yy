@@ -113,14 +113,14 @@
 %token EOF 0
 /*****************************************************************************/
 %token VoidInterfaceMethodDeclaratorRest InterfaceMethodOrFieldDecl
-%token MemberDecl InterfaceBodyDeclarations
+%token MemberDecl InterfaceBodyDeclarations ReturnStatement
 
-%token ClassInstanceCreationExpression ExpressionOpt
+%token ClassInstanceCreationExpression
 
 // Grammar
 %%
 // %start CompilationUnit;
-%start Statement;
+%start ForStatement;
 
 
 /* Expressions */
@@ -377,22 +377,26 @@ Block:
 
 BlockStatementsOpt:
     /* Empty - represents zero BlockStatements */
-    | BlockStatementsOpt BlockStatement
+    | BlockStatements
+    ;
+
+BlockStatements:
+    BlockStatement
+    | BlockStatements BlockStatement
     ;
 
 BlockStatement:
-    LocalVariableDeclarationStatement
+    LocalVariableDeclarationStatement 
     | ClassDeclaration
     | Statement
     ;
 
 LocalVariableDeclarationStatement:
     LocalVariableDeclaration SEMI_COLON
-    //FinalOpt Type VariableDeclarators SEMI_COLON
     ;
 
 LocalVariableDeclaration:
-    FinalOpt Type VariableDeclarators
+    Type VariableDeclarators
     ;
 
 VariableDeclarators:
@@ -409,10 +413,6 @@ VariableDeclaratorId:
     Identifier
     | VariableDeclaratorId OPENING_BRACKET CLOSING_BRACKET
     ;
-
-/* VariableDeclaratorRest:
-    BracketsOpt VariableInitializerOpt
-    ; */
 
 VariableInitializerOpt:
     /* Empty - No variable initializer */
@@ -652,58 +652,20 @@ ForInit:
     ;
 
 ForUpdateOpt:
-    StatementExpression
+    /* Empty - no update */
+    | StatementExpression
     ;
 
-/* ExpressionOpt:
-    Expression
+ExpressionOpt:
+    /* no expression */
+    | Expression
+    ;
+
+/* ReturnStatement:
+    RETURN ExpressionOpt
     ; */
 
-ReturnStatement:
-    RETURN ExpressionOpt
-    ;
-
 // -------------------------------------------------------------
-
-
-// Statement:
-//   Block
-//   | IF ParExpression Statement ElseOpt
-//    | FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
-//    | WHILE ParExpression Statement
-//    | RETURN ExpressionOpt SEMI_COLON
-//    | SEMI_COLON /* Empty statement */
-//    | StatementExpression
-//   ;
-
-// ElseOpt:
-//     /* Empty - No else part */
-//     | ELSE Statement
-//     ;
-
-// ForInitOpt:
-//     /* Empty - No initialization */
-//     | ForInit
-//     ;
-
-// ForInit:
-//     StatementExpression MoreStatementExpressions
-//     | FinalOpt Type VariableDeclarators
-//     ;
-
-// MoreStatementExpressions:
-//     /* Empty - No more expressions */
-//     | MoreStatementExpressions COMMA StatementExpression
-//     ;
-
-// ForUpdateOpt:
-//     /* Empty - No update */
-//     | ForUpdate
-//     ;
-
-// ForUpdate:
-//     StatementExpression MoreStatementExpressions
-//     ;
 
 // MemberDecl:
 //     | MethodOrFieldDecl
@@ -721,11 +683,6 @@ ReturnStatement:
 //     MethodDeclaratorRest
 //     ;
 
-/* Type:
-    QualifiedIdentifier BracketsOpt
-    | BasicType BracketsOpt
-    ; */
-
 BasicType:
     BYTE
     | SHORT
@@ -738,10 +695,6 @@ TypeList:
     Type
     | TypeList COMMA Type
     ;
-
-// StatementExpression: 
-// 	  Expression
-//     ;
 
 ParExpression: 
     OPENING_PAREN Expression CLOSING_PAREN
@@ -758,10 +711,6 @@ ParExpression:
 
 // ConstantDeclarator:
 //     Identifier ConstantDeclaratorRest
-//     ;
-
-// VariableDeclaratorId: 
-// 	  Identifier BracketsOpt
 //     ;
 
 // Literal:
