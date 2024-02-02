@@ -5,9 +5,7 @@ public final class InvalidAbstractMethod {
     public InvalidAbstractMethod() {
         unction1();
         function2();
-        super();
     }
-
 
     public abstract validAbstractMethod();
 

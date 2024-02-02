@@ -11,7 +11,7 @@ Weeder::Weeder() {
 void Weeder::checkAsciiRange(const std::string& source) {
     for (char c : source) {
         if (c < 0 || c > 127) {
-            addViolation("Character outside 7-bit ASCII range detected.");
+            addViolation("Character outside 7-bit ASCII range detected: " + c);
             break;
         }
     }
@@ -28,11 +28,12 @@ void Weeder::printViolations() {
     }
 }
 
-int Weeder::weed(AstNode* root) {
+int Weeder::weed(AstNode* root, std::string filename) {
     std::vector<AstNode*> classes = util->getClasses(root);
+    std::string file = getFilename(filename);
 
     // weed program, if we found errors, return 42, else return 0
-    checkClassModifiersAndConstructors(classes);
+    checkClassModifiersAndConstructors(classes, file);
     checkLiterals(root);
 
     if(!violations.empty()) {
@@ -43,12 +44,22 @@ int Weeder::weed(AstNode* root) {
     return 0;
 }
 
-void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes) {
+
+
+void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes, std::string filename) {
+    bool classNameFound = false;
+
     for (auto c_class : classes) {
         // ------------------- Finding Class Constructor --------------------
         bool constructorFound = false;
         std:string className = util->getClassName(c_class);
+
+        // Check if className == fileName for weeding
+        if (className == filename) classNameFound = true;
+   
         std::vector<AstNode*> methods = util->getFunctionsFromClass(c_class);
+
+        // Weeding all methods
         checkMethodModifiersAndBody(methods);
 
         for (auto method: methods) {
@@ -73,6 +84,10 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes) {
         if ((abstractIt != classModifiers.end()) and (finalIt != classModifiers.end())) {
             addViolation(className + " cannot be both abstract and final.");
         }
+    }
+
+    if(!classNameFound) {
+        addViolation("No matching class found for " + filename);
     }
 }
 
@@ -106,35 +121,5 @@ void Weeder::checkMethodModifiersAndBody(std::vector<AstNode*> methods) {
             if(funcName == "super") addViolation("No super() calls allowed inside functions. (" + functionName + ")" );
             if(funcName == "this") addViolation("No this() calls allowed inside functions. (" + functionName + ")");
         }
-    }
-}
-
-void Weeder::checkLiterals(AstNode * root) {
-    vector<pair<AstNode *, AstNode *>> literals = util->getLiteralPairs(root);
-    for ( auto pair : literals ) {
-        auto & innerValue = pair.second->value.value();
-        switch ( pair.second->type ) {
-            case yy::parser::symbol_kind::S_INTEGER:
-                // Check range of integer
-                if ( pair.first != nullptr && pair.first->type == yy::parser::symbol_kind::S_MINUS ) {
-                    if ( -get<long int>(innerValue) < INT32_MIN ) {
-                        throw runtime_error("Integer out of range");
-                    }
-                } else if ( get<long int>(innerValue) > INT32_MAX ) {
-                    throw runtime_error("Integer out of range");
-                }
-                break;
-            case yy::parser::symbol_kind::S_STRING_LITERAL:
-                // Eventually need to unescape the characters, prob do this in Flex
-                break;
-            case yy::parser::symbol_kind::S_CHAR_LITERAL:
-                // Eventually need to unescape the characters, prob do this in Flex
-                break;
-        }
-        // cout << "(";
-        // if ( pair.first != nullptr ) {
-        //     cout << util->getParserType(pair.first->type) << ", ";
-        // }
-        // cout << util->getParserType(pair.second->type) << ")" << endl;
     }
 }

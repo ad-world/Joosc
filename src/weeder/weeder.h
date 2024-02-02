@@ -8,7 +8,7 @@
 class Weeder {
 public:
     // TODO: send root of parse tree to this function
-    int weed(AstNode* root);
+    int weed(AstNode* root, std::string fileName);
 
     Weeder();
 
@@ -20,7 +20,7 @@ private:
     
     // TODO: send vector of class nodes to this function. It will check modifiers + constructors
     // It will also check that constructors do not include explicit this() or super()
-    void checkClassModifiersAndConstructors(std::vector<AstNode*> classes);
+    void checkClassModifiersAndConstructors(std::vector<AstNode*> classes, std::string filename);
 
     // TODO: send vector class of methods to this function. This function will check if there is body if it is not native or abstract.
     // It will also check there are no explicit this() or super() calls if there is a function body
@@ -35,7 +35,9 @@ private:
     // Print a list of violations, if found
     void printViolations();
 
+    // Get filename
+    std::string getFilename(std::string& filePath);
+
     // Get all literals and ensure they are correct
     void checkLiterals(AstNode *root);
-    
 };
