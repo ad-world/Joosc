@@ -29,7 +29,7 @@ Digit           [0-9]
 Identifier      {Letter}({Digit}|{Letter}|_)*
 Integer         0|[1-9]{Digit}*
 Float           {Digit}+"."{Digit}+
-Ascii           [ -~]
+Ascii           [ -!]|[#-&]|[(-~]
 OctalEscape     \\[0-3]?[0-7]?[0-7]?
 Escape          \\[tbnrf\\]
 
