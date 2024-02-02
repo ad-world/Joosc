@@ -26,4 +26,8 @@ class Utils {
     // Root can be anything
     std::vector<std::pair<AstNode *, AstNode *>> getLiteralPairs(AstNode *root);
 
+    // Expects *root to be MethodDeclaration
+    std::vector<std::string> getFunctionModifiers(AstNode *root);
+    // Expects *root to be AstNode
+    bool hasFunctionBody(AstNode *root);
 };
