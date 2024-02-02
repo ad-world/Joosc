@@ -28,7 +28,7 @@ int Driver::parse(const std::string &f) {
       int curr_depth = depth.front();
 
       for (int j = 0; j < curr_depth; j++) std::cout << '\t';
-      std::cout << yy::parser::symbol_name(static_cast<yy::parser::symbol_kind_type>(curr->type)) << std::endl;
+      // std::cout << yy::parser::symbol_name(static_cast<yy::parser::symbol_kind_type>(curr->type)) << std::endl;
 
       q.pop_front();
       depth.pop_front();

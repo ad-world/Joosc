@@ -233,9 +233,12 @@
 
 // Grammar
 %%
-%start Modifiers;
+%start Start;
 
 /*---------------------- Packages ----------------------*/
+
+Start:
+     CompilationUnit { *root = $1; }
 
 CompilationUnit:
     PackageDeclaration ImportDeclarations TypeDeclarations
