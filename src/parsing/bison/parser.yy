@@ -330,6 +330,7 @@ IntegralType:
     BYTE
     | SHORT
     | INT
+    | CHAR
     ;
 
 BooleanType:
