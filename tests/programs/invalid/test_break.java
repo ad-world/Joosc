@@ -1,4 +1,4 @@
-public class break {
+public class test_break {
   public int m(int x) {
     while (x>0) {
        x=x-1;

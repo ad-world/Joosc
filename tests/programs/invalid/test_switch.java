@@ -1,4 +1,4 @@
-public class switch {
+public class test_switch {
   public int m(int x) {
     int y = 0;
     switch (x) {

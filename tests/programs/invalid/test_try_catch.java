@@ -1,4 +1,4 @@
-public class try_catch {
+public class test_try_catch {
   public int m(java.io.FileInputStream x) {
     int y;
     try {
