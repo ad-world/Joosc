@@ -47,53 +47,53 @@ volatile|super|long|float|double|throws|throw|try|catch|finally|do|switch|break|
                (loc, "invalid token: '" + std::string(yytext) + "' is not a valid joosc token, only a Java token");
 }
 
-if    return yy::parser::make_IF(new AstNode(yy::parser::symbol_kind_type::S_IF), loc);
-while     return yy::parser::make_WHILE(new AstNode(yy::parser::symbol_kind_type::S_WHILE), loc);
-for     return yy::parser::make_FOR(new AstNode(yy::parser::symbol_kind_type::S_FOR), loc);
-else    return yy::parser::make_ELSE(new AstNode(yy::parser::symbol_kind_type::S_ELSE), loc);
-extends     return yy::parser::make_EXTENDS(new AstNode(yy::parser::symbol_kind_type::S_EXTENDS), loc);
-new     return yy::parser::make_NEW(new AstNode(yy::parser::symbol_kind_type::S_NEW), loc);
-public    return yy::parser::make_PUBLIC(new AstNode(yy::parser::symbol_kind_type::S_PUBLIC), loc);
-implements    return yy::parser::make_IMPLEMENTS(new AstNode(yy::parser::symbol_kind_type::S_IMPLEMENTS), loc);
-protected     return yy::parser::make_PROTECTED(new AstNode(yy::parser::symbol_kind_type::S_PROTECTED), loc);
-private     return yy::parser::make_PRIVATE(new AstNode(yy::parser::symbol_kind_type::S_PRIVATE), loc);
-static    return yy::parser::make_STATIC(new AstNode(yy::parser::symbol_kind_type::S_STATIC), loc);
-abstract      return yy::parser::make_ABSTRACT(new AstNode(yy::parser::symbol_kind_type::S_ABSTRACT), loc);
-this      return yy::parser::make_THIS(new AstNode(yy::parser::symbol_kind_type::S_THIS), loc);
-void      return yy::parser::make_VOID(new AstNode(yy::parser::symbol_kind_type::S_VOID), loc);
-final     return yy::parser::make_FINAL(new AstNode(yy::parser::symbol_kind_type::S_FINAL), loc);
-import      return yy::parser::make_IMPORT(new AstNode(yy::parser::symbol_kind_type::S_IMPORT), loc);
-class      return yy::parser::make_CLASS(new AstNode(yy::parser::symbol_kind_type::S_CLASS), loc);
-package     return yy::parser::make_PACKAGE(new AstNode(yy::parser::symbol_kind_type::S_PACKAGE), loc);
-interface     return yy::parser::make_INTERFACE(new AstNode(yy::parser::symbol_kind_type::S_INTERFACE), loc);
-native    return yy::parser::make_NATIVE(new AstNode(yy::parser::symbol_kind_type::S_NATIVE), loc);
-return    return yy::parser::make_RETURN(new AstNode(yy::parser::symbol_kind_type::S_RETURN), loc);
-instanceof return yy::parser::make_INSTANCEOF(new AstNode(yy::parser::symbol_kind_type::S_INSTANCEOF), loc);
-"{"       return yy::parser::make_OPENING_BRACE(new AstNode(yy::parser::symbol_kind_type::S_OPENING_BRACE), loc);
-"}"       return yy::parser::make_CLOSING_BRACE(new AstNode(yy::parser::symbol_kind_type::S_CLOSING_BRACE), loc);
-"["       return yy::parser::make_OPENING_BRACKET(new AstNode(yy::parser::symbol_kind_type::S_OPENING_BRACKET), loc);
-"]"       return yy::parser::make_CLOSING_BRACKET(new AstNode(yy::parser::symbol_kind_type::S_CLOSING_BRACKET), loc);
-"("       return yy::parser::make_OPENING_PAREN(new AstNode(yy::parser::symbol_kind_type::S_OPENING_PAREN), loc);
-")"       return yy::parser::make_CLOSING_PAREN(new AstNode(yy::parser::symbol_kind_type::S_CLOSING_PAREN), loc);
-";"       return yy::parser::make_SEMI_COLON(new AstNode(yy::parser::symbol_kind_type::S_SEMI_COLON), loc);
-"."     return yy::parser::make_DOT(new AstNode(yy::parser::symbol_kind_type::S_DOT), loc);
-"="     return yy::parser::make_ASSIGNMENT(new AstNode(yy::parser::symbol_kind_type::S_ASSIGNMENT), loc);
+if    return yy::parser::make_IF(new AstNode(yy::parser::symbol_kind::S_IF), loc);
+while     return yy::parser::make_WHILE(new AstNode(yy::parser::symbol_kind::S_WHILE), loc);
+for     return yy::parser::make_FOR(new AstNode(yy::parser::symbol_kind::S_FOR), loc);
+else    return yy::parser::make_ELSE(new AstNode(yy::parser::symbol_kind::S_ELSE), loc);
+extends     return yy::parser::make_EXTENDS(new AstNode(yy::parser::symbol_kind::S_EXTENDS), loc);
+new     return yy::parser::make_NEW(new AstNode(yy::parser::symbol_kind::S_NEW), loc);
+public    return yy::parser::make_PUBLIC(new AstNode(yy::parser::symbol_kind::S_PUBLIC), loc);
+implements    return yy::parser::make_IMPLEMENTS(new AstNode(yy::parser::symbol_kind::S_IMPLEMENTS), loc);
+protected     return yy::parser::make_PROTECTED(new AstNode(yy::parser::symbol_kind::S_PROTECTED), loc);
+private     return yy::parser::make_PRIVATE(new AstNode(yy::parser::symbol_kind::S_PRIVATE), loc);
+static    return yy::parser::make_STATIC(new AstNode(yy::parser::symbol_kind::S_STATIC), loc);
+abstract      return yy::parser::make_ABSTRACT(new AstNode(yy::parser::symbol_kind::S_ABSTRACT), loc);
+this      return yy::parser::make_THIS(new AstNode(yy::parser::symbol_kind::S_THIS), loc);
+void      return yy::parser::make_VOID(new AstNode(yy::parser::symbol_kind::S_VOID), loc);
+final     return yy::parser::make_FINAL(new AstNode(yy::parser::symbol_kind::S_FINAL), loc);
+import      return yy::parser::make_IMPORT(new AstNode(yy::parser::symbol_kind::S_IMPORT), loc);
+class      return yy::parser::make_CLASS(new AstNode(yy::parser::symbol_kind::S_CLASS), loc);
+package     return yy::parser::make_PACKAGE(new AstNode(yy::parser::symbol_kind::S_PACKAGE), loc);
+interface     return yy::parser::make_INTERFACE(new AstNode(yy::parser::symbol_kind::S_INTERFACE), loc);
+native    return yy::parser::make_NATIVE(new AstNode(yy::parser::symbol_kind::S_NATIVE), loc);
+return    return yy::parser::make_RETURN(new AstNode(yy::parser::symbol_kind::S_RETURN), loc);
+instanceof return yy::parser::make_INSTANCEOF(new AstNode(yy::parser::symbol_kind::S_INSTANCEOF), loc);
+"{"       return yy::parser::make_OPENING_BRACE(new AstNode(yy::parser::symbol_kind::S_OPENING_BRACE), loc);
+"}"       return yy::parser::make_CLOSING_BRACE(new AstNode(yy::parser::symbol_kind::S_CLOSING_BRACE), loc);
+"["       return yy::parser::make_OPENING_BRACKET(new AstNode(yy::parser::symbol_kind::S_OPENING_BRACKET), loc);
+"]"       return yy::parser::make_CLOSING_BRACKET(new AstNode(yy::parser::symbol_kind::S_CLOSING_BRACKET), loc);
+"("       return yy::parser::make_OPENING_PAREN(new AstNode(yy::parser::symbol_kind::S_OPENING_PAREN), loc);
+")"       return yy::parser::make_CLOSING_PAREN(new AstNode(yy::parser::symbol_kind::S_CLOSING_PAREN), loc);
+";"       return yy::parser::make_SEMI_COLON(new AstNode(yy::parser::symbol_kind::S_SEMI_COLON), loc);
+"."     return yy::parser::make_DOT(new AstNode(yy::parser::symbol_kind::S_DOT), loc);
+"="     return yy::parser::make_ASSIGNMENT(new AstNode(yy::parser::symbol_kind::S_ASSIGNMENT), loc);
 
 %{ // Types %}
-int     return yy::parser::make_INT(new AstNode(yy::parser::symbol_kind_type::S_INT), loc);
-boolean    return yy::parser::make_BOOLEAN(new AstNode(yy::parser::symbol_kind_type::S_BOOLEAN), loc);
-char    return yy::parser::make_CHAR(new AstNode(yy::parser::symbol_kind_type::S_CHAR), loc); 
-byte    return yy::parser::make_BYTE(new AstNode(yy::parser::symbol_kind_type::S_BYTE), loc);
-short   return yy::parser::make_SHORT(new AstNode(yy::parser::symbol_kind_type::S_SHORT), loc);
-"int\[\]"   return yy::parser::make_ARRAY(new AstNode(yy::parser::symbol_kind_type::S_ARRAY), loc);
+int     return yy::parser::make_INT(new AstNode(yy::parser::symbol_kind::S_INT), loc);
+boolean    return yy::parser::make_BOOLEAN(new AstNode(yy::parser::symbol_kind::S_BOOLEAN), loc);
+char    return yy::parser::make_CHAR(new AstNode(yy::parser::symbol_kind::S_CHAR), loc); 
+byte    return yy::parser::make_BYTE(new AstNode(yy::parser::symbol_kind::S_BYTE), loc);
+short   return yy::parser::make_SHORT(new AstNode(yy::parser::symbol_kind::S_SHORT), loc);
+"int\[\]"   return yy::parser::make_ARRAY(new AstNode(yy::parser::symbol_kind::S_ARRAY), loc);
 
 %{ // Literals %}
-true                return yy::parser::make_TRUE(new AstNode(yy::parser::symbol_kind_type::S_TRUE), loc);
-false               return yy::parser::make_FALSE(new AstNode(yy::parser::symbol_kind_type::S_FALSE), loc);
-\"({Ascii}|{Whitespace}|[\n\"\'\\\0])*\"     return yy::parser::make_STRING_LITERAL(new AstNode(yy::parser::symbol_kind_type::S_STRING_LITERAL), loc);
-{Integer}           return yy::parser::make_INTEGER(new AstNode(yy::parser::symbol_kind_type::S_INTEGER), loc);
-null                return yy::parser::make_NULL_TOKEN(new AstNode(yy::parser::symbol_kind_type::S_NULL_TOKEN), loc);
-\'{Ascii}\'         return yy::parser::make_CHAR_LITERAL(new AstNode(yy::parser::symbol_kind_type::S_CHAR_LITERAL), loc);
+true                return yy::parser::make_TRUE(new AstNode(yy::parser::symbol_kind::S_TRUE), loc);
+false               return yy::parser::make_FALSE(new AstNode(yy::parser::symbol_kind::S_FALSE), loc);
+\"({Ascii}|{Whitespace}|[\n\"\'\\\0])*\"     return yy::parser::make_STRING_LITERAL(new AstNode(yy::parser::symbol_kind::S_STRING_LITERAL), loc);
+{Integer}           return yy::parser::make_INTEGER(new AstNode(yy::parser::symbol_kind::S_INTEGER), loc);
+null                return yy::parser::make_NULL_TOKEN(new AstNode(yy::parser::symbol_kind::S_NULL_TOKEN), loc);
+\'{Ascii}\'         return yy::parser::make_CHAR_LITERAL(new AstNode(yy::parser::symbol_kind::S_CHAR_LITERAL), loc);
 
 %{ // Comments %}
 "//".*     { }
@@ -101,23 +101,23 @@ null                return yy::parser::make_NULL_TOKEN(new AstNode(yy::parser::s
 \/\*\*.*\*\/    { } 
 
 %{ // Operators %}
-"!"     return yy::parser::make_NEGATE(new AstNode(yy::parser::symbol_kind_type::S_NEGATE), loc);
-"+"     return yy::parser::make_PLUS(new AstNode(yy::parser::symbol_kind_type::S_PLUS), loc);
-"-"     return yy::parser::make_MINUS(new AstNode(yy::parser::symbol_kind_type::S_MINUS), loc);
-"*"     return yy::parser::make_ASTERISK(new AstNode(yy::parser::symbol_kind_type::S_ASTERISK), loc);
-"/"     return yy::parser::make_DIVIDE(new AstNode(yy::parser::symbol_kind_type::S_DIVIDE), loc);
-"%"     return yy::parser::make_MODULO(new AstNode(yy::parser::symbol_kind_type::S_MODULO), loc);
-"<"     return yy::parser::make_LESS_THAN(new AstNode(yy::parser::symbol_kind_type::S_LESS_THAN), loc);
-">"     return yy::parser::make_GREATER_THAN(new AstNode(yy::parser::symbol_kind_type::S_GREATER_THAN), loc);
-"<="    return yy::parser::make_LESS_THAN_EQUAL(new AstNode(yy::parser::symbol_kind_type::S_LESS_THAN_EQUAL), loc);
-">="    return yy::parser::make_GREATER_THAN_EQUAL(new AstNode(yy::parser::symbol_kind_type::S_GREATER_THAN_EQUAL), loc);
-"=="    return yy::parser::make_BOOLEAN_EQUAL(new AstNode(yy::parser::symbol_kind_type::S_BOOLEAN_EQUAL), loc);
-"!="    return yy::parser::make_NOT_EQUAL(new AstNode(yy::parser::symbol_kind_type::S_NOT_EQUAL), loc);
-"&"     return yy::parser::make_AMPERSAND(new AstNode(yy::parser::symbol_kind_type::S_AMPERSAND), loc);
-"|"     return yy::parser::make_PIPE(new AstNode(yy::parser::symbol_kind_type::S_PIPE), loc);
+"!"     return yy::parser::make_NEGATE(new AstNode(yy::parser::symbol_kind::S_NEGATE), loc);
+"+"     return yy::parser::make_PLUS(new AstNode(yy::parser::symbol_kind::S_PLUS), loc);
+"-"     return yy::parser::make_MINUS(new AstNode(yy::parser::symbol_kind::S_MINUS), loc);
+"*"     return yy::parser::make_ASTERISK(new AstNode(yy::parser::symbol_kind::S_ASTERISK), loc);
+"/"     return yy::parser::make_DIVIDE(new AstNode(yy::parser::symbol_kind::S_DIVIDE), loc);
+"%"     return yy::parser::make_MODULO(new AstNode(yy::parser::symbol_kind::S_MODULO), loc);
+"<"     return yy::parser::make_LESS_THAN(new AstNode(yy::parser::symbol_kind::S_LESS_THAN), loc);
+">"     return yy::parser::make_GREATER_THAN(new AstNode(yy::parser::symbol_kind::S_GREATER_THAN), loc);
+"<="    return yy::parser::make_LESS_THAN_EQUAL(new AstNode(yy::parser::symbol_kind::S_LESS_THAN_EQUAL), loc);
+">="    return yy::parser::make_GREATER_THAN_EQUAL(new AstNode(yy::parser::symbol_kind::S_GREATER_THAN_EQUAL), loc);
+"=="    return yy::parser::make_BOOLEAN_EQUAL(new AstNode(yy::parser::symbol_kind::S_BOOLEAN_EQUAL), loc);
+"!="    return yy::parser::make_NOT_EQUAL(new AstNode(yy::parser::symbol_kind::S_NOT_EQUAL), loc);
+"&"     return yy::parser::make_AMPERSAND(new AstNode(yy::parser::symbol_kind::S_AMPERSAND), loc);
+"|"     return yy::parser::make_PIPE(new AstNode(yy::parser::symbol_kind::S_PIPE), loc);
 
 {Whitespace}+      loc.step ();
-{Identifier}       return yy::parser::make_IDENTIFIER(new AstNode(yy::parser::symbol_kind_type::S_IDENTIFIER, yytext), loc);
+{Identifier}       return yy::parser::make_IDENTIFIER(new AstNode(yy::parser::symbol_kind::S_IDENTIFIER, yytext), loc);
 
 .          {
              throw yy::parser::syntax_error
