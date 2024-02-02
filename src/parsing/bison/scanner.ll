@@ -112,6 +112,7 @@ null                return yy::parser::make_NULL_TOKEN(loc);
 ">="    return yy::parser::make_GREATER_THAN_EQUAL(loc);
 "=="    return yy::parser::make_BOOLEAN_EQUAL(loc);
 "!="    return yy::parser::make_NOT_EQUAL(loc);
+"&&"    return yy::parser::make_BOOLEAN_AND(loc);
 "&"     return yy::parser::make_AMPERSAND(loc);
 "|"     return yy::parser::make_PIPE(loc);
 
