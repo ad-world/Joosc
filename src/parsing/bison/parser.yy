@@ -418,7 +418,7 @@ AbstractMethodModifiers:
     ;
 
 
-/*---------------------- Classes ----------------------*/ JAGVIR START HERE
+/*---------------------- Classes ---------------------- JAGVIR START HERE */
 
 // weeder: make sure at most one of implements and extends is present
 // weeder: modifier can only be abstract, final, public
