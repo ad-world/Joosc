@@ -13,10 +13,12 @@ public:
     AstNode* parent = NULL;
     vector<AstNode *> children;
     int type;
-    std::string value;
+    std::optional<std::variant<std::string, long int, char>> value;
     AstNode();
     AstNode(int type);
     AstNode(int type, std::string value);
+    AstNode(int type, long int value);
+    AstNode(int type, char value);
     
     void addChild(AstNode *node);
     template<typename... Args>

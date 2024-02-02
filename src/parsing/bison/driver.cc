@@ -52,7 +52,19 @@ int Driver::parse(const std::string &f) {
 #endif 
 
 #ifdef GRAPHVIZ
-        graph << "\n\t\"" << curr << "\" [label=\"" << GET_NAME(curr->type) << "\"]";
+        graph << "\n\t\"" << curr << "\" [label=\"" << GET_NAME(curr->type);
+        if ( curr->value.has_value() ) {
+            auto & innerValue = curr->value.value();
+            graph << "\\n";
+            if ( holds_alternative<string>(innerValue) ) {
+                graph << get<string>(innerValue);
+            } else if ( holds_alternative<long int>(innerValue) ) {
+                graph << get<long int>(innerValue);
+            } else if ( holds_alternative<char>(innerValue) ) {
+                graph << get<char>(innerValue);
+            }
+        }
+        graph << "\"]";
         graph << "\n\t\"" << curr << "\" -> {";
 #endif
 

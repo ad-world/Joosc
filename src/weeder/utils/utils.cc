@@ -1,9 +1,13 @@
 #include "utils.h"
 
 
-std::string Utils::getParserType(int type) {
-    return yy::parser::symbol_name(static_cast<yy::parser::symbol_kind_type>(type));
+#define GET_NAME(symbol) \
+    (((symbol) == yy::parser::symbol_kind::S_YYEMPTY) ? "YYEMPTY" \
+        : yy::parser::symbol_name( \
+            static_cast<yy::parser::symbol_kind_type>((symbol))))
 
+std::string Utils::getParserType(int type) {
+    return GET_NAME(type);
 }
 
 // Expects root to be CompilationUnit
@@ -63,7 +67,7 @@ std::string Utils::getFunctionName(AstNode *function) {
 
     for (const auto& node: methodHeader->children) {
         if(getParserType(node->type) == "MethodDeclarator") {
-            std::string ident = node->children[0]->value;
+            std::string ident = get<string>(node->children[0]->value.value());
 
             return ident;
         }
@@ -76,7 +80,7 @@ std::string Utils::getFunctionName(AstNode *function) {
 std::string Utils::getClassName(AstNode *root) {
     for (const auto& node: root->children) {
         if (getParserType(node->type) == "IDENTIFIER") {
-            return node->value;
+            return get<string>(node->value.value());
         } 
     }
 
