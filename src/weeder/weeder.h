@@ -34,5 +34,8 @@ private:
 
     // Print a list of violations, if found
     void printViolations();
+
+    // Get all literals and ensure they are correct
+    void checkLiterals(AstNode *root);
     
 };

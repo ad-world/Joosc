@@ -29,7 +29,9 @@ Digit           [0-9]
 Identifier      {Letter}({Digit}|{Letter}|_)*
 Integer         0|[1-9]{Digit}*
 Float           {Digit}+"."{Digit}+
-Ascii           [ -~]
+Ascii           [ -!]|[#-&]|[(-~]
+OctalEscape     \\[0-3]?[0-7]?[0-7]?
+Escape          \\[tbnrf\\]
 
 %{
   // Code run each time a pattern is matched.
@@ -42,7 +44,7 @@ Ascii           [ -~]
   // Code run each time yylex is called.
   loc.step ();
 %}
-volatile|super|long|float|double|throws|throw|try|catch|finally|do|switch|break|continue|synchronized  {
+volatile|super|long|float|double|throws|throw|try|catch|finally|do|switch|break|continue|synchronized|"--"  {
              throw yy::parser::syntax_error
                (loc, "invalid token: '" + std::string(yytext) + "' is not a valid joosc token, only a Java token");
 }
@@ -89,10 +91,14 @@ short   return yy::parser::make_SHORT(new AstNode(yy::parser::symbol_kind::S_SHO
 %{ // Literals %}
 true                return yy::parser::make_TRUE(new AstNode(yy::parser::symbol_kind::S_TRUE), loc);
 false               return yy::parser::make_FALSE(new AstNode(yy::parser::symbol_kind::S_FALSE), loc);
-\"({Ascii}|{Whitespace}|[\n\"\'\\\0])*\"     return yy::parser::make_STRING_LITERAL(new AstNode(yy::parser::symbol_kind::S_STRING_LITERAL), loc);
-{Integer}           return yy::parser::make_INTEGER(new AstNode(yy::parser::symbol_kind::S_INTEGER), loc);
+\"({Ascii}|{OctalEscape}|{Escape}|\\\"|\')*\"  {
+    return yy::parser::make_STRING_LITERAL(new AstNode(yy::parser::symbol_kind::S_STRING_LITERAL, ((std::string) yytext).substr(1, ((std::string) yytext).size() - 2)), loc);
+}
+{Integer}           return yy::parser::make_INTEGER(new AstNode(yy::parser::symbol_kind::S_INTEGER, stol(yytext)), loc);
 null                return yy::parser::make_NULL_TOKEN(new AstNode(yy::parser::symbol_kind::S_NULL_TOKEN), loc);
-\'{Ascii}\'         return yy::parser::make_CHAR_LITERAL(new AstNode(yy::parser::symbol_kind::S_CHAR_LITERAL), loc);
+\'({Ascii}|{OctalEscape}|{Escape}|\"|\\\')\'         {
+    return yy::parser::make_CHAR_LITERAL(new AstNode(yy::parser::symbol_kind::S_CHAR_LITERAL, ((std::string) yytext).substr(1, ((std::string) yytext).size() - 2)), loc);
+}
 
 %{ // Comments %}
 "//".*     { }

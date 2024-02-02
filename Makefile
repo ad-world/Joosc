@@ -3,7 +3,7 @@ all: build
 generate-parser:
 	make -C src/parsing/bison
 
-graph:
+graph: | generate-parser
 	(mkdir -p build && cd build && cmake -DGRAPHVIZ=ON .. && make && cp joosc ../joosc)
 
 build: | generate-parser
