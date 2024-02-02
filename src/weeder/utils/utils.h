@@ -21,5 +21,8 @@ class Utils {
     std::string getClassName(AstNode *root);
     // Expects *root to be ClassDeclaration
     std::vector<std::string> getClassModifiers(AstNode *root);
-
+    // Expects *root to be MethodDeclaration
+    std::vector<std::string> getFunctionModifiers(AstNode *root);
+    // Expects *root to be AstNode
+    bool hasFunctionBody(AstNode *root);
 };

@@ -83,6 +83,7 @@ std::string Utils::getClassName(AstNode *root) {
     return "";
 }
 
+// 
 std::vector<std::string> Utils::getClassModifiers(AstNode *root) {
     std::vector<std::string> result;
 
@@ -107,3 +108,31 @@ std::vector<std::string> Utils::getClassModifiers(AstNode *root) {
     return result;
 }
 
+std::vector<std::string> Utils::getFunctionModifiers(AstNode *root) {
+    AstNode *header = root->children[0];
+    std::vector<std::string> result;
+
+    if (getParserType(header->children[0]->type) == "Modifiers") {
+        deque<AstNode* > q;
+        q.push_front(header->children[0]);
+
+        while(!q.empty()) {
+            AstNode* top = q.front();
+            q.pop_front();
+
+            if(top->children.size() == 0) {
+                result.push_back(getParserType(top->type));
+            } else {
+                for (auto child: top->children) {
+                    q.push_back(child);
+                }
+            }
+        }
+    }
+
+    return result;
+}
+
+bool Utils::hasFunctionBody(AstNode* root) {
+    return getParserType(root->children[1]->type) == "Block";
+}

@@ -46,6 +46,7 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes) {
         bool constructorFound = false;
         std:string className = util->getClassName(c_class);
         std::vector<AstNode*> methods = util->getFunctionsFromClass(c_class);
+        checkMethodModifiersAndBody(methods);
 
         for (auto method: methods) {
             std::string functionName = util->getFunctionName(method);
@@ -69,6 +70,25 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes) {
         if ((abstractIt != classModifiers.end()) and (finalIt != classModifiers.end())) {
             addViolation(className + " cannot be both abstract and final.");
         }
+    }
+}
 
+void Weeder::checkMethodModifiersAndBody(std::vector<AstNode*> methods) {
+    for (auto method: methods) {
+        // --------------Check method has body if NOT native OR abstract --------
+        std::vector<std::string> modifiers = util->getFunctionModifiers(method);
+        std::string functionName = util->getFunctionName(method);
+        bool nativeOrAbstract = "false";
+
+        for (auto modifier: modifiers) {
+            if (modifier == "NATIVE" || modifier == "ABSTRACT") nativeOrAbstract = true;
+            if (nativeOrAbstract && util->hasFunctionBody(method)) {
+                addViolation(functionName + " cannot be abstract/native and have a function body.");
+                break;
+            } else if (!nativeOrAbstract && !util->hasFunctionBody(method)) {
+                addViolation("Non native/abstract function " + functionName + " must have a function body.");
+                break;
+            }
+        }
     }
 }
