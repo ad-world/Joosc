@@ -47,53 +47,53 @@ volatile|super|long|float|double|throws|throw|try|catch|finally|do|switch|break|
                (loc, "invalid token: '" + std::string(yytext) + "' is not a valid joosc token, only a Java token");
 }
 
-if    return yy::parser::make_IF(loc);
-while     return yy::parser::make_WHILE(loc);
-for     return yy::parser::make_FOR(loc);
-else    return yy::parser::make_ELSE(loc);
-extends     return yy::parser::make_EXTENDS(loc);
-new     return yy::parser::make_NEW(loc);
-public    return yy::parser::make_PUBLIC(loc);
-implements    return yy::parser::make_IMPLEMENTS(loc);
-protected     return yy::parser::make_PROTECTED(loc);
-private     return yy::parser::make_PRIVATE(loc);
-static    return yy::parser::make_STATIC(loc);
-abstract      return yy::parser::make_ABSTRACT(loc);
-this      return yy::parser::make_THIS(loc);
-void      return yy::parser::make_VOID(loc);
-final     return yy::parser::make_FINAL(loc);
-import      return yy::parser::make_IMPORT(loc);
-class      return yy::parser::make_CLASS(loc);
-package     return yy::parser::make_PACKAGE(loc);
-interface     return yy::parser::make_INTERFACE(loc);
-native    return yy::parser::make_NATIVE(loc);
-return    return yy::parser::make_RETURN(loc);
-instanceof return yy::parser::make_INSTANCEOF(loc);
-"{"       return yy::parser::make_OPENING_BRACE(loc);
-"}"       return yy::parser::make_CLOSING_BRACE(loc);
-"["       return yy::parser::make_OPENING_BRACKET(loc);
-"]"       return yy::parser::make_CLOSING_BRACKET(loc);
-"("       return yy::parser::make_OPENING_PAREN(loc);
-")"       return yy::parser::make_CLOSING_PAREN(loc);
-";"       return yy::parser::make_SEMI_COLON(loc);
-"."     return yy::parser::make_DOT(loc);
-"="     return yy::parser::make_ASSIGNMENT(loc);
+if    return yy::parser::make_IF(new AstNode("IF"), loc);
+while     return yy::parser::make_WHILE(new AstNode("WHILE"), loc);
+for     return yy::parser::make_FOR(new AstNode("FOR"), loc);
+else    return yy::parser::make_ELSE(new AstNode("ELSE"), loc);
+extends     return yy::parser::make_EXTENDS(new AstNode("EXTENDS"), loc);
+new     return yy::parser::make_NEW(new AstNode("NEW"), loc);
+public    return yy::parser::make_PUBLIC(new AstNode("PUBLIC"), loc);
+implements    return yy::parser::make_IMPLEMENTS(new AstNode("IMPLEMENTS"), loc);
+protected     return yy::parser::make_PROTECTED(new AstNode("PROTECTED"), loc);
+private     return yy::parser::make_PRIVATE(new AstNode("PRIVATE"), loc);
+static    return yy::parser::make_STATIC(new AstNode("STATIC"), loc);
+abstract      return yy::parser::make_ABSTRACT(new AstNode("ABSTRACT"), loc);
+this      return yy::parser::make_THIS(new AstNode("THIS"), loc);
+void      return yy::parser::make_VOID(new AstNode("VOID"), loc);
+final     return yy::parser::make_FINAL(new AstNode("FINAL"), loc);
+import      return yy::parser::make_IMPORT(new AstNode("IMPORT"), loc);
+class      return yy::parser::make_CLASS(new AstNode("CLASS"), loc);
+package     return yy::parser::make_PACKAGE(new AstNode("PACKAGE"), loc);
+interface     return yy::parser::make_INTERFACE(new AstNode("INTERFACE"), loc);
+native    return yy::parser::make_NATIVE(new AstNode("NATIVE"), loc);
+return    return yy::parser::make_RETURN(new AstNode("RETURN"), loc);
+instanceof return yy::parser::make_INSTANCEOF(new AstNode("INSTANCEOF"), loc);
+"{"       return yy::parser::make_OPENING_BRACE(new AstNode("OPENING_BRACE"), loc);
+"}"       return yy::parser::make_CLOSING_BRACE(new AstNode("CLOSING_BRACE"), loc);
+"["       return yy::parser::make_OPENING_BRACKET(new AstNode("OPENING_BRACKET"), loc);
+"]"       return yy::parser::make_CLOSING_BRACKET(new AstNode("CLOSING_BRACKET"), loc);
+"("       return yy::parser::make_OPENING_PAREN(new AstNode("OPENING_PAREN"), loc);
+")"       return yy::parser::make_CLOSING_PAREN(new AstNode("CLOSING_PAREN"), loc);
+";"       return yy::parser::make_SEMI_COLON(new AstNode("SEMI_COLON"), loc);
+"."     return yy::parser::make_DOT(new AstNode("DOT"), loc);
+"="     return yy::parser::make_ASSIGNMENT(new AstNode("ASSIGNMENT"), loc);
 
 %{ // Types %}
-int     return yy::parser::make_INT(loc);
-boolean    return yy::parser::make_BOOLEAN(loc);
-char    return yy::parser::make_CHAR(loc); 
-byte    return yy::parser::make_BYTE(loc);
-short   return yy::parser::make_SHORT(loc);
-"int\[\]"   return yy::parser::make_ARRAY(loc);
+int     return yy::parser::make_INT(new AstNode("INT"), loc);
+boolean    return yy::parser::make_BOOLEAN(new AstNode("BOOLEAN"), loc);
+char    return yy::parser::make_CHAR(new AstNode("CHAR"), loc); 
+byte    return yy::parser::make_BYTE(new AstNode("BYTE"), loc);
+short   return yy::parser::make_SHORT(new AstNode("SHORT"), loc);
+"int\[\]"   return yy::parser::make_ARRAY(new AstNode("ARRAY"), loc);
 
 %{ // Literals %}
-true                return yy::parser::make_TRUE(loc);
-false               return yy::parser::make_FALSE(loc);
-\"({Ascii}|{Whitespace}|[\n\"\'\\\0])*\"     return yy::parser::make_STRING_LITERAL(loc);
-{Integer}           return yy::parser::make_INTEGER(loc);
-null                return yy::parser::make_NULL_TOKEN(loc);
-\'{Ascii}\'         return yy::parser::make_CHAR_LITERAL(loc);
+true                return yy::parser::make_TRUE(new AstNode("TRUE"), loc);
+false               return yy::parser::make_FALSE(new AstNode("FALSE"), loc);
+\"({Ascii}|{Whitespace}|[\n\"\'\\\0])*\"     return yy::parser::make_STRING_LITERAL(new AstNode("STRING_LITERAL"), loc);
+{Integer}           return yy::parser::make_INTEGER(new AstNode("INTEGER"), loc);
+null                return yy::parser::make_NULL_TOKEN(new AstNode("NULL_TOKEN"), loc);
+\'{Ascii}\'         return yy::parser::make_CHAR_LITERAL(new AstNode("CHAR_LITERAL"), loc);
 
 %{ // Comments %}
 "//".*     { }
@@ -101,23 +101,24 @@ null                return yy::parser::make_NULL_TOKEN(loc);
 \/\*\*.*\*\/    { } 
 
 %{ // Operators %}
-"!"     return yy::parser::make_NEGATE(loc);
-"+"     return yy::parser::make_PLUS(loc);
-"-"     return yy::parser::make_MINUS(loc);
-"*"     return yy::parser::make_ASTERISK(loc);
-"/"     return yy::parser::make_DIVIDE(loc);
-"%"     return yy::parser::make_MODULO(loc);
-"<"     return yy::parser::make_LESS_THAN(loc);
-">"     return yy::parser::make_GREATER_THAN(loc);
-"<="    return yy::parser::make_LESS_THAN_EQUAL(loc);
-">="    return yy::parser::make_GREATER_THAN_EQUAL(loc);
-"=="    return yy::parser::make_BOOLEAN_EQUAL(loc);
-"!="    return yy::parser::make_NOT_EQUAL(loc);
-"&"     return yy::parser::make_AMPERSAND(loc);
-"|"     return yy::parser::make_PIPE(loc);
+"!"     return yy::parser::make_NEGATE(new AstNode("NEGATE"), loc);
+"+"     return yy::parser::make_PLUS(new AstNode("PLUS"), loc);
+"-"     return yy::parser::make_MINUS(new AstNode("MINUS"), loc);
+"*"     return yy::parser::make_ASTERISK(new AstNode("ASTERISK"), loc);
+"/"     return yy::parser::make_DIVIDE(new AstNode("DIVIDE"), loc);
+"%"     return yy::parser::make_MODULO(new AstNode("MODULO"), loc);
+"<"     return yy::parser::make_LESS_THAN(new AstNode("LESS_THAN"), loc);
+">"     return yy::parser::make_GREATER_THAN(new AstNode("GREATER_THAN"), loc);
+"<="    return yy::parser::make_LESS_THAN_EQUAL(new AstNode("LESS_THAN_EQUAL"), loc);
+">="    return yy::parser::make_GREATER_THAN_EQUAL(new AstNode("GREATER_THAN_EQUAL"), loc);
+"=="    return yy::parser::make_BOOLEAN_EQUAL(new AstNode("BOOLEAN_EQUAL"), loc);
+"!="    return yy::parser::make_NOT_EQUAL(new AstNode("NOT_EQUAL"), loc);
+"&"     return yy::parser::make_AMPERSAND(new AstNode("AMPERSAND"), loc);
+"|"     return yy::parser::make_PIPE(new AstNode("PIPE"), loc);
 
-{Whitespace}+   loc.step ();
-{Identifier}       return yy::parser::make_IDENTIFIER (yytext, loc);
+{Whitespace}+      loc.step ();
+{Identifier}       return yy::parser::make_IDENTIFIER(new AstNode("IDENTIFIER", yytext), loc);
+
 .          {
              throw yy::parser::syntax_error
                (loc, "invalid character: " + std::string(yytext));
