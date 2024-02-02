@@ -2,20 +2,25 @@
 
 #include <iostream>
 #include <vector>
+#include "../ast/ast.h"
+#include "utils/utils.h"
 
 class Weeder {
 public:
     // TODO: send root of parse tree to this function
-    int weed();
+    int weed(AstNode* root);
+
+    Weeder();
 
 private:
     std::vector<std::string> violations;
+    Utils *util;
 
     void checkAsciiRange(const std::string& source);
     
     // TODO: send vector of class nodes to this function. It will check modifiers + constructors
     // It will also check that constructors do not include explicit this() or super()
-    void checkClassModifiersAndConstructors();
+    void checkClassModifiersAndConstructors(std::vector<AstNode*> classes);
 
     // TODO: send vector class of methods to this function. This function will check if there is body if it is not native or abstract.
     // It will also check there are no explicit this() or super() calls if there is a function body
@@ -29,4 +34,5 @@ private:
 
     // Print a list of violations, if found
     void printViolations();
+    
 };

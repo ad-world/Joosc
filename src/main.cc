@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     int parsing_rc = ((rc == 0) ? PARSING_SUCCESS : PARSING_FAILURE);
 
     // TODO: pass this function the root of the parse tree / AST
-    int weeder_response = weeder.weed();
+    int weeder_response = weeder.weed(drv.root);
 
     if ( output_rc ) { cerr << "RETURN CODE " << parsing_rc << endl; }
     return parsing_rc;
