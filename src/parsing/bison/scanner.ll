@@ -112,6 +112,7 @@ null                return yy::parser::make_NULL_TOKEN(new AstNode(yy::parser::s
 ">="    return yy::parser::make_GREATER_THAN_EQUAL(new AstNode(yy::parser::symbol_kind::S_GREATER_THAN_EQUAL), loc);
 "=="    return yy::parser::make_BOOLEAN_EQUAL(new AstNode(yy::parser::symbol_kind::S_BOOLEAN_EQUAL), loc);
 "!="    return yy::parser::make_NOT_EQUAL(new AstNode(yy::parser::symbol_kind::S_NOT_EQUAL), loc);
+"&&"    return yy::parser::make_BOOLEAN_AND(new AstNode(yy::parser::symbol_kind::S_BOOLEAN_AND), loc);
 "&"     return yy::parser::make_AMPERSAND(new AstNode(yy::parser::symbol_kind::S_AMPERSAND), loc);
 "|"     return yy::parser::make_PIPE(new AstNode(yy::parser::symbol_kind::S_PIPE), loc);
 
