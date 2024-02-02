@@ -85,7 +85,6 @@ boolean    return yy::parser::make_BOOLEAN(loc);
 char    return yy::parser::make_CHAR(loc); 
 byte    return yy::parser::make_BYTE(loc);
 short   return yy::parser::make_SHORT(loc);
-"int\[\]"   return yy::parser::make_ARRAY(loc);
 
 %{ // Literals %}
 true                return yy::parser::make_TRUE(loc);
