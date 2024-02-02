@@ -17,11 +17,6 @@ AstNode::AstNode(int type, long int value) {
     this->value = value;
 }
 
-AstNode::AstNode(int type, char value) {
-    this->type = type;
-    this->value = value;
-}
-
 void AstNode::addChild(AstNode *node) {
     node->setParent(this);
     children.push_back(node);

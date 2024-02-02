@@ -1,5 +1,7 @@
 #include "weeder.h"
 #include <algorithm>
+#include <sstream>
+#include <stdexcept>
 
 
 Weeder::Weeder() {
@@ -31,6 +33,7 @@ int Weeder::weed(AstNode* root) {
 
     // weed program, if we found errors, return 42, else return 0
     checkClassModifiersAndConstructors(classes);
+    checkLiterals(root);
 
     if(!violations.empty()) {
         printViolations();
@@ -70,5 +73,35 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes) {
             addViolation(className + " cannot be both abstract and final.");
         }
 
+    }
+}
+
+void Weeder::checkLiterals(AstNode * root) {
+    vector<pair<AstNode *, AstNode *>> literals = util->getLiteralPairs(root);
+    for ( auto pair : literals ) {
+        auto & innerValue = pair.second->value.value();
+        switch ( pair.second->type ) {
+            case yy::parser::symbol_kind::S_INTEGER:
+                // Check range of integer
+                if ( pair.first != nullptr && pair.first->type == yy::parser::symbol_kind::S_MINUS ) {
+                    if ( -get<long int>(innerValue) < INT32_MIN ) {
+                        throw runtime_error("Integer out of range");
+                    }
+                } else if ( get<long int>(innerValue) > INT32_MAX ) {
+                    throw runtime_error("Integer out of range");
+                }
+                break;
+            case yy::parser::symbol_kind::S_STRING_LITERAL:
+                // Eventually need to unescape the characters, prob do this in Flex
+                break;
+            case yy::parser::symbol_kind::S_CHAR_LITERAL:
+                // Eventually need to unescape the characters, prob do this in Flex
+                break;
+        }
+        // cout << "(";
+        // if ( pair.first != nullptr ) {
+        //     cout << util->getParserType(pair.first->type) << ", ";
+        // }
+        // cout << util->getParserType(pair.second->type) << ")" << endl;
     }
 }

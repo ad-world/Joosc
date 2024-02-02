@@ -60,8 +60,6 @@ int Driver::parse(const std::string &f) {
                 graph << get<string>(innerValue);
             } else if ( holds_alternative<long int>(innerValue) ) {
                 graph << get<long int>(innerValue);
-            } else if ( holds_alternative<char>(innerValue) ) {
-                graph << get<char>(innerValue);
             }
         }
         graph << "\"]";

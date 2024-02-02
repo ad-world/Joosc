@@ -1,4 +1,6 @@
 #include "utils.h"
+#include <unordered_set>
+using namespace std;
 
 
 #define GET_NAME(symbol) \
@@ -111,3 +113,32 @@ std::vector<std::string> Utils::getClassModifiers(AstNode *root) {
     return result;
 }
 
+
+vector<pair<AstNode *, AstNode *>> Utils::getLiteralPairs(AstNode *root) {
+    vector<pair<AstNode *, AstNode *>> res;
+    unordered_set<int> types_to_get = {
+        yy::parser::symbol_kind::S_STRING_LITERAL,
+        yy::parser::symbol_kind::S_CHAR_LITERAL,
+        yy::parser::symbol_kind::S_INTEGER,
+    };
+
+    deque<AstNode *> q;
+    q.push_front(root);
+    
+    while ( !q.empty() ) {
+        AstNode *curr = q.front();
+        q.pop_front();
+
+        AstNode *prev = nullptr;
+        for ( auto child : curr->children ) {
+            q.push_back(child);
+
+            if ( types_to_get.find(child->type) != types_to_get.end() ) {
+                res.push_back({prev, child});
+            }
+            prev = child;
+        }
+    }
+
+    return res;
+}
