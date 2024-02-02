@@ -92,9 +92,20 @@ void Weeder::checkMethodModifiersAndBody(std::vector<AstNode*> methods) {
             }
         }
 
+        // ------------- Check that if not native or abstract, then body is present ------
         if(!nativeOrAbstract && !util->hasFunctionBody(method)) {
             addViolation("Non abstract/native method " + functionName + " must have a function body.");
         }   
+
+        // ------------ Check no this() or super() ---------------------------------------
+        std::vector<AstNode*> invocations = util->getMethodInvocations(method);
+
+        for (auto invoc: invocations) {
+            std::string funcName = invoc->children[0]->value;
+
+            if(funcName == "super") addViolation("No super() calls allowed inside functions. (" + functionName + ")" );
+            if(funcName == "this") addViolation("No this() calls allowed inside functions. (" + functionName + ")");
+        }
     }
 }
 

@@ -171,3 +171,27 @@ std::vector<std::string> Utils::getFunctionModifiers(AstNode *root) {
 bool Utils::hasFunctionBody(AstNode* root) {
     return getParserType(root->children[1]->type) == "Block";
 }
+
+// Exprects root to be MethodDeclarations
+std::vector<AstNode*> Utils::getMethodInvocations(AstNode* root) {
+    std::vector<AstNode*> result; 
+
+    deque<AstNode *> q;
+
+    q.push_front(root);
+
+    while (!q.empty()) {
+        AstNode *top = q.front();
+        q.pop_front();
+
+        if(getParserType(top->type) == "MethodInvocation") {
+            result.push_back(top);
+        }
+
+        for (auto child: top->children) {
+            q.push_back(child);
+        }
+    } 
+
+    return result;
+}

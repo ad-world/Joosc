@@ -1,15 +1,13 @@
-public final abstract class InvalidAbstractMethod {
-    public abstract void abstractMethod() {
-        // Invalid abstract method with a body
+public final class InvalidAbstractMethod {
+    public abstract void abstractMethod();
+
+    public abstract void anotherMethod();
+    public InvalidAbstractMethod() {
+        unction1();
+        function2();
+        super();
     }
 
-    public abstract void anotherMethod() {
-
-    }
-
-    public InvalidAbstractMethod();
-
-    public NonAbstractMethod();
 
     public abstract validAbstractMethod();
 
