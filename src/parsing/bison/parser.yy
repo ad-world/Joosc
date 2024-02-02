@@ -628,7 +628,7 @@ ClassBodyDeclarationsOpt:
     ;
 
 ClassBodyDeclarations:
-    ClassBodyDeclaration { MAKE_EMPTY($$); }
+    ClassBodyDeclaration { MAKE_ONE($$, $1); }
     | ClassBodyDeclarations ClassBodyDeclaration { MAKE_NODE($$, symbol_kind::S_ClassBodyDeclarations, $1, $2); }
     ;
 
