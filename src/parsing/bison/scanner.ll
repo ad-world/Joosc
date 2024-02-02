@@ -80,12 +80,20 @@ instanceof return yy::parser::make_INSTANCEOF(new AstNode(yy::parser::symbol_kin
 "="     return yy::parser::make_ASSIGNMENT(new AstNode(yy::parser::symbol_kind::S_ASSIGNMENT), loc);
 
 %{ // Types %}
+<<<<<<< HEAD
 int     return yy::parser::make_INT(new AstNode(yy::parser::symbol_kind::S_INT), loc);
 boolean    return yy::parser::make_BOOLEAN(new AstNode(yy::parser::symbol_kind::S_BOOLEAN), loc);
 char    return yy::parser::make_CHAR(new AstNode(yy::parser::symbol_kind::S_CHAR), loc); 
 byte    return yy::parser::make_BYTE(new AstNode(yy::parser::symbol_kind::S_BYTE), loc);
 short   return yy::parser::make_SHORT(new AstNode(yy::parser::symbol_kind::S_SHORT), loc);
 "int\[\]"   return yy::parser::make_ARRAY(new AstNode(yy::parser::symbol_kind::S_ARRAY), loc);
+=======
+int     return yy::parser::make_INT(loc);
+boolean    return yy::parser::make_BOOLEAN(loc);
+char    return yy::parser::make_CHAR(loc); 
+byte    return yy::parser::make_BYTE(loc);
+short   return yy::parser::make_SHORT(loc);
+>>>>>>> main
 
 %{ // Literals %}
 true                return yy::parser::make_TRUE(new AstNode(yy::parser::symbol_kind::S_TRUE), loc);

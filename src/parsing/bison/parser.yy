@@ -177,9 +177,12 @@ Expression:
     ;
 
 AssignmentExpression:
-    LeftHandSide ASSIGNMENT AssignmentExpression
+    Assignment
     | ConditionalOrExpression
     ;
+
+Assignment:
+    LeftHandSide ASSIGNMENT AssignmentExpression
 
 LeftHandSide:
     QualifiedIdentifier // ExpressionName
@@ -500,6 +503,7 @@ MethodHeader:
     | Modifiers Type MethodDeclarator
     | VOID MethodDeclarator
     | Modifiers VOID MethodDeclarator
+    | Modifiers MethodDeclarator // Represents constructor, todo weeding: reject if identifier is not class name
     ;
 
 MethodDeclarator: 
@@ -559,11 +563,11 @@ StatementWithoutTrailingSubstatement:
     ;
 
 ExpressionStatement:
-    StatementExpression
+    StatementExpression SEMI_COLON
     ;
 
 StatementExpression:
-    ASSIGNMENT
+    Assignment
     | MethodInvocation
     | ClassInstanceCreationExpression
     ;
