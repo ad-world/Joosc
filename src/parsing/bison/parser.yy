@@ -14,7 +14,7 @@
   # include "../parsetree/parsetreenode.h"
   # include "../parsetree/parsetreenode_t.h"
   # include "../../ast/ast.h"
-  
+
   class Driver;
 }
 
@@ -350,7 +350,7 @@ InterfaceDeclaration:
 
 Modifiers:
     Modifier { $$ = new AstNode(symbol_kind::S_Modifiers); $$->addChild($1); *root = $$; } 
-    | Modifiers Modifier { $$ = new AstNode(symbol_kind::S_Modifiers); $$->addChild($1); $$->addChild($2); *root = $$; } 
+    | Modifiers Modifier { $$ = new AstNode(symbol_kind::S_Modifiers); $$->addChild($1, $2); *root = $$; } 
     ;
 
 Modifier:  
@@ -414,7 +414,8 @@ AbstractMethodModifiers:
     | AbstractMethodModifiers AbstractMethodModifier
     ;
 
-/*---------------------- Classes ----------------------*/
+
+/*---------------------- Classes ----------------------*/ JAGVIR START HERE
 
 // weeder: make sure at most one of implements and extends is present
 // weeder: modifier can only be abstract, final, public
