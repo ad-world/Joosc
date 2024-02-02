@@ -325,10 +325,18 @@ ConditionalOrExpression:
     ;
 
 ConditionalAndExpression:
-    EqualityExpression { MAKE_1(); }
-    | ConditionalAndExpression BOOLEAN_AND EqualityExpression
+    InclusiveOrExpression { MAKE_1(); }
+    | ConditionalAndExpression BOOLEAN_AND InclusiveOrExpression
         { MAKE_3(symbol_kind::S_ConditionalAndExpression); }
     ;
+
+InclusiveOrExpression:
+    AndExpression
+    | InclusiveOrExpression PIPE AndExpression
+
+AndExpression:
+    EqualityExpression
+    | AndExpression AMPERSAND EqualityExpression
 
 EqualityExpression:
     RelationalExpression { MAKE_1(); }
@@ -484,6 +492,7 @@ IntegralType:
     BYTE { MAKE_1(); }
     | SHORT { MAKE_1(); }
     | INT { MAKE_1(); }
+    | CHAR { MAKE_1(); }
     ;
 
 BooleanType:
