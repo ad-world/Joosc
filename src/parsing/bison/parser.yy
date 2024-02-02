@@ -129,6 +129,8 @@
 %nterm <AstNode*> LeftHandSide
 %nterm <AstNode*> ConditionalOrExpression
 %nterm <AstNode*> ConditionalAndExpression
+%nterm <AstNode*> InclusiveOrExpression
+%nterm <AstNode*> AndExpression
 %nterm <AstNode*> EqualityExpression
 %nterm <AstNode*> RelationalExpression
 %nterm <AstNode*> AdditiveExpression
