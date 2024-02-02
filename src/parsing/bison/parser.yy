@@ -225,372 +225,362 @@
 %parse-param {AstNode **root}
 
 %{
-#define ASSIGN_SYMBOL(symbol)           $$ = new AstNode((symbol))
-
-#define MAKE_EMPTY()                    ASSIGN_SYMBOL(symbol_kind::S_YYEMPTY)
-#define MAKE_NODE(symbol, children...)  ASSIGN_SYMBOL(symbol); $$.addChild(children)
-
-#define MAKE_1  ()              $$ = $1
-#define MAKE_2  (symbol)        MAKE_NODE(symbol, $1, $2)
-#define MAKE_3  (symbol)        MAKE_NODE(symbol, $1, $2, $3)
-#define MAKE_4  (symbol)        MAKE_NODE(symbol, $1, $2, $3, $4)
-#define MAKE_5  (symbol)        MAKE_NODE(symbol, $1, $2, $3, $4, $5)
-#define MAKE_6  (symbol)        MAKE_NODE(symbol, $1, $2, $3, $4, $5, $6)
-#define MAKE_7  (symbol)        MAKE_NODE(symbol, $1, $2, $3, $4, $5, $6, $7)
-#define MAKE_8  (symbol)        MAKE_NODE(symbol, $1, $2, $3, $4, $5, $6, $7, $8)
-#define MAKE_9  (symbol)        MAKE_NODE(symbol, $1, $2, $3, $4, $5, $6, $7, $8, $9)
+#define MAKE_EMPTY(me)      me = new AstNode((symbol_kind::S_YYEMPTY))
+#define MAKE_ONE(me, you)   me = you
+#define MAKE_NODE(me, symbol, children...) \
+    me = new AstNode((symbol)); me->addChild(children)
 %}
 
 // Grammar
 %%
-%start CompilationUnit;
+%start Modifiers;
 
 /*---------------------- Packages ----------------------*/
 
 CompilationUnit:
     PackageDeclaration ImportDeclarations TypeDeclarations
-        { MAKE_3(symbol_kind::S_CompilationUnit); }
+        { MAKE_NODE($$, symbol_kind::S_CompilationUnit, $1, $2, $3); }
     | ImportDeclarations TypeDeclarations   // No PackageDeclaration
-        { MAKE_2(symbol_kind::S_CompilationUnit); }
+        { MAKE_NODE($$, symbol_kind::S_CompilationUnit, $1, $2); }
     | PackageDeclaration TypeDeclarations   // No ImportDeclarations
-        { MAKE_2(symbol_kind::S_CompilationUnit); }
+        { MAKE_NODE($$, symbol_kind::S_CompilationUnit, $1, $2); }
     | PackageDeclaration ImportDeclarations // No TypeDeclarations
-        { MAKE_2(symbol_kind::S_CompilationUnit); }
-    | PackageDeclaration { MAKE_1(); }
-    | ImportDeclaration { MAKE_1(); }
-    | TypeDeclaration { MAKE_1(); }
-    | /* Empty */ { MAKE_EMPTY(); }
+        { MAKE_NODE($$, symbol_kind::S_CompilationUnit, $1, $2); }
+    | PackageDeclaration { MAKE_ONE($$, $1); }
+    | ImportDeclaration { MAKE_ONE($$, $1); }
+    | TypeDeclaration { MAKE_ONE($$, $1); }
+    | /* Empty */ { MAKE_EMPTY($$); }
     ;
 
 PackageDeclaration:
     PACKAGE QualifiedIdentifier SEMI_COLON
-        { MAKE_3(symbol_kind::S_PackageDeclaration); }
+        { MAKE_NODE($$, symbol_kind::S_PackageDeclaration, $1, $2, $3); }
     ;
 
 ImportDeclarations:
-    ImportDeclaration { MAKE_1(); }
+    ImportDeclaration { MAKE_ONE($$, $1); }
     | ImportDeclarations ImportDeclaration
-        { MAKE_2(symbol_kind::S_ImportDeclarations); }
+        { MAKE_NODE($$, symbol_kind::S_ImportDeclarations, $1, $2); }
     ;
 
 TypeDeclarations:
-    TypeDeclaration { MAKE_1(); }
-    | TypeDeclarations TypeDeclaration { MAKE_2(symbol_kind::S_TypeDeclarations); }
+    TypeDeclaration { MAKE_ONE($$, $1); }
+    | TypeDeclarations TypeDeclaration { MAKE_NODE($$, symbol_kind::S_TypeDeclarations, $1, $2); }
     ;
 
 ImportDeclaration:
-	SingleTypeImportDeclaration { MAKE_1(); }
-	| TypeImportOnDemandDeclaration { MAKE_1(); }
+	SingleTypeImportDeclaration { MAKE_ONE($$, $1); }
+	| TypeImportOnDemandDeclaration { MAKE_ONE($$, $1); }
     ;
 
 SingleTypeImportDeclaration:
     IMPORT QualifiedIdentifier SEMI_COLON // TypeName
-        { MAKE_3(symbol_kind::S_SingleTypeImportDeclaration); }
+        { MAKE_NODE($$, symbol_kind::S_SingleTypeImportDeclaration, $1, $2, $3); }
     ;
 
 TypeImportOnDemandDeclaration:
     IMPORT QualifiedIdentifier DOT ASTERISK SEMI_COLON // PackageOrTypeName
-        { MAKE_5(symbol_kind::S_TypeImportOnDemandDeclaration); }
+        { MAKE_NODE($$, symbol_kind::S_TypeImportOnDemandDeclaration, $1, $2, $3, $4, $5); }
     ;
 
 TypeDeclaration:
-    ClassDeclaration { MAKE_1(); }
-    | InterfaceDeclaration { MAKE_1(); }
-    | SEMI_COLON { MAKE_1(); }
+    ClassDeclaration { MAKE_ONE($$, $1); }
+    | InterfaceDeclaration { MAKE_ONE($$, $1); }
+    | SEMI_COLON { MAKE_ONE($$, $1); }
     ;
 
 /*---------------------- Expressions ----------------------*/
 
 Expression:
-    AssignmentExpression { MAKE_1(); }
+    AssignmentExpression { MAKE_ONE($$, $1); }
     ;
 
 AssignmentExpression:
-    Assignment { MAKE_1(); }
-    | ConditionalOrExpression { MAKE_1(); }
+    Assignment { MAKE_ONE($$, $1); }
+    | ConditionalOrExpression { MAKE_ONE($$, $1); }
     ;
 
 Assignment:
-    LeftHandSide ASSIGNMENT AssignmentExpression { MAKE_3(symbol_kind::S_Assignment); }
+    LeftHandSide ASSIGNMENT AssignmentExpression { MAKE_NODE($$, symbol_kind::S_Assignment, $1, $2, $3); }
 
 LeftHandSide:
     QualifiedIdentifier // ExpressionName
-        { MAKE_1(); }
-    | FieldAccess { MAKE_1(); }
-    | ArrayAccess { MAKE_1(); }
+        { MAKE_ONE($$, $1); }
+    | FieldAccess { MAKE_ONE($$, $1); }
+    | ArrayAccess { MAKE_ONE($$, $1); }
     ;
 
 ConditionalOrExpression:
-    ConditionalAndExpression { MAKE_1(); }
+    ConditionalAndExpression { MAKE_ONE($$, $1); }
     | ConditionalOrExpression BOOLEAN_OR ConditionalAndExpression
-        { MAKE_3(symbol_kind::S_ConditionalOrExpression); }
+        { MAKE_NODE($$, symbol_kind::S_ConditionalOrExpression, $1, $2, $3); }
     ;
 
 ConditionalAndExpression:
-    InclusiveOrExpression { MAKE_1(); }
+    InclusiveOrExpression { MAKE_ONE($$, $1); }
     | ConditionalAndExpression BOOLEAN_AND InclusiveOrExpression
-        { MAKE_3(symbol_kind::S_ConditionalAndExpression); }
+        { MAKE_NODE($$, symbol_kind::S_ConditionalAndExpression, $1, $2, $3); }
     ;
 
 InclusiveOrExpression:
-    AndExpression
-    | InclusiveOrExpression PIPE AndExpression
+    AndExpression { MAKE_ONE($$, $1); }
+    | InclusiveOrExpression PIPE AndExpression { MAKE_NODE($$, symbol_kind::S_InclusiveOrExpression, $1, $2, $3); }
 
 AndExpression:
-    EqualityExpression
-    | AndExpression AMPERSAND EqualityExpression
+    EqualityExpression { MAKE_ONE($$, $1); }
+    | AndExpression AMPERSAND EqualityExpression { MAKE_NODE($$, symbol_kind::S_AndExpression, $1, $2, $3); }
 
 EqualityExpression:
-    RelationalExpression { MAKE_1(); }
-    | EqualityExpression BOOLEAN_EQUAL RelationalExpression  { MAKE_3(symbol_kind::S_EqualityExpression); }
-    | EqualityExpression NOT_EQUAL RelationalExpression { MAKE_3(symbol_kind::S_EqualityExpression); }
+    RelationalExpression { MAKE_ONE($$, $1); }
+    | EqualityExpression BOOLEAN_EQUAL RelationalExpression  { MAKE_NODE($$, symbol_kind::S_EqualityExpression, $1, $2, $3); }
+    | EqualityExpression NOT_EQUAL RelationalExpression { MAKE_NODE($$, symbol_kind::S_EqualityExpression, $1, $2, $3); }
     ;
 
 RelationalExpression:
-    AdditiveExpression { MAKE_1(); }
+    AdditiveExpression { MAKE_ONE($$, $1); }
     | RelationalExpression LESS_THAN AdditiveExpression
-        { MAKE_3(symbol_kind::S_RelationalExpression); }
+        { MAKE_NODE($$, symbol_kind::S_RelationalExpression, $1, $2, $3); }
     | RelationalExpression GREATER_THAN AdditiveExpression
-        { MAKE_3(symbol_kind::S_RelationalExpression); }
+        { MAKE_NODE($$, symbol_kind::S_RelationalExpression, $1, $2, $3); }
     | RelationalExpression LESS_THAN_EQUAL AdditiveExpression
-        { MAKE_3(symbol_kind::S_RelationalExpression); }
+        { MAKE_NODE($$, symbol_kind::S_RelationalExpression, $1, $2, $3); }
     | RelationalExpression GREATER_THAN_EQUAL AdditiveExpression
-        { MAKE_3(symbol_kind::S_RelationalExpression); }
+        { MAKE_NODE($$, symbol_kind::S_RelationalExpression, $1, $2, $3); }
     | RelationalExpression INSTANCEOF ReferenceType // ReferenceType
-        { MAKE_3(symbol_kind::S_RelationalExpression); }
+        { MAKE_NODE($$, symbol_kind::S_RelationalExpression, $1, $2, $3); }
     ;
 
 AdditiveExpression:
-    MultiplicativeExpression { MAKE_1(); }
-    | AdditiveExpression PLUS MultiplicativeExpression { MAKE_3(symbol_kind::S_AdditiveExpression); }
-    | AdditiveExpression MINUS MultiplicativeExpression { MAKE_3(symbol_kind::S_AdditiveExpression); }
+    MultiplicativeExpression { MAKE_ONE($$, $1); }
+    | AdditiveExpression PLUS MultiplicativeExpression { MAKE_NODE($$, symbol_kind::S_AdditiveExpression, $1, $2, $3); }
+    | AdditiveExpression MINUS MultiplicativeExpression { MAKE_NODE($$, symbol_kind::S_AdditiveExpression, $1, $2, $3); }
     ;
 
 MultiplicativeExpression:
-    UnaryExpression { MAKE_1(); }
-    | MultiplicativeExpression ASTERISK UnaryExpression { MAKE_3(symbol_kind::S_MultiplicativeExpression); }
-    | MultiplicativeExpression DIVIDE UnaryExpression { MAKE_3(symbol_kind::S_MultiplicativeExpression); }
-    | MultiplicativeExpression MODULO UnaryExpression { MAKE_3(symbol_kind::S_MultiplicativeExpression); }
+    UnaryExpression { MAKE_ONE($$, $1); }
+    | MultiplicativeExpression ASTERISK UnaryExpression { MAKE_NODE($$, symbol_kind::S_MultiplicativeExpression, $1, $2, $3); }
+    | MultiplicativeExpression DIVIDE UnaryExpression { MAKE_NODE($$, symbol_kind::S_MultiplicativeExpression, $1, $2, $3); }
+    | MultiplicativeExpression MODULO UnaryExpression { MAKE_NODE($$, symbol_kind::S_MultiplicativeExpression, $1, $2, $3); }
     ;
 
 UnaryExpression:
-    MINUS UnaryExpression { MAKE_2(symbol_kind::S_UnaryExpression); }
-    | UnaryExpressionNotPlusMinus { MAKE_1(); }
+    MINUS UnaryExpression { MAKE_NODE($$, symbol_kind::S_UnaryExpression, $1, $2); }
+    | UnaryExpressionNotPlusMinus { MAKE_ONE($$, $1); }
     ;
 
 UnaryExpressionNotPlusMinus:
-    NEGATE UnaryExpression { MAKE_2(symbol_kind::S_UnaryExpressionNotPlusMinus); }
-    | CastExpression { MAKE_1(); }
-    | PrimaryOrExpressionName { MAKE_1(); }
+    NEGATE UnaryExpression { MAKE_NODE($$, symbol_kind::S_UnaryExpressionNotPlusMinus, $1, $2); }
+    | CastExpression { MAKE_ONE($$, $1); }
+    | PrimaryOrExpressionName { MAKE_ONE($$, $1); }
     ;
 
 CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
-        { MAKE_4(symbol_kind::S_CastExpression); }
+        { MAKE_NODE($$, symbol_kind::S_CastExpression, $1, $2, $3, $4); }
     | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
-        { MAKE_4(symbol_kind::S_CastExpression); }
+        { MAKE_NODE($$, symbol_kind::S_CastExpression, $1, $2, $3, $4); }
     | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
-        { MAKE_6(symbol_kind::S_CastExpression); }
+        { MAKE_NODE($$, symbol_kind::S_CastExpression, $1, $2, $3, $4, $5, $6); }
     | OPENING_PAREN
         PrimitiveType OPENING_BRACKET CLOSING_BRACKET // ReferenceType as PrimitiveType with array
             CLOSING_PAREN UnaryExpressionNotPlusMinus
-        { MAKE_6(symbol_kind::S_CastExpression); }
+        { MAKE_NODE($$, symbol_kind::S_CastExpression, $1, $2, $3, $4, $5, $6); }
     ;
 
 PrimaryOrExpressionName:
-    Primary { MAKE_1(); }
+    Primary { MAKE_ONE($$, $1); }
     | QualifiedIdentifier // ExpressionName
-        { MAKE_1(); }
+        { MAKE_ONE($$, $1); }
     ;
 
 Primary:
-    PrimaryNoNewArray { MAKE_1(); }
-    | ArrayCreationExpression { MAKE_1(); }
+    PrimaryNoNewArray { MAKE_ONE($$, $1); }
+    | ArrayCreationExpression { MAKE_ONE($$, $1); }
     ;
 
 ArrayCreationExpression:
     NEW PrimitiveType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_4(symbol_kind::S_ArrayCreationExpression); }
+        { MAKE_NODE($$, symbol_kind::S_ArrayCreationExpression, $1, $2, $3, $4); }
     | NEW PrimitiveType OPENING_BRACKET Expression CLOSING_BRACKET
-        { MAKE_5(symbol_kind::S_ArrayCreationExpression); }
+        { MAKE_NODE($$, symbol_kind::S_ArrayCreationExpression, $1, $2, $3, $4, $5); }
     | NEW QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET // TypeName
-        { MAKE_4(symbol_kind::S_ArrayCreationExpression); }
+        { MAKE_NODE($$, symbol_kind::S_ArrayCreationExpression, $1, $2, $3, $4); }
     | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // TypeName
-        { MAKE_5(symbol_kind::S_ArrayCreationExpression); }
+        { MAKE_NODE($$, symbol_kind::S_ArrayCreationExpression, $1, $2, $3, $4, $5); }
     ;
 
 ClassInstanceCreationExpression:
     NEW QualifiedIdentifier OPENING_PAREN ArgumentListOpt CLOSING_PAREN
-        { MAKE_5(symbol_kind::S_ClassInstanceCreationExpression); }
+        { MAKE_NODE($$, symbol_kind::S_ClassInstanceCreationExpression, $1, $2, $3, $4, $5); }
 
 PrimaryNoNewArray:
-    Literal { MAKE_1(); }
-    | THIS { MAKE_1(); }
+    Literal { MAKE_ONE($$, $1); }
+    | THIS { MAKE_ONE($$, $1); }
     | QualifiedIdentifier DOT THIS // ClassName
-        { MAKE_3(symbol_kind::S_PrimaryNoNewArray); }
+        { MAKE_NODE($$, symbol_kind::S_PrimaryNoNewArray, $1, $2, $3); }
     | OPENING_PAREN Expression CLOSING_PAREN
-        { MAKE_3(symbol_kind::S_PrimaryNoNewArray); }
-    | ClassInstanceCreationExpression { MAKE_1(); }
-    | FieldAccess { MAKE_1(); }
-    | MethodInvocation { MAKE_1(); }
-    | ArrayAccess { MAKE_1(); }
+        { MAKE_NODE($$, symbol_kind::S_PrimaryNoNewArray, $1, $2, $3); }
+    | ClassInstanceCreationExpression { MAKE_ONE($$, $1); }
+    | FieldAccess { MAKE_ONE($$, $1); }
+    | MethodInvocation { MAKE_ONE($$, $1); }
+    | ArrayAccess { MAKE_ONE($$, $1); }
     ;
 
 Literal:
-    INTEGER  { MAKE_1(); }
-    | TRUE  { MAKE_1(); }
-    | FALSE  { MAKE_1(); }
-    | CHAR_LITERAL  { MAKE_1(); }
-    | STRING_LITERAL  { MAKE_1(); }
-    | NULL_TOKEN   { MAKE_1(); }
+    INTEGER  { MAKE_ONE($$, $1); }
+    | TRUE  { MAKE_ONE($$, $1); }
+    | FALSE  { MAKE_ONE($$, $1); }
+    | CHAR_LITERAL  { MAKE_ONE($$, $1); }
+    | STRING_LITERAL  { MAKE_ONE($$, $1); }
+    | NULL_TOKEN   { MAKE_ONE($$, $1); }
     ;
 
 ArrayAccess:
     QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // ExpressionName
-        { MAKE_4(symbol_kind::S_ArrayAccess); }
+        { MAKE_NODE($$, symbol_kind::S_ArrayAccess, $1, $2, $3, $4); }
     | PrimaryNoNewArray OPENING_BRACKET Expression CLOSING_BRACKET
-        { MAKE_4(symbol_kind::S_ArrayAccess); }
+        { MAKE_NODE($$, symbol_kind::S_ArrayAccess, $1, $2, $3, $4); }
     ;
 
 FieldAccess:
     Primary DOT Identifier
-        { MAKE_3(symbol_kind::S_FieldAccess); }
+        { MAKE_NODE($$, symbol_kind::S_FieldAccess, $1, $2, $3); }
     ;
 
 ArgumentListOpt:
-    /* Empty - No arguments */ { MAKE_EMPTY(); }
-    | ArgumentList { MAKE_1(); }
+    /* Empty - No arguments */ { MAKE_EMPTY($$); }
+    | ArgumentList { MAKE_ONE($$, $1); }
     ;
 
 ArgumentList:
-    Expression { MAKE_1(); }
+    Expression { MAKE_ONE($$, $1); }
     | Expression COMMA ArgumentList
-        { MAKE_3(symbol_kind::S_ArgumentList); }
+        { MAKE_NODE($$, symbol_kind::S_ArgumentList, $1, $2, $3); }
     ;
 
 Arguments:
     OPENING_PAREN ArgumentListOpt CLOSING_PAREN
-        { MAKE_3(symbol_kind::S_Arguments); }
+        { MAKE_NODE($$, symbol_kind::S_Arguments, $1, $2, $3); }
     ;
 
 MethodInvocation:
     QualifiedIdentifier Arguments // MethodName
-        { MAKE_2(symbol_kind::S_MethodInvocation); }
+        { MAKE_NODE($$, symbol_kind::S_MethodInvocation, $1, $2); }
     | Primary DOT Identifier Arguments
-        { MAKE_4(symbol_kind::S_MethodInvocation); }
+        { MAKE_NODE($$, symbol_kind::S_MethodInvocation, $1, $2, $3, $4); }
     ;
 
 Type:
-    PrimitiveType { MAKE_1(); }
-    | ReferenceType { MAKE_1(); }
+    PrimitiveType { MAKE_ONE($$, $1); }
+    | ReferenceType { MAKE_ONE($$, $1); }
     ;
 
 PrimitiveType:
-    IntegralType { MAKE_1(); }
-    | BooleanType { MAKE_1(); }
+    IntegralType { MAKE_ONE($$, $1); }
+    | BooleanType { MAKE_ONE($$, $1); }
     ;
 
 IntegralType:
-    BYTE { MAKE_1(); }
-    | SHORT { MAKE_1(); }
-    | INT { MAKE_1(); }
-    | CHAR { MAKE_1(); }
+    BYTE { MAKE_ONE($$, $1); }
+    | SHORT { MAKE_ONE($$, $1); }
+    | INT { MAKE_ONE($$, $1); }
+    | CHAR { MAKE_ONE($$, $1); }
     ;
 
 BooleanType:
-    BOOLEAN { MAKE_1(); }
+    BOOLEAN { MAKE_ONE($$, $1); }
     ;
 
 ClassOrInterfaceType:
     QualifiedIdentifier // ClassType, InterfaceType -> TypeName
-        { MAKE_1(); }
+        { MAKE_ONE($$, $1); }
 
 ReferenceType: // Done this way to disallow multidimensional arrays
     ClassOrInterfaceType
-        { MAKE_1(); }
+        { MAKE_ONE($$, $1); }
     | ClassOrInterfaceType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_3(symbol_kind::S_ReferenceType); }
+        { MAKE_NODE($$, symbol_kind::S_ReferenceType, $1, $2, $3); }
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_3(symbol_kind::S_ReferenceType); }
+        { MAKE_NODE($$, symbol_kind::S_ReferenceType, $1, $2, $3); }
     ;
 
 /*---------------------- Interfaces ----------------------*/
 
 InterfaceDeclaration:
     InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfacesOpt InterfaceBody
-        { MAKE_5(symbol_kind::S_InterfaceDeclaration); }
+        { MAKE_NODE($$, symbol_kind::S_InterfaceDeclaration, $1, $2, $3, $4, $5); }
     ;
 
 Modifiers:
-    Modifier { MAKE_1(); }
-    | Modifiers Modifier { MAKE_2(symbol_kind::S_Modifiers); }
+    Modifier { MAKE_ONE($$, $1); }
+    | Modifiers Modifier { MAKE_NODE($$, symbol_kind::S_Modifiers, $1, $2); }
     ;
 
 Modifier:
-    PUBLIC  { MAKE_1(); }
-    | PROTECTED  { MAKE_1(); }
-    | PRIVATE  { MAKE_1(); }
-    | ABSTRACT  { MAKE_1(); }
-    | STATIC  { MAKE_1(); }
-    | NATIVE  { MAKE_1(); }
+    PUBLIC  { MAKE_ONE($$, $1); }
+    | PROTECTED  { MAKE_ONE($$, $1); }
+    | PRIVATE  { MAKE_ONE($$, $1); }
+    | ABSTRACT  { MAKE_ONE($$, $1); }
+    | STATIC  { MAKE_ONE($$, $1); }
+    | NATIVE  { MAKE_ONE($$, $1); }
     ;
 
 InterfaceModifiersOpt:
-    /* Empty - optional */ { MAKE_EMPTY(); }
-    | Modifiers { MAKE_1(); }
+    /* Empty - optional */ { MAKE_EMPTY($$); }
+    | Modifiers { MAKE_ONE($$, $1); }
     ;
 
 InterfaceType:
-    QualifiedIdentifier { MAKE_1(); }
+    QualifiedIdentifier { MAKE_ONE($$, $1); }
     ;
 
 ExtendsInterfaces:
-    EXTENDS InterfaceType { MAKE_2(symbol_kind::S_ExtendsInterfaces); }
-    | ExtendsInterfaces COMMA InterfaceType { MAKE_3(symbol_kind::S_ExtendsInterfaces); }
+    EXTENDS InterfaceType { MAKE_NODE($$, symbol_kind::S_ExtendsInterfaces, $1, $2); }
+    | ExtendsInterfaces COMMA InterfaceType { MAKE_NODE($$, symbol_kind::S_ExtendsInterfaces, $1, $2, $3); }
     ;
 
 ExtendsInterfacesOpt:
-    /* Empty - optional interface */ { MAKE_EMPTY(); }
-    | ExtendsInterfaces { MAKE_1(); }
+    /* Empty - optional interface */ { MAKE_EMPTY($$); }
+    | ExtendsInterfaces { MAKE_ONE($$, $1); }
     ;
 
 InterfaceBody:
     OPENING_BRACE InterfaceMemberDeclarationsOpt CLOSING_BRACE
-        { MAKE_3(symbol_kind::S_InterfaceBody); }
+        { MAKE_NODE($$, symbol_kind::S_InterfaceBody, $1, $2, $3); }
     ;
 
 InterfaceMemberDeclarationsOpt:
-    /* Empty - No interface body declarations */ { MAKE_EMPTY(); }
-    | InterfaceMemberDeclarations { MAKE_1(); }
+    /* Empty - No interface body declarations */ { MAKE_EMPTY($$); }
+    | InterfaceMemberDeclarations { MAKE_ONE($$, $1); }
     ;
 
 InterfaceMemberDeclarations:
-    InterfaceMemberDeclaration { MAKE_1(); }
+    InterfaceMemberDeclaration { MAKE_ONE($$, $1); }
     | InterfaceMemberDeclarations InterfaceMemberDeclaration
-        { MAKE_2(symbol_kind::S_InterfaceMemberDeclarations); }
+        { MAKE_NODE($$, symbol_kind::S_InterfaceMemberDeclarations, $1, $2); }
     ;
 
 InterfaceMemberDeclaration: // Nested types and interface constants not supported
-    AbstractMethodDeclaration { MAKE_1(); }
+    AbstractMethodDeclaration { MAKE_ONE($$, $1); }
     ;
 
 AbstractMethodDeclaration:
     AbstractMethodModifiersOpt Type MethodDeclarator SEMI_COLON
-        { MAKE_4(symbol_kind::S_AbstractMethodDeclaration); }
+        { MAKE_NODE($$, symbol_kind::S_AbstractMethodDeclaration, $1, $2, $3, $4); }
     | AbstractMethodModifiersOpt VOID MethodDeclarator SEMI_COLON
-        { MAKE_4(symbol_kind::S_AbstractMethodDeclaration); }
+        { MAKE_NODE($$, symbol_kind::S_AbstractMethodDeclaration, $1, $2, $3, $4); }
     ;
 
 AbstractMethodModifiersOpt:
-    /* Empty - optional */ { MAKE_EMPTY(); }
-    | AbstractMethodModifiers { MAKE_1(); }
+    /* Empty - optional */ { MAKE_EMPTY($$); }
+    | AbstractMethodModifiers { MAKE_ONE($$, $1); }
     ;
 
 AbstractMethodModifiers:
     AbstractMethodModifier
-        { MAKE_1(); }
+        { MAKE_ONE($$, $1); }
     | AbstractMethodModifiers AbstractMethodModifier
-        { MAKE_2(symbol_kind::S_AbstractMethodModifiers); }
+        { MAKE_NODE($$, symbol_kind::S_AbstractMethodModifiers, $1, $2); }
     ;
 
 
@@ -602,275 +592,275 @@ AbstractMethodModifiers:
 // weeder: must contain public?
 ClassDeclaration:
     CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_FIVE(symbol_kind::S_ClassDeclaration); }
+        { MAKE_NODE($$, symbol_kind::S_ClassDeclaration, $1, $2, $3, $4, $5); }
     | Modifiers CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_SIX(symbol_kind::S_ClassDeclaration); }
+        { MAKE_NODE($$, symbol_kind::S_ClassDeclaration, $1, $2, $3, $4, $5, $6); }
     ;
 
 /* Class interfaces */
 InterfacesOpt:
-    /* Empty - No implements */ { MAKE_EMPTY(); }
-    | Interfaces { MAKE_1(); }
+    /* Empty - No implements */ { MAKE_EMPTY($$); }
+    | Interfaces { MAKE_ONE($$, $1); }
     ;
 
 Interfaces:
-    IMPLEMENTS InterfaceTypeList { MAKE_2(symbol_kind::S_Interfaces); }
+    IMPLEMENTS InterfaceTypeList { MAKE_NODE($$, symbol_kind::S_Interfaces, $1, $2); }
     ;
 
 InterfaceTypeList:
-    InterfaceType { MAKE_1(); }
-    | InterfaceTypeList COMMA InterfaceType { MAKE_3(symbol_kind::S_InterfaceTypeList); }
+    InterfaceType { MAKE_ONE($$, $1); }
+    | InterfaceTypeList COMMA InterfaceType { MAKE_NODE($$, symbol_kind::S_InterfaceTypeList, $1, $2, $3); }
     ;
 
 /* Class Extends */
 ExtendsOpt:
-    /* Empty - No extends */ { MAKE_EMPTY(); }
-    | EXTENDS QualifiedIdentifier { MAKE_2(symbol_kind::S_ExtendsOpt); } // ClassType
+    /* Empty - No extends */ { MAKE_EMPTY($$); }
+    | EXTENDS QualifiedIdentifier { MAKE_NODE($$, symbol_kind::S_ExtendsOpt, $1, $2); } // ClassType
     ;
 
 /* Class body */
 ClassBodyDeclarationsOpt:
-    /* Empty */ { MAKE_EMPTY(); }
-    | ClassBodyDeclarations { MAKE_1(); }
+    /* Empty */ { MAKE_EMPTY($$); }
+    | ClassBodyDeclarations { MAKE_ONE($$, $1); }
     ;
 
 ClassBodyDeclarations:
-    ClassBodyDeclaration { MAKE_EMPTY(); }
-    | ClassBodyDeclarations ClassBodyDeclaration { MAKE_2(symbol_kind::S_ClassBodyDeclarations); }
+    ClassBodyDeclaration { MAKE_EMPTY($$); }
+    | ClassBodyDeclarations ClassBodyDeclaration { MAKE_NODE($$, symbol_kind::S_ClassBodyDeclarations, $1, $2); }
     ;
 
 ClassBodyDeclaration:
-    ClassMemberDeclaration { MAKE_1(); }
+    ClassMemberDeclaration { MAKE_ONE($$, $1); }
     ;
     // ensure there is at least one constructor
     // | InstanceInitializer: omitted from joos
     // | StaticInitializer: omitted from joos
 
 ClassMemberDeclaration:
-    FieldDeclaration { MAKE_1(); }
-    | MethodDeclaration { MAKE_1(); }
-    | SEMI_COLON { MAKE_1(); }
+    FieldDeclaration { MAKE_ONE($$, $1); }
+    | MethodDeclaration { MAKE_ONE($$, $1); }
+    | SEMI_COLON { MAKE_ONE($$, $1); }
     ;
     // | ClassDeclaration: omitted for joos
     // | InterfaceDeclaration: NOT SURE IF THIS SHOULD BE OMITTED FOR JOOS
 
 ClassBody:
-    OPENING_BRACE ClassBodyDeclarationsOpt CLOSING_BRACE { MAKE_3(symbol_kind::S_ClassBody); }
+    OPENING_BRACE ClassBodyDeclarationsOpt CLOSING_BRACE { MAKE_NODE($$, symbol_kind::S_ClassBody, $1, $2, $3); }
     ;
 
 /* Fields */
 // Only one variable declaration is allowed at a time
 FieldDeclaration:
-    Type VariableDeclarator SEMI_COLON { MAKE_3(symbol_kind::S_FieldDeclaration); }
-    | Modifiers Type VariableDeclarator SEMI_COLON { MAKE_4(symbol_kind::S_FieldDeclaration); }
+    Type VariableDeclarator SEMI_COLON { MAKE_NODE($$, symbol_kind::S_FieldDeclaration, $1, $2, $3); }
+    | Modifiers Type VariableDeclarator SEMI_COLON { MAKE_NODE($$, symbol_kind::S_FieldDeclaration, $1, $2, $3, $4); }
     ;
 
 VariableInitializer:
-    Expression { MAKE_1(); }
+    Expression { MAKE_ONE($$, $1); }
     ;
 
 /* Methods */
 // weeder: methodbody exists if neither abstract nor native
 MethodDeclaration: // One of these must be constructor
-    MethodHeader MethodBody { MAKE_2(symbol_kind::S_MethodDeclaration); }
+    MethodHeader MethodBody { MAKE_NODE($$, symbol_kind::S_MethodDeclaration, $1, $2); }
     ;
 
 // weeder: allow static native int m(int)
 // weeder: see A1 specs for weeding modifiers
 MethodHeader:
-    Type MethodDeclarator { MAKE_2(symbol_kind::S_MethodHeader); }
-    | Modifiers Type MethodDeclarator { MAKE_3(symbol_kind::S_MethodHeader); }
-    | VOID MethodDeclarator { MAKE_2(symbol_kind::S_MethodHeader); }
-    | Modifiers VOID MethodDeclarator { MAKE_3(symbol_kind::S_MethodHeader); }
+    Type MethodDeclarator { MAKE_NODE($$, symbol_kind::S_MethodHeader, $1, $2); }
+    | Modifiers Type MethodDeclarator { MAKE_NODE($$, symbol_kind::S_MethodHeader, $1, $2, $3); }
+    | VOID MethodDeclarator { MAKE_NODE($$, symbol_kind::S_MethodHeader, $1, $2); }
+    | Modifiers VOID MethodDeclarator { MAKE_NODE($$, symbol_kind::S_MethodHeader, $1, $2, $3); }
     | Modifiers MethodDeclarator // Represents constructor, todo weeding: reject if identifier is not class name
-        { MAKE_2(symbol_kind::S_MethodHeader); }
+        { MAKE_NODE($$, symbol_kind::S_MethodHeader, $1, $2); }
     ;
 
 MethodDeclarator:
     Identifier OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
-        { MAKE_4(symbol_kind::S_MethodDeclarator); }
+        { MAKE_NODE($$, symbol_kind::S_MethodDeclarator, $1, $2, $3, $4); }
     ;
 
 MethodBody:
-    SEMI_COLON { MAKE_1(); }
-    | Block { MAKE_1(); }
+    SEMI_COLON { MAKE_ONE($$, $1); }
+    | Block { MAKE_ONE($$, $1); }
     ;
 
 /* Formal parameters */
 FormalParameterListOpt:
-    { MAKE_EMPTY(); }
-    | FormalParameterList { MAKE_1(); }
+    { MAKE_EMPTY($$); }
+    | FormalParameterList { MAKE_ONE($$, $1); }
     ;
 
 FormalParameterList:
-    FormalParameter { MAKE_1(); }
-    | FormalParameterList COMMA FormalParameter { MAKE_3(symbol_kind::S_FormalParameterList); }
+    FormalParameter { MAKE_ONE($$, $1); }
+    | FormalParameterList COMMA FormalParameter { MAKE_NODE($$, symbol_kind::S_FormalParameterList, $1, $2, $3); }
     ;
 /*-----------------------*/
 
 AbstractMethodModifier:
-    PUBLIC { MAKE_1(); }
-    | ABSTRACT { MAKE_1(); }
+    PUBLIC { MAKE_ONE($$, $1); }
+    | ABSTRACT { MAKE_ONE($$, $1); }
     ;
 
 FinalOpt:
-    /* Empty - No final keyword */ { MAKE_EMPTY(); }
-    | FINAL { MAKE_1(); }
+    /* Empty - No final keyword */ { MAKE_EMPTY($$); }
+    | FINAL { MAKE_ONE($$, $1); }
     ;
 
 FormalParameter:
-	FinalOpt Type VariableDeclaratorId { MAKE_3(symbol_kind::S_FormalParameter); }
+	FinalOpt Type VariableDeclaratorId { MAKE_NODE($$, symbol_kind::S_FormalParameter, $1, $2, $3); }
     ;
 
 VariableDeclaratorId:
-    Identifier { MAKE_1(); }
-    | Identifier OPENING_BRACKET CLOSING_BRACKET { MAKE_3(symbol_kind::S_VariableDeclaratorId); }
+    Identifier { MAKE_ONE($$, $1); }
+    | Identifier OPENING_BRACKET CLOSING_BRACKET { MAKE_NODE($$, symbol_kind::S_VariableDeclaratorId, $1, $2, $3); }
     ;
 
 /*---------------------- Statements ----------------------*/
 
 Statement:
-    StatementWithoutTrailingSubstatement { MAKE_1(); }
-    | IfThenStatement { MAKE_1(); }
-    | IfThenElseStatement { MAKE_1(); }
-    | WhileStatement { MAKE_1(); }
-    | ForStatement { MAKE_1(); }
+    StatementWithoutTrailingSubstatement { MAKE_ONE($$, $1); }
+    | IfThenStatement { MAKE_ONE($$, $1); }
+    | IfThenElseStatement { MAKE_ONE($$, $1); }
+    | WhileStatement { MAKE_ONE($$, $1); }
+    | ForStatement { MAKE_ONE($$, $1); }
     ;
 
 StatementWithoutTrailingSubstatement:
-    Block { MAKE_1(); }
-    | EmptyStatement { MAKE_1(); }
-    | ExpressionStatement { MAKE_1(); }
-    | ReturnStatement { MAKE_1(); }
+    Block { MAKE_ONE($$, $1); }
+    | EmptyStatement { MAKE_ONE($$, $1); }
+    | ExpressionStatement { MAKE_ONE($$, $1); }
+    | ReturnStatement { MAKE_ONE($$, $1); }
     ;
 
 ExpressionStatement:
-    StatementExpression SEMI_COLON { MAKE_2(symbol_kind::S_ExpressionStatement); }
+    StatementExpression SEMI_COLON { MAKE_NODE($$, symbol_kind::S_ExpressionStatement, $1, $2); }
     ;
 
 StatementExpression:
-    Assignment { MAKE_1(); }
-    | MethodInvocation { MAKE_1(); }
-    | ClassInstanceCreationExpression { MAKE_1(); }
+    Assignment { MAKE_ONE($$, $1); }
+    | MethodInvocation { MAKE_ONE($$, $1); }
+    | ClassInstanceCreationExpression { MAKE_ONE($$, $1); }
     ;
 
 StatementNoShortIf:
-    StatementWithoutTrailingSubstatement { MAKE_1(); }
-    | IfThenElseStatementNoShortIf { MAKE_1(); }
-    | WhileStatementNoShortIf { MAKE_1(); }
-    | ForStatementNoShortIf { MAKE_1(); }
+    StatementWithoutTrailingSubstatement { MAKE_ONE($$, $1); }
+    | IfThenElseStatementNoShortIf { MAKE_ONE($$, $1); }
+    | WhileStatementNoShortIf { MAKE_ONE($$, $1); }
+    | ForStatementNoShortIf { MAKE_ONE($$, $1); }
     ;
 
 EmptyStatement:
-    SEMI_COLON { MAKE_1(); }
+    SEMI_COLON { MAKE_ONE($$, $1); }
 	;
 
 IfThenStatement:
-	IF ParExpression Statement { MAKE_3(symbol_kind::S_IfThenStatement); }
+	IF ParExpression Statement { MAKE_NODE($$, symbol_kind::S_IfThenStatement, $1, $2, $3); }
     ;
 
 IfThenElseStatement:
-	IF ParExpression StatementNoShortIf ELSE Statement { MAKE_5(symbol_kind::S_IfThenElseStatement); }
+	IF ParExpression StatementNoShortIf ELSE Statement { MAKE_NODE($$, symbol_kind::S_IfThenElseStatement, $1, $2, $3, $4, $5); }
     ;
 
 IfThenElseStatementNoShortIf:
-	IF ParExpression StatementNoShortIf ELSE StatementNoShortIf { MAKE_5(symbol_kind::S_IfThenElseStatementNoShortIf); }
+	IF ParExpression StatementNoShortIf ELSE StatementNoShortIf { MAKE_NODE($$, symbol_kind::S_IfThenElseStatementNoShortIf, $1, $2, $3, $4, $5); }
     ;
 
 WhileStatement:
-	  WHILE ParExpression Statement { MAKE_3(symbol_kind::S_WhileStatement); }
+	  WHILE ParExpression Statement { MAKE_NODE($$, symbol_kind::S_WhileStatement, $1, $2, $3); }
     ;
 
 WhileStatementNoShortIf:
-	  WHILE ParExpression StatementNoShortIf { MAKE_3(symbol_kind::S_WhileStatementNoShortIf); }
+	  WHILE ParExpression StatementNoShortIf { MAKE_NODE($$, symbol_kind::S_WhileStatementNoShortIf, $1, $2, $3); }
     ;
 
 ForStatement:
 	  FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
-          { MAKE_NINE(symbol_kind::S_ForStatement); }
+          { MAKE_NODE($$, symbol_kind::S_ForStatement, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
     ;
 
 ForStatementNoShortIf:
 	  FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN StatementNoShortIf
-          { MAKE_NINE(symbol_kind::S_ForStatementNoShortIf); }
+          { MAKE_NODE($$, symbol_kind::S_ForStatementNoShortIf, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
     ;
 		
 ForInitOpt:
-    /* No init */ { MAKE_EMPTY(); }
-    | ForInit { MAKE_1(); }
+    /* No init */ { MAKE_EMPTY($$); }
+    | ForInit { MAKE_ONE($$, $1); }
     ;
 
 ForInit:
-    StatementExpression { MAKE_1(); }
-    | LocalVariableDeclaration { MAKE_1(); }
+    StatementExpression { MAKE_ONE($$, $1); }
+    | LocalVariableDeclaration { MAKE_ONE($$, $1); }
     ;
 
 ForUpdateOpt:
-    /* Empty - no update */ { MAKE_EMPTY(); }
-    | StatementExpression { MAKE_1(); }
+    /* Empty - no update */ { MAKE_EMPTY($$); }
+    | StatementExpression { MAKE_ONE($$, $1); }
     ;
 
 ExpressionOpt:
-    /* no expression */ { MAKE_EMPTY(); }
-    | Expression { MAKE_1(); }
+    /* no expression */ { MAKE_EMPTY($$); }
+    | Expression { MAKE_ONE($$, $1); }
     ;
 
 ReturnStatement:
-    RETURN ExpressionOpt SEMI_COLON { MAKE_3(symbol_kind::S_ReturnStatement); }
+    RETURN ExpressionOpt SEMI_COLON { MAKE_NODE($$, symbol_kind::S_ReturnStatement, $1, $2, $3); }
     ;
 
 ParExpression:
-    OPENING_PAREN Expression CLOSING_PAREN { MAKE_3(symbol_kind::S_ParExpression); }
+    OPENING_PAREN Expression CLOSING_PAREN { MAKE_NODE($$, symbol_kind::S_ParExpression, $1, $2, $3); }
     ;
 
 QualifiedIdentifier:
-    Identifier { MAKE_1(); }
-    | QualifiedIdentifier DOT Identifier { MAKE_3(symbol_kind::S_QualifiedIdentifier); }
+    Identifier { MAKE_ONE($$, $1); }
+    | QualifiedIdentifier DOT Identifier { MAKE_NODE($$, symbol_kind::S_QualifiedIdentifier, $1, $2, $3); }
     ;
 
 Identifier:
-    IDENTIFIER { MAKE_1(); }
+    IDENTIFIER { MAKE_ONE($$, $1); }
     ;
 
 // Delay Type reduce due to conflict
 LocalVariableDeclaration:
     // Type VariableDeclarators
     QualifiedIdentifier VariableDeclarator // ClassOrInterfaceType VariableDeclarators
-        { MAKE_2(symbol_kind::S_LocalVariableDeclaration); }
+        { MAKE_NODE($$, symbol_kind::S_LocalVariableDeclaration, $1, $2); }
     | QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // ClassOrInterfaceTypeArray VariableDeclarators
-        { MAKE_4(symbol_kind::S_LocalVariableDeclaration); }
+        { MAKE_NODE($$, symbol_kind::S_LocalVariableDeclaration, $1, $2, $3, $4); }
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // PrimitiveArray VariableDeclarators
-        { MAKE_4(symbol_kind::S_LocalVariableDeclaration); }
-    | PrimitiveType VariableDeclarator { MAKE_2(symbol_kind::S_LocalVariableDeclaration); }
+        { MAKE_NODE($$, symbol_kind::S_LocalVariableDeclaration, $1, $2, $3, $4); }
+    | PrimitiveType VariableDeclarator { MAKE_NODE($$, symbol_kind::S_LocalVariableDeclaration, $1, $2); }
     ;
 
 Block:
-    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE { MAKE_3(symbol_kind::S_Block); }
+    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE { MAKE_NODE($$, symbol_kind::S_Block, $1, $2, $3); }
     ;
 
 BlockStatementsOpt:
-    /* Empty - represents zero BlockStatements */ { MAKE_EMPTY(); }
-    | BlockStatements { MAKE_1(); }
+    /* Empty - represents zero BlockStatements */ { MAKE_EMPTY($$); }
+    | BlockStatements { MAKE_ONE($$, $1); }
     ;
 
 BlockStatements:
-    BlockStatement { MAKE_1(); }
-    | BlockStatements BlockStatement { MAKE_2(symbol_kind::S_BlockStatements); }
+    BlockStatement { MAKE_ONE($$, $1); }
+    | BlockStatements BlockStatement { MAKE_NODE($$, symbol_kind::S_BlockStatements, $1, $2); }
     ;
 
 BlockStatement:
-    LocalVariableDeclarationStatement  { MAKE_1(); }
-    | ClassDeclaration { MAKE_1(); }
-    | Statement { MAKE_1(); }
+    LocalVariableDeclarationStatement  { MAKE_ONE($$, $1); }
+    | ClassDeclaration { MAKE_ONE($$, $1); }
+    | Statement { MAKE_ONE($$, $1); }
     ;
 
 LocalVariableDeclarationStatement:
-    LocalVariableDeclaration SEMI_COLON { MAKE_2(symbol_kind::S_LocalVariableDeclarationStatement); }
+    LocalVariableDeclaration SEMI_COLON { MAKE_NODE($$, symbol_kind::S_LocalVariableDeclarationStatement, $1, $2); }
     ;
 
 VariableDeclarator:
-    VariableDeclaratorId { MAKE_1(); }
-    | VariableDeclaratorId ASSIGNMENT VariableInitializer { MAKE_3(symbol_kind::S_VariableDeclarator); }
+    VariableDeclaratorId { MAKE_ONE($$, $1); }
+    | VariableDeclaratorId ASSIGNMENT VariableInitializer { MAKE_NODE($$, symbol_kind::S_VariableDeclarator, $1, $2, $3); }
     ;
 
 // -------------------------------------------------------------
