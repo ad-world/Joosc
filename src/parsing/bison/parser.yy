@@ -13,6 +13,8 @@
   # include <vector>
   # include "../parsetree/parsetreenode.h"
   # include "../parsetree/parsetreenode_t.h"
+  # include "../../ast/ast.h"
+  
   class Driver;
 }
 
@@ -35,87 +37,92 @@
 /*=============================================================================
                               Token Definitions
 =============================================================================*/
-%token IF
-%token WHILE
-%token FOR
-%token ELSE
-%token EXTENDS
-%token IMPLEMENTS
-%token PUBLIC 
-%token PROTECTED
-%token PRIVATE
-%token STATIC
-%token ABSTRACT
-%token THIS
-%token VOID
-%token FINAL
-%token IMPORT
-%token CLASS
-%token NEW
-%token INSTANCEOF
+%token <AstNode*> IF
+%token <AstNode*> WHILE
+%token <AstNode*> FOR
+%token <AstNode*> ELSE
+%token <AstNode*> EXTENDS
+%token <AstNode*> IMPLEMENTS
+%token <AstNode*> PUBLIC 
+%token <AstNode*> PROTECTED
+%token <AstNode*> PRIVATE
+%token <AstNode*> STATIC
+%token <AstNode*> ABSTRACT
+%token <AstNode*> THIS
+%token <AstNode*> VOID
+%token <AstNode*> FINAL
+%token <AstNode*> IMPORT
+%token <AstNode*> CLASS
+%token <AstNode*> NEW
+%token <AstNode*> INSTANCEOF
 
 // might need to look at this again
-%token PACKAGE
-%token INTERFACE
-%token OPENING_BRACE
-%token CLOSING_BRACE
-%token OPENING_PAREN
-%token CLOSING_PAREN
-%token OPENING_BRACKET
-%token CLOSING_BRACKET
-%token SEMI_COLON
-%token COLON
-%token COMMA
-%token DOT
-%token <std::string> IDENTIFIER
-%token NATIVE
-%token ASSIGNMENT
-%token RETURN
+%token <AstNode*> PACKAGE
+%token <AstNode*> INTERFACE
+%token <AstNode*> OPENING_BRACE
+%token <AstNode*> CLOSING_BRACE
+%token <AstNode*> OPENING_PAREN
+%token <AstNode*> CLOSING_PAREN
+%token <AstNode*> OPENING_BRACKET
+%token <AstNode*> CLOSING_BRACKET
+%token <AstNode*> SEMI_COLON
+%token <AstNode*> COLON
+%token <AstNode*> COMMA
+%token <AstNode*> DOT
+%token <AstNode*> IDENTIFIER
+%token <AstNode*> NATIVE
+%token <AstNode*> ASSIGNMENT
+%token <AstNode*> RETURN
 
 // types
-%token INT
-%token BOOLEAN
-%token CHAR 
-%token BYTE
-%token SHORT
-%token ARRAY
-%token TRUE
-%token FALSE
-%token STRING_LITERAL
-%token INTEGER
-%token NULL_TOKEN
-%token CHAR_LITERAL
+%token <AstNode*> INT
+%token <AstNode*> BOOLEAN
+%token <AstNode*> CHAR 
+%token <AstNode*> BYTE
+%token <AstNode*> SHORT
+%token <AstNode*> ARRAY
+%token <AstNode*> TRUE
+%token <AstNode*> FALSE
+%token <AstNode*> STRING_LITERAL
+%token <AstNode*> INTEGER
+%token <AstNode*> NULL_TOKEN
+%token <AstNode*> CHAR_LITERAL
 
 // comments
-%token MULTI_LINE_COMMENT
-%token SINGLE_LINE_COMMENT
-%token JAVADOC_COMMENT
+%token <AstNode*> MULTI_LINE_COMMENT
+%token <AstNode*> SINGLE_LINE_COMMENT
+%token <AstNode*> JAVADOC_COMMENT
 
 // operators
-%token NEGATE
-%token ASTERISK
-%token PLUS
-%token MINUS
-%token DIVIDE
-%token MODULO
-%token LESS_THAN
-%token GREATER_THAN
-%token LESS_THAN_EQUAL
-%token GREATER_THAN_EQUAL
-%token BOOLEAN_EQUAL
-%token NOT_EQUAL
-%token AMPERSAND
-%token PIPE
-%token BOOLEAN_AND
-%token BOOLEAN_OR
+%token <AstNode*> NEGATE
+%token <AstNode*> ASTERISK
+%token <AstNode*> PLUS
+%token <AstNode*> MINUS
+%token <AstNode*> DIVIDE
+%token <AstNode*> MODULO
+%token <AstNode*> LESS_THAN
+%token <AstNode*> GREATER_THAN
+%token <AstNode*> LESS_THAN_EQUAL
+%token <AstNode*> GREATER_THAN_EQUAL
+%token <AstNode*> BOOLEAN_EQUAL
+%token <AstNode*> NOT_EQUAL
+%token <AstNode*> AMPERSAND
+%token <AstNode*> PIPE
+%token <AstNode*> BOOLEAN_AND
+%token <AstNode*> BOOLEAN_OR
 
 // END OF FILE TOKEN
-%token EOF 0
+%token <AstNode*> EOF 0
 /*****************************************************************************/
+
+%nterm <AstNode*> Modifier
+%nterm <AstNode*> Modifiers
+
+%parse-param {AstNode **root}
 
 // Grammar
 %%
-%start CompilationUnit;
+%start Modifiers;
 
 /*---------------------- Packages ----------------------*/
 
@@ -270,12 +277,12 @@ PrimaryNoNewArray:
     ;
 
 Literal:
-    INTEGER
-    | TRUE
-    | FALSE
-    | CHAR_LITERAL
-    | STRING_LITERAL
-    | NULL_TOKEN
+    INTEGER 
+    | TRUE 
+    | FALSE 
+    | CHAR_LITERAL 
+    | STRING_LITERAL 
+    | NULL_TOKEN  
     ;
 
 ArrayAccess:
@@ -342,17 +349,17 @@ InterfaceDeclaration:
     ;
 
 Modifiers:
-    Modifier 
-    | Modifiers Modifier
+    Modifier { $$ = new AstNode(symbol_kind::S_Modifiers); $$->addChild($1); *root = $$; } 
+    | Modifiers Modifier { $$ = new AstNode(symbol_kind::S_Modifiers); $$->addChild($1); $$->addChild($2); *root = $$; } 
     ;
 
 Modifier:  
-    PUBLIC
-    | PROTECTED
-    | PRIVATE
-    | ABSTRACT
-    | STATIC
-    | NATIVE
+    PUBLIC { $$ = new AstNode(symbol_kind::S_Modifier); $$->addChild($1); }
+    | PROTECTED { $$ = new AstNode(symbol_kind::S_Modifier); $$->addChild($1); }
+    | PRIVATE { $$ = new AstNode(symbol_kind::S_Modifier); $$->addChild($1); }
+    | ABSTRACT { $$ = new AstNode(symbol_kind::S_Modifier); $$->addChild($1); }
+    | STATIC { $$ = new AstNode(symbol_kind::S_Modifier); $$->addChild($1); }
+    | NATIVE { $$ = new AstNode(symbol_kind::S_Modifier); $$->addChild($1); }
     ;
 
 InterfaceModifiersOpt:

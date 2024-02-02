@@ -123,7 +123,7 @@ null                return yy::parser::make_NULL_TOKEN(new AstNode(yy::parser::s
              throw yy::parser::syntax_error
                (loc, "invalid character: " + std::string(yytext));
 }
-<<EOF>>    return yy::parser::make_EOF (loc);
+<<EOF>>    return yy::parser::make_EOF (new AstNode(yy::parser::symbol_kind::S_YYEOF),loc);
 [\n]+      loc.lines (yyleng); loc.step ();
 %%
 
