@@ -188,9 +188,17 @@ ConditionalOrExpression:
     ;
 
 ConditionalAndExpression:
-    EqualityExpression
-    | ConditionalAndExpression BOOLEAN_AND EqualityExpression
+    InclusiveOrExpression
+    | ConditionalAndExpression BOOLEAN_AND InclusiveOrExpression
     ;
+
+InclusiveOrExpression:
+    AndExpression
+    | InclusiveOrExpression PIPE AndExpression
+
+AndExpression:
+    EqualityExpression
+    | AndExpression AMPERSAND EqualityExpression
 
 EqualityExpression:
     RelationalExpression
