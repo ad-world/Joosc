@@ -52,8 +52,8 @@ int Driver::parse(const std::string &f) {
 #endif 
 
 #ifdef GRAPHVIZ
-        graph << "\n\t" << curr << " [label=\"" << GET_NAME(curr->type) << "\"]";
-        graph << "\n\t" << curr << " -> {";
+        graph << "\n\t\"" << curr << "\" [label=\"" << GET_NAME(curr->type) << "\"]";
+        graph << "\n\t\"" << curr << "\" -> {";
 #endif
 
         q.pop_front();
@@ -62,7 +62,7 @@ int Driver::parse(const std::string &f) {
             q.push_back(child);
             depth.push_back(curr_depth + 1);
 #ifdef GRAPHVIZ
-            graph << child << " ";
+            graph << "\"" << child << "\" ";
         }
         graph << "}";
     }
