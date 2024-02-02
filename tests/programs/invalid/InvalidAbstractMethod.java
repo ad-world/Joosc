@@ -7,9 +7,9 @@ public final abstract class InvalidAbstractMethod {
 
     }
 
-    public InvalidAbstractMethod() {
+    public InvalidAbstractMethod();
 
-    }
+    public NonAbstractMethod();
 
     public abstract validAbstractMethod();
 

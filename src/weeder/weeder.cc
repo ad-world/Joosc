@@ -81,18 +81,20 @@ void Weeder::checkMethodModifiersAndBody(std::vector<AstNode*> methods) {
         // --------------Check method has body if NOT native OR abstract --------
         std::vector<std::string> modifiers = util->getFunctionModifiers(method);
         std::string functionName = util->getFunctionName(method);
-        bool nativeOrAbstract = "false";
+        bool nativeOrAbstract = false;
 
         for (auto modifier: modifiers) {
             if (modifier == "NATIVE" || modifier == "ABSTRACT") nativeOrAbstract = true;
+
             if (nativeOrAbstract && util->hasFunctionBody(method)) {
                 addViolation(functionName + " cannot be abstract/native and have a function body.");
                 break;
-            } else if (!nativeOrAbstract && !util->hasFunctionBody(method)) {
-                addViolation("Non native/abstract function " + functionName + " must have a function body.");
-                break;
             }
         }
+
+        if(!nativeOrAbstract && !util->hasFunctionBody(method)) {
+            addViolation("Non abstract/native method " + functionName + " must have a function body.");
+        }   
     }
 }
 
