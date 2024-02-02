@@ -10,7 +10,7 @@
   yy::parser::symbol_type yylex(Driver& drv)
 YY_DECL;
 
-// Class to drive parsing and scanning
+// Class to drive parsing/u3/a23dhingra/cs444/cs444-compiler/src/parsing/bison and scanning
 class Driver {
 public:
   Driver();
@@ -18,7 +18,7 @@ public:
   // Return code from last parse; 0 if success and non-zero otherwise
   int result;
   // Parse tree from last parse
-  ParseTreeNode parse_tree;
+  AstNode *root;
 
   // Run the parser on file F. Return 0 on success
   int parse(const std::string& f);

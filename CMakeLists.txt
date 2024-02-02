@@ -1,6 +1,13 @@
 project(joosc)
 cmake_minimum_required(VERSION 3.16)
 
+# Graphing
+option(GRAPHVIZ "Generate a graph of the parse tree" OFF)
+if(GRAPHVIZ)
+    add_definitions("-DGRAPHVIZ")
+endif(GRAPHVIZ)
+unset(GRAPHVIZ CACHE)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
