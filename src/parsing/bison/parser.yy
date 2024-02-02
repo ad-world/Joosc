@@ -526,6 +526,7 @@ Modifier:
     | ABSTRACT  { MAKE_ONE($$, $1); }
     | STATIC  { MAKE_ONE($$, $1); }
     | NATIVE  { MAKE_ONE($$, $1); }
+    | FINAL { MAKE_ONE($$, $1); }
     ;
 
 InterfaceModifiersOpt:
