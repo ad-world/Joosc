@@ -2,7 +2,8 @@
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
-
+#include <optional>
+#include <variant>
 
 Weeder::Weeder() {
     util = new Utils();
@@ -11,7 +12,7 @@ Weeder::Weeder() {
 void Weeder::checkAsciiRange(const std::string& source) {
     for (char c : source) {
         if (c < 0 || c > 127) {
-            addViolation("Character outside 7-bit ASCII range detected.");
+            addViolation("Character outside 7-bit ASCII range detected: " + c);
             break;
         }
     }
@@ -28,11 +29,12 @@ void Weeder::printViolations() {
     }
 }
 
-int Weeder::weed(AstNode* root) {
+int Weeder::weed(AstNode* root, std::string filename) {
     std::vector<AstNode*> classes = util->getClasses(root);
+    std::string file = getFilename(filename);
 
     // weed program, if we found errors, return 42, else return 0
-    checkClassModifiersAndConstructors(classes);
+    checkClassModifiersAndConstructors(classes, file);
     checkLiterals(root);
 
     if(!violations.empty()) {
@@ -43,12 +45,22 @@ int Weeder::weed(AstNode* root) {
     return 0;
 }
 
-void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes) {
+
+
+void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes, std::string filename) {
+    bool classNameFound = false;
+
     for (auto c_class : classes) {
         // ------------------- Finding Class Constructor --------------------
         bool constructorFound = false;
         std:string className = util->getClassName(c_class);
+
+        // Check if className == fileName for weeding
+        if (className == filename) classNameFound = true;
+   
         std::vector<AstNode*> methods = util->getFunctionsFromClass(c_class);
+
+        // Weeding all methods
         checkMethodModifiersAndBody(methods);
 
         for (auto method: methods) {
@@ -56,6 +68,15 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes) {
 
             if(functionName == className) {
                 constructorFound = true;
+
+                std::vector<std::string> funcModifiers = util->getFunctionModifiers(method);
+                std::string abstract_token = "ABSTRACT";
+                auto abstractIt = std::find(funcModifiers.begin(), funcModifiers.end(), abstract_token);
+
+                if(abstractIt != funcModifiers.end()) {
+                    addViolation(className + " constructor cannot be abstract");
+                }
+
                 break;
             }
         }
@@ -74,6 +95,10 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes) {
             addViolation(className + " cannot be both abstract and final.");
         }
     }
+
+    if(!classNameFound && classes.size() > 0) {
+        addViolation("No matching class found for " + filename);
+    }
 }
 
 void Weeder::checkMethodModifiersAndBody(std::vector<AstNode*> methods) {
@@ -81,18 +106,84 @@ void Weeder::checkMethodModifiersAndBody(std::vector<AstNode*> methods) {
         // --------------Check method has body if NOT native OR abstract --------
         std::vector<std::string> modifiers = util->getFunctionModifiers(method);
         std::string functionName = util->getFunctionName(method);
-        bool nativeOrAbstract = "false";
+        bool nativeOrAbstract = false;
 
         for (auto modifier: modifiers) {
             if (modifier == "NATIVE" || modifier == "ABSTRACT") nativeOrAbstract = true;
+
             if (nativeOrAbstract && util->hasFunctionBody(method)) {
                 addViolation(functionName + " cannot be abstract/native and have a function body.");
                 break;
-            } else if (!nativeOrAbstract && !util->hasFunctionBody(method)) {
-                addViolation("Non native/abstract function " + functionName + " must have a function body.");
-                break;
             }
         }
+
+        // ------------- Check that if not native or abstract, then body is present ------
+        if(!nativeOrAbstract && !util->hasFunctionBody(method)) {
+            addViolation("Non abstract/native method " + functionName + " must have a function body.");
+        }
+
+        // ------------- Check that there is atleast one modifier ------------------------
+        if (modifiers.size() == 0) {
+            addViolation(functionName + " cannot have 0 access modifiers.");
+        }   
+
+        // ------------- Check that modifiers don't include STATIC and FINAL -------------
+        std::string final_token = "FINAL";
+        std::string static_token = "STATIC";
+        std::string abstract_token = "ABSTRACT";
+        
+        auto staticIt = std::find(modifiers.begin(), modifiers.end(), static_token);
+        auto finalIt = std::find(modifiers.begin(), modifiers.end(), final_token);
+        auto abstractIt = std::find(modifiers.begin(), modifiers.end(), abstract_token);
+
+        // Check not STATIC and FINAL
+        if ((staticIt != modifiers.end()) && (finalIt != modifiers.end())) {
+            addViolation(functionName + " cannot be both static and final.");
+        }
+
+        // Check not ABSTRACT and FINAL
+        if((finalIt != modifiers.end()) && (abstractIt != modifiers.end())) {
+            addViolation(functionName + " cannot be both abstract and final.");
+        }
+
+        // Check not ABSTRACT and STATIC
+        if((abstractIt != modifiers.end()) && (staticIt != modifiers.end())) {
+            addViolation(functionName + " abstract method cannot be static.");
+        }
+
+        // ------------ Check no this() or super() ---------------------------------------
+        std::vector<AstNode*> invocations = util->getMethodInvocations(method);
+
+        for (auto invoc: invocations) {
+            std::optional<std::variant<std::string, long int>> funcNameOpt = invoc->children[0]->value;
+
+            std::string funcName = "";
+            
+            if (funcNameOpt) {
+                std::variant<std::string, long int> funcNameVar = *funcNameOpt;
+                funcName = std::get<std::string>(funcNameVar);
+            }
+
+            if(funcName == "super") addViolation("No super() calls allowed inside functions. (" + functionName + ")" );
+            if(funcName == "this") addViolation("No this() calls allowed inside functions. (" + functionName + ")");
+        }
+    }
+}
+
+std::string Weeder::getFilename(std::string& filename) {
+    // Find the last occurrence of the path separator (/ or \)
+    size_t lastSlash = filename.find_last_of("/\\");
+    
+    // Find the last occurrence of the dot (.) after the last path separator
+    size_t lastDot = filename.find_last_of('.');
+    
+    // Check if the dot is present and comes after the last path separator
+    if (lastDot != std::string::npos && (lastSlash == std::string::npos || lastDot > lastSlash)) {
+        // Extract the substring between the last path separator and the dot
+        return filename.substr(lastSlash + 1, lastDot - lastSlash - 1);
+    } else {
+        // If no dot or it comes before the last path separator, return the entire file name
+        return filename.substr(lastSlash + 1);
     }
 }
 
@@ -120,10 +211,5 @@ void Weeder::checkLiterals(AstNode * root) {
                 // Eventually need to unescape the characters, prob do this in Flex
                 break;
         }
-        // cout << "(";
-        // if ( pair.first != nullptr ) {
-        //     cout << util->getParserType(pair.first->type) << ", ";
-        // }
-        // cout << util->getParserType(pair.second->type) << ")" << endl;
     }
 }

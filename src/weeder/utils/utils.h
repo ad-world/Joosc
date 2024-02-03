@@ -28,6 +28,8 @@ class Utils {
 
     // Expects *root to be MethodDeclaration
     std::vector<std::string> getFunctionModifiers(AstNode *root);
-    // Expects *root to be AstNode
+    // Expects *root to be MethodDeclaration
     bool hasFunctionBody(AstNode *root);
+    // Expects *root to be MethodDeclaration
+    std::vector<AstNode*> getMethodInvocations(AstNode* root);
 };

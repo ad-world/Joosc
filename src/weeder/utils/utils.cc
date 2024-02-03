@@ -163,6 +163,27 @@ std::vector<std::string> Utils::getFunctionModifiers(AstNode *root) {
                 }
             }
         }
+    } else {
+        int first_type = header->children[0]->type;
+        switch(first_type) {
+            case yy::parser::symbol_kind::S_PUBLIC:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_PRIVATE:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_ABSTRACT:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_VOID:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_PROTECTED:
+                result.push_back(getParserType(first_type));
+                break;
+            default:
+                break;
+        }
     }
 
     return result;
@@ -170,4 +191,28 @@ std::vector<std::string> Utils::getFunctionModifiers(AstNode *root) {
 
 bool Utils::hasFunctionBody(AstNode* root) {
     return getParserType(root->children[1]->type) == "Block";
+}
+
+// Exprects root to be MethodDeclarations
+std::vector<AstNode*> Utils::getMethodInvocations(AstNode* root) {
+    std::vector<AstNode*> result; 
+
+    deque<AstNode *> q;
+
+    q.push_front(root);
+
+    while (!q.empty()) {
+        AstNode *top = q.front();
+        q.pop_front();
+
+        if(getParserType(top->type) == "MethodInvocation") {
+            result.push_back(top);
+        }
+
+        for (auto child: top->children) {
+            q.push_back(child);
+        }
+    } 
+
+    return result;
 }
