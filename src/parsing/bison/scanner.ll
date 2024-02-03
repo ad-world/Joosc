@@ -121,6 +121,7 @@ null                return yy::parser::make_NULL_TOKEN(new AstNode(yy::parser::s
 "&"     return yy::parser::make_AMPERSAND(new AstNode(yy::parser::symbol_kind::S_AMPERSAND), loc);
 "||"    return yy::parser::make_BOOLEAN_OR(new AstNode(yy::parser::symbol_kind::S_BOOLEAN_OR), loc);
 "|"     return yy::parser::make_PIPE(new AstNode(yy::parser::symbol_kind::S_PIPE), loc);
+","     return yy::parser::make_COMMA(new AstNode(yy::parser::symbol_kind::S_COMMA), loc);
 
 {Whitespace}+      loc.step ();
 {Identifier}       return yy::parser::make_IDENTIFIER(new AstNode(yy::parser::symbol_kind::S_IDENTIFIER, yytext), loc);
