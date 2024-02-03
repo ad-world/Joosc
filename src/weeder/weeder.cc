@@ -55,6 +55,14 @@ void Weeder::checkInterfaces(std::vector<AstNode*> interfaces, std::string filen
         std::string interfaceName = util->getClassName(inter);
 
         if(interfaceName == filename) interfaceNameFound = true;
+
+        std::vector<std::string> modifiers = util->getClassModifiers(inter);
+
+        std::cout << modifiers.size() << std::endl;
+
+        if(!util->isPublicProtected(modifiers)) {
+            addViolation("Interface doesn't have access modifier.");
+        }
     }
 
     if(!interfaceNameFound && interfaces.size() > 0) {
@@ -107,6 +115,11 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes, s
         }
         // ------------------- Class cannot be abstract and final ------------
         std::vector<std::string> classModifiers = util->getClassModifiers(c_class);
+
+        if(!util->isPublicProtected(classModifiers)) {
+            addViolation(className + " does not have an access modifier.");
+        }
+
         std::string abstract_token = "ABSTRACT";
         std::string final_token = "FINAL";
         auto abstractIt = std::find(classModifiers.begin(), classModifiers.end(), abstract_token);
@@ -246,6 +259,10 @@ void Weeder::checkClassFields(std::vector<AstNode*> fields) {
 
         if(finalIt != modifiers.end()) {
             addViolation("Fields cannot be marked as final.");
+        }
+
+        if(!util->isPublicProtected(modifiers)) {
+            addViolation("Fields must have an access modifier.");
         }
 
         /*

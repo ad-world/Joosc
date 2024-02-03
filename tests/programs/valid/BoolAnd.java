@@ -3,4 +3,8 @@ public class BoolAnd {
         boolean and = (true && false);
         boolean or = (true || false);
     }
+
+    public BoolAnd() {
+        
+    }
 }

@@ -1,7 +1,9 @@
 public final class InvalidAbstractMethod {
     public abstract void abstractMethod();
 
-    public abstract void anotherMethod();
+    public abstract void anotherMethod() {
+        
+    }
     public InvalidAbstractMethod() {
         unction1();
         function2();

@@ -43,6 +43,8 @@ private:
     // Get filename
     std::string getFilename(std::string& filePath);
 
+    bool isClassPublic(AstNode* root);
+
     // Get all literals and ensure they are correct
     void checkLiterals(AstNode *root);
 
