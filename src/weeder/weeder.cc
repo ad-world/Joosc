@@ -239,11 +239,17 @@ void Weeder::checkClassFields(std::vector<AstNode*> fields) {
     for (auto field: fields) {
         std::vector<std::string> modifiers = util->getFieldModifiers(field);
         std::string final_token = "FINAL";
+        std::string private_token = "PRIVATE";
 
         auto finalIt = std::find(modifiers.begin(), modifiers.end(), final_token);
+        auto privateIt = std::find(modifiers.begin(), modifiers.end(), private_token);
 
         if(finalIt != modifiers.end()) {
             addViolation("Fields cannot be marked as final.");
+        }
+
+        if(privateIt != modifiers.end()) {
+            addViolation("Fields cannot be marked as private.");
         }
     }
 }
