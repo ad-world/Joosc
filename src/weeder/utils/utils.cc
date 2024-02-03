@@ -1,5 +1,9 @@
 #include "utils.h"
 #include <unordered_set>
+#include <string>
+#include <sstream>
+#include <algorithm>
+
 using namespace std;
 
 
@@ -155,6 +159,24 @@ std::vector<std::string> Utils::getClassModifiers(AstNode *root) {
                     q.push_back(child);
                 }
             }
+        }
+    } else {
+        int first_type = root->children[0]->type;
+        switch(first_type) {
+            case yy::parser::symbol_kind::S_PUBLIC:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_ABSTRACT:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_VOID:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_PROTECTED:
+                result.push_back(getParserType(first_type));
+                break;
+            default:
+                break;
         }
     }
     
@@ -327,3 +349,13 @@ std::vector<std::string> Utils::getFieldModifiers(AstNode *root) {
     return result;
 }
  
+
+bool Utils::isPublicProtected(std::vector<std::string> modifiers) {
+    std::string publicToken = "PUBLIC";
+    std::string protectedToken = "PROTECTED";
+
+    auto pubIt = std::find(modifiers.begin(), modifiers.end(), publicToken);
+    auto protIt = std::find(modifiers.begin(), modifiers.end(), protectedToken);
+
+    return (pubIt != modifiers.end()) || (protIt != modifiers.end());
+}

@@ -1,5 +1,5 @@
 public class NoThisSuperExample {
-    int value;
+    protected int value;
 
     public NoThisSuperExample() {
         // Valid constructor without explicit this() or super() calls

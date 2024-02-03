@@ -1,5 +1,5 @@
 public class NoFinalFieldExample {
-    int nonFinalField = 10;
+    public int nonFinalField = 10;
     public NoFinalFieldExample() {
 
     }

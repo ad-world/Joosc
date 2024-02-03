@@ -41,4 +41,6 @@ class Utils {
     std::vector<AstNode*> getFieldDeclarations(AstNode* root);
     // Expects *root to be FieldDeclaration
     std::vector<std::string> getFieldModifiers(AstNode* root);
+
+    bool isPublicProtected(std::vector<std::string> modifiers);
 };
