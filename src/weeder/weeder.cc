@@ -36,6 +36,7 @@ int Weeder::weed(AstNode* root, std::string filename) {
     // weed program, if we found errors, return 42, else return 0
     checkClassModifiersAndConstructors(classes, file);
     checkLiterals(root);
+    checkCastExpressionsValid(root);
 
     if(!violations.empty()) {
         printViolations();
@@ -210,6 +211,36 @@ void Weeder::checkLiterals(AstNode * root) {
             case yy::parser::symbol_kind::S_CHAR_LITERAL:
                 // Eventually need to unescape the characters, prob do this in Flex
                 break;
+        }
+    }
+}
+
+// TODO: Rewrite
+void Weeder::checkCastExpressionsValid(AstNode *root) {
+    vector<AstNode*> cast_expressions = util->getCastExpressions(root);
+    for (auto &cast_expression : cast_expressions) {
+        if (cast_expression->children.size() < 2) {
+            addViolation("CastExpression invalid; likely due to parser error");
+            return;
+        }
+        auto should_be_qualifiedid = cast_expression->children[1];
+
+        // Verify this derives to a identifier or primitive
+        auto primitives = vector<int>{
+            yy::parser::symbol_kind::S_INT,
+            yy::parser::symbol_kind::S_CHAR,
+            yy::parser::symbol_kind::S_SHORT,
+            yy::parser::symbol_kind::S_BYTE,
+            yy::parser::symbol_kind::S_BOOLEAN,
+            yy::parser::symbol_kind::S_IDENTIFIER
+        };
+        auto cast_type = should_be_qualifiedid->type;
+        if (std::find(primitives.begin(), primitives.end(), cast_type) == primitives.end())  {
+            addViolation(
+                "CastExpression invalid due to Expression not deriving to QualifiedIdentifier; derived to " +
+                util->getParserType(cast_type) + " instead"
+            );
+            return;
         }
     }
 }

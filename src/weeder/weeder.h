@@ -29,6 +29,9 @@ private:
     // TODO: figure out how this function will work 
     void checkClassNameWithFile();
 
+    // Checks cast expressions are valid by ensuring all Expression refers to QualifiedIdentifier if it should
+    void checkCastExpressionsValid(AstNode *root);
+
     // Add a violation to the vector
     void addViolation(const std::string& vio);
 
