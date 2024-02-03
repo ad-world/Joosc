@@ -1,5 +1,5 @@
 public class NoThisSuperExample {
-    private int value;
+    int value;
 
     public NoThisSuperExample() {
         // Valid constructor without explicit this() or super() calls
@@ -7,5 +7,9 @@ public class NoThisSuperExample {
 
     public void setValue(int value) {
         this.value = value;  // Valid usage of this
+    }
+
+    public NoThisSuperExample() {
+
     }
 }
