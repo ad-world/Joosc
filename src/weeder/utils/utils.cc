@@ -41,6 +41,29 @@ std::vector<AstNode*> Utils::getClasses(AstNode* root) {
     return res;
 }
 
+// Expects root to be CompilationUnit
+std::vector<AstNode*> Utils::getCastExpressions(AstNode* root) {
+
+    std::vector<AstNode*> res;
+    deque<AstNode *> q;
+    q.push_back(root);
+
+    while (!q.empty()) {
+        AstNode* curr = q.front();
+
+        q.pop_front();
+        
+        if (getParserType(curr->type) == "CastExpression") {
+            res.push_back(curr);
+        }
+
+        for ( auto child : curr->children ) {
+            q.push_back(child);
+        }
+    }
+    return res;
+}
+
 // Expects *root to be ClassDeclaration
 std::vector<AstNode *> Utils::getFunctionsFromClass(AstNode* root) {
     std::vector<AstNode*> res;

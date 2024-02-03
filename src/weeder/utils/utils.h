@@ -32,4 +32,7 @@ class Utils {
     bool hasFunctionBody(AstNode *root);
     // Expects *root to be MethodDeclaration
     std::vector<AstNode*> getMethodInvocations(AstNode* root);
+
+    // Expects root to be CompilationUnit
+    std::vector<AstNode*> getCastExpressions(AstNode *root);
 };
