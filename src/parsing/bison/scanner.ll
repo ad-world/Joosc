@@ -44,7 +44,7 @@ Escape          \\[tbnrf\\]
   // Code run each time yylex is called.
   loc.step ();
 %}
-goto|volatile|super|long|float|double|throws|throw|try|catch|finally|do|switch|break|continue|synchronized|"--"  {
+private|goto|volatile|super|long|float|double|throws|throw|try|catch|finally|do|switch|break|continue|synchronized|"--"  {
              throw yy::parser::syntax_error
                (loc, "invalid token: '" + std::string(yytext) + "' is not a valid joosc token, only a Java token");
 }
