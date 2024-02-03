@@ -31,9 +31,11 @@ void Weeder::printViolations() {
 
 int Weeder::weed(AstNode* root, std::string filename) {
     std::vector<AstNode*> classes = util->getClasses(root);
+    std::vector<AstNode*> interfaces = util->getInterfaces(root);
     std::string file = getFilename(filename);
 
     // weed program, if we found errors, return 42, else return 0
+    checkInterfaces(interfaces, file);
     checkClassModifiersAndConstructors(classes, file);
     checkLiterals(root);
     checkCastExpressionsValid(root);
@@ -46,6 +48,20 @@ int Weeder::weed(AstNode* root, std::string filename) {
     return 0;
 }
 
+void Weeder::checkInterfaces(std::vector<AstNode*> interfaces, std::string filename) {
+    bool interfaceNameFound = false;
+
+    for (auto inter: interfaces) {
+        std::string interfaceName = util->getClassName(inter);
+
+        if(interfaceName == filename) interfaceNameFound = true;
+    }
+
+    if(!interfaceNameFound && interfaces.size() > 0) {
+        addViolation("No matching interface found for " + filename);
+    } 
+}
+
 
 
 void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes, std::string filename) {
@@ -54,7 +70,7 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes, s
     for (auto c_class : classes) {
         // ------------------- Finding Class Constructor --------------------
         bool constructorFound = false;
-        std:string className = util->getClassName(c_class);
+        std::string className = util->getClassName(c_class);
 
         // Check if className == fileName for weeding
         if (className == filename) classNameFound = true;
@@ -63,6 +79,10 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes, s
 
         // Weeding all methods
         checkMethodModifiersAndBody(methods);
+
+        // Weeding all fields
+        std::vector<AstNode*> fields = util->getFieldDeclarations(c_class);
+        checkClassFields(fields);
 
         for (auto method: methods) {
             std::string functionName = util->getFunctionName(method);
@@ -215,6 +235,26 @@ void Weeder::checkLiterals(AstNode * root) {
     }
 }
 
+void Weeder::checkClassFields(std::vector<AstNode*> fields) {
+    for (auto field: fields) {
+        std::vector<std::string> modifiers = util->getFieldModifiers(field);
+        std::string final_token = "FINAL";
+        // std::string private_token = "PRIVATE";
+
+        auto finalIt = std::find(modifiers.begin(), modifiers.end(), final_token);
+        // auto privateIt = std::find(modifiers.begin(), modifiers.end(), private_token);
+
+        if(finalIt != modifiers.end()) {
+            addViolation("Fields cannot be marked as final.");
+        }
+
+        /*
+        if(privateIt != modifiers.end()) {
+            addViolation("Fields cannot be marked as private.");
+        }
+        */
+    }
+}
 // TODO: Rewrite
 void Weeder::checkCastExpressionsValid(AstNode *root) {
     vector<AstNode*> cast_expressions = util->getCastExpressions(root);

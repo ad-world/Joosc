@@ -186,7 +186,6 @@
 %nterm <AstNode*> FormalParameterListOpt
 %nterm <AstNode*> FormalParameterList
 %nterm <AstNode*> AbstractMethodModifier
-%nterm <AstNode*> FinalOpt
 %nterm <AstNode*> FormalParameter
 %nterm <AstNode*> VariableDeclaratorId
 %nterm <AstNode*> Statement
@@ -703,13 +702,8 @@ AbstractMethodModifier:
     | ABSTRACT { MAKE_ONE($$, $1); }
     ;
 
-FinalOpt:
-    /* Empty - No final keyword */ { MAKE_EMPTY($$); }
-    | FINAL { MAKE_ONE($$, $1); }
-    ;
-
 FormalParameter:
-	FinalOpt Type VariableDeclaratorId { MAKE_NODE($$, symbol_kind::S_FormalParameter, $1, $2, $3); }
+	Type VariableDeclaratorId { MAKE_NODE($$, symbol_kind::S_FormalParameter, $1, $2); }
     ;
 
 VariableDeclaratorId:
