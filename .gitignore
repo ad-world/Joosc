@@ -16,3 +16,4 @@ location.hh
 location.h
 .vscode
 parser.output
+tests/programs/marmoset

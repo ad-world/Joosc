@@ -163,6 +163,24 @@ std::vector<std::string> Utils::getFunctionModifiers(AstNode *root) {
                 }
             }
         }
+    } else {
+        int first_type = header->children[0]->type;
+        switch(first_type) {
+            case yy::parser::symbol_kind::S_PUBLIC:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_PRIVATE:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_ABSTRACT:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_VOID:
+                result.push_back(getParserType(first_type));
+                break;
+            default:
+                break;
+        }
     }
 
     return result;

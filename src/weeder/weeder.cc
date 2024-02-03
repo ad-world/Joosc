@@ -111,7 +111,23 @@ void Weeder::checkMethodModifiersAndBody(std::vector<AstNode*> methods) {
         // ------------- Check that if not native or abstract, then body is present ------
         if(!nativeOrAbstract && !util->hasFunctionBody(method)) {
             addViolation("Non abstract/native method " + functionName + " must have a function body.");
+        }
+
+        // ------------- Check that there is atleast one modifier ------------------------
+        if (modifiers.size() == 0) {
+            addViolation(functionName + " cannot have 0 access modifiers.");
         }   
+
+        // ------------- Check that modifiers don't include STATIC and FINAL -------------
+        std::string final_token = "FINAL";
+        std::string static_token = "STATIC";
+        
+        auto staticIt = std::find(modifiers.begin(), modifiers.end(), static_token);
+        auto finalIt = std::find(modifiers.begin(), modifiers.end(), final_token);
+
+        if ((staticIt != modifiers.end()) and (finalIt != modifiers.end())) {
+            addViolation(functionName + " cannot be both static and final.");
+        }
 
         // ------------ Check no this() or super() ---------------------------------------
         std::vector<AstNode*> invocations = util->getMethodInvocations(method);
