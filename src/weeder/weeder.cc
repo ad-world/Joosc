@@ -68,6 +68,15 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes, s
 
             if(functionName == className) {
                 constructorFound = true;
+
+                std::vector<std::string> funcModifiers = util->getFunctionModifiers(method);
+                std::string abstract_token = "ABSTRACT";
+                auto abstractIt = std::find(funcModifiers.begin(), funcModifiers.end(), abstract_token);
+
+                if(abstractIt != funcModifiers.end()) {
+                    addViolation(className + " constructor cannot be abstract");
+                }
+
                 break;
             }
         }
@@ -121,12 +130,20 @@ void Weeder::checkMethodModifiersAndBody(std::vector<AstNode*> methods) {
         // ------------- Check that modifiers don't include STATIC and FINAL -------------
         std::string final_token = "FINAL";
         std::string static_token = "STATIC";
+        std::string abstract_token = "ABSTRACT";
         
         auto staticIt = std::find(modifiers.begin(), modifiers.end(), static_token);
         auto finalIt = std::find(modifiers.begin(), modifiers.end(), final_token);
+        auto abstractIt = std::find(modifiers.begin(), modifiers.end(), abstract_token);
 
-        if ((staticIt != modifiers.end()) and (finalIt != modifiers.end())) {
+        // Check not STATIC and FINAL
+        if ((staticIt != modifiers.end()) && (finalIt != modifiers.end())) {
             addViolation(functionName + " cannot be both static and final.");
+        }
+
+        // Check not ABSTRACT and FINAL
+        if((finalIt != modifiers.end()) && (abstractIt != modifiers.end())) {
+            addViolation(functionName + " cannot be both abstract and final.");
         }
 
         // ------------ Check no this() or super() ---------------------------------------
