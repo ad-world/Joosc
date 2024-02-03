@@ -2,7 +2,8 @@
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
-
+#include <optional>
+#include <variant>
 
 Weeder::Weeder() {
     util = new Utils();
@@ -116,10 +117,59 @@ void Weeder::checkMethodModifiersAndBody(std::vector<AstNode*> methods) {
         std::vector<AstNode*> invocations = util->getMethodInvocations(method);
 
         for (auto invoc: invocations) {
-            std::string funcName = invoc->children[0]->value;
+            std::optional<std::variant<std::string, long int>> funcNameOpt = invoc->children[0]->value;
+
+            std::string funcName = "";
+            
+            if (funcNameOpt) {
+                std::variant<std::string, long int> funcNameVar = *funcNameOpt;
+                funcName = std::get<std::string>(funcNameVar);
+            }
 
             if(funcName == "super") addViolation("No super() calls allowed inside functions. (" + functionName + ")" );
             if(funcName == "this") addViolation("No this() calls allowed inside functions. (" + functionName + ")");
+        }
+    }
+}
+
+std::string Weeder::getFilename(std::string& filename) {
+    // Find the last occurrence of the path separator (/ or \)
+    size_t lastSlash = filename.find_last_of("/\\");
+    
+    // Find the last occurrence of the dot (.) after the last path separator
+    size_t lastDot = filename.find_last_of('.');
+    
+    // Check if the dot is present and comes after the last path separator
+    if (lastDot != std::string::npos && (lastSlash == std::string::npos || lastDot > lastSlash)) {
+        // Extract the substring between the last path separator and the dot
+        return filename.substr(lastSlash + 1, lastDot - lastSlash - 1);
+    } else {
+        // If no dot or it comes before the last path separator, return the entire file name
+        return filename.substr(lastSlash + 1);
+    }
+}
+
+void Weeder::checkLiterals(AstNode * root) {
+    vector<pair<AstNode *, AstNode *>> literals = util->getLiteralPairs(root);
+    for ( auto pair : literals ) {
+        auto & innerValue = pair.second->value.value();
+        switch ( pair.second->type ) {
+            case yy::parser::symbol_kind::S_INTEGER:
+                // Check range of integer
+                if ( pair.first != nullptr && pair.first->type == yy::parser::symbol_kind::S_MINUS ) {
+                    if ( -get<long int>(innerValue) < INT32_MIN ) {
+                        throw runtime_error("Integer out of range");
+                    }
+                } else if ( get<long int>(innerValue) > INT32_MAX ) {
+                    throw runtime_error("Integer out of range");
+                }
+                break;
+            case yy::parser::symbol_kind::S_STRING_LITERAL:
+                // Eventually need to unescape the characters, prob do this in Flex
+                break;
+            case yy::parser::symbol_kind::S_CHAR_LITERAL:
+                // Eventually need to unescape the characters, prob do this in Flex
+                break;
         }
     }
 }
