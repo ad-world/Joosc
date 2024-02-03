@@ -58,7 +58,6 @@ new     return yy::parser::make_NEW(new AstNode(yy::parser::symbol_kind::S_NEW),
 public    return yy::parser::make_PUBLIC(new AstNode(yy::parser::symbol_kind::S_PUBLIC), loc);
 implements    return yy::parser::make_IMPLEMENTS(new AstNode(yy::parser::symbol_kind::S_IMPLEMENTS), loc);
 protected     return yy::parser::make_PROTECTED(new AstNode(yy::parser::symbol_kind::S_PROTECTED), loc);
-private     return yy::parser::make_PRIVATE(new AstNode(yy::parser::symbol_kind::S_PRIVATE), loc);
 static    return yy::parser::make_STATIC(new AstNode(yy::parser::symbol_kind::S_STATIC), loc);
 abstract      return yy::parser::make_ABSTRACT(new AstNode(yy::parser::symbol_kind::S_ABSTRACT), loc);
 this      return yy::parser::make_THIS(new AstNode(yy::parser::symbol_kind::S_THIS), loc);
