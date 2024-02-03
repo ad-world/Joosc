@@ -174,10 +174,12 @@ void Weeder::checkLiterals(AstNode * root) {
                 // Check range of integer
                 if ( pair.first != nullptr && pair.first->type == yy::parser::symbol_kind::S_MINUS ) {
                     if ( -get<long int>(innerValue) < INT32_MIN ) {
-                        throw runtime_error("Integer out of range");
+                        addViolation("Integer out of range");
+                        // throw runtime_error("Integer out of range");
                     }
                 } else if ( get<long int>(innerValue) > INT32_MAX ) {
-                    throw runtime_error("Integer out of range");
+                    addViolation("Integer out of range");
+                    // throw runtime_error("Integer out of range");
                 }
                 break;
             case yy::parser::symbol_kind::S_STRING_LITERAL:
