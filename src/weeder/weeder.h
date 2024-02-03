@@ -22,6 +22,8 @@ private:
     // It will also check that constructors do not include explicit this() or super()
     void checkClassModifiersAndConstructors(std::vector<AstNode*> classes, std::string filename);
 
+    void checkInterfaces(std::vector<AstNode*> classes, std::string filename); 
+    
     // TODO: send vector class of methods to this function. This function will check if there is body if it is not native or abstract.
     // It will also check there are no explicit this() or super() calls if there is a function body
     void checkMethodModifiersAndBody(std::vector<AstNode*> methods);

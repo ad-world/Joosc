@@ -31,9 +31,11 @@ void Weeder::printViolations() {
 
 int Weeder::weed(AstNode* root, std::string filename) {
     std::vector<AstNode*> classes = util->getClasses(root);
+    std::vector<AstNode*> interfaces = util->getIntefaces(root);
     std::string file = getFilename(filename);
 
     // weed program, if we found errors, return 42, else return 0
+    checkInterfaces(interfaces, file);
     checkClassModifiersAndConstructors(classes, file);
     checkLiterals(root);
     checkCastExpressionsValid(root);
@@ -46,6 +48,20 @@ int Weeder::weed(AstNode* root, std::string filename) {
     return 0;
 }
 
+void Weeder::checkInterfaces(std::vector<AstNode*> interfaces, std::string filename) {
+    bool interfaceNameFound = false;
+
+    for (auto inter: interfaces) {
+        std::string interfaceName = util->getClassName(inter);
+
+        if(interfaceName == filename) interfaceNameFound = true;
+    }
+
+    if(!interfaceNameFound && interfaces.size() > 0) {
+        addViolation("No matching interface found for " + filename);
+    } 
+}
+
 
 
 void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes, std::string filename) {
@@ -54,7 +70,7 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes, s
     for (auto c_class : classes) {
         // ------------------- Finding Class Constructor --------------------
         bool constructorFound = false;
-        std:string className = util->getClassName(c_class);
+        std::string className = util->getClassName(c_class);
 
         // Check if className == fileName for weeding
         if (className == filename) classNameFound = true;
