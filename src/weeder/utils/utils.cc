@@ -178,6 +178,9 @@ std::vector<std::string> Utils::getFunctionModifiers(AstNode *root) {
             case yy::parser::symbol_kind::S_VOID:
                 result.push_back(getParserType(first_type));
                 break;
+            case yy::parser::symbol_kind::S_PROTECTED:
+                result.push_back(getParserType(first_type));
+                break;
             default:
                 break;
         }
