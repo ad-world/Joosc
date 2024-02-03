@@ -43,7 +43,6 @@
 %token <AstNode*> IMPLEMENTS
 %token <AstNode*> PUBLIC
 %token <AstNode*> PROTECTED
-%token <AstNode*> PRIVATE
 %token <AstNode*> STATIC
 %token <AstNode*> ABSTRACT
 %token <AstNode*> THIS
@@ -520,7 +519,6 @@ Modifiers:
 Modifier:
     PUBLIC  { MAKE_ONE($$, $1); }
     | PROTECTED  { MAKE_ONE($$, $1); }
-    | PRIVATE  { MAKE_ONE($$, $1); }
     | ABSTRACT  { MAKE_ONE($$, $1); }
     | STATIC  { MAKE_ONE($$, $1); }
     | NATIVE  { MAKE_ONE($$, $1); }

@@ -169,9 +169,6 @@ std::vector<std::string> Utils::getFunctionModifiers(AstNode *root) {
             case yy::parser::symbol_kind::S_PUBLIC:
                 result.push_back(getParserType(first_type));
                 break;
-            case yy::parser::symbol_kind::S_PRIVATE:
-                result.push_back(getParserType(first_type));
-                break;
             case yy::parser::symbol_kind::S_ABSTRACT:
                 result.push_back(getParserType(first_type));
                 break;
