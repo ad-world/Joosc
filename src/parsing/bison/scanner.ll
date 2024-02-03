@@ -95,7 +95,7 @@ false               return yy::parser::make_FALSE(new AstNode(yy::parser::symbol
 }
 {Integer}           return yy::parser::make_INTEGER(new AstNode(yy::parser::symbol_kind::S_INTEGER, stol(yytext)), loc);
 null                return yy::parser::make_NULL_TOKEN(new AstNode(yy::parser::symbol_kind::S_NULL_TOKEN), loc);
-\'({Ascii}|{OctalEscape}|{Escape}|\"|\\\')\'         {
+\'({Ascii}|{OctalEscape}|{Escape}|\\\"|\\\')\'         {
     return yy::parser::make_CHAR_LITERAL(new AstNode(yy::parser::symbol_kind::S_CHAR_LITERAL, ((std::string) yytext).substr(1, ((std::string) yytext).size() - 2)), loc);
 }
 
