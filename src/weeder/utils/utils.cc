@@ -236,3 +236,73 @@ std::vector<AstNode*> Utils::getMethodInvocations(AstNode* root) {
 
     return result;
 }
+
+std::vector<AstNode*> Utils::getFieldDeclarations(AstNode *root) {
+    std::vector<AstNode*> result;
+
+    deque<AstNode*> q;
+
+    q.push_front(root);
+
+    while(!q.empty()) {
+        AstNode *top = q.front();
+        q.pop_front();
+
+        if(getParserType(top->type) == "FieldDeclaration") {
+            result.push_back(top);
+        } else {
+            for(auto child: top->children) {
+                q.push_back(child);
+            }
+        }
+    }
+
+    return result;
+}
+
+
+std::vector<std::string> Utils::getFieldModifiers(AstNode *root) {
+    std::vector<std::string> result;
+
+    if (getParserType(root->children[0]->type) == "Modifiers") {
+        deque<AstNode* > q;
+        q.push_front(root->children[0]);
+
+        while(!q.empty()) {
+            AstNode* top = q.front();
+            q.pop_front();
+
+            if(top->children.size() == 0) {
+                result.push_back(getParserType(top->type));
+            } else {
+                for (auto child: top->children) {
+                    q.push_back(child);
+                }
+            }
+        }
+    } else {
+        int first_type = root->children[0]->type;
+        switch(first_type) {
+            case yy::parser::symbol_kind::S_PUBLIC:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_PRIVATE:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_ABSTRACT:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_VOID:
+                result.push_back(getParserType(first_type));
+                break;
+            case yy::parser::symbol_kind::S_PROTECTED:
+                result.push_back(getParserType(first_type));
+                break;
+            default:
+                break;
+        }
+    }
+    
+    return result;
+}
+ 

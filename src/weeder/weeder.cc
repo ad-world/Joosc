@@ -64,6 +64,10 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes, s
         // Weeding all methods
         checkMethodModifiersAndBody(methods);
 
+        // Weeding all fields
+        std::vector<AstNode*> fields = util->getFieldDeclarations(c_class);
+        checkClassFields(fields);
+
         for (auto method: methods) {
             std::string functionName = util->getFunctionName(method);
 
@@ -215,6 +219,18 @@ void Weeder::checkLiterals(AstNode * root) {
     }
 }
 
+void Weeder::checkClassFields(std::vector<AstNode*> fields) {
+    for (auto field: fields) {
+        std::vector<std::string> modifiers = util->getFieldModifiers(field);
+        std::string final_token = "FINAL";
+
+        auto finalIt = std::find(modifiers.begin(), modifiers.end(), final_token);
+
+        if(finalIt != modifiers.end()) {
+            addViolation("Fields cannot be marked as final.");
+        }
+    }
+}
 // TODO: Rewrite
 void Weeder::checkCastExpressionsValid(AstNode *root) {
     vector<AstNode*> cast_expressions = util->getCastExpressions(root);

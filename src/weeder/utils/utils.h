@@ -35,4 +35,8 @@ class Utils {
 
     // Expects root to be CompilationUnit
     std::vector<AstNode*> getCastExpressions(AstNode *root);
+    // Expects *root to be ClassDeclaration
+    std::vector<AstNode*> getFieldDeclarations(AstNode* root);
+
+    std::vector<std::string> getFieldModifiers(AstNode* root);
 };

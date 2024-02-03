@@ -43,4 +43,7 @@ private:
 
     // Get all literals and ensure they are correct
     void checkLiterals(AstNode *root);
+
+    // Check fields are not final
+    void checkClassFields(std::vector<AstNode*> fields);
 };
