@@ -96,7 +96,7 @@ void Weeder::checkClassModifiersAndConstructors(std::vector<AstNode*> classes, s
         }
     }
 
-    if(!classNameFound) {
+    if(!classNameFound && classes.size() > 0) {
         addViolation("No matching class found for " + filename);
     }
 }
