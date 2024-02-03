@@ -2,7 +2,6 @@
 #include <cstring>
 #include <iostream>
 #include "parsing/bison/location.hh"
-#include "parsing/parseuser.h"
 #include "parsing/bison/driver.h"
 #include "parsing/bison/parser.hh"
 #include "weeder/weeder.h"
