@@ -58,8 +58,6 @@ void Weeder::checkInterfaces(std::vector<AstNode*> interfaces, std::string filen
 
         std::vector<std::string> modifiers = util->getClassModifiers(inter);
 
-        std::cout << modifiers.size() << std::endl;
-
         if(!util->isPublicProtected(modifiers)) {
             addViolation("Interface doesn't have access modifier.");
         }
