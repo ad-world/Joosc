@@ -146,6 +146,11 @@ void Weeder::checkMethodModifiersAndBody(std::vector<AstNode*> methods) {
             addViolation(functionName + " cannot be both abstract and final.");
         }
 
+        // Check not ABSTRACT and STATIC
+        if((abstractIt != modifiers.end()) && (staticIt != modifiers.end())) {
+            addViolation(functionName + " abstract method cannot be static.");
+        }
+
         // ------------ Check no this() or super() ---------------------------------------
         std::vector<AstNode*> invocations = util->getMethodInvocations(method);
 
