@@ -708,7 +708,7 @@ FormalParameter:
 
 VariableDeclaratorId:
     Identifier { MAKE_ONE($$, $1); }
-    | Identifier OPENING_BRACKET CLOSING_BRACKET { MAKE_NODE($$, symbol_kind::S_VariableDeclaratorId, $1, $2, $3); }
+    // | Identifier OPENING_BRACKET CLOSING_BRACKET { MAKE_NODE($$, symbol_kind::S_VariableDeclaratorId, $1, $2, $3); }
     ;
 
 /*---------------------- Statements ----------------------*/
