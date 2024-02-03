@@ -31,7 +31,7 @@ void Weeder::printViolations() {
 
 int Weeder::weed(AstNode* root, std::string filename) {
     std::vector<AstNode*> classes = util->getClasses(root);
-    std::vector<AstNode*> interfaces = util->getIntefaces(root);
+    std::vector<AstNode*> interfaces = util->getInterfaces(root);
     std::string file = getFilename(filename);
 
     // weed program, if we found errors, return 42, else return 0

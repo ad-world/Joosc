@@ -41,6 +41,53 @@ std::vector<AstNode*> Utils::getClasses(AstNode* root) {
     return res;
 }
 
+std::vector<AstNode*> Utils::getCastExpressions(AstNode* root) {
+
+    std::vector<AstNode*> res;
+    deque<AstNode *> q;
+    q.push_back(root);
+
+    while (!q.empty()) {
+        AstNode* curr = q.front();
+
+        q.pop_front();
+        
+        if (getParserType(curr->type) == "CastExpression") {
+            res.push_back(curr);
+        }
+
+        for ( auto child : curr->children ) {
+            q.push_back(child);
+        }
+    }
+    return res;
+}
+
+
+std::vector<AstNode*> Utils::getInterfaces(AstNode*root) {
+    std::vector<AstNode*> res;
+    deque<AstNode *> q;
+    q.push_back(root);
+
+    while (!q.empty()) {
+        AstNode* curr = q.front();
+
+        q.pop_front();
+        
+        if (getParserType(curr->type) == "InterfaceDeclaration") {
+            res.push_back(curr);
+        } else {
+            for ( auto child : curr->children ) {
+                q.push_back(child);
+            } 
+        }
+    }
+
+    cachedClasses.push_back({ res });
+
+    return res;
+}
+
 // Expects *root to be ClassDeclaration
 std::vector<AstNode *> Utils::getFunctionsFromClass(AstNode* root) {
     std::vector<AstNode*> res;
@@ -261,9 +308,6 @@ std::vector<std::string> Utils::getFieldModifiers(AstNode *root) {
         int first_type = root->children[0]->type;
         switch(first_type) {
             case yy::parser::symbol_kind::S_PUBLIC:
-                result.push_back(getParserType(first_type));
-                break;
-            case yy::parser::symbol_kind::S_PRIVATE:
                 result.push_back(getParserType(first_type));
                 break;
             case yy::parser::symbol_kind::S_ABSTRACT:

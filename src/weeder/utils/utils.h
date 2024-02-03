@@ -15,7 +15,7 @@ class Utils {
     // Expects root to be CompilationUnit
     std::vector<AstNode*> getClasses(AstNode *root);
     // Expects *root to be CompilationUnit
-    std::vector<AstNode*> getIntefaces(AstNode *root);
+    std::vector<AstNode*> getInterfaces(AstNode *root);
     // Expects *root to be ClassDeclaration
     std::vector<AstNode*> getFunctionsFromClass(AstNode *root);
     // Expects *root to be MethodDeclaration
