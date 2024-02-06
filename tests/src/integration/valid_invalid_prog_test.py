@@ -52,20 +52,22 @@ def valid_invalid_prog_test():
             header_bold_underline = colors.HEADER + colors.BOLD + colors.UNDERLINE
             print(f"\n{header_bold_underline}Testing all programs in {resolve_path(directory, '')}:{colors.ENDC}")
 
-            for program in os.listdir(directory):
+            if os.path.exists(directory):
+                for program in os.listdir(directory):
+                    program_path = resolve_path(directory, program)
 
-                program_path = resolve_path(directory, program)
-                with open(integration_log_file, "w") as outfile:
-                    result = subprocess.run([joosc_executable, program_path], stderr=outfile)
+                    if os.path.exists(program_path):
+                        with open(integration_log_file, "w") as outfile:
+                            result = subprocess.run([joosc_executable, program_path], stderr=outfile)
 
-                if result.returncode == expected_code:
-                    if print_pass_cases: # Test passed, display output if -f is not set
-                        print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
-                        print_file_contents(integration_log_file)
-                else:
-                    print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
-                    print_file_contents(integration_log_file)
-                    failures = True
+                        if result.returncode == expected_code:
+                            if print_pass_cases: # Test passed, display output if -f is not set
+                                print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
+                                print_file_contents(integration_log_file)
+                        else:
+                            print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
+                            print_file_contents(integration_log_file)
+                            failures = True
         
     if failures:
         print(f"{colors.FAIL}\nERROR: Tests had failures.{colors.ENDC}")
