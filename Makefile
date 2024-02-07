@@ -10,7 +10,7 @@ build: | generate-parser
 	(mkdir -p build && cd build && cmake .. && make && cp joosc ../joosc)
 
 unit-test: build
-	(cd build && ctest)
+	(cd build && ctest -V)
 
 scanner-test: build
 	(./tests/lexing/run_tests.sh)
