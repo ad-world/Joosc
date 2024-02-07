@@ -4,10 +4,6 @@
 
 namespace Variant {
 
-// ReturnType AstVisitor::visit(AstNode& a) {
-//     return std::visit(*this, a);
-// }
-
 // Concrete Visitor
 void PrintVisitor::operator()(BinaryExpression &v) {
     std::cout << "BinaryExpression(";

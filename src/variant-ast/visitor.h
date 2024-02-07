@@ -13,33 +13,87 @@ struct IfStatement;
 struct ExpressionStatement;
 struct CompilationUnit;
 
-// template <typename ReturnType>
-// struct AstVisitor {
-//     ReturnType visit(AstNode& a) {
-//         return std::visit(*this, a);
-//     }
-//     virtual ~AstVisitor() = default;
-// };
+// Superclass for visitor operation that returns a specific type
+template <typename SubReturnType, typename ReturnType>
+struct AstVisitor {
+    virtual SubReturnType operator()(BinaryExpression &v) = 0;
 
-// Concrete Visitor
-struct PrintVisitor {
-    void operator()(BinaryExpression &v);
+    virtual SubReturnType operator()(UnaryExpression &v) = 0;
 
-    void operator()(UnaryExpression &v);
+    virtual SubReturnType operator()(Integer &v) = 0;
 
-    void operator()(Integer &v);
+    virtual SubReturnType operator()(ExpressionStatement &v) = 0;
 
-    void operator()(ExpressionStatement &v);
+    virtual SubReturnType operator()(IfStatement &v) = 0;
 
-    void operator()(IfStatement &v);
+    virtual SubReturnType operator()(CompilationUnit &v) = 0;
 
-    void operator()(CompilationUnit &v);
+    virtual ReturnType visit(AstNode& a) = 0;
+    virtual ~AstVisitor() = default;
+};
 
-    // Void could really be any type; could have different type per visitor
-    void visit(AstNode& a) {
+// Concrete Print Visitor
+struct PrintVisitor : public AstVisitor<void, void> {
+    void operator()(BinaryExpression &v) override;
+
+    void operator()(UnaryExpression &v) override;
+
+    void operator()(Integer &v) override;
+
+    void operator()(ExpressionStatement &v) override;
+
+    void operator()(IfStatement &v) override;
+
+    void operator()(CompilationUnit &v) override;
+
+    void visit(AstNode& a) override {
         return std::visit(*this, a);
     }
 };
 
+// Concrete "Pass through" Visitor that allows subclasses that don't define behaviour for types they don't touch
+template <typename SubReturnType, typename ReturnType>
+struct PassThroughVisitor : public AstVisitor<SubReturnType, ReturnType> {
+    
+    virtual SubReturnType getDefaultValue() {
+        SubReturnType default_value;
+        return default_value;
+    }
+
+    virtual SubReturnType operator()(BinaryExpression &v) override {
+        visit(v.lhs);
+        visit(v.rhs);
+        return getDefaultValue();
+    }
+
+    virtual SubReturnType operator()(UnaryExpression &v) override {
+        visit(v.sub_expression);
+        return getDefaultValue();
+    }
+
+    virtual SubReturnType operator()(Integer &v) override {
+        return getDefaultValue();
+    }
+
+    virtual SubReturnType operator()(ExpressionStatement &v) override {
+        visit(v.statement_expression);
+        return getDefaultValue();
+    }
+
+    virtual SubReturnType operator()(IfStatement &v) override {
+        visit(v.if_clause);
+        visit(v.then_clause);
+        return getDefaultValue();
+    }
+
+    virtual SubReturnType operator()(CompilationUnit &v) override {
+        for (auto &p: v.program_statements) {
+            visit(v.program_statements);
+        }
+        return getDefaultValue();
+    }
+
+    virtual ReturnType visit(AstNode& a) = 0;
+};
 
 }

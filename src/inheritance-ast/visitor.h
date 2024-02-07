@@ -22,7 +22,7 @@ struct AstVisitor {
     virtual void visit(IfStatement &v) = 0;
     virtual void visit(ExpressionStatement &v) = 0;
 
-     virtual void visit(CompilationUnit &v) = 0;
+    virtual void visit(CompilationUnit &v) = 0;
 
     virtual ~AstVisitor() = default;
 };
