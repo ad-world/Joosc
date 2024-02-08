@@ -63,10 +63,10 @@ void PrintVisitor::operator()(ExpressionStatement &v) {
 
 void PrintVisitor::operator()(CompilationUnit &v) {
     std::cout << "Program(";
-    for (auto &s : v.program_statements) {
-        visit(s);
-        std::cout << ", ";
-    }
+    // for (auto &s : v.program_statements) {
+    //     visit(s);
+    //     std::cout << ", ";
+    // }
     std::cout << ")";
 }
 
