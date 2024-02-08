@@ -12,7 +12,6 @@ namespace Variant {
 struct BinaryExpression;
 struct UnaryExpression;
 struct Integer;
-struct IfStatement;
 struct ExpressionStatement;
 struct CompilationUnit;
 
@@ -35,6 +34,35 @@ struct FieldDeclaration;
 struct MethodDeclaration;
 struct Type;
 struct VariableDeclarator;
+struct LocalVariableDeclaration;
+struct IfThenStatement;
+struct IfThenElseStatement;
+struct WhileStatement;
+struct ForStatement;
+struct ReturnStatement;
+struct Assignment;
+struct MethodInvocation;
+struct ClassInstanceCreationExpression;
+struct Block;
+
+typedef std::variant <
+    Assignment,
+    MethodInvocation,
+    ClassInstanceCreationExpression
+> ExpressionStatement;
+
+typedef std::variant <
+    // Statements
+    IfThenStatement,
+    IfThenElseStatement,
+    WhileStatement,
+    ForStatement, 
+    Block,
+    std::monostate, //EmptyStatement,
+    ExpressionStatement,
+    ReturnStatement,
+    LocalVariableDeclaration
+> Statement;
 
 typedef std::variant<
     // Expressions
@@ -42,18 +70,17 @@ typedef std::variant<
     UnaryExpression,
     Integer,
     // Statements
-    IfStatement,
     ExpressionStatement,
     // Aryaman Work
     CompilationUnit,
     QualifiedIdentifier,
     ClassDeclaration,
-    InterfaceDeclaration,
     Identifier,
     FieldDeclaration,
     MethodDeclaration,
     Type,
-    VariableDeclarator
+    VariableDeclarator,
+    Statement
 > AstNode;
 
 // For putting common decorator information e.g. Type
@@ -84,11 +111,6 @@ struct Integer : public AstNodeCommon {
     Integer(int a) {this->integer = a;}
 };
 
-struct IfStatement : public AstNodeCommon {
-    std::unique_ptr<AstNode> if_clause;
-    std::unique_ptr<AstNode> then_clause;
-};
-
 struct ExpressionStatement : public AstNodeCommon {
     std::unique_ptr<AstNode> statement_expression;
 };
@@ -96,13 +118,13 @@ struct ExpressionStatement : public AstNodeCommon {
 struct Identifier: public AstNodeCommon {
     std::string name; // Idenfier name
 
-    Identifier(std::string name) : name(name) {}
+    Identifier(std::string& name) : name(std::move(name)) {}
 };
 
 struct QualifiedIdentifier: public AstNodeCommon {
     std::vector<Identifier> identifiers; // Vector of identifiers for this qualitfed identifier
 
-    QualifiedIdentifier(std::vector<Identifier> identifiers) : identifiers(identifiers) {}
+    QualifiedIdentifier(std::vector<Identifier>& identifiers) : identifiers(std::move(identifiers)) {}
 };
 
 struct CompilationUnit: public AstNodeCommon {
@@ -113,21 +135,19 @@ struct CompilationUnit: public AstNodeCommon {
     std::vector<InterfaceDeclaration> interface_declarations; // All import declarations
 
     CompilationUnit(
-        QualifiedIdentifier package_declaration, 
-        std::vector<QualifiedIdentifier> single_imports, 
-        std::vector<QualifiedIdentifier> asterisk_imports, 
-        std::vector<ClassDeclaration> class_decs, 
-        std::vector<InterfaceDeclaration> interface_decs
+        QualifiedIdentifier& package_declaration, 
+        std::vector<QualifiedIdentifier>& single_imports, 
+        std::vector<QualifiedIdentifier>& asterisk_imports, 
+        std::vector<ClassDeclaration>& class_decs, 
+        std::vector<InterfaceDeclaration>& interface_decs
     ) : 
-        package_declaration{package_declaration},
-        single_type_import_declaration{single_imports},
-        type_import_on_demand_declaration{asterisk_imports},
-        class_declarations{class_decs},
-        interface_declarations{interface_decs}
+        package_declaration{std::move(package_declaration)},
+        single_type_import_declaration{std::move(single_imports)},
+        type_import_on_demand_declaration{std::move(asterisk_imports)},
+        class_declarations{std::move(class_decs)},
+        interface_declarations{std::move(interface_decs)}
     {}
 };
-
-
 
 struct ClassDeclaration: public AstNodeCommon {
     std::vector<Modifier> modifiers; // Vector of class modifiers
@@ -138,23 +158,21 @@ struct ClassDeclaration: public AstNodeCommon {
     std::vector<MethodDeclaration> method_declarations; // Class method declarations
 
     ClassDeclaration(
-        std::vector<Modifier> modifiers,
-        Identifier class_name,
-        std::optional<QualifiedIdentifier> extends_class,
-        std::vector<QualifiedIdentifier> implements,
-        std::vector<FieldDeclaration> field_declarations,
-        std::vector<MethodDeclaration> method_declarations
+        std::vector<Modifier>& modifiers,
+        Identifier& class_name,
+        std::optional<QualifiedIdentifier>& extends_class,
+        std::vector<QualifiedIdentifier>& implements,
+        std::vector<FieldDeclaration>& field_declarations,
+        std::vector<MethodDeclaration>& method_declarations
     ) :
-        modifiers{modifiers},
-        class_name{class_name},
-        extends_class{extends_class},
-        implements{implements},
-        field_declarations{field_declarations},
-        method_declarations{method_declarations}
+        modifiers{std::move(modifiers)},
+        class_name{std::move(class_name)},
+        extends_class{std::move(extends_class)},
+        implements{std::move(implements)},
+        field_declarations{std::move(field_declarations)},
+        method_declarations{std::move(method_declarations)}
     {}
 };
-
-
 
 struct FieldDeclaration: public AstNodeCommon {
     std::vector<Modifier> modifiers;
@@ -162,13 +180,116 @@ struct FieldDeclaration: public AstNodeCommon {
     // VariableDeclarator variable_declarator;
 
     FieldDeclaration(
-        std::vector<Modifier> modifiers //,
-        // Type type,
-        // VariableDeclarator variable_declarator
+        std::vector<Modifier>& modifiers //,
+        // Type& type,
+        // VariableDeclarator& variable_declarator
     ) :
-        modifiers(modifiers) // ,
-        // type(type),
-        // variable_declarator(variable_declarator)
+        modifiers(std::move(modifiers)) // ,
+        // type(std::move(type)),
+        // variable_declarator(std::move(variable_declarator))
+    {}
+};
+
+struct LocalVariableDeclaration: public AstNodeCommon {
+    // Type type;
+    // VariableDeclarator variable_declarator;
+
+    LocalVariableDeclaration(
+        // Type& type,
+        // VariableDeclarator& variable_declarator
+    ) : 
+        // type(std::move(type)),
+        // variable_declarator(std::move(variable_declarator))
+    {}
+};
+
+struct InterfaceDeclaration: public AstNodeCommon {
+    std::vector<Modifier> modifiers; // vector of interface modifiers
+    Identifier interface_name; // interface name
+    std::optional<QualifiedIdentifier> extends_class; // class that this interface extends off of
+    std::vector<MethodDeclaration> method_declarations; // interface method declarations
+
+    InterfaceDeclaration(
+        std::vector<Modifier>& modifiers,
+        Identifier& interface_name,
+        std::optional<QualifiedIdentifier>& extends_class,
+        std::vector<MethodDeclaration>& method_declarations
+    ) :
+        modifiers{std::move(modifiers)},
+        interface_name{std::move(interface_name)},
+        extends_class{std::move(extends_class)},
+        method_declarations{std::move(method_declarations)}
+    {}
+};
+
+struct IfThenStatment: public AstNodeCommon {
+    // Expression expression; // if clause
+    Statement statement; // then clause
+
+    IfThenStatment(
+        // Expression& expression,
+        Statement& statement
+    ) : 
+        // expression{std::move(expression)},
+        statement{std::move(statement)}
+    {}
+};
+
+struct IfThenElseStatment: public AstNodeCommon {
+    // Expression expression; // if clause
+    Statement statement_then; // then clause
+    Statement statement_else; // else clause
+
+    IfThenElseStatment(
+        // Expression& expression,
+        Statement& statement_then,
+        Statement& statement_else
+    ) : 
+        // expression{std::move(expression)},
+        statement_then{std::move(statement_then)},
+        statement_else{std::move(statement_else)}
+    {}
+};
+
+struct WhileStatement: public AstNodeCommon {
+    // Expression expression; // condition clause
+    Statement statement; // loop body
+
+    WhileStatement(
+        // Expression& expression,
+        Statement& statement
+    ) : 
+        // expression{std::move(expression)},
+        statement{std::move(statement)}
+    {}
+};
+
+struct ForStatement: public AstNodeCommon {
+    std::optional<Statement> statement_init; // ForInit
+    // std::optional<Expression> expression; // condition clause
+    std::optional<Statement> statement_update; // ForUpdate
+    Statement statement_body; // Body
+
+    ForStatement(
+        std::optional<Statement>& statement_init,
+        // std::optional<Expression>& expression,
+        std::optional<Statement>& statement_update,
+        Statement& statement_body
+    ) : 
+        statement_init{std::move(statement_init)},
+        // expression{std::move(expression)},
+        statement_update{std::move(statement_update)},
+        statement_body{std::move(statement_body)}
+    {}
+};
+
+struct ReturnStatement: public AstNodeCommon {
+    // std::optional<Expression> expression;
+
+    ReturnStatement(
+        // std::optional<Expression>& expression
+    ) : 
+        // expression{std::move(expression)}
     {}
 };
 
