@@ -87,9 +87,9 @@ struct PassThroughVisitor : public AstVisitor<SubReturnType, ReturnType> {
     }
 
     virtual SubReturnType operator()(CompilationUnit &v) override {
-        for (auto &p: v.program_statements) {
-            visit(v.program_statements);
-        }
+        // for (auto &p: v.program_statements) {
+        //     visit(v.program_statements);
+        // }
         return getDefaultValue();
     }
 
