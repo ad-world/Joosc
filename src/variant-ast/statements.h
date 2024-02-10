@@ -5,40 +5,28 @@
 #include <vector>
 #include "astnodecommon.h"
 
-// -------------------
-struct IfThenStatement;
-struct IfThenElseStatement;
-struct WhileStatement;
-struct ForStatement;
-struct Block;
-struct ReturnStatement;
-struct LocalVariableDeclaration;
 struct Expression;
 struct Type;
 struct VariableDeclarator;
-struct Assignment;
-struct MethodInvocation;
-struct ClassInstanceCreationExpression;
-// ------------------
 
 typedef std::monostate EmptyStatement;
 
 typedef std::variant<
-    Assignment,
-    MethodInvocation,
-    ClassInstanceCreationExpression
+    struct Assignment,
+    struct MethodInvocation,
+    struct ClassInstanceCreationExpression
 > ExpressionStatement;
 
 typedef std::variant<
-    IfThenStatement,
-    IfThenElseStatement,
-    WhileStatement,
-    ForStatement,
-    Block,
+    struct IfThenStatement,
+    struct IfThenElseStatement,
+    struct WhileStatement,
+    struct ForStatement,
+    struct Block,
     EmptyStatement,
     ExpressionStatement,
-    ReturnStatement,
-    LocalVariableDeclaration
+    struct ReturnStatement,
+    struct LocalVariableDeclaration
 > Statement;
 
 struct IfThenStatement: public AstNodeCommon {
