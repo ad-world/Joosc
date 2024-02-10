@@ -1,14 +1,10 @@
 #include "classes.h"
 #include "statements.h"
 #include "types.h"
+#include "expressions.h"
 
 class Identifier{};
 class QualifiedIdentifier{};
-class Expression{};
-
-struct Assignment{};
-struct MethodInvocation{};
-struct ClassInstanceCreationExpression{};
 
 ClassDeclaration::ClassDeclaration(
     std::vector<Modifier>& modifiers,

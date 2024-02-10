@@ -1,11 +1,10 @@
 #include "statements.h"
+#include "classes.h"
+#include "types.h"
+#include "expressions.h"
 
-struct Expression{};
-struct Type{};
-struct VariableDeclarator{};
-struct Assignment{};
-struct MethodInvocation{};
-struct ClassInstanceCreationExpression{};
+class Identifier{};
+class QualifiedIdentifier{};
 
 IfThenStatement::IfThenStatement(
     std::unique_ptr<Expression>& if_clause,
