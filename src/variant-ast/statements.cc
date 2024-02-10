@@ -2,9 +2,7 @@
 #include "classes.h"
 #include "types.h"
 #include "expressions.h"
-
-class Identifier{};
-class QualifiedIdentifier{};
+#include "names.h"
 
 IfThenStatement::IfThenStatement(
     std::unique_ptr<Expression>& if_clause,

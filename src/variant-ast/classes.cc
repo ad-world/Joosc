@@ -2,9 +2,7 @@
 #include "statements.h"
 #include "types.h"
 #include "expressions.h"
-
-class Identifier{};
-class QualifiedIdentifier{};
+#include "names.h"
 
 ClassDeclaration::ClassDeclaration(
     std::vector<Modifier>& modifiers,

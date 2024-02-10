@@ -3,8 +3,7 @@
 #include "expressions.h"
 #include "statements.h"
 #include "types.h"
-class QualifiedIdentifier{};
-class Identifier{};
+#include "names.h"
 
 CompilationUnit::CompilationUnit(
     std::unique_ptr<QualifiedIdentifier>& package_declaration, 
