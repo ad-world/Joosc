@@ -118,7 +118,6 @@ struct MethodInvocation: public AstNodeCommon {
     );
 };
 
-
 struct InfixExpression {
     std::unique_ptr<Expression> expression1;
     std::unique_ptr<Expression> expression2;
@@ -130,7 +129,6 @@ struct InfixExpression {
         InfixOperator op
     );
 };
-
 
 struct PrefixExpression {
     std::unique_ptr<Expression> expression;
