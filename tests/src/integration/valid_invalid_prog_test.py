@@ -13,6 +13,19 @@ class colors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+# Function to load environment variables from .env file
+def load_env_file(filename=".env"):
+    with open(filename, "r") as f:
+        for line in f:
+            # Skip comments and empty lines
+            if line.strip() and not line.strip().startswith("#"):
+                key, value = line.strip().split("=")
+                os.environ[key] = value
+
+# Load variables from .env file
+load_env_file()
+
+
 def resolve_path(path1, path2):
     return str(Path(os.path.join(path1, path2)).resolve())
 
@@ -40,13 +53,11 @@ def valid_invalid_prog_test():
         print_pass_cases = False
         failures = False
 
+    # get current assignments from env
+    currently_testing = os.getenv('TESTING_COVERAGE', '') # todo: replace with environment variable
+    split_assignments = currently_testing.split(',')
+
     for assignment in os.listdir(programs_dir):
-        # get current assignments from env
-        
-        currently_testing = "a1" # todo: replace with environment variable
-
-        split_assignments = currently_testing.split(',')
-
         if assignment in split_assignments:
             assignment_path = os.path.join(programs_dir, assignment)
             local_valid_tests = os.path.join(assignment_path, "local/valid")
