@@ -3,7 +3,6 @@
 #include <variant>
 #include <memory>
 #include <string>
-#include <optional>
 #include <vector>
 #include "astnodecommon.h"
 
@@ -11,7 +10,7 @@ struct Identifier;
 struct QualifiedIdentifier;
 struct Type;
 
-enum InfixOperator {
+enum class InfixOperator {
     BOOLEAN_OR,
     BOOLEAN_AND,
     EAGER_OR,
@@ -27,12 +26,12 @@ enum InfixOperator {
     LESS_THAN_EQUAL,
     GREATER_THAN_EQUAL,
     INSTANCEOF
-}
+};
 
-enum PrefixOperator {
+enum class PrefixOperator {
     MINUS,
     NEGATE
-}
+};
 
 typedef std::variant<int64_t, bool, char, std::string, std::nullptr_t> Literal;
 
@@ -62,20 +61,20 @@ struct Assignment: public AstNodeCommon {
 };
 
 struct QualifiedThis: public AstNodeCommon {
-    std::optional<QualifiedIdentifier> qualified_this;
+    std::unique_ptr<QualifiedIdentifier> qualified_this;
 
     QualifiedThis(
-        std::optional<QualifiedIdentifier>& qt
+        std::unique_ptr<QualifiedIdentifier>& qt
     );
 };
 
 struct ArrayCreationExpression: public AstNodeCommon {
     std::unique_ptr<Type> type;
-    std::optional<Expression> expression;
+    std::unique_ptr<Expression> expression;
 
     ArrayCreationExpression(
         std::unique_ptr<Type>& type,
-        std::optional<Expression>& expr
+        std::unique_ptr<Expression>& expr
     );
 };
 
@@ -91,11 +90,11 @@ struct ClassInstanceCreationExpression: public AstNodeCommon {
 
 struct FieldAccess: public AstNodeCommon {
     std::unique_ptr<Expression> expression;
-    std::unique_ptr<Identifier> identifer;
+    std::unique_ptr<Identifier> identifier;
 
     FieldAccess(
         std::unique_ptr<Expression>& expression,
-        std::unique_ptr<Identifier>& identifer
+        std::unique_ptr<Identifier>& identifier
     );
 };
 

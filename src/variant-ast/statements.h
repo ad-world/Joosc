@@ -4,8 +4,8 @@
 #include <memory>
 #include <vector>
 #include "astnodecommon.h"
+#include "expressions.h"
 
-struct Expression;
 struct Type;
 struct VariableDeclarator;
 

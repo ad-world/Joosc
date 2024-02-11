@@ -3,14 +3,14 @@
 #include <memory>
 #include <vector>
 #include "astnodecommon.h"
+#include "expressions.h"
 
 struct Identifier;
 struct QualifiedIdentifier;
 struct Type;
 struct Block;
-struct Expression;
 
-enum Modifier {
+enum class Modifier {
     PUBLIC,
     PROTECTED,
     ABSTRACT,
