@@ -107,7 +107,7 @@ null                return yy::parser::make_NULL_TOKEN(new AstNode(yy::parser::s
 %{ // Comments %}
 "//".*     { }
 [/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]      { }
-\/\*\*.*\*\/    { } 
+[/][*][*][^/][^*]*[*]+([^*/][^*]*[*]+)*[/] {}
 
 %{ // Operators %}
 "!"     return yy::parser::make_NEGATE(new AstNode(yy::parser::symbol_kind::S_NEGATE), loc);
