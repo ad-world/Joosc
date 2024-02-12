@@ -246,8 +246,8 @@ CompilationUnit:
     | PackageDeclaration ImportDeclarations // No TypeDeclarations
         { MAKE_NODE($$, symbol_kind::S_CompilationUnit, $1, $2); }
     | PackageDeclaration { MAKE_ONE($$, $1); }
-    | ImportDeclaration { MAKE_ONE($$, $1); }
-    | TypeDeclaration { MAKE_ONE($$, $1); }
+    | ImportDeclarations { MAKE_ONE($$, $1); }
+    | TypeDeclarations { MAKE_ONE($$, $1); }
     | /* Empty */ { MAKE_EMPTY($$); }
     ;
 
