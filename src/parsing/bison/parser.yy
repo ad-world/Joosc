@@ -50,7 +50,6 @@
 %token <Modifier> NATIVE
 %token <Modifier> FINAL
 %token <AstNodeVariant*> THIS
-%token <AstNodeVariant*> VOID
 %token <AstNodeVariant*> IMPORT
 %token <AstNodeVariant*> CLASS
 %token <AstNodeVariant*> NEW
@@ -74,11 +73,12 @@
 %token <AstNodeVariant*> RETURN
 
 // types
-%token <AstNodeVariant*> INT
-%token <AstNodeVariant*> BOOLEAN
-%token <AstNodeVariant*> CHAR
-%token <AstNodeVariant*> BYTE
-%token <AstNodeVariant*> SHORT
+%token <PrimitiveType> INT
+%token <PrimitiveType> BOOLEAN
+%token <PrimitiveType> CHAR
+%token <PrimitiveType> BYTE
+%token <PrimitiveType> SHORT
+%token <PrimitiveType> VOID
 %token <AstNodeVariant*> TRUE
 %token <AstNodeVariant*> FALSE
 %token <AstNodeVariant*> STRING_LITERAL
@@ -149,7 +149,13 @@
 %nterm <vector<Modifier>> Modifiers
     %nterm <Modifier> Modifier
 
-%nterm <AstNodeVariant*> Type
+%nterm <unique_ptr<Type>> Type
+    %nterm <PrimitiveType> PrimitiveType
+        %nterm <PrimitiveType> IntegralType
+        %nterm <PrimitiveType> BooleanType
+    %nterm <unique_ptr<Type>> ReferenceType
+        %nterm <QualifiedIdentifier> ClassOrInterfaceType
+
 
 %nterm <AstNodeVariant*> Expression
 %nterm <AstNodeVariant*> AssignmentExpression
@@ -178,11 +184,6 @@
 %nterm <AstNodeVariant*> ArgumentList
 %nterm <AstNodeVariant*> Arguments
 %nterm <AstNodeVariant*> MethodInvocation
-%nterm <AstNodeVariant*> PrimitiveType
-%nterm <AstNodeVariant*> IntegralType
-%nterm <AstNodeVariant*> BooleanType
-%nterm <AstNodeVariant*> ClassOrInterfaceType
-%nterm <AstNodeVariant*> ReferenceType
 %nterm <AstNodeVariant*> InterfaceModifiersOpt
 %nterm <AstNodeVariant*> InterfaceType
 %nterm <AstNodeVariant*> ExtendsInterfaces
@@ -249,6 +250,12 @@
 
 #define MAKE_OBJ(me, type, constructor...) \
     me = make_unique<type>((constructor))
+
+#define COPY_OBJ(me, you) \
+    me = move(you)
+
+#define MAKE_PAIR(me, obj1, obj2) \
+    me = {move(obj1), move(obj2)}
 
 #define EMPTY \
     (nullptr)
@@ -519,37 +526,37 @@ MethodInvocation:
     ;
 
 Type:
-    PrimitiveType { MAKE_ONE($$, $1); }
-    | ReferenceType { MAKE_ONE($$, $1); }
+    PrimitiveType { MAKE_OBJ($$, Type, $1, false); }
+    | ReferenceType { COPY_OBJ($$, $1); }
     ;
 
 PrimitiveType:
-    IntegralType { MAKE_ONE($$, $1); }
-    | BooleanType { MAKE_ONE($$, $1); }
+    IntegralType { $$ = $1; }
+    | BooleanType { $$ = $1; }
     ;
 
 IntegralType:
-    BYTE { MAKE_ONE($$, $1); }
-    | SHORT { MAKE_ONE($$, $1); }
-    | INT { MAKE_ONE($$, $1); }
-    | CHAR { MAKE_ONE($$, $1); }
+    BYTE { $$ = $1; }
+    | SHORT { $$ = $1; }
+    | INT { $$ = $1; }
+    | CHAR { $$ = $1; }
     ;
 
 BooleanType:
-    BOOLEAN { MAKE_ONE($$, $1); }
+    BOOLEAN { $$ = $1; }
     ;
 
 ClassOrInterfaceType:
     QualifiedIdentifier // ClassType, InterfaceType -> TypeName
-        { MAKE_ONE($$, $1); }
+        { $$ = $1; }
 
 ReferenceType: // Done this way to disallow multidimensional arrays
     ClassOrInterfaceType
-        { MAKE_ONE($$, $1); }
+        { MAKE_OBJ($$, Type, $1, false); }
     | ClassOrInterfaceType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_NODE($$, symbol_kind::S_ReferenceType, $1, $2, $3); }
+        { MAKE_OBJ($$, Type, $1, true); }
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_NODE($$, symbol_kind::S_ReferenceType, $1, $2, $3); }
+        { MAKE_OBJ($$, Type, $1, true); }
     ;
 
 /*---------------------- Interfaces ----------------------*/
@@ -681,16 +688,16 @@ ClassBodyDeclarations:
     ;
 
 ClassBodyDeclaration:
-    ClassMemberDeclaration { $$ = $1; }
+    ClassMemberDeclaration { COPY_OBJ($$, $1); }
     ;
     // ensure there is at least one constructor
     // | InstanceInitializer: omitted from joos
     // | StaticInitializer: omitted from joos
 
 ClassMemberDeclaration:
-    FieldDeclaration { $$ = {$1, EMPTY}; }
-    | MethodDeclaration { $$ = {EMPTY, $1}; }
-    | SEMI_COLON { $$ = {EMPTY, EMPTY}; }
+    FieldDeclaration { MAKE_PAIR($$, $1, EMPTY); }
+    | MethodDeclaration { MAKE_PAIR($$, EMPTY, $1); }
+    | SEMI_COLON { MAKE_PAIR($$, EMPTY, EMPTY); }
     ;
     // | ClassDeclaration: omitted for joos
     // | InterfaceDeclaration: NOT SURE IF THIS SHOULD BE OMITTED FOR JOOS
