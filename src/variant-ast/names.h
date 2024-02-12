@@ -13,5 +13,6 @@ struct Identifier: public AstNodeCommon {
 struct QualifiedIdentifier: public AstNodeCommon {
     std::vector<Identifier> identifiers; // Vector of identifiers for this qualitfed identifier
 
+    QualifiedIdentifier() {}
     QualifiedIdentifier(std::vector<Identifier>& identifiers) : identifiers(std::move(identifiers)) {}
 };

@@ -13,6 +13,7 @@
   # include <vector>
   # include "../../ast/ast.h"
   # include "../../variant-ast/astnode.h"
+  #define COMMA ,
 
   class Driver;
 }
@@ -42,13 +43,14 @@
 %token <AstNodeVariant*> ELSE
 %token <AstNodeVariant*> EXTENDS
 %token <AstNodeVariant*> IMPLEMENTS
-%token <AstNodeVariant*> PUBLIC
-%token <AstNodeVariant*> PROTECTED
-%token <AstNodeVariant*> STATIC
-%token <AstNodeVariant*> ABSTRACT
+%token <Modifier> PUBLIC
+%token <Modifier> PROTECTED
+%token <Modifier> STATIC
+%token <Modifier> ABSTRACT
+%token <Modifier> NATIVE
+%token <Modifier> FINAL
 %token <AstNodeVariant*> THIS
 %token <AstNodeVariant*> VOID
-%token <AstNodeVariant*> FINAL
 %token <AstNodeVariant*> IMPORT
 %token <AstNodeVariant*> CLASS
 %token <AstNodeVariant*> NEW
@@ -67,8 +69,7 @@
 %token <AstNodeVariant*> COLON
 %token <AstNodeVariant*> COMMA
 %token <AstNodeVariant*> DOT
-%token <AstNodeVariant*> IDENTIFIER
-%token <AstNodeVariant*> NATIVE
+%token <string>          IDENTIFIER
 %token <AstNodeVariant*> ASSIGNMENT
 %token <AstNodeVariant*> RETURN
 
@@ -113,14 +114,43 @@
 /*****************************************************************************/
 
 /************************* NONTERMINALS *************************/
-%nterm <AstNodeVariant*> CompilationUnit
-%nterm <AstNodeVariant*> PackageDeclaration
-%nterm <AstNodeVariant*> ImportDeclarations
-%nterm <AstNodeVariant*> TypeDeclarations
-%nterm <AstNodeVariant*> ImportDeclaration
-%nterm <AstNodeVariant*> SingleTypeImportDeclaration
-%nterm <AstNodeVariant*> TypeImportOnDemandDeclaration
-%nterm <AstNodeVariant*> TypeDeclaration
+
+// Comma macro used to avoid issue with # of args in other macros
+%nterm <unique_ptr<CompilationUnit>> CompilationUnit
+    %nterm <unique_ptr<QualifiedIdentifier>> PackageDeclaration
+    %nterm <pair<vector<QualifiedIdentifier> COMMA vector<QualifiedIdentifier>>> ImportDeclarations
+        %nterm <pair<unique_ptr<QualifiedIdentifier> COMMA unique_ptr<QualifiedIdentifier>>> ImportDeclaration
+            %nterm <unique_ptr<QualifiedIdentifier>> SingleTypeImportDeclaration
+            %nterm <unique_ptr<QualifiedIdentifier>> TypeImportOnDemandDeclaration
+    %nterm <pair<vector<ClassDeclaration> COMMA vector<InterfaceDeclaration>>> TypeDeclarations
+        %nterm <pair<unique_ptr<ClassDeclaration> COMMA unique_ptr<InterfaceDeclaration>>> TypeDeclaration
+            %nterm <unique_ptr<ClassDeclaration>> ClassDeclaration
+                // Modifiers
+                // Identifier
+                %nterm <unique_ptr<QualifiedIdentifier>> ExtendsOpt
+                %nterm <vector<QualifiedIdentifier>> InterfacesOpt
+                %nterm <pair<FieldDeclaration COMMA MethodDeclaration>> ClassBody
+                    %nterm <unique_ptr<pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>>> ClassBodyDeclarationsOpt
+                    %nterm <pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>> ClassBodyDeclarations
+                        %nterm <pair<unique_ptr<FieldDeclaration> COMMA unique_ptr<MethodDeclaration>>> ClassBodyDeclaration
+                            %nterm <pair<unique_ptr<FieldDeclaration> COMMA unique_ptr<MethodDeclaration>>> ClassMemberDeclaration
+                                %nterm <unique_ptr<FieldDeclaration>> FieldDeclaration
+                                    // Modifiers
+                                    // Type
+                                    // VariableDeclarator
+                                %nterm <unique_ptr<MethodDeclaration>> MethodDeclaration
+                                    // MethodHeader
+                                    // MethodBody
+            %nterm <unique_ptr<InterfaceDeclaration>> InterfaceDeclaration
+
+%nterm <QualifiedIdentifier> QualifiedIdentifier
+    %nterm <unique_ptr<Identifier>> Identifier
+
+%nterm <vector<Modifier>> Modifiers
+    %nterm <Modifier> Modifier
+
+%nterm <AstNodeVariant*> Type
+
 %nterm <AstNodeVariant*> Expression
 %nterm <AstNodeVariant*> AssignmentExpression
 %nterm <AstNodeVariant*> Assignment
@@ -148,15 +178,11 @@
 %nterm <AstNodeVariant*> ArgumentList
 %nterm <AstNodeVariant*> Arguments
 %nterm <AstNodeVariant*> MethodInvocation
-%nterm <AstNodeVariant*> Type
 %nterm <AstNodeVariant*> PrimitiveType
 %nterm <AstNodeVariant*> IntegralType
 %nterm <AstNodeVariant*> BooleanType
 %nterm <AstNodeVariant*> ClassOrInterfaceType
 %nterm <AstNodeVariant*> ReferenceType
-%nterm <AstNodeVariant*> InterfaceDeclaration
-%nterm <AstNodeVariant*> Modifiers
-%nterm <AstNodeVariant*> Modifier
 %nterm <AstNodeVariant*> InterfaceModifiersOpt
 %nterm <AstNodeVariant*> InterfaceType
 %nterm <AstNodeVariant*> ExtendsInterfaces
@@ -168,19 +194,9 @@
 %nterm <AstNodeVariant*> AbstractMethodDeclaration
 %nterm <AstNodeVariant*> AbstractMethodModifiersOpt
 %nterm <AstNodeVariant*> AbstractMethodModifiers
-%nterm <AstNodeVariant*> ClassDeclaration
-%nterm <AstNodeVariant*> InterfacesOpt
 %nterm <AstNodeVariant*> Interfaces
 %nterm <AstNodeVariant*> InterfaceTypeList
-%nterm <AstNodeVariant*> ExtendsOpt
-%nterm <AstNodeVariant*> ClassBodyDeclarationsOpt
-%nterm <AstNodeVariant*> ClassBodyDeclarations
-%nterm <AstNodeVariant*> ClassBodyDeclaration
-%nterm <AstNodeVariant*> ClassMemberDeclaration
-%nterm <AstNodeVariant*> ClassBody
-%nterm <AstNodeVariant*> FieldDeclaration
 %nterm <AstNodeVariant*> VariableInitializer
-%nterm <AstNodeVariant*> MethodDeclaration
 %nterm <AstNodeVariant*> MethodHeader
 %nterm <AstNodeVariant*> MethodDeclarator
 %nterm <AstNodeVariant*> MethodBody
@@ -208,8 +224,6 @@
 %nterm <AstNodeVariant*> ExpressionOpt
 %nterm <AstNodeVariant*> ReturnStatement
 %nterm <AstNodeVariant*> ParExpression
-%nterm <AstNodeVariant*> QualifiedIdentifier
-%nterm <AstNodeVariant*> Identifier
 %nterm <AstNodeVariant*> LocalVariableDeclaration
 %nterm <AstNodeVariant*> Block
 %nterm <AstNodeVariant*> BlockStatementsOpt
@@ -226,6 +240,36 @@
 #define MAKE_ONE(me, you)   ; // me = you
 #define MAKE_NODE(me, symbol, children...) ;
     // me = new AstNodeVariant((symbol)); me->addChild(children)
+
+#define MAKE_STACK_OBJ(me, type, constructor...) \
+    me = type(constructor)
+
+#define NEW_OBJ(type, constructor...) \
+    make_unique<type>(constructor)
+
+#define MAKE_OBJ(me, type, constructor...) \
+    me = make_unique<type>((constructor))
+
+#define EMPTY \
+    (nullptr)
+
+#define EMPTY_MODIFIERS \
+    (vector<Modifier>())
+
+#define MAKE_CompilationUnit(me, package, importdecl_first, importdecl_second, typedecl_first, typedecl_second) \
+    MAKE_OBJ(me, CompilationUnit, (package), (importdecl_first), \
+        (importdecl_second), (typedecl_first), (typedecl_second))
+
+// expects (me, pair<vector<type1>, vector<type2>>, pair<type1, type2>)
+#define MAKE_PAIRVECTORS(me, pair_of_vector, pair) \
+    if ( pair.first ) { pair_of_vector.first.push_back(*pair.first); } \
+    if ( pair.second ) { pair_of_vector.second.push_back(*pair.second); } \
+    me = pair_of_vector
+
+// expects (me, vector, item)
+#define MAKE_VECTOR(me, vector, item) \
+    vector.push_back((item)); \
+    me = vector
 %}
 
 // Grammar
@@ -239,54 +283,58 @@ Start:
 
 CompilationUnit:
     PackageDeclaration ImportDeclarations TypeDeclarations
-        { MAKE_NODE($$, symbol_kind::S_CompilationUnit, $1, $2, $3); }
+        { MAKE_CompilationUnit($$, $1,     $2.first, $2.second,     $3.first, $3.second); }
     | ImportDeclarations TypeDeclarations   // No PackageDeclaration
-        { MAKE_NODE($$, symbol_kind::S_CompilationUnit, $1, $2); }
+        { MAKE_CompilationUnit($$, EMPTY,     $1.first, $1.second,     $2.first, $2.second); }
     | PackageDeclaration TypeDeclarations   // No ImportDeclarations
-        { MAKE_NODE($$, symbol_kind::S_CompilationUnit, $1, $2); }
+        { MAKE_CompilationUnit($$, $1,     EMPTY, EMPTY,     $2.first, $2.second); }
     | PackageDeclaration ImportDeclarations // No TypeDeclarations
-        { MAKE_NODE($$, symbol_kind::S_CompilationUnit, $1, $2); }
-    | PackageDeclaration { MAKE_ONE($$, $1); }
-    | ImportDeclaration { MAKE_ONE($$, $1); }
-    | TypeDeclaration { MAKE_ONE($$, $1); }
-    | /* Empty */ { MAKE_EMPTY($$); }
+        { MAKE_CompilationUnit($$, $1,     $2.first, $2.second,     EMPTY, EMPTY); }
+    | PackageDeclaration { MAKE_CompilationUnit($$, $1,     EMPTY, EMPTY,     EMPTY, EMPTY); }
+    | ImportDeclarations { MAKE_CompilationUnit($$, EMPTY,    $1.first, $1.second,     EMPTY, EMPTY); }
+    | TypeDeclarations { MAKE_CompilationUnit($$, EMPTY,     EMPTY, EMPTY,     $1.first, $1.second); }
+    | /* Empty */ { MAKE_CompilationUnit($$, EMPTY,     EMPTY, EMPTY,     EMPTY, EMPTY); }
     ;
 
 PackageDeclaration:
     PACKAGE QualifiedIdentifier SEMI_COLON
-        { MAKE_NODE($$, symbol_kind::S_PackageDeclaration, $1, $2, $3); }
+        { MAKE_OBJ($$, QualifiedIdentifier, $1); }
     ;
 
 ImportDeclarations:
-    ImportDeclaration { MAKE_ONE($$, $1); }
+    ImportDeclaration
+        { MAKE_STACK_OBJ($$, pair<vector<QualifiedIdentifier> COMMA vector<QualifiedIdentifier>>);
+            MAKE_PAIRVECTORS($$, $$, $1); }
     | ImportDeclarations ImportDeclaration
-        { MAKE_NODE($$, symbol_kind::S_ImportDeclarations, $1, $2); }
+        { MAKE_PAIRVECTORS($$, $1, $2); }
     ;
 
 TypeDeclarations:
-    TypeDeclaration { MAKE_ONE($$, $1); }
-    | TypeDeclarations TypeDeclaration { MAKE_NODE($$, symbol_kind::S_TypeDeclarations, $1, $2); }
+    TypeDeclaration
+        { MAKE_STACK_OBJ($$, pair<vector<ClassDeclaration> COMMA vector<InterfaceDeclaration>>);
+            MAKE_PAIRVECTORS($$, $$, $1); }
+    | TypeDeclarations TypeDeclaration { MAKE_PAIRVECTORS($$, $1, $2); }
     ;
 
 ImportDeclaration:
-	SingleTypeImportDeclaration { MAKE_ONE($$, $1); }
-	| TypeImportOnDemandDeclaration { MAKE_ONE($$, $1); }
+	SingleTypeImportDeclaration { $$ = make_pair($1, EMPTY); }
+	| TypeImportOnDemandDeclaration { $$ = make_pair(EMPTY, $1); }
     ;
 
 SingleTypeImportDeclaration:
     IMPORT QualifiedIdentifier SEMI_COLON // TypeName
-        { MAKE_NODE($$, symbol_kind::S_SingleTypeImportDeclaration, $1, $2, $3); }
+        { MAKE_OBJ($$, QualifiedIdentifier, $2); }
     ;
 
 TypeImportOnDemandDeclaration:
     IMPORT QualifiedIdentifier DOT ASTERISK SEMI_COLON // PackageOrTypeName
-        { MAKE_NODE($$, symbol_kind::S_TypeImportOnDemandDeclaration, $1, $2, $3, $4, $5); }
+        { MAKE_OBJ($$, QualifiedIdentifier, $2); }
     ;
 
 TypeDeclaration:
-    ClassDeclaration { MAKE_ONE($$, $1); }
-    | InterfaceDeclaration { MAKE_ONE($$, $1); }
-    | SEMI_COLON { MAKE_ONE($$, $1); }
+    ClassDeclaration { $$ = make_pair($1, EMPTY); }
+    | InterfaceDeclaration { $$ = make_pair(EMPTY, $1); }
+    | SEMI_COLON { $$ = make_pair(EMPTY, EMPTY); }
     ;
 
 /*---------------------- Expressions ----------------------*/
@@ -512,17 +560,17 @@ InterfaceDeclaration:
     ;
 
 Modifiers:
-    Modifier { MAKE_ONE($$, $1); }
-    | Modifiers Modifier { MAKE_NODE($$, symbol_kind::S_Modifiers, $1, $2); }
+    Modifier { MAKE_STACK_OBJ($$, vector<Modifier>); MAKE_VECTOR($$, $$, $1); }
+    | Modifiers Modifier { MAKE_VECTOR($$, $1, $2); }
     ;
 
 Modifier:
-    PUBLIC  { MAKE_ONE($$, $1); }
-    | PROTECTED  { MAKE_ONE($$, $1); }
-    | ABSTRACT  { MAKE_ONE($$, $1); }
-    | STATIC  { MAKE_ONE($$, $1); }
-    | NATIVE  { MAKE_ONE($$, $1); }
-    | FINAL { MAKE_ONE($$, $1); }
+    PUBLIC  { $$ = $1; }
+    | PROTECTED  { $$ = $1; }
+    | ABSTRACT  { $$ = $1; }
+    | STATIC  { $$ = $1; }
+    | NATIVE  { $$ = $1; }
+    | FINAL { $$ = $1; }
     ;
 
 InterfaceModifiersOpt:
@@ -592,7 +640,7 @@ AbstractMethodModifiers:
 // weeder: must contain public?
 ClassDeclaration:
     CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_NODE($$, symbol_kind::S_ClassDeclaration, $1, $2, $3, $4, $5); }
+        { MAKE_OBJ($$, ClassDeclaration, EMPTY_MODIFIERS, $1, $2, $3, $4); }
     | Modifiers CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
         { MAKE_NODE($$, symbol_kind::S_ClassDeclaration, $1, $2, $3, $4, $5, $6); }
     ;
@@ -614,32 +662,35 @@ InterfaceTypeList:
 
 /* Class Extends */
 ExtendsOpt:
-    /* Empty - No extends */ { MAKE_EMPTY($$); }
-    | EXTENDS QualifiedIdentifier { MAKE_NODE($$, symbol_kind::S_ExtendsOpt, $1, $2); } // ClassType
+    /* Empty - No extends */ { $$ = EMPTY; }
+    | EXTENDS QualifiedIdentifier { MAKE_OBJ($$, QualifiedIdentifier, $2); } // ClassType
     ;
 
 /* Class body */
 ClassBodyDeclarationsOpt:
-    /* Empty */ { MAKE_EMPTY($$); }
-    | ClassBodyDeclarations { MAKE_ONE($$, $1); }
+    /* Empty */ { $$ = EMPTY; }
+    | ClassBodyDeclarations { MAKE_OBJ($$, pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>, $1); }
     ;
 
 ClassBodyDeclarations:
-    ClassBodyDeclaration { MAKE_ONE($$, $1); }
-    | ClassBodyDeclarations ClassBodyDeclaration { MAKE_NODE($$, symbol_kind::S_ClassBodyDeclarations, $1, $2); }
+    ClassBodyDeclaration {
+            MAKE_STACK_OBJ($$, pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>);
+            MAKE_PAIRVECTORS($$, $$, $1);
+        }
+    | ClassBodyDeclarations ClassBodyDeclaration { MAKE_PAIRVECTORS($$, $1, $2); }
     ;
 
 ClassBodyDeclaration:
-    ClassMemberDeclaration { MAKE_ONE($$, $1); }
+    ClassMemberDeclaration { $$ = $1; }
     ;
     // ensure there is at least one constructor
     // | InstanceInitializer: omitted from joos
     // | StaticInitializer: omitted from joos
 
 ClassMemberDeclaration:
-    FieldDeclaration { MAKE_ONE($$, $1); }
-    | MethodDeclaration { MAKE_ONE($$, $1); }
-    | SEMI_COLON { MAKE_ONE($$, $1); }
+    FieldDeclaration { $$ = {$1, EMPTY}; }
+    | MethodDeclaration { $$ = {EMPTY, $1}; }
+    | SEMI_COLON { $$ = {EMPTY, EMPTY}; }
     ;
     // | ClassDeclaration: omitted for joos
     // | InterfaceDeclaration: NOT SURE IF THIS SHOULD BE OMITTED FOR JOOS
@@ -651,8 +702,8 @@ ClassBody:
 /* Fields */
 // Only one variable declaration is allowed at a time
 FieldDeclaration:
-    Type VariableDeclarator SEMI_COLON { MAKE_NODE($$, symbol_kind::S_FieldDeclaration, $1, $2, $3); }
-    | Modifiers Type VariableDeclarator SEMI_COLON { MAKE_NODE($$, symbol_kind::S_FieldDeclaration, $1, $2, $3, $4); }
+    Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, EMPTY_MODIFIERS, $1, $2); }
+    | Modifiers Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, $1, $2, $3); }
     ;
 
 VariableInitializer:
@@ -809,12 +860,12 @@ ParExpression:
     ;
 
 QualifiedIdentifier:
-    Identifier { MAKE_ONE($$, $1); }
-    | QualifiedIdentifier DOT Identifier { MAKE_NODE($$, symbol_kind::S_QualifiedIdentifier, $1, $2, $3); }
+    Identifier { MAKE_STACK_OBJ($$, QualifiedIdentifier); MAKE_VECTOR($$, $$.identifiers, *$1); }
+    | QualifiedIdentifier DOT Identifier { MAKE_VECTOR($$, $1.identifiers, *$3); }
     ;
 
 Identifier:
-    IDENTIFIER { MAKE_ONE($$, $1); }
+    IDENTIFIER { MAKE_OBJ($$, Identifier, $1); }
     ;
 
 // Delay Type reduce due to conflict
