@@ -116,6 +116,8 @@
 /************************* NONTERMINALS *************************/
 
 // Comma macro used to avoid issue with # of args in other macros
+
+// Overall tree (in progress)
 %nterm <unique_ptr<CompilationUnit>> CompilationUnit
     %nterm <unique_ptr<QualifiedIdentifier>> PackageDeclaration
     %nterm <pair<vector<QualifiedIdentifier> COMMA vector<QualifiedIdentifier>>> ImportDeclarations
@@ -143,12 +145,15 @@
                                     // MethodBody
             %nterm <unique_ptr<InterfaceDeclaration>> InterfaceDeclaration
 
+// QualifiedIdentifier (done)
 %nterm <QualifiedIdentifier> QualifiedIdentifier
     %nterm <unique_ptr<Identifier>> Identifier
 
+// Modifiers (done)
 %nterm <vector<Modifier>> Modifiers
     %nterm <Modifier> Modifier
 
+// Type (done)
 %nterm <unique_ptr<Type>> Type
     %nterm <PrimitiveType> PrimitiveType
         %nterm <PrimitiveType> IntegralType
@@ -156,8 +161,19 @@
     %nterm <unique_ptr<Type>> ReferenceType
         %nterm <QualifiedIdentifier> ClassOrInterfaceType
 
+// VariableDeclarator (todo)
+%nterm <unique_ptr<VariableDeclarator>> VariableDeclarator
+    %nterm <unique_ptr<Identifier>> VariableDeclaratorId
+    %nterm <unique_ptr<Expression>> VariableInitializer
 
+// Expression (todo)
 %nterm <AstNodeVariant*> Expression
+
+// Method Header/Body (todo)
+%nterm <AstNodeVariant*> MethodHeader
+%nterm <AstNodeVariant*> MethodBody
+
+// Rest of non-terminals
 %nterm <AstNodeVariant*> AssignmentExpression
 %nterm <AstNodeVariant*> Assignment
 %nterm <AstNodeVariant*> LeftHandSide
@@ -197,15 +213,11 @@
 %nterm <AstNodeVariant*> AbstractMethodModifiers
 %nterm <AstNodeVariant*> Interfaces
 %nterm <AstNodeVariant*> InterfaceTypeList
-%nterm <AstNodeVariant*> VariableInitializer
-%nterm <AstNodeVariant*> MethodHeader
 %nterm <AstNodeVariant*> MethodDeclarator
-%nterm <AstNodeVariant*> MethodBody
 %nterm <AstNodeVariant*> FormalParameterListOpt
 %nterm <AstNodeVariant*> FormalParameterList
 %nterm <AstNodeVariant*> AbstractMethodModifier
 %nterm <AstNodeVariant*> FormalParameter
-%nterm <AstNodeVariant*> VariableDeclaratorId
 %nterm <AstNodeVariant*> Statement
 %nterm <AstNodeVariant*> StatementWithoutTrailingSubstatement
 %nterm <AstNodeVariant*> ExpressionStatement
@@ -231,7 +243,6 @@
 %nterm <AstNodeVariant*> BlockStatements
 %nterm <AstNodeVariant*> BlockStatement
 %nterm <AstNodeVariant*> LocalVariableDeclarationStatement
-%nterm <AstNodeVariant*> VariableDeclarator
 /******************** END NONTERMINALS ********************/
 
 %parse-param {AstNodeVariant **root}
@@ -912,8 +923,8 @@ LocalVariableDeclarationStatement:
     ;
 
 VariableDeclarator:
-    VariableDeclaratorId { MAKE_ONE($$, $1); }
-    | VariableDeclaratorId ASSIGNMENT VariableInitializer { MAKE_NODE($$, symbol_kind::S_VariableDeclarator, $1, $2, $3); }
+    VariableDeclaratorId { MAKE_OBJ($$, VariableDeclarator, $1, EMPTY); }
+    | VariableDeclaratorId ASSIGNMENT VariableInitializer { MAKE_OBJ($$, VariableDeclarator, $1, $3); }
     ;
 
 // -------------------------------------------------------------
