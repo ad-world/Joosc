@@ -32,6 +32,11 @@ int Driver::parse(const std::string &f) {
     // Exception on parser failure
     if ( result != 0 ) { throw std::runtime_error("Parser error."); }
 
+    return result;
+}
+
+#if 0
+
     // Traverse and print parse tree
     deque<AstNode *> q;
     deque<int> depth;
@@ -86,3 +91,4 @@ int Driver::parse(const std::string &f) {
 
     return result;
 }
+#endif

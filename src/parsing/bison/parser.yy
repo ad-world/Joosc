@@ -12,6 +12,7 @@
   # include <memory>
   # include <vector>
   # include "../../ast/ast.h"
+  # include "../../variant-ast/astnode.h"
 
   class Driver;
 }
@@ -35,196 +36,196 @@
 /*=============================================================================
                               Token Definitions
 =============================================================================*/
-%token <AstNode*> IF
-%token <AstNode*> WHILE
-%token <AstNode*> FOR
-%token <AstNode*> ELSE
-%token <AstNode*> EXTENDS
-%token <AstNode*> IMPLEMENTS
-%token <AstNode*> PUBLIC
-%token <AstNode*> PROTECTED
-%token <AstNode*> STATIC
-%token <AstNode*> ABSTRACT
-%token <AstNode*> THIS
-%token <AstNode*> VOID
-%token <AstNode*> FINAL
-%token <AstNode*> IMPORT
-%token <AstNode*> CLASS
-%token <AstNode*> NEW
-%token <AstNode*> INSTANCEOF
+%token <AstNodeVariant*> IF
+%token <AstNodeVariant*> WHILE
+%token <AstNodeVariant*> FOR
+%token <AstNodeVariant*> ELSE
+%token <AstNodeVariant*> EXTENDS
+%token <AstNodeVariant*> IMPLEMENTS
+%token <AstNodeVariant*> PUBLIC
+%token <AstNodeVariant*> PROTECTED
+%token <AstNodeVariant*> STATIC
+%token <AstNodeVariant*> ABSTRACT
+%token <AstNodeVariant*> THIS
+%token <AstNodeVariant*> VOID
+%token <AstNodeVariant*> FINAL
+%token <AstNodeVariant*> IMPORT
+%token <AstNodeVariant*> CLASS
+%token <AstNodeVariant*> NEW
+%token <AstNodeVariant*> INSTANCEOF
 
 // might need to look at this again
-%token <AstNode*> PACKAGE
-%token <AstNode*> INTERFACE
-%token <AstNode*> OPENING_BRACE
-%token <AstNode*> CLOSING_BRACE
-%token <AstNode*> OPENING_PAREN
-%token <AstNode*> CLOSING_PAREN
-%token <AstNode*> OPENING_BRACKET
-%token <AstNode*> CLOSING_BRACKET
-%token <AstNode*> SEMI_COLON
-%token <AstNode*> COLON
-%token <AstNode*> COMMA
-%token <AstNode*> DOT
-%token <AstNode*> IDENTIFIER
-%token <AstNode*> NATIVE
-%token <AstNode*> ASSIGNMENT
-%token <AstNode*> RETURN
+%token <AstNodeVariant*> PACKAGE
+%token <AstNodeVariant*> INTERFACE
+%token <AstNodeVariant*> OPENING_BRACE
+%token <AstNodeVariant*> CLOSING_BRACE
+%token <AstNodeVariant*> OPENING_PAREN
+%token <AstNodeVariant*> CLOSING_PAREN
+%token <AstNodeVariant*> OPENING_BRACKET
+%token <AstNodeVariant*> CLOSING_BRACKET
+%token <AstNodeVariant*> SEMI_COLON
+%token <AstNodeVariant*> COLON
+%token <AstNodeVariant*> COMMA
+%token <AstNodeVariant*> DOT
+%token <AstNodeVariant*> IDENTIFIER
+%token <AstNodeVariant*> NATIVE
+%token <AstNodeVariant*> ASSIGNMENT
+%token <AstNodeVariant*> RETURN
 
 // types
-%token <AstNode*> INT
-%token <AstNode*> BOOLEAN
-%token <AstNode*> CHAR
-%token <AstNode*> BYTE
-%token <AstNode*> SHORT
-%token <AstNode*> TRUE
-%token <AstNode*> FALSE
-%token <AstNode*> STRING_LITERAL
-%token <AstNode*> INTEGER
-%token <AstNode*> NULL_TOKEN
-%token <AstNode*> CHAR_LITERAL
+%token <AstNodeVariant*> INT
+%token <AstNodeVariant*> BOOLEAN
+%token <AstNodeVariant*> CHAR
+%token <AstNodeVariant*> BYTE
+%token <AstNodeVariant*> SHORT
+%token <AstNodeVariant*> TRUE
+%token <AstNodeVariant*> FALSE
+%token <AstNodeVariant*> STRING_LITERAL
+%token <AstNodeVariant*> INTEGER
+%token <AstNodeVariant*> NULL_TOKEN
+%token <AstNodeVariant*> CHAR_LITERAL
 
 // comments
-%token <AstNode*> MULTI_LINE_COMMENT
-%token <AstNode*> SINGLE_LINE_COMMENT
-%token <AstNode*> JAVADOC_COMMENT
+%token <AstNodeVariant*> MULTI_LINE_COMMENT
+%token <AstNodeVariant*> SINGLE_LINE_COMMENT
+%token <AstNodeVariant*> JAVADOC_COMMENT
 
 // operators
-%token <AstNode*> NEGATE
-%token <AstNode*> ASTERISK
-%token <AstNode*> PLUS
-%token <AstNode*> MINUS
-%token <AstNode*> DIVIDE
-%token <AstNode*> MODULO
-%token <AstNode*> LESS_THAN
-%token <AstNode*> GREATER_THAN
-%token <AstNode*> LESS_THAN_EQUAL
-%token <AstNode*> GREATER_THAN_EQUAL
-%token <AstNode*> BOOLEAN_EQUAL
-%token <AstNode*> NOT_EQUAL
-%token <AstNode*> AMPERSAND
-%token <AstNode*> PIPE
-%token <AstNode*> BOOLEAN_AND
-%token <AstNode*> BOOLEAN_OR
+%token <AstNodeVariant*> NEGATE
+%token <AstNodeVariant*> ASTERISK
+%token <AstNodeVariant*> PLUS
+%token <AstNodeVariant*> MINUS
+%token <AstNodeVariant*> DIVIDE
+%token <AstNodeVariant*> MODULO
+%token <AstNodeVariant*> LESS_THAN
+%token <AstNodeVariant*> GREATER_THAN
+%token <AstNodeVariant*> LESS_THAN_EQUAL
+%token <AstNodeVariant*> GREATER_THAN_EQUAL
+%token <AstNodeVariant*> BOOLEAN_EQUAL
+%token <AstNodeVariant*> NOT_EQUAL
+%token <AstNodeVariant*> AMPERSAND
+%token <AstNodeVariant*> PIPE
+%token <AstNodeVariant*> BOOLEAN_AND
+%token <AstNodeVariant*> BOOLEAN_OR
 
 // END OF FILE TOKEN
-%token <AstNode*> EOF 0
+%token <AstNodeVariant*> EOF 0
 /*****************************************************************************/
 
 /************************* NONTERMINALS *************************/
-%nterm <AstNode*> CompilationUnit
-%nterm <AstNode*> PackageDeclaration
-%nterm <AstNode*> ImportDeclarations
-%nterm <AstNode*> TypeDeclarations
-%nterm <AstNode*> ImportDeclaration
-%nterm <AstNode*> SingleTypeImportDeclaration
-%nterm <AstNode*> TypeImportOnDemandDeclaration
-%nterm <AstNode*> TypeDeclaration
-%nterm <AstNode*> Expression
-%nterm <AstNode*> AssignmentExpression
-%nterm <AstNode*> Assignment
-%nterm <AstNode*> LeftHandSide
-%nterm <AstNode*> ConditionalOrExpression
-%nterm <AstNode*> ConditionalAndExpression
-%nterm <AstNode*> InclusiveOrExpression
-%nterm <AstNode*> AndExpression
-%nterm <AstNode*> EqualityExpression
-%nterm <AstNode*> RelationalExpression
-%nterm <AstNode*> AdditiveExpression
-%nterm <AstNode*> MultiplicativeExpression
-%nterm <AstNode*> UnaryExpression
-%nterm <AstNode*> UnaryExpressionNotPlusMinus
-%nterm <AstNode*> CastExpression
-%nterm <AstNode*> PrimaryOrExpressionName
-%nterm <AstNode*> Primary
-%nterm <AstNode*> ArrayCreationExpression
-%nterm <AstNode*> ClassInstanceCreationExpression
-%nterm <AstNode*> PrimaryNoNewArray
-%nterm <AstNode*> Literal
-%nterm <AstNode*> ArrayAccess
-%nterm <AstNode*> FieldAccess
-%nterm <AstNode*> ArgumentListOpt
-%nterm <AstNode*> ArgumentList
-%nterm <AstNode*> Arguments
-%nterm <AstNode*> MethodInvocation
-%nterm <AstNode*> Type
-%nterm <AstNode*> PrimitiveType
-%nterm <AstNode*> IntegralType
-%nterm <AstNode*> BooleanType
-%nterm <AstNode*> ClassOrInterfaceType
-%nterm <AstNode*> ReferenceType
-%nterm <AstNode*> InterfaceDeclaration
-%nterm <AstNode*> Modifiers
-%nterm <AstNode*> Modifier
-%nterm <AstNode*> InterfaceModifiersOpt
-%nterm <AstNode*> InterfaceType
-%nterm <AstNode*> ExtendsInterfaces
-%nterm <AstNode*> ExtendsInterfacesOpt
-%nterm <AstNode*> InterfaceBody
-%nterm <AstNode*> InterfaceMemberDeclarationsOpt
-%nterm <AstNode*> InterfaceMemberDeclarations
-%nterm <AstNode*> InterfaceMemberDeclaration
-%nterm <AstNode*> AbstractMethodDeclaration
-%nterm <AstNode*> AbstractMethodModifiersOpt
-%nterm <AstNode*> AbstractMethodModifiers
-%nterm <AstNode*> ClassDeclaration
-%nterm <AstNode*> InterfacesOpt
-%nterm <AstNode*> Interfaces
-%nterm <AstNode*> InterfaceTypeList
-%nterm <AstNode*> ExtendsOpt
-%nterm <AstNode*> ClassBodyDeclarationsOpt
-%nterm <AstNode*> ClassBodyDeclarations
-%nterm <AstNode*> ClassBodyDeclaration
-%nterm <AstNode*> ClassMemberDeclaration
-%nterm <AstNode*> ClassBody
-%nterm <AstNode*> FieldDeclaration
-%nterm <AstNode*> VariableInitializer
-%nterm <AstNode*> MethodDeclaration
-%nterm <AstNode*> MethodHeader
-%nterm <AstNode*> MethodDeclarator
-%nterm <AstNode*> MethodBody
-%nterm <AstNode*> FormalParameterListOpt
-%nterm <AstNode*> FormalParameterList
-%nterm <AstNode*> AbstractMethodModifier
-%nterm <AstNode*> FormalParameter
-%nterm <AstNode*> VariableDeclaratorId
-%nterm <AstNode*> Statement
-%nterm <AstNode*> StatementWithoutTrailingSubstatement
-%nterm <AstNode*> ExpressionStatement
-%nterm <AstNode*> StatementExpression
-%nterm <AstNode*> StatementNoShortIf
-%nterm <AstNode*> EmptyStatement
-%nterm <AstNode*> IfThenStatement
-%nterm <AstNode*> IfThenElseStatement
-%nterm <AstNode*> IfThenElseStatementNoShortIf
-%nterm <AstNode*> WhileStatement
-%nterm <AstNode*> WhileStatementNoShortIf
-%nterm <AstNode*> ForStatement
-%nterm <AstNode*> ForStatementNoShortIf
-%nterm <AstNode*> ForInitOpt
-%nterm <AstNode*> ForInit
-%nterm <AstNode*> ForUpdateOpt
-%nterm <AstNode*> ExpressionOpt
-%nterm <AstNode*> ReturnStatement
-%nterm <AstNode*> ParExpression
-%nterm <AstNode*> QualifiedIdentifier
-%nterm <AstNode*> Identifier
-%nterm <AstNode*> LocalVariableDeclaration
-%nterm <AstNode*> Block
-%nterm <AstNode*> BlockStatementsOpt
-%nterm <AstNode*> BlockStatements
-%nterm <AstNode*> BlockStatement
-%nterm <AstNode*> LocalVariableDeclarationStatement
-%nterm <AstNode*> VariableDeclarator
+%nterm <AstNodeVariant*> CompilationUnit
+%nterm <AstNodeVariant*> PackageDeclaration
+%nterm <AstNodeVariant*> ImportDeclarations
+%nterm <AstNodeVariant*> TypeDeclarations
+%nterm <AstNodeVariant*> ImportDeclaration
+%nterm <AstNodeVariant*> SingleTypeImportDeclaration
+%nterm <AstNodeVariant*> TypeImportOnDemandDeclaration
+%nterm <AstNodeVariant*> TypeDeclaration
+%nterm <AstNodeVariant*> Expression
+%nterm <AstNodeVariant*> AssignmentExpression
+%nterm <AstNodeVariant*> Assignment
+%nterm <AstNodeVariant*> LeftHandSide
+%nterm <AstNodeVariant*> ConditionalOrExpression
+%nterm <AstNodeVariant*> ConditionalAndExpression
+%nterm <AstNodeVariant*> InclusiveOrExpression
+%nterm <AstNodeVariant*> AndExpression
+%nterm <AstNodeVariant*> EqualityExpression
+%nterm <AstNodeVariant*> RelationalExpression
+%nterm <AstNodeVariant*> AdditiveExpression
+%nterm <AstNodeVariant*> MultiplicativeExpression
+%nterm <AstNodeVariant*> UnaryExpression
+%nterm <AstNodeVariant*> UnaryExpressionNotPlusMinus
+%nterm <AstNodeVariant*> CastExpression
+%nterm <AstNodeVariant*> PrimaryOrExpressionName
+%nterm <AstNodeVariant*> Primary
+%nterm <AstNodeVariant*> ArrayCreationExpression
+%nterm <AstNodeVariant*> ClassInstanceCreationExpression
+%nterm <AstNodeVariant*> PrimaryNoNewArray
+%nterm <AstNodeVariant*> Literal
+%nterm <AstNodeVariant*> ArrayAccess
+%nterm <AstNodeVariant*> FieldAccess
+%nterm <AstNodeVariant*> ArgumentListOpt
+%nterm <AstNodeVariant*> ArgumentList
+%nterm <AstNodeVariant*> Arguments
+%nterm <AstNodeVariant*> MethodInvocation
+%nterm <AstNodeVariant*> Type
+%nterm <AstNodeVariant*> PrimitiveType
+%nterm <AstNodeVariant*> IntegralType
+%nterm <AstNodeVariant*> BooleanType
+%nterm <AstNodeVariant*> ClassOrInterfaceType
+%nterm <AstNodeVariant*> ReferenceType
+%nterm <AstNodeVariant*> InterfaceDeclaration
+%nterm <AstNodeVariant*> Modifiers
+%nterm <AstNodeVariant*> Modifier
+%nterm <AstNodeVariant*> InterfaceModifiersOpt
+%nterm <AstNodeVariant*> InterfaceType
+%nterm <AstNodeVariant*> ExtendsInterfaces
+%nterm <AstNodeVariant*> ExtendsInterfacesOpt
+%nterm <AstNodeVariant*> InterfaceBody
+%nterm <AstNodeVariant*> InterfaceMemberDeclarationsOpt
+%nterm <AstNodeVariant*> InterfaceMemberDeclarations
+%nterm <AstNodeVariant*> InterfaceMemberDeclaration
+%nterm <AstNodeVariant*> AbstractMethodDeclaration
+%nterm <AstNodeVariant*> AbstractMethodModifiersOpt
+%nterm <AstNodeVariant*> AbstractMethodModifiers
+%nterm <AstNodeVariant*> ClassDeclaration
+%nterm <AstNodeVariant*> InterfacesOpt
+%nterm <AstNodeVariant*> Interfaces
+%nterm <AstNodeVariant*> InterfaceTypeList
+%nterm <AstNodeVariant*> ExtendsOpt
+%nterm <AstNodeVariant*> ClassBodyDeclarationsOpt
+%nterm <AstNodeVariant*> ClassBodyDeclarations
+%nterm <AstNodeVariant*> ClassBodyDeclaration
+%nterm <AstNodeVariant*> ClassMemberDeclaration
+%nterm <AstNodeVariant*> ClassBody
+%nterm <AstNodeVariant*> FieldDeclaration
+%nterm <AstNodeVariant*> VariableInitializer
+%nterm <AstNodeVariant*> MethodDeclaration
+%nterm <AstNodeVariant*> MethodHeader
+%nterm <AstNodeVariant*> MethodDeclarator
+%nterm <AstNodeVariant*> MethodBody
+%nterm <AstNodeVariant*> FormalParameterListOpt
+%nterm <AstNodeVariant*> FormalParameterList
+%nterm <AstNodeVariant*> AbstractMethodModifier
+%nterm <AstNodeVariant*> FormalParameter
+%nterm <AstNodeVariant*> VariableDeclaratorId
+%nterm <AstNodeVariant*> Statement
+%nterm <AstNodeVariant*> StatementWithoutTrailingSubstatement
+%nterm <AstNodeVariant*> ExpressionStatement
+%nterm <AstNodeVariant*> StatementExpression
+%nterm <AstNodeVariant*> StatementNoShortIf
+%nterm <AstNodeVariant*> EmptyStatement
+%nterm <AstNodeVariant*> IfThenStatement
+%nterm <AstNodeVariant*> IfThenElseStatement
+%nterm <AstNodeVariant*> IfThenElseStatementNoShortIf
+%nterm <AstNodeVariant*> WhileStatement
+%nterm <AstNodeVariant*> WhileStatementNoShortIf
+%nterm <AstNodeVariant*> ForStatement
+%nterm <AstNodeVariant*> ForStatementNoShortIf
+%nterm <AstNodeVariant*> ForInitOpt
+%nterm <AstNodeVariant*> ForInit
+%nterm <AstNodeVariant*> ForUpdateOpt
+%nterm <AstNodeVariant*> ExpressionOpt
+%nterm <AstNodeVariant*> ReturnStatement
+%nterm <AstNodeVariant*> ParExpression
+%nterm <AstNodeVariant*> QualifiedIdentifier
+%nterm <AstNodeVariant*> Identifier
+%nterm <AstNodeVariant*> LocalVariableDeclaration
+%nterm <AstNodeVariant*> Block
+%nterm <AstNodeVariant*> BlockStatementsOpt
+%nterm <AstNodeVariant*> BlockStatements
+%nterm <AstNodeVariant*> BlockStatement
+%nterm <AstNodeVariant*> LocalVariableDeclarationStatement
+%nterm <AstNodeVariant*> VariableDeclarator
 /******************** END NONTERMINALS ********************/
 
-%parse-param {AstNode **root}
+%parse-param {AstNodeVariant **root}
 
 %{
-#define MAKE_EMPTY(me)      me = new AstNode((symbol_kind::S_YYEMPTY))
-#define MAKE_ONE(me, you)   me = you
-#define MAKE_NODE(me, symbol, children...) \
-    me = new AstNode((symbol)); me->addChild(children)
+#define MAKE_EMPTY(me)      ; // me = new AstNodeVariant((symbol_kind::S_YYEMPTY))
+#define MAKE_ONE(me, you)   ; // me = you
+#define MAKE_NODE(me, symbol, children...) ;
+    // me = new AstNodeVariant((symbol)); me->addChild(children)
 %}
 
 // Grammar
@@ -234,7 +235,7 @@
 /*---------------------- Packages ----------------------*/
 
 Start:
-     CompilationUnit { *root = $1; }
+     CompilationUnit { /* *root = $1; */ }
 
 CompilationUnit:
     PackageDeclaration ImportDeclarations TypeDeclarations
