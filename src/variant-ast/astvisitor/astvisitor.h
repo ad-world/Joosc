@@ -1,6 +1,7 @@
 #pragma once
 
 #include "variant-ast/astnode.h"
+#include <variant>
 
 template <typename ReturnType>
 class AstVisitor {
@@ -23,8 +24,6 @@ class AstVisitor {
     void visit_children(FormalParameter &node);
     void visit_children(Modifier &node);
 
-    // void visit_children(Statement &node);
-    // void visit_children(ExpressionStatement &node);
     void visit_children(LocalVariableDeclaration &node);
     void visit_children(Block &node);
     void visit_children(IfThenStatement &node);
@@ -33,7 +32,6 @@ class AstVisitor {
     void visit_children(ForStatement &node);
     void visit_children(ReturnStatement &node);
 
-    // void visit_children(Expression &node);
     void visit_children(InfixExpression &node);
     void visit_children(PrefixExpression &node);
     void visit_children(CastExpression &node);
@@ -48,6 +46,23 @@ class AstVisitor {
 
   public:
     virtual ~AstVisitor() = default;
+
+    // Dispatch nested variant to member type
+    virtual void operator()(Statement &node) {
+        return std::visit( 
+            [&](auto &statement_type) { return this->operator()(statement_type); }, 
+            node);
+    }
+    virtual void operator()(Expression &node) {
+        return std::visit( 
+            [&](auto &expression_type) { return this->operator()(expression_type); }, 
+            node);
+    }
+    virtual void operator()(ExpressionStatement &node) {
+        return std::visit( 
+            [&](auto &expr_stmt_type) { return this->operator()(expr_stmt_type); }, 
+            node);
+    }
 
     virtual void operator()(CompilationUnit &node) = 0;
 
@@ -66,8 +81,6 @@ class AstVisitor {
     virtual void operator()(FormalParameter &node) = 0;
     virtual void operator()(Modifier &node) = 0;
 
-    virtual void operator()(Statement &node) = 0;
-    virtual void operator()(ExpressionStatement &node) = 0;
     virtual void operator()(LocalVariableDeclaration &node) = 0;
     virtual void operator()(Block &node) = 0;
     virtual void operator()(IfThenStatement &node) = 0;
@@ -76,7 +89,6 @@ class AstVisitor {
     virtual void operator()(ForStatement &node) = 0;
     virtual void operator()(ReturnStatement &node) = 0;
 
-    virtual void operator()(Expression &node) = 0;
     virtual void operator()(InfixExpression &node) = 0;
     virtual void operator()(PrefixExpression &node) = 0;
     virtual void operator()(CastExpression &node) = 0;
