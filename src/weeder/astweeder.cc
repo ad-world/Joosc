@@ -41,27 +41,29 @@ void AstWeeder::printViolations() {
     }
 }
 
-int AstWeeder::weed(CompilationUnit root, string fileName) {
+int AstWeeder::weed(AstNodeVariant& root, string fileName) {
     string file = getFileName(fileName);
     // check if program has any interfaces
-    checkInterfaces(root.interface_declarations, file);
 
-    // check if program has any classes
-    checkClassModifiersAndConstructors(root.class_declarations, file);
+    if (holds_alternative<CompilationUnit>(root)) {
+        auto& cu = get<CompilationUnit>(root);
+        // checkAsciiRange();
 
-    // check if program has any literals
-    GrabAllVisitor literal_vis = GrabAllVisitor<Literal>(); // todo: get these using grab all visitor
-    auto literals = literal_vis.visit(root);
-    checkLiterals(literals);
+        checkInterfaces(cu.interface_declarations, file);
 
-    // check if program has any cast expressions
-    GrabAllVisitor cast_vis = GrabAllVisitor<CastExpression>();
-    auto cast_expressions = cast_vis.visit(root);
-    checkCastExpressionsValid(cast_expressions);
+        // check if program has any classes
+        checkClassModifiersAndConstructors(cu.class_declarations, file);
 
-    if(!violations.empty()) {
-        printViolations();
-        return 42;
+        // check if program has any literals
+        checkLiterals(GrabAllVisitor<Literal>()(root));
+
+        // check if program has any cast expressions
+        checkCastExpressionsValid(GrabAllVisitor<CastExpression>()(root));
+
+        if(!violations.empty()) {
+            printViolations();
+            return 42;
+        }    
     }
     
     return 0;
