@@ -1,12 +1,25 @@
 #include "astweeder.h"
-#include "astnode.h"
-#include <algorithm>
-#include <sstream>
-#include <stdexcept>
-#include <optional>
-#include <variant>
 
 using namespace std;
+
+// Helper functions
+bool isPublicProtected(vector<Modifier> modifiers) {
+    auto pubIt = find(modifiers.begin(), modifiers.end(), Modifier::PUBLIC);
+    auto protIt = find(modifiers.begin(), modifiers.end(), Modifier::PROTECTED);
+
+    return (pubIt != modifiers.end()) || (protIt != modifiers.end());
+}
+
+string getFileName(string& filename) {
+    size_t lastSlash = filename.find_last_of("/\\");
+    size_t lastDot = filename.find_last_of('.');
+    
+    if (lastDot != std::string::npos && (lastSlash == std::string::npos || lastDot > lastSlash)) {
+        return filename.substr(lastSlash + 1, lastDot - lastSlash - 1);
+    } else {
+        return filename.substr(lastSlash + 1);
+    }
+}
 
 void AstWeeder::checkAsciiRange(const string& source) {
     for (char c : source) {
@@ -37,12 +50,12 @@ int AstWeeder::weed(CompilationUnit root, string fileName) {
     checkClassModifiersAndConstructors(root.class_declarations, file);
 
     // check if program has any literals
-    vector<Literal> literals; // todo: get these using grab all visitor
-    checkLiterals(literals);
+    //vector<Literal> literals; // todo: get these using grab all visitor
+    //checkLiterals(literals);
 
     // check if program has any cast expressions
-    vector<CastExpression> cast_expressions; // todo: get these using grab all visitor
-    checkCastExpressionsValid(cast_expressions);
+    //vector<CastExpression> cast_expressions; // todo: get these using grab all visitor
+    //checkCastExpressionsValid(cast_expressions);
 
     if(!violations.empty()) {
         printViolations();
@@ -206,24 +219,5 @@ void AstWeeder::checkLiterals(vector<Literal> literals) {
 void AstWeeder::checkCastExpressionsValid(vector<CastExpression> exprs) {
     // get all cast expressions
     // todo: fill this function in
-}
-
-// Helper functions
-bool isPublicProtected(vector<Modifier> modifiers) {
-    auto pubIt = find(modifiers.begin(), modifiers.end(), Modifier::PUBLIC);
-    auto protIt = find(modifiers.begin(), modifiers.end(), Modifier::PROTECTED);
-
-    return (pubIt != modifiers.end()) || (protIt != modifiers.end());
-}
-
-string getFileName(string& filename) {
-    size_t lastSlash = filename.find_last_of("/\\");
-    size_t lastDot = filename.find_last_of('.');
-    
-    if (lastDot != std::string::npos && (lastSlash == std::string::npos || lastDot > lastSlash)) {
-        return filename.substr(lastSlash + 1, lastDot - lastSlash - 1);
-    } else {
-        return filename.substr(lastSlash + 1);
-    }
 }
 

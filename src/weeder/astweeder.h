@@ -1,8 +1,12 @@
 #pragma once
 #include <iostream>
 #include <vector>
-#include "astnode.h"
-
+#include <algorithm>
+#include <sstream>
+#include <stdexcept>
+#include <optional>
+#include <variant>
+#include "../variant-ast/astnode.h"
 
 using namespace std;
 class AstWeeder {
