@@ -20,7 +20,7 @@ class RootEnvironment {
         RootEnvironment(std::unique_ptr<RootEnvironment> parent = nullptr);
         // add variable to environment
         void addVariable(const std::string& name, const Variable& variable);
-        // lookup a variable in the environment
+        // lookup a variable in that environment and parent environments
         std::optional<Variable> lookupVariable(const std::string& name);
 };
 
