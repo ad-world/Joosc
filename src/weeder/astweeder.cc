@@ -21,6 +21,23 @@ string getFileName(string& filename) {
     }
 }
 
+
+string readFileToString(const string& filePath) {
+    ifstream file(filePath);
+    if (!file.is_open()) {
+        throw runtime_error("Unable to open file: " + filePath);
+    }
+
+    string content;
+    string line;
+    while (getline(file, line)) {
+        content += line + "\n";
+    }
+
+    return content;
+}
+
+
 void AstWeeder::checkAsciiRange(const string& source) {
     for (char c : source) {
         if (c < 0 || c > 127) {
@@ -47,8 +64,11 @@ int AstWeeder::weed(AstNodeVariant& root, string fileName) {
 
     if (holds_alternative<CompilationUnit>(root)) {
         auto& cu = get<CompilationUnit>(root);
-        // checkAsciiRange();
+        
+        // check program ascii range
+        checkAsciiRange(readFileToString(fileName));
 
+        // check programm interfaces
         checkInterfaces(cu.interface_declarations, file);
 
         // check if program has any classes

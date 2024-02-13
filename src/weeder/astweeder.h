@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <optional>
 #include <variant>
+#include <fstream>
 #include "variant-ast/astnode.h"
 #include "variant-ast/astvisitor/graballvisitor.h"
 
