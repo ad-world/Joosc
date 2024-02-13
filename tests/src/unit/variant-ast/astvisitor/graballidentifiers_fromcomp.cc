@@ -7,7 +7,7 @@
 #include "variant-ast/astvisitor/graballvisitor.h"
 
 
-TEST(GrabAllVisitor, GetsCorrectAmount) {
+TEST(GrabAllVisitor, GetsCorrectAmountFromCompilationUnit) {
     std::string name1 = "hello";
     std::string name2 = "hello";
     auto id1 = Identifier(name1);
@@ -21,7 +21,7 @@ TEST(GrabAllVisitor, GetsCorrectAmount) {
     auto class_declarations = std::vector<ClassDeclaration>();
     auto interface_declarations = std::vector<InterfaceDeclaration>();
 
-    AstNodeVariant root = CompilationUnit(
+    CompilationUnit root = CompilationUnit(
         package_declaration, 
         single_imports, 
         asterisk_imports, 
