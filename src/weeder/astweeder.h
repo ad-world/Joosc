@@ -20,23 +20,23 @@ private:
 
     void checkAsciiRange(const string& source);
 
-    void checkClassModifiersAndConstructors(vector<ClassDeclaration> classes, string filename);
+    void checkClassModifiersAndConstructors(vector<ClassDeclaration> &classes, string filename);
 
-    void checkInterfaces(vector<InterfaceDeclaration> interfaces, string filename);
+    void checkInterfaces(vector<InterfaceDeclaration> &interfaces, string filename);
 
-    void checkMethodModifiersAndBody(vector<MethodDeclaration> methods);
+    void checkMethodModifiersAndBody(vector<MethodDeclaration> &methods);
 
-    void checkCastExpressionsValid(vector<CastExpression> exprs);
+    void checkCastExpressionsValid(vector<CastExpression> &exprs);
 
     void addViolation(const string& vio);
 
     void printViolations();
 
-    void checkClassFields(vector<FieldDeclaration> fields);
+    void checkClassFields(vector<FieldDeclaration> &fields);
 
     string getFileName(string& filePath);
 
     bool isClassPublic(ClassDeclaration classname);
 
-    void checkLiterals(vector<Literal> literls);   
+    void checkLiterals(vector<Literal> &literls);   
 };

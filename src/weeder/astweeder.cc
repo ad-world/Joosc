@@ -65,7 +65,7 @@ int AstWeeder::weed(CompilationUnit root, string fileName) {
     return 0;
 }
 
-void AstWeeder::checkInterfaces(vector<InterfaceDeclaration> interfaces, string filename) {
+void AstWeeder::checkInterfaces(vector<InterfaceDeclaration> &interfaces, string filename) {
     bool interfaceNameFound = false;
 
     for (const InterfaceDeclaration& inter: interfaces) {
@@ -86,7 +86,7 @@ void AstWeeder::checkInterfaces(vector<InterfaceDeclaration> interfaces, string 
 }
 
 
-void AstWeeder::checkClassModifiersAndConstructors(vector<ClassDeclaration> classes, string filename) {
+void AstWeeder::checkClassModifiersAndConstructors(vector<ClassDeclaration> &classes, string filename) {
     bool classNameFound = false;
 
     for (const ClassDeclaration& cls: classes) {
@@ -145,7 +145,7 @@ void AstWeeder::checkClassModifiersAndConstructors(vector<ClassDeclaration> clas
     }
 }
 
-void AstWeeder::checkMethodModifiersAndBody(std::vector<MethodDeclaration> methods) {
+void AstWeeder::checkMethodModifiersAndBody(std::vector<MethodDeclaration> &methods) {
     for (const MethodDeclaration& method: methods) {
         auto name = method.function_name->name;
         vector<Modifier> modifiers = method.modifiers;
@@ -192,7 +192,7 @@ void AstWeeder::checkMethodModifiersAndBody(std::vector<MethodDeclaration> metho
     }
 }
 
-void AstWeeder::checkClassFields(vector<FieldDeclaration> fields) {
+void AstWeeder::checkClassFields(vector<FieldDeclaration> &fields) {
     for (const FieldDeclaration& field: fields) {
         vector<Modifier> modifiers = field.modifiers;
 
@@ -210,13 +210,13 @@ void AstWeeder::checkClassFields(vector<FieldDeclaration> fields) {
     }
 }
 
-void AstWeeder::checkLiterals(vector<Literal> literals) {
+void AstWeeder::checkLiterals(vector<Literal> &literals) {
     // check all literals in new weeder class
     // todo: fill this in
 }
 
 
-void AstWeeder::checkCastExpressionsValid(vector<CastExpression> exprs) {
+void AstWeeder::checkCastExpressionsValid(vector<CastExpression> &exprs) {
     // get all cast expressions
     // todo: fill this function in
 }
