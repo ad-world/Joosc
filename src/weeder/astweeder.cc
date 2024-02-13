@@ -50,12 +50,14 @@ int AstWeeder::weed(CompilationUnit root, string fileName) {
     checkClassModifiersAndConstructors(root.class_declarations, file);
 
     // check if program has any literals
-    //vector<Literal> literals; // todo: get these using grab all visitor
-    //checkLiterals(literals);
+    GrabAllVisitor literal_vis = GrabAllVisitor<Literal>(); // todo: get these using grab all visitor
+    auto literals = literal_vis.visit(root);
+    checkLiterals(literals);
 
     // check if program has any cast expressions
-    //vector<CastExpression> cast_expressions; // todo: get these using grab all visitor
-    //checkCastExpressionsValid(cast_expressions);
+    GrabAllVisitor cast_vis = GrabAllVisitor<CastExpression>();
+    auto cast_expressions = cast_vis.visit(root);
+    checkCastExpressionsValid(cast_expressions);
 
     if(!violations.empty()) {
         printViolations();
@@ -210,14 +212,36 @@ void AstWeeder::checkClassFields(const vector<FieldDeclaration> &fields) {
     }
 }
 
-void AstWeeder::checkLiterals(vector<Literal> &literals) {
+void AstWeeder::checkLiterals(vector<Literal*> literals) {
     // check all literals in new weeder class
     // todo: fill this in
 }
 
 
-void AstWeeder::checkCastExpressionsValid(vector<CastExpression> &exprs) {
+void AstWeeder::checkCastExpressionsValid(vector<CastExpression*> exprs) {
     // get all cast expressions
     // todo: fill this function in
+    // for (auto &expr: exprs) {
+    //     auto primitives = vector<int>{
+    //         PrimitiveType::BOOLEAN,
+    //         PrimitiveType::BYTE,
+    //         PrimitiveType::SHORT,
+    //         PrimitiveType::INT,
+    //         PrimitiveType::CHAR,
+    //     };
+
+    //     Type* cast_type = expr->type;
+    //     if (cast_type->is_array) {
+    //         addViolation("Cannot cast to an array type");
+    //     } else {
+    //         auto non_array_type = cast_type->non_array_type;
+    //         if (holds_alternative<PrimitiveType>(*non_array_type)) {
+    //             auto type = get<PrimitiveType>(*non_array_type);
+    //             if (find(primitives.begin(), primitives.end(), type) == primitives.end()) {
+    //                 addViolation("Invalid cast to primitive type");
+    //             }
+    //         }
+    //     }
+    // }
 }
 

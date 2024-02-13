@@ -20,4 +20,9 @@ class GrabAllVisitor : public DefaultSkipVisitor<std::vector<GrabType*>> {
         std::visit(*this, node);
         return result;
     }
+
+    std::vector<GrabType*> visit(CompilationUnit &node) override {
+        std::visit(*this, node);
+        return result;
+    }
 };

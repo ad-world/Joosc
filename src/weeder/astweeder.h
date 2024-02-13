@@ -6,7 +6,8 @@
 #include <stdexcept>
 #include <optional>
 #include <variant>
-#include "../variant-ast/astnode.h"
+#include "variant-ast/astnode.h"
+#include "variant-ast/astvisitor/graballvisitor.h"
 
 using namespace std;
 class AstWeeder {
@@ -26,7 +27,7 @@ private:
 
     void checkMethodModifiersAndBody(const vector<MethodDeclaration> &methods);
 
-    void checkCastExpressionsValid(vector<CastExpression> &exprs);
+    void checkCastExpressionsValid(vector<CastExpression*> exprs);
 
     void addViolation(const string& vio);
 
@@ -34,5 +35,5 @@ private:
 
     void checkClassFields(const vector<FieldDeclaration> &fields);
 
-    void checkLiterals(vector<Literal> &literls);   
+    void checkLiterals(vector<Literal*> literls);   
 };
