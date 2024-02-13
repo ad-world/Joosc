@@ -89,18 +89,18 @@ void AstWeeder::checkInterfaces(vector<InterfaceDeclaration> &interfaces, string
 void AstWeeder::checkClassModifiersAndConstructors(vector<ClassDeclaration> &classes, string filename) {
     bool classNameFound = false;
 
-    for (const ClassDeclaration& cls: classes) {
+    for (ClassDeclaration& cls: classes) {
         bool constructorFound = false;
 
         // Check if class name matches file name
         auto name = cls.class_name->name;
         if (name == filename) classNameFound = true;
         
-        vector<MethodDeclaration> methods = cls.method_declarations;
+        const auto &methods = cls.method_declarations;
         // Check all methods in class
         checkMethodModifiersAndBody(methods);
 
-        vector<FieldDeclaration> fields = cls.field_declarations;
+        const auto &fields = cls.field_declarations;
         // Check all fields in class
         checkClassFields(fields);
 
@@ -145,7 +145,7 @@ void AstWeeder::checkClassModifiersAndConstructors(vector<ClassDeclaration> &cla
     }
 }
 
-void AstWeeder::checkMethodModifiersAndBody(std::vector<MethodDeclaration> &methods) {
+void AstWeeder::checkMethodModifiersAndBody(const std::vector<MethodDeclaration> &methods) {
     for (const MethodDeclaration& method: methods) {
         auto name = method.function_name->name;
         vector<Modifier> modifiers = method.modifiers;
@@ -192,7 +192,7 @@ void AstWeeder::checkMethodModifiersAndBody(std::vector<MethodDeclaration> &meth
     }
 }
 
-void AstWeeder::checkClassFields(vector<FieldDeclaration> &fields) {
+void AstWeeder::checkClassFields(const vector<FieldDeclaration> &fields) {
     for (const FieldDeclaration& field: fields) {
         vector<Modifier> modifiers = field.modifiers;
 

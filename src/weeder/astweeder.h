@@ -24,7 +24,7 @@ private:
 
     void checkInterfaces(vector<InterfaceDeclaration> &interfaces, string filename);
 
-    void checkMethodModifiersAndBody(vector<MethodDeclaration> &methods);
+    void checkMethodModifiersAndBody(const vector<MethodDeclaration> &methods);
 
     void checkCastExpressionsValid(vector<CastExpression> &exprs);
 
@@ -32,11 +32,7 @@ private:
 
     void printViolations();
 
-    void checkClassFields(vector<FieldDeclaration> &fields);
-
-    string getFileName(string& filePath);
-
-    bool isClassPublic(ClassDeclaration classname);
+    void checkClassFields(const vector<FieldDeclaration> &fields);
 
     void checkLiterals(vector<Literal> &literls);   
 };
