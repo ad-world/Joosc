@@ -29,8 +29,8 @@ TEST(GrabAllVisitor, GetsCorrectAmount) {
         interface_declarations
     );
 
-    auto grabber = GrabAllVisitor<Identifier>();
-    auto result = grabber(root);
+    auto result = GrabAllVisitor<Identifier>()(root);
     
+    std::cout << "GrabAllVisitor Got " << result.size() << " Identifiers\n";
     EXPECT_TRUE(result.size() == 2) << "GrabAllVisitor didn't grab all";
 }
