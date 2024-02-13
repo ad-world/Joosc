@@ -46,7 +46,8 @@ typedef std::variant<
     struct MethodInvocation,
     struct ArrayAccess,
     struct QualifiedThis,
-    struct ArrayCreationExpression
+    struct ArrayCreationExpression,
+    struct QualifiedIdentifier
 > Expression;
 
 struct Assignment: public AstNodeCommon {

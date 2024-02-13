@@ -146,7 +146,7 @@
             %nterm <unique_ptr<InterfaceDeclaration>> InterfaceDeclaration
 
 // QualifiedIdentifier (done)
-%nterm <QualifiedIdentifier> QualifiedIdentifier
+%nterm <QualifiedIdentifier> QualifiedIdentifier        // TODO: convert to unique_ptr
     %nterm <unique_ptr<Identifier>> Identifier
 
 // Modifiers (done)
@@ -161,23 +161,43 @@
     %nterm <unique_ptr<Type>> ReferenceType
         %nterm <QualifiedIdentifier> ClassOrInterfaceType
 
-// VariableDeclarator (todo)
+// VariableDeclarator (done)
 %nterm <unique_ptr<VariableDeclarator>> VariableDeclarator
     %nterm <unique_ptr<Identifier>> VariableDeclaratorId
     %nterm <unique_ptr<Expression>> VariableInitializer
 
 // Expression (todo)
-%nterm <AstNodeVariant*> Expression
+%nterm <unique_ptr<Expression>> Expression
+    %nterm <unique_ptr<Expression>> AssignmentExpression
+        %nterm <unique_ptr<Expression>> Assignment
+            %nterm <unique_ptr<Expression>> LeftHandSide
+                %nterm <unique_ptr<Expression>> FieldAccess
+                    // Primary
+                %nterm <unique_ptr<Expression>> ArrayAccess
+
+// ConditionalOrExpression (todo)
+%nterm <unique_ptr<Expression>> ConditionalOrExpression
+
+// Primary (done)
+%nterm <unique_ptr<Expression>> Primary
+    %nterm <unique_ptr<Expression>> PrimaryNoNewArray
+        %nterm <unique_ptr<Literal>> Literal
+        %nterm <unique_ptr<Expression>> ClassInstanceCreationExpression
+            // Arguments
+        %nterm <unique_ptr<Expression>> MethodInvocation
+    %nterm <unique_ptr<Expression>> ArrayCreationExpression
+
+
+// Arguments (done)
+%nterm <vector<Expression>> Arguments
+    %nterm <vector<Expression>> ArgumentListOpt
+        %nterm <vector<Expression>> ArgumentList
 
 // Method Header/Body (todo)
 %nterm <AstNodeVariant*> MethodHeader
 %nterm <AstNodeVariant*> MethodBody
 
 // Rest of non-terminals
-%nterm <AstNodeVariant*> AssignmentExpression
-%nterm <AstNodeVariant*> Assignment
-%nterm <AstNodeVariant*> LeftHandSide
-%nterm <AstNodeVariant*> ConditionalOrExpression
 %nterm <AstNodeVariant*> ConditionalAndExpression
 %nterm <AstNodeVariant*> InclusiveOrExpression
 %nterm <AstNodeVariant*> AndExpression
@@ -189,17 +209,6 @@
 %nterm <AstNodeVariant*> UnaryExpressionNotPlusMinus
 %nterm <AstNodeVariant*> CastExpression
 %nterm <AstNodeVariant*> PrimaryOrExpressionName
-%nterm <AstNodeVariant*> Primary
-%nterm <AstNodeVariant*> ArrayCreationExpression
-%nterm <AstNodeVariant*> ClassInstanceCreationExpression
-%nterm <AstNodeVariant*> PrimaryNoNewArray
-%nterm <AstNodeVariant*> Literal
-%nterm <AstNodeVariant*> ArrayAccess
-%nterm <AstNodeVariant*> FieldAccess
-%nterm <AstNodeVariant*> ArgumentListOpt
-%nterm <AstNodeVariant*> ArgumentList
-%nterm <AstNodeVariant*> Arguments
-%nterm <AstNodeVariant*> MethodInvocation
 %nterm <AstNodeVariant*> InterfaceModifiersOpt
 %nterm <AstNodeVariant*> InterfaceType
 %nterm <AstNodeVariant*> ExtendsInterfaces
@@ -262,6 +271,15 @@
 #define MAKE_OBJ(me, type, constructor...) \
     me = make_unique<type>((constructor))
 
+#define MAKE_VARIANT_OBJ(me, outer_type, inner_type, inner_constructor) \
+    me = make_unique<outer_type>(in_place_type<inner_type>, (inner_constructor))
+
+#define MAKE_EXPRESSION_OBJ(me, inner_type, inner_constructor...) \
+    MAKE_VARIANT_OBJ(me, Expression, inner_type, (inner_constructor))
+
+#define MAKE_LITERAL_OBJ(me, inner_type, inner_constructor...) \
+    MAKE_VARIANT_OBJ(me, Literal, inner_type, (inner_constructor))
+
 #define COPY_OBJ(me, you) \
     me = move(you)
 
@@ -270,6 +288,9 @@
 
 #define EMPTY \
     (nullptr)
+
+#define EMPTY_VECTOR(type) \
+    (vector<type>())
 
 #define EMPTY_MODIFIERS \
     (vector<Modifier>())
@@ -358,22 +379,22 @@ TypeDeclaration:
 /*---------------------- Expressions ----------------------*/
 
 Expression:
-    AssignmentExpression { MAKE_ONE($$, $1); }
+    AssignmentExpression { COPY_OBJ($$, $1); }
     ;
 
 AssignmentExpression:
-    Assignment { MAKE_ONE($$, $1); }
-    | ConditionalOrExpression { MAKE_ONE($$, $1); }
+    Assignment { COPY_OBJ($$, $1); }
+    | ConditionalOrExpression { COPY_OBJ($$, $1); }
     ;
 
 Assignment:
-    LeftHandSide ASSIGNMENT AssignmentExpression { MAKE_NODE($$, symbol_kind::S_Assignment, $1, $2, $3); }
+    LeftHandSide ASSIGNMENT AssignmentExpression { MAKE_EXPRESSION_OBJ($$, Assignment, $1, $3); }
 
 LeftHandSide:
     QualifiedIdentifier // ExpressionName
-        { MAKE_ONE($$, $1); }
-    | FieldAccess { MAKE_ONE($$, $1); }
-    | ArrayAccess { MAKE_ONE($$, $1); }
+        { MAKE_EXPRESSION_OBJ($$, QualifiedIdentifier, $1); }
+    | FieldAccess { COPY_OBJ($$, $1); }
+    | ArrayAccess { COPY_OBJ($$, $1); }
     ;
 
 ConditionalOrExpression:
@@ -460,80 +481,80 @@ PrimaryOrExpressionName:
     ;
 
 Primary:
-    PrimaryNoNewArray { MAKE_ONE($$, $1); }
-    | ArrayCreationExpression { MAKE_ONE($$, $1); }
+    PrimaryNoNewArray { COPY_OBJ($$, $1); }
+    | ArrayCreationExpression { COPY_OBJ($$, $1); }
     ;
 
 ArrayCreationExpression:
     NEW PrimitiveType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_NODE($$, symbol_kind::S_ArrayCreationExpression, $1, $2, $3, $4); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, $2, EMPTY); }
     | NEW PrimitiveType OPENING_BRACKET Expression CLOSING_BRACKET
-        { MAKE_NODE($$, symbol_kind::S_ArrayCreationExpression, $1, $2, $3, $4, $5); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, $2, $4); }
     | NEW QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET // TypeName
-        { MAKE_NODE($$, symbol_kind::S_ArrayCreationExpression, $1, $2, $3, $4); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, $2, EMPTY); }
     | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // TypeName
-        { MAKE_NODE($$, symbol_kind::S_ArrayCreationExpression, $1, $2, $3, $4, $5); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, $2, $4); }
     ;
 
 ClassInstanceCreationExpression:
     NEW QualifiedIdentifier OPENING_PAREN ArgumentListOpt CLOSING_PAREN
-        { MAKE_NODE($$, symbol_kind::S_ClassInstanceCreationExpression, $1, $2, $3, $4, $5); }
+        { MAKE_EXPRESSION_OBJ($$, ClassInstanceCreationExpression, NEW_OBJ(QualifiedIdentifier, $2), $4); }
 
 PrimaryNoNewArray:
-    Literal { MAKE_ONE($$, $1); }
-    | THIS { MAKE_ONE($$, $1); }
-    | QualifiedIdentifier DOT THIS // ClassName
-        { MAKE_NODE($$, symbol_kind::S_PrimaryNoNewArray, $1, $2, $3); }
+    Literal { MAKE_EXPRESSION_OBJ($$, Literal, $1); }
+    | THIS { MAKE_EXPRESSION_OBJ($$, QualifiedThis, NEW_OBJ(QualifiedIdentifier)); }
+    | QualifiedIdentifier DOT THIS // ClassName     TODO: REMOVE
+        { MAKE_EXPRESSION_OBJ($$, QualifiedThis, NEW_OBJ(QualifiedIdentifier, $1)); }
     | OPENING_PAREN Expression CLOSING_PAREN
-        { MAKE_NODE($$, symbol_kind::S_PrimaryNoNewArray, $1, $2, $3); }
-    | ClassInstanceCreationExpression { MAKE_ONE($$, $1); }
-    | FieldAccess { MAKE_ONE($$, $1); }
-    | MethodInvocation { MAKE_ONE($$, $1); }
-    | ArrayAccess { MAKE_ONE($$, $1); }
+        { COPY_OBJ($$, $2); }
+    | ClassInstanceCreationExpression { COPY_OBJ($$, $1); }
+    | FieldAccess { COPY_OBJ($$, $1); }
+    | MethodInvocation { COPY_OBJ($$, $1); }
+    | ArrayAccess { COPY_OBJ($$, $1); }
     ;
 
 Literal:
-    INTEGER  { MAKE_ONE($$, $1); }
-    | TRUE  { MAKE_ONE($$, $1); }
-    | FALSE  { MAKE_ONE($$, $1); }
-    | CHAR_LITERAL  { MAKE_ONE($$, $1); }
-    | STRING_LITERAL  { MAKE_ONE($$, $1); }
-    | NULL_TOKEN   { MAKE_ONE($$, $1); }
+    INTEGER  { MAKE_LITERAL_OBJ($$, int64_t, $1); }
+    | TRUE  { MAKE_LITERAL_OBJ($$, bool, $1); }
+    | FALSE  { MAKE_LITERAL_OBJ($$, bool, $1); }
+    | CHAR_LITERAL  { MAKE_LITERAL_OBJ($$, char, $1); }
+    | STRING_LITERAL  { MAKE_LITERAL_OBJ($$, string, $1); }
+    | NULL_TOKEN   { MAKE_LITERAL_OBJ($$, nullptr_t, $1); }
     ;
 
 ArrayAccess:
     QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // ExpressionName
-        { MAKE_NODE($$, symbol_kind::S_ArrayAccess, $1, $2, $3, $4); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, NEW_OBJ(QualifiedIdentifier, $1), $3); }
     | PrimaryNoNewArray OPENING_BRACKET Expression CLOSING_BRACKET
-        { MAKE_NODE($$, symbol_kind::S_ArrayAccess, $1, $2, $3, $4); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, $1, $3); }
     ;
 
 FieldAccess:
     Primary DOT Identifier
-        { MAKE_NODE($$, symbol_kind::S_FieldAccess, $1, $2, $3); }
+        { MAKE_EXPRESSION_OBJ($$, FieldAccess, $1, $3); }
     ;
 
 ArgumentListOpt:
-    /* Empty - No arguments */ { MAKE_EMPTY($$); }
-    | ArgumentList { MAKE_ONE($$, $1); }
+    /* Empty - No arguments */ { MAKE_STACK_OBJ($$, vector<Expression>); }
+    | ArgumentList { COPY_OBJ($$, $1); }
     ;
 
 ArgumentList:
-    Expression { MAKE_ONE($$, $1); }
-    | Expression COMMA ArgumentList
-        { MAKE_NODE($$, symbol_kind::S_ArgumentList, $1, $2, $3); }
+    Expression { MAKE_STACK_OBJ($$, vector<Expression>); MAKE_VECTOR($$, $$, *$1); }
+    | ArgumentList COMMA Expression
+        { MAKE_VECTOR($$, $1, *$3); }
     ;
 
 Arguments:
     OPENING_PAREN ArgumentListOpt CLOSING_PAREN
-        { MAKE_NODE($$, symbol_kind::S_Arguments, $1, $2, $3); }
+        { COPY_OBJ($$, $2); }
     ;
 
 MethodInvocation:
     QualifiedIdentifier Arguments // MethodName
-        { MAKE_NODE($$, symbol_kind::S_MethodInvocation, $1, $2); }
-    | Primary DOT Identifier Arguments
-        { MAKE_NODE($$, symbol_kind::S_MethodInvocation, $1, $2, $3, $4); }
+        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, $1, $2); }
+    | Primary DOT Identifier Arguments // Could we call this FieldAccess instead?
+        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, NEW_OBJ(FieldAccess, $1, $3), $4); }
     ;
 
 Type:
@@ -725,7 +746,7 @@ FieldDeclaration:
     ;
 
 VariableInitializer:
-    Expression { MAKE_ONE($$, $1); }
+    Expression { COPY_OBJ($$, $1); }
     ;
 
 /* Methods */
@@ -777,7 +798,7 @@ FormalParameter:
     ;
 
 VariableDeclaratorId:
-    Identifier { MAKE_ONE($$, $1); }
+    Identifier { COPY_OBJ($$, $1); }
     // | Identifier OPENING_BRACKET CLOSING_BRACKET { MAKE_NODE($$, symbol_kind::S_VariableDeclaratorId, $1, $2, $3); }
     ;
 
