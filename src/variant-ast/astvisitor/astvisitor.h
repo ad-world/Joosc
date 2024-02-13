@@ -44,25 +44,12 @@ class AstVisitor {
     void visit_children(ArrayAccess &node);
     void visit_children(MethodInvocation &node);
 
+    void visit_children(Statement &node);
+    void visit_children(Expression &node);
+    void visit_children(ExpressionStatement &node);
+
   public:
     virtual ~AstVisitor() = default;
-
-    // Dispatch nested variant to member type
-    virtual void operator()(Statement &node) {
-        return std::visit( 
-            [&](auto &statement_type) { return this->operator()(statement_type); }, 
-            node);
-    }
-    virtual void operator()(Expression &node) {
-        return std::visit( 
-            [&](auto &expression_type) { return this->operator()(expression_type); }, 
-            node);
-    }
-    virtual void operator()(ExpressionStatement &node) {
-        return std::visit( 
-            [&](auto &expr_stmt_type) { return this->operator()(expr_stmt_type); }, 
-            node);
-    }
 
     virtual void operator()(CompilationUnit &node) = 0;
 
@@ -100,6 +87,10 @@ class AstVisitor {
     virtual void operator()(FieldAccess &node) = 0;
     virtual void operator()(ArrayAccess &node) = 0;
     virtual void operator()(MethodInvocation &node) = 0;
+
+    virtual void operator()(Statement &node);
+    virtual void operator()(Expression &node);
+    virtual void operator()(ExpressionStatement &node);
 
     // Can call either visitor(node) or visitor.visit(node) as the entrypoint
     ReturnType operator()(AstNodeVariant &node) {

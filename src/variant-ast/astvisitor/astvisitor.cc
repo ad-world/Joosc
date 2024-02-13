@@ -314,3 +314,40 @@ void AstVisitor<ReturnType>::visit_children(MethodInvocation &node) {
         this->operator()(child);
     }
 }
+
+// Dispatch nested variant to member type
+template <typename ReturnType>
+void AstVisitor<ReturnType>::visit_children(Statement &node) {
+    return std::visit( 
+        [&](auto &statement_type) { return this->operator()(statement_type); }, 
+        node);
+}
+
+template <typename ReturnType>
+void AstVisitor<ReturnType>::visit_children(Expression &node) {
+    return std::visit( 
+        [&](auto &expression_type) { return this->operator()(expression_type); }, 
+        node);
+}
+
+template <typename ReturnType>
+void AstVisitor<ReturnType>::visit_children(ExpressionStatement &node) {
+    return std::visit( 
+        [&](auto &expr_stmt_type) { return this->operator()(expr_stmt_type); }, 
+        node);
+}
+
+template <typename ReturnType>
+void AstVisitor<ReturnType>::operator()(Statement &node) {
+    this->visit_children(node);
+}
+
+template <typename ReturnType>
+void AstVisitor<ReturnType>::operator()(Expression &node) {
+    this->visit_children(node);
+}
+
+template <typename ReturnType>
+void AstVisitor<ReturnType>::operator()(ExpressionStatement &node) {
+    this->visit_children(node);
+}
