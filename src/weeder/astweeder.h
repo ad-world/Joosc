@@ -20,9 +20,9 @@ private:
 
     void checkAsciiRange(const string& source);
 
-    void checkClassModifiersAndConstructors(vector<ClassDeclaration>, string filename);
+    void checkClassModifiersAndConstructors(vector<ClassDeclaration> classes, string filename);
 
-    void checkInterfaces(vector<InterfaceDeclaration>, string filename);
+    void checkInterfaces(vector<InterfaceDeclaration> interfaces, string filename);
 
     void checkMethodModifiersAndBody(vector<MethodDeclaration> methods);
 
