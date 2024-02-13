@@ -7,6 +7,10 @@ bool isPublicProtected(vector<Modifier> modifiers) {
     auto pubIt = find(modifiers.begin(), modifiers.end(), Modifier::PUBLIC);
     auto protIt = find(modifiers.begin(), modifiers.end(), Modifier::PROTECTED);
 
+    if (pubIt != modifiers.end() && protIt != modifiers.end()) {
+        return false;
+    }
+
     return (pubIt != modifiers.end()) || (protIt != modifiers.end());
 }
 
@@ -60,7 +64,6 @@ void AstWeeder::printViolations() {
 
 int AstWeeder::weed(AstNodeVariant& root, string fileName) {
     string file = getFileName(fileName);
-    // check if program has any interfaces
 
     if (holds_alternative<CompilationUnit>(root)) {
         auto& cu = get<CompilationUnit>(root);
@@ -87,7 +90,7 @@ int AstWeeder::weed(AstNodeVariant& root, string fileName) {
     return 0;
 }
 
-void AstWeeder::checkInterfaces(vector<InterfaceDeclaration> &interfaces, string filename) {
+void AstWeeder::checkInterfaces(vector<InterfaceDeclaration> &interfaces, string &filename) {
     bool interfaceNameFound = false;
 
     for (const InterfaceDeclaration& inter: interfaces) {
@@ -98,7 +101,7 @@ void AstWeeder::checkInterfaces(vector<InterfaceDeclaration> &interfaces, string
 
         // check if modifiers do not contain public or protected
         if (!isPublicProtected(modifiers)) {
-            addViolation("Interface " + name + " does not have access modifiers");
+            addViolation("Interface " + name + " must be public or protected.");
         }
     }
 
@@ -108,7 +111,7 @@ void AstWeeder::checkInterfaces(vector<InterfaceDeclaration> &interfaces, string
 }
 
 
-void AstWeeder::checkClassModifiersAndConstructors(vector<ClassDeclaration> &classes, string filename) {
+void AstWeeder::checkClassModifiersAndConstructors(vector<ClassDeclaration> &classes, string &filename) {
     bool classNameFound = false;
 
     for (ClassDeclaration& cls: classes) {
@@ -118,7 +121,7 @@ void AstWeeder::checkClassModifiersAndConstructors(vector<ClassDeclaration> &cla
         auto name = cls.class_name->name;
         if (name == filename) classNameFound = true;
         
-        const auto &methods = cls.method_declarations;
+        auto &methods = cls.method_declarations;
         // Check all methods in class
         checkMethodModifiersAndBody(methods);
 
@@ -150,7 +153,7 @@ void AstWeeder::checkClassModifiersAndConstructors(vector<ClassDeclaration> &cla
         vector<Modifier> modifiers = cls.modifiers;
         // Check that class has an access modifier
         if (!isPublicProtected(modifiers)) {
-            addViolation("Class " + name + " does not have access modifiers");
+            addViolation("Class " + name + " must be public or protected.");
         }
 
         auto finalIt = find(modifiers.begin(), modifiers.end(), Modifier::FINAL);
@@ -184,11 +187,13 @@ void AstWeeder::checkMethodModifiersAndBody(const std::vector<MethodDeclaration>
         // Make sure that native or abstract methods do not have a body
         if (nativeOrAbstract && method.body != nullptr) {
             addViolation("Method " + name + " cannot have a body");
+            continue;
         } 
 
         // Check that method has access modifiers
-        if (modifiers.size() == 0) {
+        if (!isPublicProtected(modifiers)) {
             addViolation("Method " + name + " cannot have 0 access modifiers");
+            continue;
         }
 
         auto staticIt = std::find(modifiers.begin(), modifiers.end(), Modifier::STATIC);
@@ -198,19 +203,43 @@ void AstWeeder::checkMethodModifiersAndBody(const std::vector<MethodDeclaration>
         // Check not STATIC and FINAL
         if ((staticIt != modifiers.end()) && (finalIt != modifiers.end())) {
             addViolation(name + " cannot be both static and final.");
+            continue;
         }
 
         // Check not ABSTRACT and FINAL
         if((finalIt != modifiers.end()) && (abstractIt != modifiers.end())) {
             addViolation(name + " cannot be both abstract and final.");
+            continue;
         }
 
         // Check not ABSTRACT and STATIC
         if((abstractIt != modifiers.end()) && (staticIt != modifiers.end())) {
             addViolation(name + " abstract method cannot be static.");
+            continue;
         }
 
-        // TODO: get all method invocations, check that none are super() or this()
+        auto &body = method.body;
+
+        if (body == nullptr) {
+            continue;
+        }
+
+        // Check that methdod does not call super() or this()
+        vector<MethodInvocation*> invocations = GrabAllVisitor<MethodInvocation>().visit((AstNodeVariant& )body);
+         
+        for (auto &invoc: invocations) {
+            if (holds_alternative<QualifiedIdentifier>(*invoc->method_name)) {
+                QualifiedIdentifier ident = get<QualifiedIdentifier>(*invoc->method_name);
+                
+                int q_ident_size = ident.identifiers.size();
+                Identifier last_ident = ident.identifiers[q_ident_size - 1];
+                string method_name = last_ident.name;
+
+                if(method_name == "super" || method_name == "this") {
+                    addViolation("Method " + name + " cannot call super() or this()");
+                }
+            }    
+        }
     }
 }
 
@@ -227,7 +256,7 @@ void AstWeeder::checkClassFields(const vector<FieldDeclaration> &fields) {
 
         // Check that field has access modifiers
         if(!isPublicProtected(modifiers)) {
-            addViolation("Field " + field.variable_declarator->variable_name->name + " does not have access modifiers");
+            addViolation("Field " + field.variable_declarator->variable_name->name + " must be public or protected.");
         }
     }
 }

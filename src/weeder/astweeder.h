@@ -22,9 +22,9 @@ private:
 
     void checkAsciiRange(const string& source);
 
-    void checkClassModifiersAndConstructors(vector<ClassDeclaration> &classes, string filename);
+    void checkClassModifiersAndConstructors(vector<ClassDeclaration> &classes, string &filename);
 
-    void checkInterfaces(vector<InterfaceDeclaration> &interfaces, string filename);
+    void checkInterfaces(vector<InterfaceDeclaration> &interfaces, string &filename);
 
     void checkMethodModifiersAndBody(const vector<MethodDeclaration> &methods);
 
