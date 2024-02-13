@@ -75,8 +75,8 @@ int AstWeeder::weed(AstNodeVariant& root, string fileName) {
         checkClassModifiersAndConstructors(cu.class_declarations, file);
 
         // check if program has any literals
-        checkLiterals(GrabAllVisitor<Literal>()(root), GrabAllVisitor<PrefixExpression>()(root));
-        
+        checkLiterals(GrabAllVisitor<Literal>()(root));
+
 
         if(!violations.empty()) {
             printViolations();
@@ -232,26 +232,14 @@ void AstWeeder::checkClassFields(const vector<FieldDeclaration> &fields) {
     }
 }
 
-void AstWeeder::checkLiterals(vector<Literal*> literals, vector<PrefixExpression*> prefixExpr) {
-    // TODO: check that the positive literals don't have prefix expression as a parent
+void AstWeeder::checkLiterals(vector<Literal*> literals) {
     for (auto &lit: literals) {
         if (holds_alternative<int64_t>(*lit)) {
             auto intLit = get<int64_t>(*lit);
             if (intLit > INT32_MAX) {
                 addViolation("Integer literal " + to_string(intLit) + " is too large");
-            }
-        }
-    }
-
-    for (auto &prefix: prefixExpr) {
-        if(prefix->op == PrefixOperator::MINUS) {
-            if(holds_alternative<Literal>(*prefix->expression)) {
-                if(holds_alternative<int64_t>(*prefix->expression)) {
-                    auto intLit = get<int64_t>(*prefix->expression);
-                    if(intLit * -1 < INT32_MIN) {
-                        addViolation("Integer literal " + to_string(intLit) + " is too small");
-                    }
-                }
+            } else if (intLit < INT32_MIN) {
+                addViolation("Integer literal " + to_string(intLit) + " is too small");
             }
         }
     }

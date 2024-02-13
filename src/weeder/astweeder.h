@@ -34,5 +34,5 @@ private:
 
     void checkClassFields(const vector<FieldDeclaration> &fields);
 
-    void checkLiterals(vector<Literal*> literls, vector<PrefixExpression*> prefixExpr);   
+    void checkLiterals(vector<Literal*> literls);   
 };
