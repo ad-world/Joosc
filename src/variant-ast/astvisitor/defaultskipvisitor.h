@@ -7,6 +7,7 @@
 template <typename ReturnType>
 class DefaultSkipVisitor : public AstVisitor<ReturnType> {
   public:
+    using AstVisitor<ReturnType>::operator();
     virtual void operator()(CompilationUnit &node) override { this->visit_children(node); }
 
     virtual void operator()(QualifiedIdentifier &node) override { this->visit_children(node); }
@@ -31,6 +32,7 @@ class DefaultSkipVisitor : public AstVisitor<ReturnType> {
     virtual void operator()(WhileStatement &node) override { this->visit_children(node); }
     virtual void operator()(ForStatement &node) override { this->visit_children(node); }
     virtual void operator()(ReturnStatement &node) override { this->visit_children(node); }
+    virtual void operator()(EmptyStatement &node) override { this->visit_children(node); }
 
     virtual void operator()(InfixExpression &node) override { this->visit_children(node); }
     virtual void operator()(PrefixExpression &node) override { this->visit_children(node); }

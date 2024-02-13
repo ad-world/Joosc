@@ -31,6 +31,7 @@ class AstVisitor {
     void visit_children(WhileStatement &node);
     void visit_children(ForStatement &node);
     void visit_children(ReturnStatement &node);
+    void visit_children(EmptyStatement &node);
 
     void visit_children(InfixExpression &node);
     void visit_children(PrefixExpression &node);
@@ -75,6 +76,7 @@ class AstVisitor {
     virtual void operator()(WhileStatement &node) = 0;
     virtual void operator()(ForStatement &node) = 0;
     virtual void operator()(ReturnStatement &node) = 0;
+    virtual void operator()(EmptyStatement &node) = 0;
 
     virtual void operator()(InfixExpression &node) = 0;
     virtual void operator()(PrefixExpression &node) = 0;
@@ -99,3 +101,5 @@ class AstVisitor {
 
     virtual ReturnType visit(AstNodeVariant &node) = 0;
 };
+
+#include "astvisitor_impl.h"

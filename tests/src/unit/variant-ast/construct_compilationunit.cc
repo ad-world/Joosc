@@ -1,17 +1,20 @@
-#include "variant-ast/astnode.h"
 #include <memory>
 #include <vector>
 #include <gtest/gtest.h>
 
+#include "variant-ast/astnode.h"
 
 TEST(AstNode, ConstructorCompiles) {
-    auto package_declaration = std::unique_ptr<QualifiedIdentifier>();
+    auto identifiers = std::vector<Identifier>();
+    auto package_declaration = std::make_unique<QualifiedIdentifier>(
+        identifiers
+    );
     auto single_imports = std::vector<QualifiedIdentifier>();
     auto asterisk_imports = std::vector<QualifiedIdentifier>();
     auto class_declarations = std::vector<ClassDeclaration>();
     auto interface_declarations = std::vector<InterfaceDeclaration>();
 
-    auto root = CompilationUnit(
+    AstNodeVariant root = CompilationUnit(
         package_declaration, 
         single_imports, 
         asterisk_imports, 

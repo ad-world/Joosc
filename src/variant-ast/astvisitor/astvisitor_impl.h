@@ -1,5 +1,6 @@
+#pragma once
+
 #include "astvisitor.h"
-#include "variant-ast/astnode.h"
 
 /* Packages */
 template <typename ReturnType>
@@ -216,6 +217,9 @@ void AstVisitor<ReturnType>::visit_children(ReturnStatement &node) {
         this->operator()(*node.return_expression);
     }
 }
+
+template <typename ReturnType>
+void AstVisitor<ReturnType>::visit_children(EmptyStatement &node) {}
 
 /* Expressions */
 template <typename ReturnType>

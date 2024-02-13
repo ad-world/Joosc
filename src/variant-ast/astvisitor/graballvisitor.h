@@ -10,6 +10,7 @@ class GrabAllVisitor : public DefaultSkipVisitor<std::vector<GrabType*>> {
     std::vector<GrabType*> result;
 
   public:
+    using DefaultSkipVisitor<std::vector<GrabType*>>::operator();
     void operator()(GrabType &node) override {
         result.push_back(&node);
         this->visit_children(node);
