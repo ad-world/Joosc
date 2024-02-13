@@ -126,24 +126,34 @@
             %nterm <unique_ptr<QualifiedIdentifier>> TypeImportOnDemandDeclaration
     %nterm <pair<vector<ClassDeclaration> COMMA vector<InterfaceDeclaration>>> TypeDeclarations
         %nterm <pair<unique_ptr<ClassDeclaration> COMMA unique_ptr<InterfaceDeclaration>>> TypeDeclaration
-            %nterm <unique_ptr<ClassDeclaration>> ClassDeclaration
-                // Modifiers
-                // Identifier
-                %nterm <unique_ptr<QualifiedIdentifier>> ExtendsOpt
-                %nterm <vector<QualifiedIdentifier>> InterfacesOpt
-                %nterm <pair<FieldDeclaration COMMA MethodDeclaration>> ClassBody
-                    %nterm <unique_ptr<pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>>> ClassBodyDeclarationsOpt
-                    %nterm <pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>> ClassBodyDeclarations
-                        %nterm <pair<unique_ptr<FieldDeclaration> COMMA unique_ptr<MethodDeclaration>>> ClassBodyDeclaration
-                            %nterm <pair<unique_ptr<FieldDeclaration> COMMA unique_ptr<MethodDeclaration>>> ClassMemberDeclaration
-                                %nterm <unique_ptr<FieldDeclaration>> FieldDeclaration
-                                    // Modifiers
-                                    // Type
-                                    // VariableDeclarator
-                                %nterm <unique_ptr<MethodDeclaration>> MethodDeclaration
-                                    // MethodHeader
-                                    // MethodBody
-            %nterm <unique_ptr<InterfaceDeclaration>> InterfaceDeclaration
+            // Class declaration
+            // InterfaceDeclaration
+
+// Class declaration (done?)
+%nterm <unique_ptr<ClassDeclaration>> ClassDeclaration
+    // Modifiers
+    // Identifier
+    %nterm <unique_ptr<QualifiedIdentifier>> ExtendsOpt
+    %nterm <vector<QualifiedIdentifier>> InterfacesOpt
+    %nterm <pair<FieldDeclaration COMMA MethodDeclaration>> ClassBody
+        %nterm <unique_ptr<pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>>> ClassBodyDeclarationsOpt
+        %nterm <pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>> ClassBodyDeclarations
+            %nterm <pair<unique_ptr<FieldDeclaration> COMMA unique_ptr<MethodDeclaration>>> ClassBodyDeclaration
+                %nterm <pair<unique_ptr<FieldDeclaration> COMMA unique_ptr<MethodDeclaration>>> ClassMemberDeclaration
+                    %nterm <unique_ptr<FieldDeclaration>> FieldDeclaration
+                        // Modifiers
+                        // Type
+                        // VariableDeclarator
+                    %nterm <unique_ptr<MethodDeclaration>> MethodDeclaration
+                        // MethodHeader
+                        // MethodBody
+
+// Method Header/Body (todo)
+%nterm <AstNodeVariant*> MethodHeader
+%nterm <AstNodeVariant*> MethodBody
+
+// InterfaceDeclaration (todo)
+%nterm <unique_ptr<InterfaceDeclaration>> InterfaceDeclaration
 
 // QualifiedIdentifier (done)
 %nterm <unique_ptr<QualifiedIdentifier>> QualifiedIdentifier
@@ -166,7 +176,7 @@
     %nterm <unique_ptr<Identifier>> VariableDeclaratorId
     %nterm <unique_ptr<Expression>> VariableInitializer
 
-// Expression (todo)
+// Expression (done)
 %nterm <unique_ptr<Expression>> Expression
     %nterm <unique_ptr<Expression>> AssignmentExpression
         %nterm <unique_ptr<Expression>> Assignment
@@ -175,7 +185,7 @@
                     // Primary
                 %nterm <unique_ptr<Expression>> ArrayAccess
 
-    // ConditionalOrExpression (todo)
+    // ConditionalOrExpression (done)
     %nterm <unique_ptr<Expression>> ConditionalOrExpression
     %nterm <unique_ptr<Expression>> ConditionalAndExpression
     %nterm <unique_ptr<Expression>> InclusiveOrExpression
@@ -198,17 +208,46 @@
             %nterm <unique_ptr<Expression>> MethodInvocation
         %nterm <unique_ptr<Expression>> ArrayCreationExpression
 
+// Statements (todo)
+%nterm <unique_ptr<Statement>> Statement
+    %nterm <unique_ptr<Statement>> StatementWithoutTrailingSubstatement
+        // Block
+        %nterm <unique_ptr<EmptyStatement>> EmptyStatement
+        %nterm <unique_ptr<ExpressionStatement>> ExpressionStatement
+        %nterm <unique_ptr<ReturnStatement>> ReturnStatement
+    %nterm <unique_ptr<IfThenStatement>> IfThenStatement
+    %nterm <unique_ptr<IfThenElseStatement>> IfThenElseStatement
+    %nterm <unique_ptr<WhileStatement>> WhileStatement
+    %nterm <unique_ptr<ForStatement>> ForStatement
+
+    // Block (todo)
+    %nterm <unique_ptr<Block>> Block
+        %nterm <AstNodeVariant*> BlockStatementsOpt
+        %nterm <AstNodeVariant*> BlockStatements
+        %nterm <AstNodeVariant*> BlockStatement
+            %nterm <unique_ptr<LocalVariableDeclaration>> LocalVariableDeclarationStatement
+                %nterm <unique_ptr<LocalVariableDeclaration>> LocalVariableDeclaration
+            // Class decl
+            // Statement
+
+    // Unused
+    %nterm <AstNodeVariant*> StatementExpression
+    %nterm <AstNodeVariant*> StatementNoShortIf
+    %nterm <AstNodeVariant*> IfThenElseStatementNoShortIf
+    %nterm <AstNodeVariant*> WhileStatementNoShortIf
+    %nterm <AstNodeVariant*> ForStatementNoShortIf
+    %nterm <AstNodeVariant*> ForInitOpt
+    %nterm <AstNodeVariant*> ForInit
+    %nterm <AstNodeVariant*> ForUpdateOpt
+    %nterm <AstNodeVariant*> ExpressionOpt
+    %nterm <AstNodeVariant*> ParExpression
 
 // Arguments (done)
 %nterm <vector<Expression>> Arguments
     %nterm <vector<Expression>> ArgumentListOpt
         %nterm <vector<Expression>> ArgumentList
 
-// Method Header/Body (todo)
-%nterm <AstNodeVariant*> MethodHeader
-%nterm <AstNodeVariant*> MethodBody
-
-// Rest of non-terminals
+// Rest of non-terminals (todo)
 %nterm <AstNodeVariant*> InterfaceModifiersOpt
 %nterm <AstNodeVariant*> InterfaceType
 %nterm <AstNodeVariant*> ExtendsInterfaces
@@ -227,31 +266,6 @@
 %nterm <AstNodeVariant*> FormalParameterList
 %nterm <AstNodeVariant*> AbstractMethodModifier
 %nterm <AstNodeVariant*> FormalParameter
-%nterm <AstNodeVariant*> Statement
-%nterm <AstNodeVariant*> StatementWithoutTrailingSubstatement
-%nterm <AstNodeVariant*> ExpressionStatement
-%nterm <AstNodeVariant*> StatementExpression
-%nterm <AstNodeVariant*> StatementNoShortIf
-%nterm <AstNodeVariant*> EmptyStatement
-%nterm <AstNodeVariant*> IfThenStatement
-%nterm <AstNodeVariant*> IfThenElseStatement
-%nterm <AstNodeVariant*> IfThenElseStatementNoShortIf
-%nterm <AstNodeVariant*> WhileStatement
-%nterm <AstNodeVariant*> WhileStatementNoShortIf
-%nterm <AstNodeVariant*> ForStatement
-%nterm <AstNodeVariant*> ForStatementNoShortIf
-%nterm <AstNodeVariant*> ForInitOpt
-%nterm <AstNodeVariant*> ForInit
-%nterm <AstNodeVariant*> ForUpdateOpt
-%nterm <AstNodeVariant*> ExpressionOpt
-%nterm <AstNodeVariant*> ReturnStatement
-%nterm <AstNodeVariant*> ParExpression
-%nterm <AstNodeVariant*> LocalVariableDeclaration
-%nterm <AstNodeVariant*> Block
-%nterm <AstNodeVariant*> BlockStatementsOpt
-%nterm <AstNodeVariant*> BlockStatements
-%nterm <AstNodeVariant*> BlockStatement
-%nterm <AstNodeVariant*> LocalVariableDeclarationStatement
 /******************** END NONTERMINALS ********************/
 
 %parse-param {AstNodeVariant **root}
@@ -289,7 +303,7 @@
 #define MAKE_CASTEXPR_OBJ(me, type, expr, isarray) \
     MAKE_EXPRESSION_OBJ(me, CastExpression, NEW_OBJ(Type, (type), (isarray)), (expr))
 
-#define MAKE_QI_EXPRESSION_OBJ(me, QI) \
+#define MAKE_QIEXPR_OBJ(me, QI) \
     MAKE_EXPRESSION_OBJ(me, QualifiedIdentifier, (QI))
 
 #define COPY_OBJ(me, you) \
@@ -404,7 +418,7 @@ Assignment:
 
 LeftHandSide:
     QualifiedIdentifier // ExpressionName
-        { MAKE_QI_EXPRESSION_OBJ($$, $1); }
+        { MAKE_QIEXPR_OBJ($$, $1); }
     | FieldAccess { COPY_OBJ($$, $1); }
     | ArrayAccess { COPY_OBJ($$, $1); }
     ;
@@ -489,7 +503,7 @@ CastExpression: // Done this way to avoid conflicts
 PrimaryOrExpressionName:
     Primary { COPY_OBJ($$, $1); }
     | QualifiedIdentifier // ExpressionName
-        { MAKE_QI_EXPRESSION_OBJ($$, $1); }
+        { MAKE_QIEXPR_OBJ($$, $1); }
     ;
 
 Primary:
