@@ -75,10 +75,8 @@ int AstWeeder::weed(AstNodeVariant& root, string fileName) {
         checkClassModifiersAndConstructors(cu.class_declarations, file);
 
         // check if program has any literals
-        checkLiterals(GrabAllVisitor<Literal>()(root));
-
-        // check if program has any cast expressions
-        checkCastExpressionsValid(GrabAllVisitor<CastExpression>()(root));
+        checkLiterals(GrabAllVisitor<Literal>()(root), GrabAllVisitor<PrefixExpression>()(root));
+        
 
         if(!violations.empty()) {
             printViolations();
@@ -234,36 +232,27 @@ void AstWeeder::checkClassFields(const vector<FieldDeclaration> &fields) {
     }
 }
 
-void AstWeeder::checkLiterals(vector<Literal*> literals) {
-    // check all literals in new weeder class
-    // todo: fill this in
+void AstWeeder::checkLiterals(vector<Literal*> literals, vector<PrefixExpression*> prefixExpr) {
+    // TODO: check that the positive literals don't have prefix expression as a parent
+    for (auto &lit: literals) {
+        if (holds_alternative<int64_t>(*lit)) {
+            auto intLit = get<int64_t>(*lit);
+            if (intLit > INT32_MAX) {
+                addViolation("Integer literal " + to_string(intLit) + " is too large");
+            }
+        }
+    }
+
+    for (auto &prefix: prefixExpr) {
+        if(prefix->op == PrefixOperator::MINUS) {
+            if(holds_alternative<Literal>(*prefix->expression)) {
+                if(holds_alternative<int64_t>(*prefix->expression)) {
+                    auto intLit = get<int64_t>(*prefix->expression);
+                    if(intLit * -1 < INT32_MIN) {
+                        addViolation("Integer literal " + to_string(intLit) + " is too small");
+                    }
+                }
+            }
+        }
+    }
 }
-
-
-void AstWeeder::checkCastExpressionsValid(vector<CastExpression*> exprs) {
-    // get all cast expressions
-    // todo: fill this function in
-    // for (auto &expr: exprs) {
-    //     auto primitives = vector<int>{
-    //         PrimitiveType::BOOLEAN,
-    //         PrimitiveType::BYTE,
-    //         PrimitiveType::SHORT,
-    //         PrimitiveType::INT,
-    //         PrimitiveType::CHAR,
-    //     };
-
-    //     Type* cast_type = expr->type;
-    //     if (cast_type->is_array) {
-    //         addViolation("Cannot cast to an array type");
-    //     } else {
-    //         auto non_array_type = cast_type->non_array_type;
-    //         if (holds_alternative<PrimitiveType>(*non_array_type)) {
-    //             auto type = get<PrimitiveType>(*non_array_type);
-    //             if (find(primitives.begin(), primitives.end(), type) == primitives.end()) {
-    //                 addViolation("Invalid cast to primitive type");
-    //             }
-    //         }
-    //     }
-    // }
-}
-

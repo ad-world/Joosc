@@ -28,13 +28,11 @@ private:
 
     void checkMethodModifiersAndBody(const vector<MethodDeclaration> &methods);
 
-    void checkCastExpressionsValid(vector<CastExpression*> exprs);
-
     void addViolation(const string& vio);
 
     void printViolations();
 
     void checkClassFields(const vector<FieldDeclaration> &fields);
 
-    void checkLiterals(vector<Literal*> literls);   
+    void checkLiterals(vector<Literal*> literls, vector<PrefixExpression*> prefixExpr);   
 };
