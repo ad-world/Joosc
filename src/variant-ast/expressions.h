@@ -18,18 +18,19 @@ enum class InfixOperator {
     BOOLEAN_EQUAL,
     BOOLEAN_NOT_EQUAL,
     PLUS,
-    MINUS,
+    MINUS = '-',
     DIVIDE,
     MULTIPLY,
     LESS_THAN,
     GREATER_THAN,
     LESS_THAN_EQUAL,
     GREATER_THAN_EQUAL,
-    INSTANCEOF
+    INSTANCEOF,
+    MODULO
 };
 
 enum class PrefixOperator {
-    MINUS,
+    MINUS = '-',
     NEGATE
 };
 

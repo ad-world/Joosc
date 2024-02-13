@@ -53,7 +53,6 @@
 %token <AstNodeVariant*> IMPORT
 %token <AstNodeVariant*> CLASS
 %token <AstNodeVariant*> NEW
-%token <AstNodeVariant*> INSTANCEOF
 
 // might need to look at this again
 %token <AstNodeVariant*> PACKAGE
@@ -92,22 +91,23 @@
 %token <AstNodeVariant*> JAVADOC_COMMENT
 
 // operators
-%token <AstNodeVariant*> NEGATE
-%token <AstNodeVariant*> ASTERISK
-%token <AstNodeVariant*> PLUS
-%token <AstNodeVariant*> MINUS
-%token <AstNodeVariant*> DIVIDE
-%token <AstNodeVariant*> MODULO
-%token <AstNodeVariant*> LESS_THAN
-%token <AstNodeVariant*> GREATER_THAN
-%token <AstNodeVariant*> LESS_THAN_EQUAL
-%token <AstNodeVariant*> GREATER_THAN_EQUAL
-%token <AstNodeVariant*> BOOLEAN_EQUAL
-%token <AstNodeVariant*> NOT_EQUAL
-%token <AstNodeVariant*> AMPERSAND
-%token <AstNodeVariant*> PIPE
-%token <AstNodeVariant*> BOOLEAN_AND
-%token <AstNodeVariant*> BOOLEAN_OR
+%token <InfixOperator> BOOLEAN_OR
+%token <InfixOperator> BOOLEAN_AND
+%token <InfixOperator> PIPE             // eager or
+%token <InfixOperator> AMPERSAND        // eager and
+%token <InfixOperator> BOOLEAN_EQUAL
+%token <InfixOperator> NOT_EQUAL
+%token <InfixOperator> PLUS
+%token <InfixOperator> MINUS            // can also be used as a prefix operator
+%token <InfixOperator> DIVIDE
+%token <InfixOperator> ASTERISK         // multiply
+%token <InfixOperator> LESS_THAN
+%token <InfixOperator> GREATER_THAN
+%token <InfixOperator> LESS_THAN_EQUAL
+%token <InfixOperator> GREATER_THAN_EQUAL
+%token <InfixOperator> INSTANCEOF
+%token <InfixOperator> MODULO           // TODO: not in the astnode common class
+%token <PrefixOperator> NEGATE
 
 // END OF FILE TOKEN
 %token <AstNodeVariant*> EOF 0
@@ -146,7 +146,7 @@
             %nterm <unique_ptr<InterfaceDeclaration>> InterfaceDeclaration
 
 // QualifiedIdentifier (done)
-%nterm <QualifiedIdentifier> QualifiedIdentifier        // TODO: convert to unique_ptr
+%nterm <unique_ptr<QualifiedIdentifier>> QualifiedIdentifier
     %nterm <unique_ptr<Identifier>> Identifier
 
 // Modifiers (done)
@@ -175,17 +175,28 @@
                     // Primary
                 %nterm <unique_ptr<Expression>> ArrayAccess
 
-// ConditionalOrExpression (todo)
-%nterm <unique_ptr<Expression>> ConditionalOrExpression
+    // ConditionalOrExpression (todo)
+    %nterm <unique_ptr<Expression>> ConditionalOrExpression
+    %nterm <unique_ptr<Expression>> ConditionalAndExpression
+    %nterm <unique_ptr<Expression>> InclusiveOrExpression
+    %nterm <unique_ptr<Expression>> AndExpression
+    %nterm <unique_ptr<Expression>> EqualityExpression
+    %nterm <unique_ptr<Expression>> RelationalExpression
+    %nterm <unique_ptr<Expression>> AdditiveExpression
+    %nterm <unique_ptr<Expression>> MultiplicativeExpression
+    %nterm <unique_ptr<Expression>> UnaryExpression
+    %nterm <unique_ptr<Expression>> UnaryExpressionNotPlusMinus
+    %nterm <unique_ptr<Expression>> CastExpression
+    %nterm <unique_ptr<Expression>> PrimaryOrExpressionName
 
-// Primary (done)
-%nterm <unique_ptr<Expression>> Primary
-    %nterm <unique_ptr<Expression>> PrimaryNoNewArray
-        %nterm <unique_ptr<Literal>> Literal
-        %nterm <unique_ptr<Expression>> ClassInstanceCreationExpression
-            // Arguments
-        %nterm <unique_ptr<Expression>> MethodInvocation
-    %nterm <unique_ptr<Expression>> ArrayCreationExpression
+    // Primary (done)
+    %nterm <unique_ptr<Expression>> Primary
+        %nterm <unique_ptr<Expression>> PrimaryNoNewArray
+            %nterm <unique_ptr<Literal>> Literal
+            %nterm <unique_ptr<Expression>> ClassInstanceCreationExpression
+                // Arguments
+            %nterm <unique_ptr<Expression>> MethodInvocation
+        %nterm <unique_ptr<Expression>> ArrayCreationExpression
 
 
 // Arguments (done)
@@ -198,17 +209,6 @@
 %nterm <AstNodeVariant*> MethodBody
 
 // Rest of non-terminals
-%nterm <AstNodeVariant*> ConditionalAndExpression
-%nterm <AstNodeVariant*> InclusiveOrExpression
-%nterm <AstNodeVariant*> AndExpression
-%nterm <AstNodeVariant*> EqualityExpression
-%nterm <AstNodeVariant*> RelationalExpression
-%nterm <AstNodeVariant*> AdditiveExpression
-%nterm <AstNodeVariant*> MultiplicativeExpression
-%nterm <AstNodeVariant*> UnaryExpression
-%nterm <AstNodeVariant*> UnaryExpressionNotPlusMinus
-%nterm <AstNodeVariant*> CastExpression
-%nterm <AstNodeVariant*> PrimaryOrExpressionName
 %nterm <AstNodeVariant*> InterfaceModifiersOpt
 %nterm <AstNodeVariant*> InterfaceType
 %nterm <AstNodeVariant*> ExtendsInterfaces
@@ -280,6 +280,18 @@
 #define MAKE_LITERAL_OBJ(me, inner_type, inner_constructor...) \
     MAKE_VARIANT_OBJ(me, Literal, inner_type, (inner_constructor))
 
+#define MAKE_INFIX_OBJ(me, expr1, op, expr2) \
+    MAKE_EXPRESSION_OBJ(me, InfixExpression, ( expr1 ), ( expr2 ), ( op ))
+
+#define MAKE_PREFIX_OBJ(me, op, expr) \
+    MAKE_EXPRESSION_OBJ(me, PrefixExpression, ( expr ), ( op ))
+
+#define MAKE_CASTEXPR_OBJ(me, type, expr, isarray) \
+    MAKE_EXPRESSION_OBJ(me, CastExpression, NEW_OBJ(Type, (type), (isarray)), (expr))
+
+#define MAKE_QI_EXPRESSION_OBJ(me, QI) \
+    MAKE_EXPRESSION_OBJ(me, QualifiedIdentifier, (QI))
+
 #define COPY_OBJ(me, you) \
     me = move(you)
 
@@ -337,7 +349,7 @@ CompilationUnit:
 
 PackageDeclaration:
     PACKAGE QualifiedIdentifier SEMI_COLON
-        { MAKE_OBJ($$, QualifiedIdentifier, $1); }
+        { COPY_OBJ($$, $2); }
     ;
 
 ImportDeclarations:
@@ -362,12 +374,12 @@ ImportDeclaration:
 
 SingleTypeImportDeclaration:
     IMPORT QualifiedIdentifier SEMI_COLON // TypeName
-        { MAKE_OBJ($$, QualifiedIdentifier, $2); }
+        { COPY_OBJ($$, $2); }
     ;
 
 TypeImportOnDemandDeclaration:
     IMPORT QualifiedIdentifier DOT ASTERISK SEMI_COLON // PackageOrTypeName
-        { MAKE_OBJ($$, QualifiedIdentifier, $2); }
+        { COPY_OBJ($$, $2); }
     ;
 
 TypeDeclaration:
@@ -392,92 +404,92 @@ Assignment:
 
 LeftHandSide:
     QualifiedIdentifier // ExpressionName
-        { MAKE_EXPRESSION_OBJ($$, QualifiedIdentifier, $1); }
+        { MAKE_QI_EXPRESSION_OBJ($$, $1); }
     | FieldAccess { COPY_OBJ($$, $1); }
     | ArrayAccess { COPY_OBJ($$, $1); }
     ;
 
 ConditionalOrExpression:
-    ConditionalAndExpression { MAKE_ONE($$, $1); }
+    ConditionalAndExpression { COPY_OBJ($$, $1); }
     | ConditionalOrExpression BOOLEAN_OR ConditionalAndExpression
-        { MAKE_NODE($$, symbol_kind::S_ConditionalOrExpression, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     ;
 
 ConditionalAndExpression:
-    InclusiveOrExpression { MAKE_ONE($$, $1); }
+    InclusiveOrExpression { COPY_OBJ($$, $1); }
     | ConditionalAndExpression BOOLEAN_AND InclusiveOrExpression
-        { MAKE_NODE($$, symbol_kind::S_ConditionalAndExpression, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     ;
 
 InclusiveOrExpression:
-    AndExpression { MAKE_ONE($$, $1); }
-    | InclusiveOrExpression PIPE AndExpression { MAKE_NODE($$, symbol_kind::S_InclusiveOrExpression, $1, $2, $3); }
+    AndExpression { COPY_OBJ($$, $1); }
+    | InclusiveOrExpression PIPE AndExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
 
 AndExpression:
-    EqualityExpression { MAKE_ONE($$, $1); }
-    | AndExpression AMPERSAND EqualityExpression { MAKE_NODE($$, symbol_kind::S_AndExpression, $1, $2, $3); }
+    EqualityExpression { COPY_OBJ($$, $1); }
+    | AndExpression AMPERSAND EqualityExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
 
 EqualityExpression:
-    RelationalExpression { MAKE_ONE($$, $1); }
-    | EqualityExpression BOOLEAN_EQUAL RelationalExpression  { MAKE_NODE($$, symbol_kind::S_EqualityExpression, $1, $2, $3); }
-    | EqualityExpression NOT_EQUAL RelationalExpression { MAKE_NODE($$, symbol_kind::S_EqualityExpression, $1, $2, $3); }
+    RelationalExpression { COPY_OBJ($$, $1); }
+    | EqualityExpression BOOLEAN_EQUAL RelationalExpression  { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+    | EqualityExpression NOT_EQUAL RelationalExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     ;
 
 RelationalExpression:
-    AdditiveExpression { MAKE_ONE($$, $1); }
+    AdditiveExpression { COPY_OBJ($$, $1); }
     | RelationalExpression LESS_THAN AdditiveExpression
-        { MAKE_NODE($$, symbol_kind::S_RelationalExpression, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     | RelationalExpression GREATER_THAN AdditiveExpression
-        { MAKE_NODE($$, symbol_kind::S_RelationalExpression, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     | RelationalExpression LESS_THAN_EQUAL AdditiveExpression
-        { MAKE_NODE($$, symbol_kind::S_RelationalExpression, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     | RelationalExpression GREATER_THAN_EQUAL AdditiveExpression
-        { MAKE_NODE($$, symbol_kind::S_RelationalExpression, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     | RelationalExpression INSTANCEOF ReferenceType // ReferenceType
-        { MAKE_NODE($$, symbol_kind::S_RelationalExpression, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     ;
 
 AdditiveExpression:
-    MultiplicativeExpression { MAKE_ONE($$, $1); }
-    | AdditiveExpression PLUS MultiplicativeExpression { MAKE_NODE($$, symbol_kind::S_AdditiveExpression, $1, $2, $3); }
-    | AdditiveExpression MINUS MultiplicativeExpression { MAKE_NODE($$, symbol_kind::S_AdditiveExpression, $1, $2, $3); }
+    MultiplicativeExpression { COPY_OBJ($$, $1); }
+    | AdditiveExpression PLUS MultiplicativeExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+    | AdditiveExpression MINUS MultiplicativeExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     ;
 
 MultiplicativeExpression:
-    UnaryExpression { MAKE_ONE($$, $1); }
-    | MultiplicativeExpression ASTERISK UnaryExpression { MAKE_NODE($$, symbol_kind::S_MultiplicativeExpression, $1, $2, $3); }
-    | MultiplicativeExpression DIVIDE UnaryExpression { MAKE_NODE($$, symbol_kind::S_MultiplicativeExpression, $1, $2, $3); }
-    | MultiplicativeExpression MODULO UnaryExpression { MAKE_NODE($$, symbol_kind::S_MultiplicativeExpression, $1, $2, $3); }
+    UnaryExpression { COPY_OBJ($$, $1); }
+    | MultiplicativeExpression ASTERISK UnaryExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+    | MultiplicativeExpression DIVIDE UnaryExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+    | MultiplicativeExpression MODULO UnaryExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     ;
 
 UnaryExpression:
-    MINUS UnaryExpression { MAKE_NODE($$, symbol_kind::S_UnaryExpression, $1, $2); }
-    | UnaryExpressionNotPlusMinus { MAKE_ONE($$, $1); }
+    MINUS UnaryExpression { MAKE_PREFIX_OBJ($$, $1, $2); }
+    | UnaryExpressionNotPlusMinus { COPY_OBJ($$, $1); }
     ;
 
 UnaryExpressionNotPlusMinus:
-    NEGATE UnaryExpression { MAKE_NODE($$, symbol_kind::S_UnaryExpressionNotPlusMinus, $1, $2); }
-    | CastExpression { MAKE_ONE($$, $1); }
-    | PrimaryOrExpressionName { MAKE_ONE($$, $1); }
+    NEGATE UnaryExpression { MAKE_PREFIX_OBJ($$, $1, $2); }
+    | CastExpression { COPY_OBJ($$, $1); }
+    | PrimaryOrExpressionName { COPY_OBJ($$, $1); }
     ;
 
 CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
-        { MAKE_NODE($$, symbol_kind::S_CastExpression, $1, $2, $3, $4); }
+        { MAKE_CASTEXPR_OBJ($$, $2, $4, false); }
     | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
-        { MAKE_NODE($$, symbol_kind::S_CastExpression, $1, $2, $3, $4); }
+        { MAKE_CASTEXPR_OBJ($$, get<QualifiedIdentifier>(*$2), $4, false); } // throws err if Expression not QI
     | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
-        { MAKE_NODE($$, symbol_kind::S_CastExpression, $1, $2, $3, $4, $5, $6); }
+        { MAKE_CASTEXPR_OBJ($$, $2, $6, true); }
     | OPENING_PAREN
         PrimitiveType OPENING_BRACKET CLOSING_BRACKET // ReferenceType as PrimitiveType with array
             CLOSING_PAREN UnaryExpressionNotPlusMinus
-        { MAKE_NODE($$, symbol_kind::S_CastExpression, $1, $2, $3, $4, $5, $6); }
+        { MAKE_CASTEXPR_OBJ($$, $2, $6, true); }
     ;
 
 PrimaryOrExpressionName:
-    Primary { MAKE_ONE($$, $1); }
+    Primary { COPY_OBJ($$, $1); }
     | QualifiedIdentifier // ExpressionName
-        { MAKE_ONE($$, $1); }
+        { MAKE_QI_EXPRESSION_OBJ($$, $1); }
     ;
 
 Primary:
@@ -498,13 +510,13 @@ ArrayCreationExpression:
 
 ClassInstanceCreationExpression:
     NEW QualifiedIdentifier OPENING_PAREN ArgumentListOpt CLOSING_PAREN
-        { MAKE_EXPRESSION_OBJ($$, ClassInstanceCreationExpression, NEW_OBJ(QualifiedIdentifier, $2), $4); }
+        { MAKE_EXPRESSION_OBJ($$, ClassInstanceCreationExpression, $2, $4); }
 
 PrimaryNoNewArray:
     Literal { MAKE_EXPRESSION_OBJ($$, Literal, $1); }
-    | THIS { MAKE_EXPRESSION_OBJ($$, QualifiedThis, NEW_OBJ(QualifiedIdentifier)); }
+    | THIS { MAKE_EXPRESSION_OBJ($$, QualifiedThis, EMPTY); }
     | QualifiedIdentifier DOT THIS // ClassName     TODO: REMOVE
-        { MAKE_EXPRESSION_OBJ($$, QualifiedThis, NEW_OBJ(QualifiedIdentifier, $1)); }
+        { MAKE_EXPRESSION_OBJ($$, QualifiedThis, $1); }
     | OPENING_PAREN Expression CLOSING_PAREN
         { COPY_OBJ($$, $2); }
     | ClassInstanceCreationExpression { COPY_OBJ($$, $1); }
@@ -524,7 +536,7 @@ Literal:
 
 ArrayAccess:
     QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // ExpressionName
-        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, NEW_OBJ(QualifiedIdentifier, $1), $3); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, $1, $3); }
     | PrimaryNoNewArray OPENING_BRACKET Expression CLOSING_BRACKET
         { MAKE_EXPRESSION_OBJ($$, ArrayAccess, $1, $3); }
     ;
@@ -580,7 +592,7 @@ BooleanType:
 
 ClassOrInterfaceType:
     QualifiedIdentifier // ClassType, InterfaceType -> TypeName
-        { $$ = $1; }
+        { $$ = *$1; }
 
 ReferenceType: // Done this way to disallow multidimensional arrays
     ClassOrInterfaceType
@@ -899,8 +911,16 @@ ParExpression:
     ;
 
 QualifiedIdentifier:
-    Identifier { MAKE_STACK_OBJ($$, QualifiedIdentifier); MAKE_VECTOR($$, $$.identifiers, *$1); }
-    | QualifiedIdentifier DOT Identifier { MAKE_VECTOR($$, $1.identifiers, *$3); }
+    Identifier
+        {
+            MAKE_OBJ($$, QualifiedIdentifier, EMPTY_VECTOR(Identifier));
+            $$->identifiers.push_back(*$1);
+        }
+    | QualifiedIdentifier DOT Identifier
+        { 
+            COPY_OBJ($$, $1);
+            $$->identifiers.push_back(*$3);
+        }
     ;
 
 Identifier:
