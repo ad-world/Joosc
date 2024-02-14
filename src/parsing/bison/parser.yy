@@ -135,6 +135,8 @@
     // Identifier
     %nterm <unique_ptr<QualifiedIdentifier>> ExtendsOpt
     %nterm <vector<QualifiedIdentifier>> InterfacesOpt
+        %nterm <AstNodeVariant*> Interfaces
+            %nterm <AstNodeVariant*> InterfaceTypeList
     %nterm <pair<FieldDeclaration COMMA MethodDeclaration>> ClassBody
         %nterm <unique_ptr<pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>>> ClassBodyDeclarationsOpt
         %nterm <pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>> ClassBodyDeclarations
@@ -150,10 +152,30 @@
 
 // Method Header/Body (todo)
 %nterm <AstNodeVariant*> MethodHeader
+    // (Modifiers, MethodDeclarator)
 %nterm <AstNodeVariant*> MethodBody
+    // (Block)
 
 // InterfaceDeclaration (todo)
 %nterm <unique_ptr<InterfaceDeclaration>> InterfaceDeclaration
+    %nterm <AstNodeVariant*> InterfaceModifiersOpt
+    // Identifier
+    %nterm <vector<QualifiedIdentifier>> ExtendsInterfacesOpt
+        %nterm <vector<QualifiedIdentifier>> ExtendsInterfaces
+            %nterm <unique_ptr<QualifiedIdentifier>> InterfaceType
+    %nterm <AstNodeVariant*> InterfaceBody
+        %nterm <AstNodeVariant*> InterfaceMemberDeclarationsOpt
+            %nterm <AstNodeVariant*> InterfaceMemberDeclarations
+                %nterm <AstNodeVariant*> InterfaceMemberDeclaration
+                    %nterm <AstNodeVariant*> AbstractMethodDeclaration
+                        %nterm <AstNodeVariant*> AbstractMethodModifiersOpt
+                            %nterm <AstNodeVariant*> AbstractMethodModifiers
+                                %nterm <AstNodeVariant*> AbstractMethodModifier
+                        %nterm <AstNodeVariant*> MethodDeclarator
+                            %nterm <AstNodeVariant*> FormalParameterListOpt
+                                %nterm <AstNodeVariant*> FormalParameterList
+                                    %nterm <AstNodeVariant*> FormalParameter
+
 
 // QualifiedIdentifier (done)
 %nterm <unique_ptr<QualifiedIdentifier>> QualifiedIdentifier
@@ -255,24 +277,6 @@
         %nterm <vector<Expression>> ArgumentList
 
 // Rest of non-terminals (todo)
-%nterm <AstNodeVariant*> InterfaceModifiersOpt
-%nterm <AstNodeVariant*> InterfaceType
-%nterm <AstNodeVariant*> ExtendsInterfaces
-%nterm <AstNodeVariant*> ExtendsInterfacesOpt
-%nterm <AstNodeVariant*> InterfaceBody
-%nterm <AstNodeVariant*> InterfaceMemberDeclarationsOpt
-%nterm <AstNodeVariant*> InterfaceMemberDeclarations
-%nterm <AstNodeVariant*> InterfaceMemberDeclaration
-%nterm <AstNodeVariant*> AbstractMethodDeclaration
-%nterm <AstNodeVariant*> AbstractMethodModifiersOpt
-%nterm <AstNodeVariant*> AbstractMethodModifiers
-%nterm <AstNodeVariant*> Interfaces
-%nterm <AstNodeVariant*> InterfaceTypeList
-%nterm <AstNodeVariant*> MethodDeclarator
-%nterm <AstNodeVariant*> FormalParameterListOpt
-%nterm <AstNodeVariant*> FormalParameterList
-%nterm <AstNodeVariant*> AbstractMethodModifier
-%nterm <AstNodeVariant*> FormalParameter
 /******************** END NONTERMINALS ********************/
 
 %parse-param {AstNodeVariant **root}
@@ -631,7 +635,7 @@ ReferenceType: // Done this way to disallow multidimensional arrays
 
 InterfaceDeclaration:
     InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfacesOpt InterfaceBody
-        { MAKE_NODE($$, symbol_kind::S_InterfaceDeclaration, $1, $2, $3, $4, $5); }
+        { MAKE_OBJ($$, InterfaceDeclaration, $1, $3, $4, $5); }
     ;
 
 Modifiers:
