@@ -82,6 +82,14 @@ CastExpression::CastExpression(
     expression{std::move(expression)}
 {}
 
+InstanceOfExpression::InstanceOfExpression(
+    std::unique_ptr<Expression>& expression,
+    std::unique_ptr<Type>& type
+): 
+    expression{std::move(expression)},
+    type{std::move(type)}
+{}
+
 // ----------
 
 Assignment::Assignment(
@@ -162,4 +170,12 @@ CastExpression::CastExpression(
 ): 
     type{std::move(type)},
     expression{std::move(expression)}
+{}
+
+InstanceOfExpression::InstanceOfExpression(
+    std::unique_ptr<Expression>&& expression,
+    std::unique_ptr<Type>&& type
+): 
+    expression{std::move(expression)},
+    type{std::move(type)}
 {}

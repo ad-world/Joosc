@@ -319,6 +319,16 @@ void AstVisitor<ReturnType>::visit_children(MethodInvocation &node) {
     }
 }
 
+template <typename ReturnType>
+void AstVisitor<ReturnType>::visit_children(InstanceOfExpression &node) {
+    if (node.expression) {
+        this->operator()(*node.expression);
+    }
+    if (node.type) {
+        this->operator()(*node.type);
+    }
+}
+
 // Dispatch nested variant to member type
 template <typename ReturnType>
 void AstVisitor<ReturnType>::visit_children(Statement &node) {
