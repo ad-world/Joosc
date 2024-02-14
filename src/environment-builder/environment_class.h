@@ -5,7 +5,7 @@
 #include <vector>
 #include <variant>
 
-enum Type {
+enum class VarType {
     BOOL,
     INT,
     SHORT,
@@ -16,11 +16,11 @@ enum Type {
     INTERFACE,
 };
 
-typedef std::variant<std::monostate, bool, int64_t, char, std::string, RootEnvironment*> VariableType;
+typedef std::variant<std::monostate, bool, int64_t, char, std::string, RootEnvironment*> VarValue;
 
 struct Variable {
-    Type type;
-    VariableType value;
+    VarType type;
+    VarValue value;
     bool is_array;
 };
 
