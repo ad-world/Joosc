@@ -212,13 +212,32 @@
 %nterm <unique_ptr<Statement>> Statement
     %nterm <unique_ptr<Statement>> StatementWithoutTrailingSubstatement
         // Block
-        %nterm <unique_ptr<EmptyStatement>> EmptyStatement
+        %nterm <EmptyStatement> EmptyStatement
         %nterm <unique_ptr<ExpressionStatement>> ExpressionStatement
-        %nterm <unique_ptr<ReturnStatement>> ReturnStatement
-    %nterm <unique_ptr<IfThenStatement>> IfThenStatement
-    %nterm <unique_ptr<IfThenElseStatement>> IfThenElseStatement
-    %nterm <unique_ptr<WhileStatement>> WhileStatement
-    %nterm <unique_ptr<ForStatement>> ForStatement
+        %nterm <unique_ptr<Statement>> ReturnStatement
+    %nterm <unique_ptr<Statement>> IfThenStatement
+        // ParExpr, Statement
+    %nterm <unique_ptr<Statement>> IfThenElseStatement
+        %nterm <unique_ptr<Statement>> IfThenElseStatementNoShortIf
+        // ParExpr, StatementNoShortIf, Statement
+    %nterm <unique_ptr<Statement>> WhileStatement
+        %nterm <unique_ptr<Statement>> WhileStatementNoShortIf
+        // ParExpr, Statement
+    %nterm <unique_ptr<Statement>> ForStatement
+        %nterm <unique_ptr<Statement>> ForStatementNoShortIf
+        %nterm <unique_ptr<Statement>> ForInitOpt
+            %nterm <unique_ptr<Statement>> ForInit
+                // (StatementExpression, LocalVariableDeclaration)
+        %nterm <unique_ptr<Expression>> ExpressionOpt
+            // (Expression)
+        %nterm <unique_ptr<Statement>> ForUpdateOpt
+            // (StatementExpression)
+        // (Statement)
+
+    // Common types for statements
+    %nterm <unique_ptr<Expression>> ParExpression
+    %nterm <unique_ptr<Statement>> StatementNoShortIf
+    %nterm <unique_ptr<ExpressionStatement>> StatementExpression
 
     // Block (todo)
     %nterm <unique_ptr<Block>> Block
@@ -231,16 +250,6 @@
             // Statement
 
     // Unused
-    %nterm <AstNodeVariant*> StatementExpression
-    %nterm <AstNodeVariant*> StatementNoShortIf
-    %nterm <AstNodeVariant*> IfThenElseStatementNoShortIf
-    %nterm <AstNodeVariant*> WhileStatementNoShortIf
-    %nterm <AstNodeVariant*> ForStatementNoShortIf
-    %nterm <AstNodeVariant*> ForInitOpt
-    %nterm <AstNodeVariant*> ForInit
-    %nterm <AstNodeVariant*> ForUpdateOpt
-    %nterm <AstNodeVariant*> ExpressionOpt
-    %nterm <AstNodeVariant*> ParExpression
 
 // Arguments (done)
 %nterm <vector<Expression>> Arguments
@@ -293,6 +302,9 @@
 
 #define MAKE_LITERAL_OBJ(me, inner_type, inner_constructor...) \
     MAKE_VARIANT_OBJ(me, Literal, inner_type, (inner_constructor))
+
+#define MAKE_STATEMENT_OBJ(me, inner_type, inner_constructor...) \
+    MAKE_VARIANT_OBJ(me, Statement, inner_type, (inner_constructor))
 
 #define MAKE_INFIX_OBJ(me, expr1, op, expr2) \
     MAKE_EXPRESSION_OBJ(me, InfixExpression, ( expr1 ), ( expr2 ), ( op ))
@@ -831,97 +843,100 @@ VariableDeclaratorId:
 /*---------------------- Statements ----------------------*/
 
 Statement:
-    StatementWithoutTrailingSubstatement { MAKE_ONE($$, $1); }
-    | IfThenStatement { MAKE_ONE($$, $1); }
-    | IfThenElseStatement { MAKE_ONE($$, $1); }
-    | WhileStatement { MAKE_ONE($$, $1); }
-    | ForStatement { MAKE_ONE($$, $1); }
+    StatementWithoutTrailingSubstatement { COPY_OBJ($$, $1); }
+    | IfThenStatement { COPY_OBJ($$, $1); }
+    | IfThenElseStatement { COPY_OBJ($$, $1); }
+    | WhileStatement { COPY_OBJ($$, $1); }
+    | ForStatement { COPY_OBJ($$, $1); }
     ;
 
 StatementWithoutTrailingSubstatement:
-    Block { MAKE_ONE($$, $1); }
-    | EmptyStatement { MAKE_ONE($$, $1); }
-    | ExpressionStatement { MAKE_ONE($$, $1); }
-    | ReturnStatement { MAKE_ONE($$, $1); }
+    Block { MAKE_STATEMENT_OBJ($$, Block, $1); }
+    | EmptyStatement { MAKE_STATEMENT_OBJ($$, EmptyStatement, $1); }
+    | ExpressionStatement { MAKE_STATEMENT_OBJ($$, ExpressionStatement, $1); }
+    | ReturnStatement { COPY_OBJ($$, $1); }
     ;
 
 ExpressionStatement:
-    StatementExpression SEMI_COLON { MAKE_NODE($$, symbol_kind::S_ExpressionStatement, $1, $2); }
+    StatementExpression SEMI_COLON { COPY_OBJ($$, $1); }
     ;
 
 StatementExpression:
-    Assignment { MAKE_ONE($$, $1); }
-    | MethodInvocation { MAKE_ONE($$, $1); }
-    | ClassInstanceCreationExpression { MAKE_ONE($$, $1); }
+    Assignment
+        { MAKE_VARIANT_OBJ($$, ExpressionStatement, Assignment, $1); }
+    | MethodInvocation
+        { MAKE_VARIANT_OBJ($$, ExpressionStatement, MethodInvocation, $1); }
+    | ClassInstanceCreationExpression
+        { MAKE_VARIANT_OBJ($$, ExpressionStatement, ClassInstanceCreationExpression, $1); }
     ;
 
 StatementNoShortIf:
-    StatementWithoutTrailingSubstatement { MAKE_ONE($$, $1); }
-    | IfThenElseStatementNoShortIf { MAKE_ONE($$, $1); }
-    | WhileStatementNoShortIf { MAKE_ONE($$, $1); }
-    | ForStatementNoShortIf { MAKE_ONE($$, $1); }
+    StatementWithoutTrailingSubstatement { COPY_OBJ($$, $1); }
+    | IfThenElseStatementNoShortIf { COPY_OBJ($$, $1); }
+    | WhileStatementNoShortIf { COPY_OBJ($$, $1); }
+    | ForStatementNoShortIf { COPY_OBJ($$, $1); }
     ;
 
 EmptyStatement:
-    SEMI_COLON { MAKE_ONE($$, $1); }
+    SEMI_COLON { MAKE_STACK_OBJ($$, EmptyStatement); }
 	;
 
 IfThenStatement:
-	IF ParExpression Statement { MAKE_NODE($$, symbol_kind::S_IfThenStatement, $1, $2, $3); }
+	IF ParExpression Statement { MAKE_STATEMENT_OBJ($$, IfThenStatement, $2, $3); }
     ;
 
 IfThenElseStatement:
-	IF ParExpression StatementNoShortIf ELSE Statement { MAKE_NODE($$, symbol_kind::S_IfThenElseStatement, $1, $2, $3, $4, $5); }
+	IF ParExpression StatementNoShortIf ELSE Statement { MAKE_STATEMENT_OBJ($$, IfThenElseStatement, $2, $3, $5); }
     ;
 
 IfThenElseStatementNoShortIf:
-	IF ParExpression StatementNoShortIf ELSE StatementNoShortIf { MAKE_NODE($$, symbol_kind::S_IfThenElseStatementNoShortIf, $1, $2, $3, $4, $5); }
+	IF ParExpression StatementNoShortIf ELSE StatementNoShortIf { MAKE_STATEMENT_OBJ($$, IfThenElseStatement, $2, $3, $5); }
     ;
 
 WhileStatement:
-	  WHILE ParExpression Statement { MAKE_NODE($$, symbol_kind::S_WhileStatement, $1, $2, $3); }
+	  WHILE ParExpression Statement { MAKE_STATEMENT_OBJ($$, WhileStatement, $2, $3); }
     ;
 
 WhileStatementNoShortIf:
-	  WHILE ParExpression StatementNoShortIf { MAKE_NODE($$, symbol_kind::S_WhileStatementNoShortIf, $1, $2, $3); }
+	  WHILE ParExpression StatementNoShortIf { MAKE_STATEMENT_OBJ($$, WhileStatement, $2, $3); }
     ;
 
 ForStatement:
 	  FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
-          { MAKE_NODE($$, symbol_kind::S_ForStatement, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
+          { MAKE_STATEMENT_OBJ($$, ForStatement, $3, $5, $7, $9); }
     ;
 
 ForStatementNoShortIf:
 	  FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN StatementNoShortIf
-          { MAKE_NODE($$, symbol_kind::S_ForStatementNoShortIf, $1, $2, $3, $4, $5, $6, $7, $8, $9); }
+          { MAKE_STATEMENT_OBJ($$, ForStatement, $3, $5, $7, $9); }
     ;
 		
 ForInitOpt:
-    /* No init */ { MAKE_EMPTY($$); }
-    | ForInit { MAKE_ONE($$, $1); }
+    /* No init */ { $$ = EMPTY; }
+    | ForInit { COPY_OBJ($$, $1); }
     ;
 
 ForInit:
-    StatementExpression { MAKE_ONE($$, $1); }
-    | LocalVariableDeclaration { MAKE_ONE($$, $1); }
+    StatementExpression { MAKE_STATEMENT_OBJ($$, ExpressionStatement, $1); }
+    | LocalVariableDeclaration { MAKE_STATEMENT_OBJ($$, LocalVariableDeclaration, $1); }
     ;
 
 ForUpdateOpt:
-    /* Empty - no update */ { MAKE_EMPTY($$); }
-    | StatementExpression { MAKE_ONE($$, $1); }
+    /* Empty - no update */ { $$ = EMPTY; }
+    | StatementExpression { MAKE_STATEMENT_OBJ($$, ExpressionStatement, $1); }
     ;
 
 ExpressionOpt:
-    /* no expression */ { MAKE_EMPTY($$); }
-    | Expression { MAKE_ONE($$, $1); }
+    /* no expression */ { $$ = EMPTY; }
+    | Expression { COPY_OBJ($$, $1); }
     ;
 
 ReturnStatement:
-    RETURN ExpressionOpt SEMI_COLON { MAKE_NODE($$, symbol_kind::S_ReturnStatement, $1, $2, $3); }
+    RETURN ExpressionOpt SEMI_COLON { MAKE_STATEMENT_OBJ($$, ReturnStatement, $2); }
     ;
 
 ParExpression:
-    OPENING_PAREN Expression CLOSING_PAREN { MAKE_NODE($$, symbol_kind::S_ParExpression, $1, $2, $3); }
+    OPENING_PAREN Expression CLOSING_PAREN { COPY_OBJ($$, $2); }
     ;
 
 QualifiedIdentifier:
