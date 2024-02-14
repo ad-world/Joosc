@@ -247,7 +247,6 @@
             %nterm <unique_ptr<LocalVariableDeclaration>> LocalVariableDeclarationStatement
                 %nterm <unique_ptr<LocalVariableDeclaration>> LocalVariableDeclaration
                     // (Type, VariableDeclarator)
-            // Class decl   (todo: should this be removed?)
             // Statement
 
 // Arguments (done)
@@ -986,7 +985,6 @@ BlockStatements:
 
 BlockStatement:
     LocalVariableDeclarationStatement  { MAKE_STATEMENT_OBJ($$, LocalVariableDeclaration, $1); }
-    | ClassDeclaration { MAKE_ONE($$, $1); } // TODO: what to do here?
     | Statement { COPY_OBJ($$, $1); }
     ;
 
