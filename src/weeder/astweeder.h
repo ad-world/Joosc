@@ -20,6 +20,8 @@ public:
 private:
     vector<string> violations;
 
+    void checkOneTypePerFile(const CompilationUnit& cu);
+
     void checkAsciiRange(const string& source);
 
     void checkClassModifiersAndConstructors(vector<ClassDeclaration> &classes, string &filename);

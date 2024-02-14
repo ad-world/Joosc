@@ -67,6 +67,9 @@ int AstWeeder::weed(AstNodeVariant& root, string fileName) {
 
     if (holds_alternative<CompilationUnit>(root)) {
         auto& cu = get<CompilationUnit>(root);
+
+        // check at most one type per file
+        checkOneTypePerFile(cu);
         
         // check program ascii range
         checkAsciiRange(readFileToString(fileName));
@@ -88,6 +91,12 @@ int AstWeeder::weed(AstNodeVariant& root, string fileName) {
     }
     
     return 0;
+}
+
+void AstWeeder::checkOneTypePerFile(const CompilationUnit &cu) {
+    if (cu.class_declarations.size() + cu.interface_declarations.size() > 1) {
+        addViolation("Only one type declaration allowed per file.");
+    }
 }
 
 void AstWeeder::checkInterfaces(vector<InterfaceDeclaration> &interfaces, string &filename) {
