@@ -116,19 +116,19 @@ struct ClassDeclaration: public AstNodeCommon {
 struct InterfaceDeclaration: public AstNodeCommon {
     std::vector<Modifier> modifiers; // vector of interface modifiers
     std::unique_ptr<Identifier> interface_name; // interface name
-    std::unique_ptr<QualifiedIdentifier> extends_class; // class that this interface extends off of
+    std::vector<QualifiedIdentifier> extends_class; // classes that this interface extends off of
     std::vector<MethodDeclaration> method_declarations; // interface method declarations
 
     InterfaceDeclaration(
         std::vector<Modifier>& modifiers,
         std::unique_ptr<Identifier>& interface_name,
-        std::unique_ptr<QualifiedIdentifier>& extends_class,
+        std::vector<QualifiedIdentifier>& extends_class,
         std::vector<MethodDeclaration>& method_declarations
     );
     InterfaceDeclaration(
         std::vector<Modifier>&& modifiers,
         std::unique_ptr<Identifier>&& interface_name,
-        std::unique_ptr<QualifiedIdentifier>&& extends_class,
+        std::vector<QualifiedIdentifier>&& extends_class,
         std::vector<MethodDeclaration>&& method_declarations
     );
 };

@@ -78,8 +78,8 @@ void AstVisitor<ReturnType>::visit_children(InterfaceDeclaration &node) {
     if (node.interface_name) {
         this->operator()(*node.interface_name);
     }
-    if (node.extends_class) {
-        this->operator()(*node.extends_class);
+    for (auto &child : node.extends_class) {
+        this->operator()(child);
     }
     for (auto &child : node.method_declarations) {
         this->operator()(child);
