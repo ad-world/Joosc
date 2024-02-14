@@ -154,9 +154,6 @@ void AstVisitor<ReturnType>::visit_children(LocalVariableDeclaration &node) {
 
 template <typename ReturnType>
 void AstVisitor<ReturnType>::visit_children(Block &node) {
-    for (auto &child : node.variable_declarations) {
-        this->operator()(child);
-    }
     for (auto &child : node.statements) {
         this->operator()(child);
     }
