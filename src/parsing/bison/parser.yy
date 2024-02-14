@@ -208,7 +208,7 @@
             %nterm <unique_ptr<Expression>> MethodInvocation
         %nterm <unique_ptr<Expression>> ArrayCreationExpression
 
-// Statements (todo)
+// Statements (done)
 %nterm <unique_ptr<Statement>> Statement
     %nterm <unique_ptr<Statement>> StatementWithoutTrailingSubstatement
         // Block
@@ -234,22 +234,21 @@
             // (StatementExpression)
         // (Statement)
 
-    // Common types for statements
+    // Common types for statements (done)
     %nterm <unique_ptr<Expression>> ParExpression
     %nterm <unique_ptr<Statement>> StatementNoShortIf
     %nterm <unique_ptr<ExpressionStatement>> StatementExpression
 
     // Block (todo)
     %nterm <unique_ptr<Block>> Block
-        %nterm <AstNodeVariant*> BlockStatementsOpt
-        %nterm <AstNodeVariant*> BlockStatements
-        %nterm <AstNodeVariant*> BlockStatement
+        %nterm <vector<Statement>> BlockStatementsOpt
+        %nterm <vector<Statement>> BlockStatements
+        %nterm <unique_ptr<Statement>> BlockStatement
             %nterm <unique_ptr<LocalVariableDeclaration>> LocalVariableDeclarationStatement
                 %nterm <unique_ptr<LocalVariableDeclaration>> LocalVariableDeclaration
-            // Class decl
+                    // (Type, VariableDeclarator)
+            // Class decl   (todo: should this be removed?)
             // Statement
-
-    // Unused
 
 // Arguments (done)
 %nterm <vector<Expression>> Arguments
@@ -960,36 +959,39 @@ Identifier:
 LocalVariableDeclaration:
     // Type VariableDeclarators
     QualifiedIdentifier VariableDeclarator // ClassOrInterfaceType VariableDeclarators
-        { MAKE_NODE($$, symbol_kind::S_LocalVariableDeclaration, $1, $2); }
+        { MAKE_OBJ($$, LocalVariableDeclaration, $1, $2); }
     | QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // ClassOrInterfaceTypeArray VariableDeclarators
-        { MAKE_NODE($$, symbol_kind::S_LocalVariableDeclaration, $1, $2, $3, $4); }
+        { MAKE_OBJ($$, LocalVariableDeclaration, $1, $4); }
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // PrimitiveArray VariableDeclarators
-        { MAKE_NODE($$, symbol_kind::S_LocalVariableDeclaration, $1, $2, $3, $4); }
-    | PrimitiveType VariableDeclarator { MAKE_NODE($$, symbol_kind::S_LocalVariableDeclaration, $1, $2); }
+        { MAKE_OBJ($$, LocalVariableDeclaration, $1, $4); }
+    | PrimitiveType VariableDeclarator { MAKE_OBJ($$, LocalVariableDeclaration, $1, $2); }
     ;
 
 Block:
-    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE { MAKE_NODE($$, symbol_kind::S_Block, $1, $2, $3); }
+    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE { MAKE_OBJ($$, Block, $2); }
     ;
 
 BlockStatementsOpt:
-    /* Empty - represents zero BlockStatements */ { MAKE_EMPTY($$); }
-    | BlockStatements { MAKE_ONE($$, $1); }
+    /* Empty - represents zero BlockStatements */ { MAKE_STACK_OBJ($$, vector<Statement>); }
+    | BlockStatements { $$ = $1; }
     ;
 
 BlockStatements:
-    BlockStatement { MAKE_ONE($$, $1); }
-    | BlockStatements BlockStatement { MAKE_NODE($$, symbol_kind::S_BlockStatements, $1, $2); }
+    BlockStatement {
+            MAKE_STACK_OBJ($$, vector<Statement>);
+            MAKE_VECTOR($$, $$, *$1);
+        }
+    | BlockStatements BlockStatement { MAKE_VECTOR($$, $1, *$2); }
     ;
 
 BlockStatement:
-    LocalVariableDeclarationStatement  { MAKE_ONE($$, $1); }
-    | ClassDeclaration { MAKE_ONE($$, $1); }
-    | Statement { MAKE_ONE($$, $1); }
+    LocalVariableDeclarationStatement  { MAKE_STATEMENT_OBJ($$, LocalVariableDeclaration, $1); }
+    | ClassDeclaration { MAKE_ONE($$, $1); } // TODO: what to do here?
+    | Statement { COPY_OBJ($$, $1); }
     ;
 
 LocalVariableDeclarationStatement:
-    LocalVariableDeclaration SEMI_COLON { MAKE_NODE($$, symbol_kind::S_LocalVariableDeclarationStatement, $1, $2); }
+    LocalVariableDeclaration SEMI_COLON { COPY_OBJ($$, $1); }
     ;
 
 VariableDeclarator:
