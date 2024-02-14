@@ -135,8 +135,8 @@
     // Identifier
     %nterm <unique_ptr<QualifiedIdentifier>> ExtendsOpt
     %nterm <vector<QualifiedIdentifier>> InterfacesOpt
-        %nterm <AstNodeVariant*> Interfaces
-            %nterm <AstNodeVariant*> InterfaceTypeList
+        %nterm <vector<QualifiedIdentifier>> Interfaces
+            %nterm <vector<QualifiedIdentifier>> InterfaceTypeList
     %nterm <pair<FieldDeclaration COMMA MethodDeclaration>> ClassBody
         %nterm <unique_ptr<pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>>> ClassBodyDeclarationsOpt
         %nterm <pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>> ClassBodyDeclarations
@@ -150,31 +150,31 @@
                         // MethodHeader
                         // MethodBody
 
-// Method Header/Body (todo)
-%nterm <AstNodeVariant*> MethodHeader
-    // (Modifiers, MethodDeclarator)
-%nterm <AstNodeVariant*> MethodBody
+// Method Header/Body (done)
+%nterm <unique_ptr<MethodDeclaration>> MethodHeader
+    %nterm <pair<unique_ptr<Identifier> COMMA vector<FormalParameter>>> MethodDeclarator
+        %nterm <vector<FormalParameter>> FormalParameterListOpt
+            %nterm <vector<FormalParameter>> FormalParameterList
+                %nterm <unique_ptr<FormalParameter>> FormalParameter
+%nterm <unique_ptr<Block>> MethodBody
     // (Block)
 
 // InterfaceDeclaration (todo)
 %nterm <unique_ptr<InterfaceDeclaration>> InterfaceDeclaration
-    %nterm <AstNodeVariant*> InterfaceModifiersOpt
+    %nterm <vector<Modifier>> InterfaceModifiersOpt
     // Identifier
-    %nterm <vector<QualifiedIdentifier>> ExtendsInterfacesOpt
-        %nterm <vector<QualifiedIdentifier>> ExtendsInterfaces
+    %nterm <unique_ptr<QualifiedIdentifier>> ExtendsInterfaceOpt
+        %nterm <unique_ptr<QualifiedIdentifier>> ExtendsInterface
             %nterm <unique_ptr<QualifiedIdentifier>> InterfaceType
-    %nterm <AstNodeVariant*> InterfaceBody
-        %nterm <AstNodeVariant*> InterfaceMemberDeclarationsOpt
-            %nterm <AstNodeVariant*> InterfaceMemberDeclarations
-                %nterm <AstNodeVariant*> InterfaceMemberDeclaration
-                    %nterm <AstNodeVariant*> AbstractMethodDeclaration
-                        %nterm <AstNodeVariant*> AbstractMethodModifiersOpt
-                            %nterm <AstNodeVariant*> AbstractMethodModifiers
-                                %nterm <AstNodeVariant*> AbstractMethodModifier
-                        %nterm <AstNodeVariant*> MethodDeclarator
-                            %nterm <AstNodeVariant*> FormalParameterListOpt
-                                %nterm <AstNodeVariant*> FormalParameterList
-                                    %nterm <AstNodeVariant*> FormalParameter
+    %nterm <vector<MethodDeclaration>> InterfaceBody
+        %nterm <vector<MethodDeclaration>> InterfaceMemberDeclarationsOpt
+            %nterm <vector<MethodDeclaration>> InterfaceMemberDeclarations
+                %nterm <unique_ptr<MethodDeclaration>> InterfaceMemberDeclaration
+                    %nterm <unique_ptr<MethodDeclaration>> AbstractMethodDeclaration
+                        %nterm <vector<Modifier>> AbstractMethodModifiersOpt
+                            %nterm <vector<Modifier>> AbstractMethodModifiers
+                                %nterm <Modifier> AbstractMethodModifier
+                        // MethodDeclarator
 
 
 // QualifiedIdentifier (done)
@@ -634,7 +634,7 @@ ReferenceType: // Done this way to disallow multidimensional arrays
 /*---------------------- Interfaces ----------------------*/
 
 InterfaceDeclaration:
-    InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfacesOpt InterfaceBody
+    InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfaceOpt InterfaceBody
         { MAKE_OBJ($$, InterfaceDeclaration, $1, $3, $4, $5); }
     ;
 
@@ -653,61 +653,65 @@ Modifier:
     ;
 
 InterfaceModifiersOpt:
-    /* Empty - optional */ { MAKE_EMPTY($$); }
-    | Modifiers { MAKE_ONE($$, $1); }
+    /* Empty - optional */ { MAKE_STACK_OBJ($$, vector<Modifier>); }
+    | Modifiers { $$ = $1; }
     ;
 
 InterfaceType:
-    QualifiedIdentifier { MAKE_ONE($$, $1); }
+    QualifiedIdentifier { COPY_OBJ($$, $1); }
     ;
 
-ExtendsInterfaces:
-    EXTENDS InterfaceType { MAKE_NODE($$, symbol_kind::S_ExtendsInterfaces, $1, $2); }
-    | ExtendsInterfaces COMMA InterfaceType { MAKE_NODE($$, symbol_kind::S_ExtendsInterfaces, $1, $2, $3); }
+ExtendsInterface:
+    EXTENDS InterfaceType { COPY_OBJ($$, $2); }
     ;
 
-ExtendsInterfacesOpt:
-    /* Empty - optional interface */ { MAKE_EMPTY($$); }
-    | ExtendsInterfaces { MAKE_ONE($$, $1); }
+ExtendsInterfaceOpt:
+    /* Empty - optional interface */ { $$ = EMPTY; }
+    | ExtendsInterface { COPY_OBJ($$, $1); }
     ;
 
 InterfaceBody:
     OPENING_BRACE InterfaceMemberDeclarationsOpt CLOSING_BRACE
-        { MAKE_NODE($$, symbol_kind::S_InterfaceBody, $1, $2, $3); }
+        { $$ = $2; }
     ;
 
 InterfaceMemberDeclarationsOpt:
-    /* Empty - No interface body declarations */ { MAKE_EMPTY($$); }
-    | InterfaceMemberDeclarations { MAKE_ONE($$, $1); }
+    /* Empty - No interface body declarations */ { MAKE_STACK_OBJ($$, vector<MethodDeclaration>); }
+    | InterfaceMemberDeclarations { $$ = $1; }
     ;
 
 InterfaceMemberDeclarations:
-    InterfaceMemberDeclaration { MAKE_ONE($$, $1); }
+    InterfaceMemberDeclaration {
+            MAKE_STACK_OBJ($$, vector<MethodDeclaration>);
+            MAKE_VECTOR($$, $$, *$1);
+        }
     | InterfaceMemberDeclarations InterfaceMemberDeclaration
-        { MAKE_NODE($$, symbol_kind::S_InterfaceMemberDeclarations, $1, $2); }
+        { MAKE_VECTOR($$, $1, *$2); }
     ;
 
 InterfaceMemberDeclaration: // Nested types and interface constants not supported
-    AbstractMethodDeclaration { MAKE_ONE($$, $1); }
+    AbstractMethodDeclaration { COPY_OBJ($$, $1); }
     ;
 
 AbstractMethodDeclaration:
     AbstractMethodModifiersOpt Type MethodDeclarator SEMI_COLON
-        { MAKE_NODE($$, symbol_kind::S_AbstractMethodDeclaration, $1, $2, $3, $4); }
+        { MAKE_OBJ($$, MethodDeclaration, $1, $2, $3.first, $3.second, EMPTY); }
     | AbstractMethodModifiersOpt VOID MethodDeclarator SEMI_COLON
-        { MAKE_NODE($$, symbol_kind::S_AbstractMethodDeclaration, $1, $2, $3, $4); }
+        { MAKE_OBJ($$, MethodDeclaration, $1, NEW_OBJ(Type, $2, false), $3.first, $3.second, EMPTY); }
     ;
 
 AbstractMethodModifiersOpt:
-    /* Empty - optional */ { MAKE_EMPTY($$); }
-    | AbstractMethodModifiers { MAKE_ONE($$, $1); }
+    /* Empty - optional */ { MAKE_STACK_OBJ($$, vector<Modifier>); }
+    | AbstractMethodModifiers { $$ = $1; }
     ;
 
 AbstractMethodModifiers:
-    AbstractMethodModifier
-        { MAKE_ONE($$, $1); }
+    AbstractMethodModifier { 
+            MAKE_STACK_OBJ($$, vector<Modifier>);
+            MAKE_VECTOR($$, $$, $1);
+        }
     | AbstractMethodModifiers AbstractMethodModifier
-        { MAKE_NODE($$, symbol_kind::S_AbstractMethodModifiers, $1, $2); }
+        { MAKE_VECTOR($$, $1, $2); }
     ;
 
 
@@ -719,24 +723,24 @@ AbstractMethodModifiers:
 // weeder: must contain public?
 ClassDeclaration:
     CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_OBJ($$, ClassDeclaration, EMPTY_MODIFIERS, $1, $2, $3, $4); }
+        { MAKE_OBJ($$, ClassDeclaration, EMPTY_VECTOR(Modifier), $2, $3, $4, $5); }
     | Modifiers CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_NODE($$, symbol_kind::S_ClassDeclaration, $1, $2, $3, $4, $5, $6); }
+        { MAKE_OBJ($$, ClassDeclaration, $1, $3, $4, $5, $6); }
     ;
 
 /* Class interfaces */
 InterfacesOpt:
-    /* Empty - No implements */ { MAKE_EMPTY($$); }
-    | Interfaces { MAKE_ONE($$, $1); }
+    /* Empty - No implements */ { MAKE_STACK_OBJ($$, vector<QualifiedIdentifier>); }
+    | Interfaces { $$ = $1; }
     ;
 
 Interfaces:
-    IMPLEMENTS InterfaceTypeList { MAKE_NODE($$, symbol_kind::S_Interfaces, $1, $2); }
+    IMPLEMENTS InterfaceTypeList { COPY_OBJ($$, $2); }
     ;
 
 InterfaceTypeList:
-    InterfaceType { MAKE_ONE($$, $1); }
-    | InterfaceTypeList COMMA InterfaceType { MAKE_NODE($$, symbol_kind::S_InterfaceTypeList, $1, $2, $3); }
+    InterfaceType { MAKE_STACK_OBJ($$, vector<QualifiedIdentifier>); MAKE_VECTOR($$, $$, *$1); }
+    | InterfaceTypeList COMMA InterfaceType { MAKE_VECTOR($$, $1, *$3); }
     ;
 
 /* Class Extends */
@@ -792,49 +796,49 @@ VariableInitializer:
 /* Methods */
 // weeder: methodbody exists if neither abstract nor native
 MethodDeclaration: // One of these must be constructor
-    MethodHeader MethodBody { MAKE_NODE($$, symbol_kind::S_MethodDeclaration, $1, $2); }
+    MethodHeader MethodBody { COPY_OBJ($$, $1); COPY_OBJ($$->body, $2); }
     ;
 
 // weeder: allow static native int m(int)
 // weeder: see A1 specs for weeding modifiers
 MethodHeader:
-    Type MethodDeclarator { MAKE_NODE($$, symbol_kind::S_MethodHeader, $1, $2); }
-    | Modifiers Type MethodDeclarator { MAKE_NODE($$, symbol_kind::S_MethodHeader, $1, $2, $3); }
-    | VOID MethodDeclarator { MAKE_NODE($$, symbol_kind::S_MethodHeader, $1, $2); }
-    | Modifiers VOID MethodDeclarator { MAKE_NODE($$, symbol_kind::S_MethodHeader, $1, $2, $3); }
+    Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), $1, $2.first, $2.second, EMPTY); }
+    | Modifiers Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, $2, $3.first, $3.second, EMPTY); }
+    | VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), $1, $2.first, $2.second, EMPTY); }
+    | Modifiers VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, $2, $3.first, $3.second, EMPTY); }
     | Modifiers MethodDeclarator // Represents constructor, todo weeding: reject if identifier is not class name
-        { MAKE_NODE($$, symbol_kind::S_MethodHeader, $1, $2); }
+        { MAKE_OBJ($$, MethodDeclaration, $1, EMPTY, $2.first, $2.second, EMPTY); }
     ;
 
 MethodDeclarator:
     Identifier OPENING_PAREN FormalParameterListOpt CLOSING_PAREN
-        { MAKE_NODE($$, symbol_kind::S_MethodDeclarator, $1, $2, $3, $4); }
+        { MAKE_PAIR($$, $1, $3); }
     ;
 
 MethodBody:
-    SEMI_COLON { MAKE_ONE($$, $1); }
-    | Block { MAKE_ONE($$, $1); }
+    SEMI_COLON { $$ = EMPTY; }
+    | Block { COPY_OBJ($$, $1); }
     ;
 
 /* Formal parameters */
 FormalParameterListOpt:
-    { MAKE_EMPTY($$); }
-    | FormalParameterList { MAKE_ONE($$, $1); }
+    /* EMPTY */ { MAKE_STACK_OBJ($$, vector<FormalParameter>); }
+    | FormalParameterList { $$ = $1; }
     ;
 
 FormalParameterList:
-    FormalParameter { MAKE_ONE($$, $1); }
-    | FormalParameterList COMMA FormalParameter { MAKE_NODE($$, symbol_kind::S_FormalParameterList, $1, $2, $3); }
+    FormalParameter { MAKE_STACK_OBJ($$, vector<FormalParameter>); MAKE_VECTOR($$, $$, *$1); }
+    | FormalParameterList COMMA FormalParameter { MAKE_VECTOR($$, $1, *$3); }
     ;
 /*-----------------------*/
 
 AbstractMethodModifier:
-    PUBLIC { MAKE_ONE($$, $1); }
-    | ABSTRACT { MAKE_ONE($$, $1); }
+    PUBLIC { $$ = $1; }
+    | ABSTRACT { $$ = $1; }
     ;
 
 FormalParameter:
-	Type VariableDeclaratorId { MAKE_NODE($$, symbol_kind::S_FormalParameter, $1, $2); }
+	Type VariableDeclaratorId { MAKE_OBJ($$, FormalParameter, $1, $2); }
     ;
 
 VariableDeclaratorId:
