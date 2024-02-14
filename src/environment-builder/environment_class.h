@@ -11,7 +11,6 @@ enum class VarType {
     SHORT,
     BYTE,
     CHAR,
-    STRING,
     CLASS,
     INTERFACE,
 };
