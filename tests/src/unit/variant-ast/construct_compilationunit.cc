@@ -4,7 +4,7 @@
 
 #include "variant-ast/astnode.h"
 
-TEST(AstNode, ConstructorCompiles) {
+TEST(AstNodeVariant, LValueConstructorCompiles) {
     auto identifiers = std::vector<Identifier>();
     auto package_declaration = std::make_unique<QualifiedIdentifier>(
         identifiers
@@ -20,5 +20,17 @@ TEST(AstNode, ConstructorCompiles) {
         asterisk_imports, 
         class_declarations, 
         interface_declarations
+    );
+}
+
+TEST(AstNodeVariant, RValueConstructorCompiles) {
+    AstNodeVariant root = CompilationUnit(
+        std::make_unique<QualifiedIdentifier>(
+            std::vector<Identifier>()
+        ),
+        std::vector<QualifiedIdentifier>(), 
+        std::vector<QualifiedIdentifier>(), 
+        std::vector<ClassDeclaration>(), 
+        std::vector<InterfaceDeclaration>()
     );
 }

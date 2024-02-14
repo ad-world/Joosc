@@ -22,4 +22,11 @@ struct CompilationUnit: public AstNodeCommon {
         std::vector<ClassDeclaration>& class_decs, 
         std::vector<InterfaceDeclaration>& interface_decs
     );
+    CompilationUnit(
+        std::unique_ptr<QualifiedIdentifier>&& package_declaration, 
+        std::vector<QualifiedIdentifier>&& single_imports, 
+        std::vector<QualifiedIdentifier>&& asterisk_imports, 
+        std::vector<ClassDeclaration>&& class_decs, 
+        std::vector<InterfaceDeclaration>&& interface_decs
+    );
 };

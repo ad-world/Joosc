@@ -14,4 +14,5 @@ struct Type {
     bool is_array;
 
     Type(std::unique_ptr<NonArrayType>& non_array_type, bool is_array);
+    Type(std::unique_ptr<NonArrayType>&& non_array_type, bool is_array);
 };

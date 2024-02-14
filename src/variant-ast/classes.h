@@ -27,6 +27,10 @@ struct VariableDeclarator {
         std::unique_ptr<Identifier>& variable_name, 
         std::unique_ptr<Expression>& expression
     );
+    VariableDeclarator(
+        std::unique_ptr<Identifier>&& variable_name, 
+        std::unique_ptr<Expression>&& expression
+    );
 };
 
 struct FieldDeclaration: public AstNodeCommon {
@@ -39,6 +43,11 @@ struct FieldDeclaration: public AstNodeCommon {
         std::unique_ptr<Type>& type,
         std::unique_ptr<VariableDeclarator>& variable_declarator
     );
+    FieldDeclaration(
+        std::vector<Modifier>&& modifiers,
+        std::unique_ptr<Type>&& type,
+        std::unique_ptr<VariableDeclarator>&& variable_declarator
+    );
 };
 
 struct FormalParameter {
@@ -48,6 +57,10 @@ struct FormalParameter {
     FormalParameter(
         std::unique_ptr<Type>& type, 
         std::unique_ptr<Identifier>& parameter_name
+    );
+    FormalParameter(
+        std::unique_ptr<Type>&& type, 
+        std::unique_ptr<Identifier>&& parameter_name
     );
 };
 
@@ -64,6 +77,13 @@ struct MethodDeclaration {
         std::unique_ptr<Identifier>& function_name,
         std::vector<FormalParameter>& parameters,
         std::unique_ptr<Block>& body
+    );
+    MethodDeclaration(
+        std::vector<Modifier>&& modifiers,
+        std::unique_ptr<Type>&& type,
+        std::unique_ptr<Identifier>&& function_name,
+        std::vector<FormalParameter>&& parameters,
+        std::unique_ptr<Block>&& body
     );
 };
 
@@ -83,6 +103,14 @@ struct ClassDeclaration: public AstNodeCommon {
         std::vector<FieldDeclaration>& field_declarations,
         std::vector<MethodDeclaration>& method_declarations
     );
+    ClassDeclaration(
+        std::vector<Modifier>&& modifiers,
+        std::unique_ptr<struct Identifier>&& class_name,
+        std::unique_ptr<QualifiedIdentifier>&& extends_class,
+        std::vector<QualifiedIdentifier>&& implements,
+        std::vector<FieldDeclaration>&& field_declarations,
+        std::vector<MethodDeclaration>&& method_declarations
+    );
 };
 
 struct InterfaceDeclaration: public AstNodeCommon {
@@ -96,5 +124,11 @@ struct InterfaceDeclaration: public AstNodeCommon {
         std::unique_ptr<Identifier>& interface_name,
         std::unique_ptr<QualifiedIdentifier>& extends_class,
         std::vector<MethodDeclaration>& method_declarations
+    );
+    InterfaceDeclaration(
+        std::vector<Modifier>&& modifiers,
+        std::unique_ptr<Identifier>&& interface_name,
+        std::unique_ptr<QualifiedIdentifier>&& extends_class,
+        std::vector<MethodDeclaration>&& method_declarations
     );
 };
