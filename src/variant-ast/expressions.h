@@ -24,8 +24,7 @@ enum class InfixOperator {
     LESS_THAN,
     GREATER_THAN,
     LESS_THAN_EQUAL,
-    GREATER_THAN_EQUAL,
-    INSTANCEOF
+    GREATER_THAN_EQUAL
 };
 
 enum class PrefixOperator {
