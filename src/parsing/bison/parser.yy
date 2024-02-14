@@ -37,39 +37,39 @@
 /*=============================================================================
                               Token Definitions
 =============================================================================*/
-%token <AstNodeVariant*> IF
-%token <AstNodeVariant*> WHILE
-%token <AstNodeVariant*> FOR
-%token <AstNodeVariant*> ELSE
-%token <AstNodeVariant*> EXTENDS
-%token <AstNodeVariant*> IMPLEMENTS
+%token IF
+%token WHILE
+%token FOR
+%token ELSE
+%token EXTENDS
+%token IMPLEMENTS
 %token <Modifier> PUBLIC
 %token <Modifier> PROTECTED
 %token <Modifier> STATIC
 %token <Modifier> ABSTRACT
 %token <Modifier> NATIVE
 %token <Modifier> FINAL
-%token <AstNodeVariant*> THIS
-%token <AstNodeVariant*> IMPORT
-%token <AstNodeVariant*> CLASS
-%token <AstNodeVariant*> NEW
+%token THIS
+%token IMPORT
+%token CLASS
+%token NEW
 
 // might need to look at this again
-%token <AstNodeVariant*> PACKAGE
-%token <AstNodeVariant*> INTERFACE
-%token <AstNodeVariant*> OPENING_BRACE
-%token <AstNodeVariant*> CLOSING_BRACE
-%token <AstNodeVariant*> OPENING_PAREN
-%token <AstNodeVariant*> CLOSING_PAREN
-%token <AstNodeVariant*> OPENING_BRACKET
-%token <AstNodeVariant*> CLOSING_BRACKET
-%token <AstNodeVariant*> SEMI_COLON
-%token <AstNodeVariant*> COLON
-%token <AstNodeVariant*> COMMA
-%token <AstNodeVariant*> DOT
+%token PACKAGE
+%token INTERFACE
+%token OPENING_BRACE
+%token CLOSING_BRACE
+%token OPENING_PAREN
+%token CLOSING_PAREN
+%token OPENING_BRACKET
+%token CLOSING_BRACKET
+%token SEMI_COLON
+%token COLON
+%token COMMA
+%token DOT
 %token <string>          IDENTIFIER
-%token <AstNodeVariant*> ASSIGNMENT
-%token <AstNodeVariant*> RETURN
+%token ASSIGNMENT
+%token RETURN
 
 // types
 %token <PrimitiveType> INT
@@ -78,17 +78,17 @@
 %token <PrimitiveType> BYTE
 %token <PrimitiveType> SHORT
 %token <PrimitiveType> VOID
-%token <AstNodeVariant*> TRUE
-%token <AstNodeVariant*> FALSE
-%token <AstNodeVariant*> STRING_LITERAL
-%token <AstNodeVariant*> INTEGER
-%token <AstNodeVariant*> NULL_TOKEN
-%token <AstNodeVariant*> CHAR_LITERAL
+%token <bool> TRUE
+%token <bool> FALSE
+%token <string> STRING_LITERAL
+%token <int64_t> INTEGER
+%token <nullptr_t> NULL_TOKEN
+%token <char> CHAR_LITERAL
 
 // comments
-%token <AstNodeVariant*> MULTI_LINE_COMMENT
-%token <AstNodeVariant*> SINGLE_LINE_COMMENT
-%token <AstNodeVariant*> JAVADOC_COMMENT
+%token MULTI_LINE_COMMENT
+%token SINGLE_LINE_COMMENT
+%token JAVADOC_COMMENT
 
 // operators
 %token <InfixOperator> BOOLEAN_OR
@@ -110,7 +110,7 @@
 %token <PrefixOperator> NEGATE
 
 // END OF FILE TOKEN
-%token <AstNodeVariant*> EOF 0
+%token EOF 0
 /*****************************************************************************/
 
 /************************* NONTERMINALS *************************/
@@ -137,18 +137,18 @@
     %nterm <vector<QualifiedIdentifier>> InterfacesOpt
         %nterm <vector<QualifiedIdentifier>> Interfaces
             %nterm <vector<QualifiedIdentifier>> InterfaceTypeList
-    %nterm <pair<FieldDeclaration COMMA MethodDeclaration>> ClassBody
-        %nterm <unique_ptr<pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>>> ClassBodyDeclarationsOpt
-        %nterm <pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>> ClassBodyDeclarations
-            %nterm <pair<unique_ptr<FieldDeclaration> COMMA unique_ptr<MethodDeclaration>>> ClassBodyDeclaration
-                %nterm <pair<unique_ptr<FieldDeclaration> COMMA unique_ptr<MethodDeclaration>>> ClassMemberDeclaration
-                    %nterm <unique_ptr<FieldDeclaration>> FieldDeclaration
-                        // Modifiers
-                        // Type
-                        // VariableDeclarator
-                    %nterm <unique_ptr<MethodDeclaration>> MethodDeclaration
-                        // MethodHeader
-                        // MethodBody
+    %nterm <pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>> ClassBody
+        %nterm <pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>> ClassBodyDeclarationsOpt
+            %nterm <pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>> ClassBodyDeclarations
+                %nterm <pair<unique_ptr<FieldDeclaration> COMMA unique_ptr<MethodDeclaration>>> ClassBodyDeclaration
+                    %nterm <pair<unique_ptr<FieldDeclaration> COMMA unique_ptr<MethodDeclaration>>> ClassMemberDeclaration
+                        %nterm <unique_ptr<FieldDeclaration>> FieldDeclaration
+                            // Modifiers
+                            // Type
+                            // VariableDeclarator
+                        %nterm <unique_ptr<MethodDeclaration>> MethodDeclaration
+                            // MethodHeader
+                            // MethodBody
 
 // Method Header/Body (done)
 %nterm <unique_ptr<MethodDeclaration>> MethodHeader
@@ -294,7 +294,7 @@
     make_unique<type>(constructor)
 
 #define MAKE_OBJ(me, type, constructor...) \
-    me = make_unique<type>((constructor))
+    me = make_unique<type>(constructor)
 
 #define MAKE_VARIANT_OBJ(me, outer_type, inner_type, inner_constructor) \
     me = make_unique<outer_type>(in_place_type<inner_type>, (inner_constructor))
@@ -335,9 +335,8 @@
 #define EMPTY_MODIFIERS \
     (vector<Modifier>())
 
-#define MAKE_CompilationUnit(me, package, importdecl_first, importdecl_second, typedecl_first, typedecl_second) \
-    MAKE_OBJ(me, CompilationUnit, (package), (importdecl_first), \
-        (importdecl_second), (typedecl_first), (typedecl_second))
+#define MAKE_CompilationUnit(me, args...) \
+    MAKE_OBJ(me, CompilationUnit, args)
 
 // expects (me, pair<vector<type1>, vector<type2>>, pair<type1, type2>)
 #define MAKE_PAIRVECTORS(me, pair_of_vector, pair) \
@@ -723,9 +722,9 @@ AbstractMethodModifiers:
 // weeder: must contain public?
 ClassDeclaration:
     CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_OBJ($$, ClassDeclaration, EMPTY_VECTOR(Modifier), $2, $3, $4, $5); }
+        { MAKE_OBJ($$, ClassDeclaration, EMPTY_VECTOR(Modifier), $2, $3, $4, $5.first, $5.second); }
     | Modifiers CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_OBJ($$, ClassDeclaration, $1, $3, $4, $5, $6); }
+        { MAKE_OBJ($$, ClassDeclaration, $1, $3, $4, $5, $6.first, $6.second); }
     ;
 
 /* Class interfaces */
@@ -751,8 +750,8 @@ ExtendsOpt:
 
 /* Class body */
 ClassBodyDeclarationsOpt:
-    /* Empty */ { $$ = EMPTY; }
-    | ClassBodyDeclarations { MAKE_OBJ($$, pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>, $1); }
+    /* Empty */ { MAKE_STACK_OBJ($$, pair<vector<FieldDeclaration> COMMA vector<MethodDeclaration>>); }
+    | ClassBodyDeclarations { COPY_OBJ($$, $1); }
     ;
 
 ClassBodyDeclarations:
@@ -779,7 +778,7 @@ ClassMemberDeclaration:
     // | InterfaceDeclaration: NOT SURE IF THIS SHOULD BE OMITTED FOR JOOS
 
 ClassBody:
-    OPENING_BRACE ClassBodyDeclarationsOpt CLOSING_BRACE { MAKE_NODE($$, symbol_kind::S_ClassBody, $1, $2, $3); }
+    OPENING_BRACE ClassBodyDeclarationsOpt CLOSING_BRACE { COPY_OBJ($$, $2); }
     ;
 
 /* Fields */
