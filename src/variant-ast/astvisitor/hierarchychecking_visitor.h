@@ -41,4 +41,25 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
 
         this->visit_children(node);
     }
+
+    void operator()(MethodDeclaration &node) override {
+        // A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1)
+        auto &modifiers = node.modifiers;
+
+        // If modifiers includes ABSTRACT, then class must be abstract as well
+        auto abstractIt = std::find(modifiers.begin(), modifiers.end(), Modifier::ABSTRACT);
+        
+        if(abstractIt != modifiers.end()) {
+            // Check that class is abstract
+            // i.e. get parent of the Method, check that parent is a class, and that class is abstract
+        }
+
+        // A nonstatic method must not replace a static method. (JLS 8.4.6.1)
+        // A static method must not replace a nonstatic method. (JLS 8.4.6.2)
+        // A method must not replace a method with a different return type. (JLS 8.1.1.1, 8.4, 8.4.2, 8.4.6.3, 8.4.6.4, 9.2, 9.4.1)
+        // A protected method must not replace a public method. (JLS 8.4.6.3)
+        // A method must not replace a final method. (JLS 8.4.3.3)
+
+        this->visit_children(node);
+    }
 };
