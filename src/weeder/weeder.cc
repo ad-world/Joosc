@@ -227,7 +227,7 @@ void Weeder::checkLiterals(AstNode * root) {
             case yy::parser::symbol_kind::S_INTEGER:
                 // Check range of integer
                 if ( pair.first != nullptr && pair.first->type == yy::parser::symbol_kind::S_MINUS ) {
-                    if ( -get<long int>(innerValue) < INT32_MIN ) {
+                    if ( -1 * get<long int>(innerValue) < INT32_MIN ) {
                         addViolation("Integer out of range");
                         // throw runtime_error("Integer out of range");
                     }
