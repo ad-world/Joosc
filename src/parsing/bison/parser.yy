@@ -353,7 +353,7 @@
 #define MAKE_PAIRVECTORS(me, pair_of_vector, pair) \
     if ( pair.first ) { pair_of_vector.first.push_back(move( *pair.first )); } \
     if ( pair.second ) { pair_of_vector.second.push_back(move( *pair.second )); } \
-    me = pair_of_vector
+    if ( &me != &pair_of_vector) { me = move(pair_of_vector); }
 
 // expects (me, vector, item)
 #define MAKE_VECTOR(me, vector, item) \
@@ -372,18 +372,20 @@ Start:
 
 CompilationUnit:
     PackageDeclaration ImportDeclarations TypeDeclarations
-        { MAKE_OBJ($$, CompilationUnit, move($1),   $2.first, $2.second,   $3.first, $3.second); }
+        { 
+            MAKE_OBJ($$, CompilationUnit, move($1),   move($2.first), move($2.second),   move($3.first), move($3.second));
+        }
     | ImportDeclarations TypeDeclarations   // No PackageDeclaration
-        { MAKE_OBJ($$, CompilationUnit, EMPTY,   $1.first, $1.second,   $2.first, $2.second); }
+        { MAKE_OBJ($$, CompilationUnit, EMPTY,   move($1.first), move($1.second),   move($2.first), move($2.second)); }
     | PackageDeclaration TypeDeclarations   // No ImportDeclarations
         { MAKE_OBJ($$, CompilationUnit,
             move($1),                                                               // package
             EMPTY_VECTOR(QualifiedIdentifier), EMPTY_VECTOR(QualifiedIdentifier),   // import
-            $2.first, $2.second); }                                                 // type
+            move($2.first), move($2.second)); }                                                 // type
     | PackageDeclaration ImportDeclarations // No TypeDeclarations
         { MAKE_OBJ($$, CompilationUnit,
             move($1),
-            $2.first, $2.second,
+            move($2.first), move($2.second),
             EMPTY_VECTOR(ClassDeclaration), EMPTY_VECTOR(InterfaceDeclaration)); }
     | PackageDeclaration { MAKE_OBJ($$, CompilationUnit,
             move($1),
@@ -392,13 +394,13 @@ CompilationUnit:
         }
     | ImportDeclarations { MAKE_OBJ($$, CompilationUnit,
             EMPTY,
-            $1.first, $1.second,
+            move($1.first), move($1.second),
             EMPTY_VECTOR(ClassDeclaration), EMPTY_VECTOR(InterfaceDeclaration));
         }
     | TypeDeclarations { MAKE_OBJ($$, CompilationUnit,
             EMPTY,
             EMPTY_VECTOR(QualifiedIdentifier), EMPTY_VECTOR(QualifiedIdentifier),
-            $1.first, $1.second);
+            move($1.first), move($1.second));
         }
     | /* Empty */ { MAKE_OBJ($$, CompilationUnit,
             EMPTY,
@@ -730,9 +732,9 @@ InterfaceMemberDeclaration: // Nested types and interface constants not supporte
 
 AbstractMethodDeclaration:
     AbstractMethodModifiersOpt Type MethodDeclarator SEMI_COLON
-        { MAKE_OBJ($$, MethodDeclaration, $1, move($2), move($3.first), $3.second, EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, $1, move($2), move($3.first), move($3.second), EMPTY); }
     | AbstractMethodModifiersOpt VOID MethodDeclarator SEMI_COLON
-        { MAKE_OBJ($$, MethodDeclaration, $1, NEW_TYPE($2, false), move($3.first), $3.second, EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, $1, NEW_TYPE($2, false), move($3.first), move($3.second), EMPTY); }
     ;
 
 AbstractMethodModifiersOpt:
@@ -758,9 +760,9 @@ AbstractMethodModifiers:
 // weeder: must contain public?
 ClassDeclaration:
     CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_OBJ($$, ClassDeclaration, EMPTY_VECTOR(Modifier), move($2), move($3), $4, $5.first, $5.second); }
+        { MAKE_OBJ($$, ClassDeclaration, EMPTY_VECTOR(Modifier), move($2), move($3), $4, move($5.first), move($5.second)); }
     | Modifiers CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_OBJ($$, ClassDeclaration, $1, move($3), move($4), $5, $6.first, $6.second); }
+        { MAKE_OBJ($$, ClassDeclaration, $1, move($3), move($4), $5, move($6.first), move($6.second)); }
     ;
 
 /* Class interfaces */
@@ -837,12 +839,12 @@ MethodDeclaration: // One of these must be constructor
 // weeder: allow static native int m(int)
 // weeder: see A1 specs for weeding modifiers
 MethodHeader:
-    Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), move($1), move($2.first), $2.second, EMPTY); }
-    | Modifiers Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, move($2), move($3.first), $3.second, EMPTY); }
-    | VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), NEW_TYPE($1, false), move($2.first), $2.second, EMPTY); }
-    | Modifiers VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, NEW_TYPE($2, false), move($3.first), $3.second, EMPTY); }
+    Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), move($1), move($2.first), move($2.second), EMPTY); }
+    | Modifiers Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, move($2), move($3.first), move($3.second), EMPTY); }
+    | VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), NEW_TYPE($1, false), move($2.first), move($2.second), EMPTY); }
+    | Modifiers VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, NEW_TYPE($2, false), move($3.first), move($3.second), EMPTY); }
     | Modifiers MethodDeclarator // Represents constructor, todo weeding: reject if identifier is not class name
-        { MAKE_OBJ($$, MethodDeclaration, $1, EMPTY, move($2.first), $2.second, EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, $1, EMPTY, move($2.first), move($2.second), EMPTY); }
     ;
 
 MethodDeclarator:
@@ -892,7 +894,7 @@ Statement:
     ;
 
 StatementWithoutTrailingSubstatement:
-    Block { MAKE_STATEMENT_OBJ($$, Block, $1->statements); }
+    Block { MAKE_STATEMENT_OBJ($$, Block, move($1->statements)); }
     | EmptyStatement { MAKE_STATEMENT_OBJ($$, EmptyStatement, $1); }
     | ExpressionStatement { MAKE_OBJ($$, Statement, move(*$1)); }
     | ReturnStatement { COPY_OBJ($$, $1); }
@@ -1011,7 +1013,7 @@ LocalVariableDeclaration:
     ;
 
 Block:
-    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE { MAKE_OBJ($$, Block, $2); }
+    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE { MAKE_OBJ($$, Block, move($2)); }
     ;
 
 BlockStatementsOpt:
