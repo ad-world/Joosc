@@ -351,14 +351,14 @@
 
 // expects (me, pair<vector<type1>, vector<type2>>, pair<type1, type2>)
 #define MAKE_PAIRVECTORS(me, pair_of_vector, pair) \
-    if ( pair.first ) { pair_of_vector.first.push_back(*pair.first); } \
-    if ( pair.second ) { pair_of_vector.second.push_back(*pair.second); } \
+    if ( pair.first ) { pair_of_vector.first.push_back(move( *pair.first )); } \
+    if ( pair.second ) { pair_of_vector.second.push_back(move( *pair.second )); } \
     me = pair_of_vector
 
 // expects (me, vector, item)
 #define MAKE_VECTOR(me, vector, item) \
-    vector.push_back((item)); \
-    me = vector
+    vector.push_back(move(item)); \
+    if ( &me != &vector ) { me = move(vector); }
 %}
 
 // Grammar
@@ -612,7 +612,10 @@ ArgumentListOpt:
     ;
 
 ArgumentList:
-    Expression { MAKE_STACK_OBJ($$, vector<Expression>); MAKE_VECTOR($$, $$, *$1); }
+    Expression {
+            MAKE_STACK_OBJ($$, vector<Expression>);
+            MAKE_VECTOR($$, $$, *$1);
+        }
     | ArgumentList COMMA Expression
         { MAKE_VECTOR($$, $1, *$3); }
     ;
@@ -709,7 +712,7 @@ InterfaceBody:
 
 InterfaceMemberDeclarationsOpt:
     /* Empty - No interface body declarations */ { MAKE_STACK_OBJ($$, vector<MethodDeclaration>); }
-    | InterfaceMemberDeclarations { $$ = $1; }
+    | InterfaceMemberDeclarations { $$ = move($1); }
     ;
 
 InterfaceMemberDeclarations:
@@ -855,7 +858,7 @@ MethodBody:
 /* Formal parameters */
 FormalParameterListOpt:
     /* EMPTY */ { MAKE_STACK_OBJ($$, vector<FormalParameter>); }
-    | FormalParameterList { $$ = $1; }
+    | FormalParameterList { $$ = move($1); }
     ;
 
 FormalParameterList:
