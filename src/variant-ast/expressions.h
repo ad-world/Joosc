@@ -95,8 +95,8 @@ struct FieldAccess: public AstNodeCommon {
     std::unique_ptr<Identifier> identifier;
 
     FieldAccess(
-        std::unique_ptr<Expression>& expression,
-        std::unique_ptr<Identifier>& identifier
+        std::unique_ptr<Expression> expression,
+        std::unique_ptr<Identifier> identifier
     );
 };
 
@@ -115,8 +115,8 @@ struct MethodInvocation: public AstNodeCommon {
     std::vector<Expression> arguments;
 
     MethodInvocation(
-        std::unique_ptr<Expression>& method_name,
-        std::vector<Expression>& arguments
+        std::unique_ptr<Expression> method_name,
+        std::vector<Expression> arguments
     );
 };
 

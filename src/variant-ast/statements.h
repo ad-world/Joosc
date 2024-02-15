@@ -81,7 +81,7 @@ struct Block: public AstNodeCommon {
 
     Block(
         // std::vector<LocalVariableDeclaration>& variable_declarations, 
-        std::vector<Statement>& statements
+        std::vector<Statement> statements
     );
 };
 
@@ -98,7 +98,7 @@ struct LocalVariableDeclaration: public AstNodeCommon {
     std::unique_ptr<VariableDeclarator> variable_declarator;
 
     LocalVariableDeclaration(
-        std::unique_ptr<Type>& type,
-        std::unique_ptr<VariableDeclarator>& variable_declarator
+        std::unique_ptr<Type> type,
+        std::unique_ptr<VariableDeclarator> variable_declarator
     );
 };

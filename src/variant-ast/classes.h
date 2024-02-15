@@ -24,8 +24,8 @@ struct VariableDeclarator {
     std::unique_ptr<Expression> expression;
 
     VariableDeclarator(
-        std::unique_ptr<Identifier>& variable_name, 
-        std::unique_ptr<Expression>& expression
+        std::unique_ptr<Identifier> variable_name, 
+        std::unique_ptr<Expression> expression
     );
 };
 
@@ -35,9 +35,9 @@ struct FieldDeclaration: public AstNodeCommon {
     std::unique_ptr<VariableDeclarator> variable_declarator;
 
     FieldDeclaration(
-        std::vector<Modifier>& modifiers,
-        std::unique_ptr<Type>& type,
-        std::unique_ptr<VariableDeclarator>& variable_declarator
+        std::vector<Modifier> modifiers,
+        std::unique_ptr<Type> type,
+        std::unique_ptr<VariableDeclarator> variable_declarator
     );
 };
 
@@ -76,12 +76,12 @@ struct ClassDeclaration: public AstNodeCommon {
     std::vector<MethodDeclaration> method_declarations; // Class method declarations
 
     ClassDeclaration(
-        std::vector<Modifier>& modifiers,
-        std::unique_ptr<struct Identifier>& class_name,
-        std::unique_ptr<QualifiedIdentifier>& extends_class,
-        std::vector<QualifiedIdentifier>& implements,
-        std::vector<FieldDeclaration>& field_declarations,
-        std::vector<MethodDeclaration>& method_declarations
+        std::vector<Modifier> modifiers,
+        std::unique_ptr<struct Identifier> class_name,
+        std::unique_ptr<QualifiedIdentifier> extends_class,
+        std::vector<QualifiedIdentifier> implements,
+        std::vector<FieldDeclaration> field_declarations,
+        std::vector<MethodDeclaration> method_declarations
     );
 };
 

@@ -292,6 +292,9 @@
 #define NEW_OBJ(type, constructor...) \
     make_unique<type>(constructor)
 
+#define NEW_TYPE(type, isarray) \
+    NEW_OBJ(Type, NEW_OBJ(NonArrayType, type), isarray)
+
 #define NEW_VARIANT_OBJ(outer_type, inner_type, inner_constructor...) \
     make_unique<outer_type>(in_place_type<inner_type>, inner_constructor)
 
@@ -300,6 +303,9 @@
 
 #define MAKE_VARIANT_OBJ(me, outer_type, inner_type, inner_constructor...) \
     me = make_unique<outer_type>(in_place_type<inner_type>, inner_constructor)
+
+#define OBJ_TO_VARIANT(outer_type, obj) \
+    NEW_OBJ(outer_type, move(obj))
 
 #define MAKE_EXPRESSION_OBJ(me, inner_type, inner_constructor...) \
     MAKE_VARIANT_OBJ(me, Expression, inner_type, inner_constructor)
@@ -531,9 +537,9 @@ CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
         { MAKE_CASTEXPR_OBJ($$, move($2), move($4)); }
     | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
-        { MAKE_CASTEXPR_OBJ($$, NEW_OBJ(Type, NEW_OBJ(NonArrayType, get<QualifiedIdentifier>(*$2)), false), move($4)); } // throws err if Expression not QI
+        { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(get<QualifiedIdentifier>(*$2), false), move($4)); } // throws err if Expression not QI
     | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
-        { MAKE_CASTEXPR_OBJ($$, NEW_OBJ(Type, NEW_OBJ(NonArrayType, *$2), true), move($6)); }
+        { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(*$2, true), move($6)); }
     | OPENING_PAREN
         PrimitiveType OPENING_BRACKET CLOSING_BRACKET // ReferenceType as PrimitiveType with array
             CLOSING_PAREN UnaryExpressionNotPlusMinus
@@ -557,9 +563,9 @@ ArrayCreationExpression:
     | NEW PrimitiveType OPENING_BRACKET Expression CLOSING_BRACKET
         { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, move($2), move($4)); }
     | NEW QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET // TypeName
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_OBJ(Type, NEW_OBJ(NonArrayType, *$2), false), EMPTY); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_TYPE(*$2, false), EMPTY); }
     | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // TypeName
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_OBJ(Type, NEW_OBJ(NonArrayType, *$2), false), move($4)); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_TYPE(*$2, false), move($4)); }
     ;
 
 ClassInstanceCreationExpression:
@@ -590,14 +596,14 @@ Literal:
 
 ArrayAccess:
     QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // ExpressionName
-        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, $1, $3); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, OBJ_TO_VARIANT(Expression, *$1), move($3)); }
     | PrimaryNoNewArray OPENING_BRACKET Expression CLOSING_BRACKET
-        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, $1, $3); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, move($1), move($3)); }
     ;
 
 FieldAccess:
     Primary DOT Identifier
-        { MAKE_EXPRESSION_OBJ($$, FieldAccess, $1, $3); }
+        { MAKE_EXPRESSION_OBJ($$, FieldAccess, move($1), move($3)); }
     ;
 
 ArgumentListOpt:
@@ -618,9 +624,9 @@ Arguments:
 
 MethodInvocation:
     QualifiedIdentifier Arguments // MethodName
-        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, $1, $2); }
+        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, OBJ_TO_VARIANT(Expression, *$1), move($2)); }
     | Primary DOT Identifier Arguments // Could we call this FieldAccess instead?
-        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, NEW_OBJ(FieldAccess, $1, $3), $4); }
+        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, OBJ_TO_VARIANT(Expression, *NEW_OBJ(FieldAccess, move($1), move($3))), move($4)); }
     ;
 
 Type:
@@ -629,8 +635,8 @@ Type:
     ;
 
 PrimitiveType:
-    IntegralType { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, $1), false); }
-    | BooleanType { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, $1), false); }
+    IntegralType { $$ = NEW_TYPE($1, false); }
+    | BooleanType { $$ = NEW_TYPE($1, false); }
     ;
 
 IntegralType:
@@ -723,7 +729,7 @@ AbstractMethodDeclaration:
     AbstractMethodModifiersOpt Type MethodDeclarator SEMI_COLON
         { MAKE_OBJ($$, MethodDeclaration, $1, move($2), move($3.first), $3.second, EMPTY); }
     | AbstractMethodModifiersOpt VOID MethodDeclarator SEMI_COLON
-        { MAKE_OBJ($$, MethodDeclaration, $1, NEW_OBJ(Type, NEW_OBJ(NonArrayType, $2), false), move($3.first), $3.second, EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, $1, NEW_TYPE($2, false), move($3.first), $3.second, EMPTY); }
     ;
 
 AbstractMethodModifiersOpt:
@@ -749,9 +755,9 @@ AbstractMethodModifiers:
 // weeder: must contain public?
 ClassDeclaration:
     CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_OBJ($$, ClassDeclaration, EMPTY_VECTOR(Modifier), $2, $3, $4, $5.first, $5.second); }
+        { MAKE_OBJ($$, ClassDeclaration, EMPTY_VECTOR(Modifier), move($2), move($3), $4, $5.first, $5.second); }
     | Modifiers CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_OBJ($$, ClassDeclaration, $1, $3, $4, $5, $6.first, $6.second); }
+        { MAKE_OBJ($$, ClassDeclaration, $1, move($3), move($4), $5, $6.first, $6.second); }
     ;
 
 /* Class interfaces */
@@ -772,7 +778,7 @@ InterfaceTypeList:
 /* Class Extends */
 ExtendsOpt:
     /* Empty - No extends */ { $$ = EMPTY; }
-    | EXTENDS QualifiedIdentifier { MAKE_OBJ($$, QualifiedIdentifier, $2); } // ClassType
+    | EXTENDS QualifiedIdentifier { COPY_OBJ($$, $2); } // ClassType
     ;
 
 /* Class body */
@@ -811,8 +817,8 @@ ClassBody:
 /* Fields */
 // Only one variable declaration is allowed at a time
 FieldDeclaration:
-    Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, EMPTY_MODIFIERS, $1, $2); }
-    | Modifiers Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, $1, $2, $3); }
+    Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, EMPTY_VECTOR(Modifier), move($1), move($2)); }
+    | Modifiers Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, $1, move($2), move($3)); }
     ;
 
 VariableInitializer:
@@ -828,12 +834,12 @@ MethodDeclaration: // One of these must be constructor
 // weeder: allow static native int m(int)
 // weeder: see A1 specs for weeding modifiers
 MethodHeader:
-    Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), $1, $2.first, $2.second, EMPTY); }
-    | Modifiers Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, $2, $3.first, $3.second, EMPTY); }
-    | VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), $1, $2.first, $2.second, EMPTY); }
-    | Modifiers VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, $2, $3.first, $3.second, EMPTY); }
+    Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), move($1), move($2.first), $2.second, EMPTY); }
+    | Modifiers Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, move($2), move($3.first), $3.second, EMPTY); }
+    | VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), NEW_TYPE($1, false), move($2.first), $2.second, EMPTY); }
+    | Modifiers VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, NEW_TYPE($2, false), move($3.first), $3.second, EMPTY); }
     | Modifiers MethodDeclarator // Represents constructor, todo weeding: reject if identifier is not class name
-        { MAKE_OBJ($$, MethodDeclaration, $1, EMPTY, $2.first, $2.second, EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, $1, EMPTY, move($2.first), $2.second, EMPTY); }
     ;
 
 MethodDeclarator:
@@ -883,9 +889,9 @@ Statement:
     ;
 
 StatementWithoutTrailingSubstatement:
-    Block { MAKE_STATEMENT_OBJ($$, Block, $1); }
+    Block { MAKE_STATEMENT_OBJ($$, Block, $1->statements); }
     | EmptyStatement { MAKE_STATEMENT_OBJ($$, EmptyStatement, $1); }
-    | ExpressionStatement { MAKE_STATEMENT_OBJ($$, ExpressionStatement, $1); }
+    | ExpressionStatement { MAKE_OBJ($$, Statement, move(*$1)); }
     | ReturnStatement { COPY_OBJ($$, $1); }
     ;
 
@@ -895,11 +901,11 @@ ExpressionStatement:
 
 StatementExpression:
     Assignment
-        { MAKE_VARIANT_OBJ($$, ExpressionStatement, Assignment, $1); }
+        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<Assignment>(*$1)); }
     | MethodInvocation
-        { MAKE_VARIANT_OBJ($$, ExpressionStatement, MethodInvocation, $1); }
+        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<MethodInvocation>(*$1)); }
     | ClassInstanceCreationExpression
-        { MAKE_VARIANT_OBJ($$, ExpressionStatement, ClassInstanceCreationExpression, $1); }
+        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<ClassInstanceCreationExpression>(*$1)); }
     ;
 
 StatementNoShortIf:
@@ -949,13 +955,13 @@ ForInitOpt:
     ;
 
 ForInit:
-    StatementExpression { MAKE_STATEMENT_OBJ($$, ExpressionStatement, $1); }
-    | LocalVariableDeclaration { MAKE_STATEMENT_OBJ($$, LocalVariableDeclaration, $1); }
+    StatementExpression { $$ = OBJ_TO_VARIANT(Statement, *$1); }
+    | LocalVariableDeclaration { $$ = OBJ_TO_VARIANT(Statement, *$1); }
     ;
 
 ForUpdateOpt:
     /* Empty - no update */ { $$ = EMPTY; }
-    | StatementExpression { MAKE_STATEMENT_OBJ($$, ExpressionStatement, $1); }
+    | StatementExpression { $$ = OBJ_TO_VARIANT(Statement, *$1); }
     ;
 
 ExpressionOpt:
@@ -992,12 +998,13 @@ Identifier:
 LocalVariableDeclaration:
     // Type VariableDeclarators
     QualifiedIdentifier VariableDeclarator // ClassOrInterfaceType VariableDeclarators
-        { MAKE_OBJ($$, LocalVariableDeclaration, $1, $2); }
+        { MAKE_OBJ($$, LocalVariableDeclaration, NEW_TYPE(*$1, false), move($2)); }
     | QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // ClassOrInterfaceTypeArray VariableDeclarators
-        { MAKE_OBJ($$, LocalVariableDeclaration, $1, $4); }
+        { MAKE_OBJ($$, LocalVariableDeclaration, NEW_TYPE(*$1, true), move($4)); }
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // PrimitiveArray VariableDeclarators
-        { MAKE_OBJ($$, LocalVariableDeclaration, $1, $4); }
-    | PrimitiveType VariableDeclarator { MAKE_OBJ($$, LocalVariableDeclaration, $1, $2); }
+        { $1->is_array = true; MAKE_OBJ($$, LocalVariableDeclaration, move($1), move($4)); }
+    | PrimitiveType VariableDeclarator
+        { MAKE_OBJ($$, LocalVariableDeclaration, move($1), move($2)); }
     ;
 
 Block:
