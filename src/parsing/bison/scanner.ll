@@ -80,12 +80,12 @@ return    return yy::parser::make_RETURN(loc);
 ","     return yy::parser::make_COMMA(loc);
 
 %{ // Types %}
-int     return yy::parser::make_INT(loc);
-boolean    return yy::parser::make_BOOLEAN(loc);
-char    return yy::parser::make_CHAR(loc); 
-byte    return yy::parser::make_BYTE(loc);
-short   return yy::parser::make_SHORT(loc);
-void      return yy::parser::make_VOID(loc);
+int     return yy::parser::make_INT(PrimitiveType::INT, loc);
+boolean    return yy::parser::make_BOOLEAN(PrimitiveType::BOOL, loc);
+char    return yy::parser::make_CHAR(PrimitiveType::CHAR, loc); 
+byte    return yy::parser::make_BYTE(PrimitiveType::BYTE, loc);
+short   return yy::parser::make_SHORT(PrimitiveType::SHORT, loc);
+void      return yy::parser::make_VOID(PrimitiveType::VOID, loc);
 
 %{ // Literals %}
 true                return yy::parser::make_TRUE(true, loc);
