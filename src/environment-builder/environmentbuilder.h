@@ -16,9 +16,9 @@ class EnvironmentBuilder : public DefaultSkipVisitor<void> {
     //
     // Throws SemanticError if name conflicts with a class.
     void lookupOrCreatePackage(QualifiedIdentifier &package_name) {
-        for (auto &identifier : package_name.identifiers) {
-            current_environment = current_environment->localLookupOrCreate(identifier.name, Environment::PACKAGE);
-        }
+        // for (auto &identifier : package_name.identifiers) {
+        //     current_environment = current_environment->localLookupOrCreate(identifier.name, Environment::PACKAGE);
+        // }
     }
 
     void operator()(CompilationUnit &node) override {
