@@ -187,7 +187,7 @@
 
 // Type (done)
 %nterm <unique_ptr<Type>> Type
-    %nterm <PrimitiveType> PrimitiveType
+    %nterm <unique_ptr<Type>> PrimitiveType
         %nterm <PrimitiveType> IntegralType
         %nterm <PrimitiveType> BooleanType
     %nterm <unique_ptr<Type>> ReferenceType
@@ -316,8 +316,8 @@
 #define MAKE_PREFIX_OBJ(me, op, expr) \
     MAKE_EXPRESSION_OBJ(me, PrefixExpression, ( expr ), ( op ))
 
-#define MAKE_CASTEXPR_OBJ(me, innertype, type, expr, isarray) \
-    MAKE_EXPRESSION_OBJ(me, CastExpression, NEW_OBJ(Type, make_unique<NonArrayType>((NonArrayType) type), isarray), expr)
+#define MAKE_CASTEXPR_OBJ(me, type, expr) \
+    MAKE_EXPRESSION_OBJ(me, CastExpression, type, expr)
 
 #define MAKE_QIEXPR_OBJ(me, qid) \
     MAKE_EXPRESSION_OBJ(me, QualifiedIdentifier, (*qid))
@@ -529,15 +529,15 @@ UnaryExpressionNotPlusMinus:
 
 CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
-        { MAKE_CASTEXPR_OBJ($$, PrimitiveType, $2, move($4), false); }
+        { MAKE_CASTEXPR_OBJ($$, move($2), move($4)); }
     | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
-        { MAKE_CASTEXPR_OBJ($$, QualifiedIdentifier, get<QualifiedIdentifier>(*$2), move($4), false); } // throws err if Expression not QI
+        { MAKE_CASTEXPR_OBJ($$, NEW_OBJ(Type, make_unique<NonArrayType>(get<QualifiedIdentifier>(*$2)), false), move($4)); } // throws err if Expression not QI
     | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
-        { MAKE_CASTEXPR_OBJ($$, QualifiedIdentifier, *$2, move($6), true); }
+        { MAKE_CASTEXPR_OBJ($$, NEW_OBJ(Type, make_unique<NonArrayType>(*$2), true), move($6)); }
     | OPENING_PAREN
         PrimitiveType OPENING_BRACKET CLOSING_BRACKET // ReferenceType as PrimitiveType with array
             CLOSING_PAREN UnaryExpressionNotPlusMinus
-        { MAKE_CASTEXPR_OBJ($$, PrimitiveType, $2, move($6), true); }
+        { MAKE_CASTEXPR_OBJ($$, NEW_OBJ(Type, move($2->non_array_type), true), move($6)); }
     ;
 
 PrimaryOrExpressionName:
@@ -624,13 +624,13 @@ MethodInvocation:
     ;
 
 Type:
-    PrimitiveType { MAKE_OBJ($$, Type, move($1), false); }
+    PrimitiveType { COPY_OBJ($$, $1); }
     | ReferenceType { COPY_OBJ($$, $1); }
     ;
 
 PrimitiveType:
-    IntegralType { $$ = $1; }
-    | BooleanType { $$ = $1; }
+    IntegralType { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, $1), false); }
+    | BooleanType { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, $1), false); }
     ;
 
 IntegralType:
