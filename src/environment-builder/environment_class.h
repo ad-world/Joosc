@@ -29,14 +29,14 @@ struct Variable {
 class Environment {
     protected:
         std::unique_ptr<Environment> parent = nullptr;
-        std::unordered_map<std::string, Variable> variables;
+        std::unordered_map<std::string, std::vector<Variable>> variables;
         std::vector<Environment*> children;
     public:
         Environment(std::unique_ptr<Environment>& parent);
         // add variable to environment
         bool addVariable(const std::string& name, const Variable& variable);
         // lookup a variable in that environment and parent environments
-        std::optional<Variable> lookupVariable(const std::string& name);
+        std::optional<std::vector<Variable>> lookupVariable(const std::string& name);
         // lookup all variables with matching name, in the current environment and parent environments
         std::optional<std::vector<Variable>> lookupVariables(const std::string& name);
         // add child environment to parent environment

@@ -12,11 +12,11 @@ bool Environment::addVariable(const std::string& name, const Variable& variable)
             }
         }
     }
-    variables[name] = variable;
+    variables[name].push_back(variable);
     return true;
 };
 
-std::optional<Variable> Environment::lookupVariable(const std::string& name) {
+std::optional<std::vector<Variable>> Environment::lookupVariable(const std::string& name) {
     auto it = variables.find(name);
     if (it != variables.end()) {
         return it->second;
@@ -31,7 +31,9 @@ std::optional<std::vector<Variable>> Environment::lookupVariables(const std::str
     for (auto env = this; env != nullptr; env = env->parent.get()) {
         auto it = env->variables.find(name);
         if (it != env->variables.end()) {
-            foundVariables.push_back(it->second);
+            for(const auto& var: it->second) {
+                foundVariables.push_back(var);
+            }
         }
     }
     if (!foundVariables.empty()) {
