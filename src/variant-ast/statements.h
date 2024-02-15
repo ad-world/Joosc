@@ -125,6 +125,8 @@ struct LocalVariableDeclaration: public AstNodeCommon {
     std::unique_ptr<Type> type;
     std::unique_ptr<VariableDeclarator> variable_declarator;
 
+    Environment *environment;
+
     LocalVariableDeclaration(
         std::unique_ptr<Type>& type,
         std::unique_ptr<VariableDeclarator>& variable_declarator
