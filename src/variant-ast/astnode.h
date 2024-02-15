@@ -50,5 +50,6 @@ typedef std::variant<
     ClassInstanceCreationExpression,
     FieldAccess,
     ArrayAccess,
-    MethodInvocation
+    MethodInvocation,
+    InstanceOfExpression
 > AstNodeVariant;

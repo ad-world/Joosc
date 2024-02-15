@@ -159,7 +159,7 @@
 %nterm <unique_ptr<Block>> MethodBody
     // (Block)
 
-// InterfaceDeclaration (todo)
+// InterfaceDeclaration (done)
 %nterm <unique_ptr<InterfaceDeclaration>> InterfaceDeclaration
     %nterm <vector<Modifier>> InterfaceModifiersOpt
     // Identifier
@@ -261,7 +261,7 @@
     %nterm <unique_ptr<Statement>> StatementNoShortIf
     %nterm <unique_ptr<ExpressionStatement>> StatementExpression
 
-    // Block (todo)
+    // Block (done)
     %nterm <unique_ptr<Block>> Block
         %nterm <vector<Statement>> BlockStatementsOpt
         %nterm <vector<Statement>> BlockStatements
@@ -276,7 +276,6 @@
     %nterm <vector<Expression>> ArgumentListOpt
         %nterm <vector<Expression>> ArgumentList
 
-// Rest of non-terminals (todo)
 /******************** END NONTERMINALS ********************/
 
 %parse-param {AstNodeVariant **root}
@@ -296,17 +295,17 @@
 #define MAKE_OBJ(me, type, constructor...) \
     me = make_unique<type>(constructor)
 
-#define MAKE_VARIANT_OBJ(me, outer_type, inner_type, inner_constructor) \
-    me = make_unique<outer_type>(in_place_type<inner_type>, (inner_constructor))
+#define MAKE_VARIANT_OBJ(me, outer_type, inner_type, inner_constructor...) \
+    me = make_unique<outer_type>(in_place_type<inner_type>, inner_constructor)
 
 #define MAKE_EXPRESSION_OBJ(me, inner_type, inner_constructor...) \
-    MAKE_VARIANT_OBJ(me, Expression, inner_type, (inner_constructor))
+    MAKE_VARIANT_OBJ(me, Expression, inner_type, inner_constructor)
 
 #define MAKE_LITERAL_OBJ(me, inner_type, inner_constructor...) \
-    MAKE_VARIANT_OBJ(me, Literal, inner_type, (inner_constructor))
+    MAKE_VARIANT_OBJ(me, Literal, inner_type, inner_constructor)
 
 #define MAKE_STATEMENT_OBJ(me, inner_type, inner_constructor...) \
-    MAKE_VARIANT_OBJ(me, Statement, inner_type, (inner_constructor))
+    MAKE_VARIANT_OBJ(me, Statement, inner_type, inner_constructor)
 
 #define MAKE_INFIX_OBJ(me, expr1, op, expr2) \
     MAKE_EXPRESSION_OBJ(me, InfixExpression, ( expr1 ), ( expr2 ), ( op ))
@@ -315,10 +314,10 @@
     MAKE_EXPRESSION_OBJ(me, PrefixExpression, ( expr ), ( op ))
 
 #define MAKE_CASTEXPR_OBJ(me, type, expr, isarray) \
-    MAKE_EXPRESSION_OBJ(me, CastExpression, NEW_OBJ(Type, (type), (isarray)), (expr))
+    MAKE_EXPRESSION_OBJ(me, CastExpression, NEW_OBJ(Type, move(type), isarray), (expr))
 
-#define MAKE_QIEXPR_OBJ(me, QI) \
-    MAKE_EXPRESSION_OBJ(me, QualifiedIdentifier, (QI))
+#define MAKE_QIEXPR_OBJ(me, qid) \
+    MAKE_EXPRESSION_OBJ(me, QualifiedIdentifier, (*qid))
 
 #define COPY_OBJ(me, you) \
     me = move(you)
@@ -328,6 +327,9 @@
 
 #define EMPTY \
     (nullptr)
+
+#define EMPTY_OBJ(type) \
+    make_unique<type>(nullptr)
 
 #define EMPTY_VECTOR(type) \
     (vector<type>())
@@ -361,17 +363,39 @@ Start:
 
 CompilationUnit:
     PackageDeclaration ImportDeclarations TypeDeclarations
-        { MAKE_CompilationUnit($$, $1,     $2.first, $2.second,     $3.first, $3.second); }
+        { MAKE_OBJ($$, CompilationUnit, move($1),   $2.first, $2.second,   $3.first, $3.second); }
     | ImportDeclarations TypeDeclarations   // No PackageDeclaration
-        { MAKE_CompilationUnit($$, EMPTY,     $1.first, $1.second,     $2.first, $2.second); }
+        { MAKE_OBJ($$, CompilationUnit, EMPTY,   $1.first, $1.second,   $2.first, $2.second); }
     | PackageDeclaration TypeDeclarations   // No ImportDeclarations
-        { MAKE_CompilationUnit($$, $1,     EMPTY, EMPTY,     $2.first, $2.second); }
+        { MAKE_OBJ($$, CompilationUnit,
+            move($1),                                                               // package
+            EMPTY_VECTOR(QualifiedIdentifier), EMPTY_VECTOR(QualifiedIdentifier),   // import
+            $2.first, $2.second); }                                                 // type
     | PackageDeclaration ImportDeclarations // No TypeDeclarations
-        { MAKE_CompilationUnit($$, $1,     $2.first, $2.second,     EMPTY, EMPTY); }
-    | PackageDeclaration { MAKE_CompilationUnit($$, $1,     EMPTY, EMPTY,     EMPTY, EMPTY); }
-    | ImportDeclarations { MAKE_CompilationUnit($$, EMPTY,    $1.first, $1.second,     EMPTY, EMPTY); }
-    | TypeDeclarations { MAKE_CompilationUnit($$, EMPTY,     EMPTY, EMPTY,     $1.first, $1.second); }
-    | /* Empty */ { MAKE_CompilationUnit($$, EMPTY,     EMPTY, EMPTY,     EMPTY, EMPTY); }
+        { MAKE_OBJ($$, CompilationUnit,
+            move($1),
+            $2.first, $2.second,
+            EMPTY_VECTOR(ClassDeclaration), EMPTY_VECTOR(InterfaceDeclaration)); }
+    | PackageDeclaration { MAKE_OBJ($$, CompilationUnit,
+            move($1),
+            EMPTY_VECTOR(QualifiedIdentifier), EMPTY_VECTOR(QualifiedIdentifier),
+            EMPTY_VECTOR(ClassDeclaration), EMPTY_VECTOR(InterfaceDeclaration));
+        }
+    | ImportDeclarations { MAKE_OBJ($$, CompilationUnit,
+            EMPTY,
+            $1.first, $1.second,
+            EMPTY_VECTOR(ClassDeclaration), EMPTY_VECTOR(InterfaceDeclaration));
+        }
+    | TypeDeclarations { MAKE_OBJ($$, CompilationUnit,
+            EMPTY,
+            EMPTY_VECTOR(QualifiedIdentifier), EMPTY_VECTOR(QualifiedIdentifier),
+            $1.first, $1.second);
+        }
+    | /* Empty */ { MAKE_OBJ($$, CompilationUnit,
+            EMPTY,
+            EMPTY_VECTOR(QualifiedIdentifier), EMPTY_VECTOR(QualifiedIdentifier),
+            EMPTY_VECTOR(ClassDeclaration), EMPTY_VECTOR(InterfaceDeclaration));
+        }
     ;
 
 PackageDeclaration:
@@ -395,8 +419,8 @@ TypeDeclarations:
     ;
 
 ImportDeclaration:
-	SingleTypeImportDeclaration { $$ = make_pair($1, EMPTY); }
-	| TypeImportOnDemandDeclaration { $$ = make_pair(EMPTY, $1); }
+	SingleTypeImportDeclaration { MAKE_PAIR($$, $1, EMPTY); }
+	| TypeImportOnDemandDeclaration { MAKE_PAIR($$, EMPTY, $1); }
     ;
 
 SingleTypeImportDeclaration:
@@ -410,9 +434,9 @@ TypeImportOnDemandDeclaration:
     ;
 
 TypeDeclaration:
-    ClassDeclaration { $$ = make_pair($1, EMPTY); }
-    | InterfaceDeclaration { $$ = make_pair(EMPTY, $1); }
-    | SEMI_COLON { $$ = make_pair(EMPTY, EMPTY); }
+    ClassDeclaration { MAKE_PAIR($$, $1, EMPTY); }
+    | InterfaceDeclaration { MAKE_PAIR($$, EMPTY, $1); }
+    | SEMI_COLON { MAKE_PAIR($$, EMPTY, EMPTY); }
     ;
 
 /*---------------------- Expressions ----------------------*/
@@ -427,7 +451,7 @@ AssignmentExpression:
     ;
 
 Assignment:
-    LeftHandSide ASSIGNMENT AssignmentExpression { MAKE_EXPRESSION_OBJ($$, Assignment, $1, $3); }
+    LeftHandSide ASSIGNMENT AssignmentExpression { MAKE_EXPRESSION_OBJ($$, Assignment, move($1), move($3)); }
 
 LeftHandSide:
     QualifiedIdentifier // ExpressionName
@@ -473,7 +497,7 @@ RelationalExpression:
     | RelationalExpression GREATER_THAN_EQUAL AdditiveExpression
         { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     | RelationalExpression INSTANCEOF ReferenceType // ReferenceType
-        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+        { MAKE_EXPRESSION_OBJ($$, InstanceOfExpression, $1, $3); }
     ;
 
 AdditiveExpression:
@@ -490,19 +514,19 @@ MultiplicativeExpression:
     ;
 
 UnaryExpression:
-    MINUS UnaryExpression { MAKE_PREFIX_OBJ($$, $1, $2); }
+    MINUS UnaryExpression { MAKE_PREFIX_OBJ($$, PrefixOperator::MINUS, move($2)); }
     | UnaryExpressionNotPlusMinus { COPY_OBJ($$, $1); }
     ;
 
 UnaryExpressionNotPlusMinus:
-    NEGATE UnaryExpression { MAKE_PREFIX_OBJ($$, $1, $2); }
+    NEGATE UnaryExpression { MAKE_PREFIX_OBJ($$, $1, move($2)); }
     | CastExpression { COPY_OBJ($$, $1); }
     | PrimaryOrExpressionName { COPY_OBJ($$, $1); }
     ;
 
 CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
-        { MAKE_CASTEXPR_OBJ($$, $2, $4, false); }
+        { MAKE_CASTEXPR_OBJ($$, $2, move($4), false); }
     | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
         { MAKE_CASTEXPR_OBJ($$, get<QualifiedIdentifier>(*$2), $4, false); } // throws err if Expression not QI
     | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
@@ -597,7 +621,7 @@ MethodInvocation:
     ;
 
 Type:
-    PrimitiveType { MAKE_OBJ($$, Type, $1, false); }
+    PrimitiveType { MAKE_OBJ($$, Type, move($1), false); }
     | ReferenceType { COPY_OBJ($$, $1); }
     ;
 
@@ -623,11 +647,11 @@ ClassOrInterfaceType:
 
 ReferenceType: // Done this way to disallow multidimensional arrays
     ClassOrInterfaceType
-        { MAKE_OBJ($$, Type, $1, false); }
+        { MAKE_OBJ($$, Type, move($1), false); }
     | ClassOrInterfaceType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_OBJ($$, Type, $1, true); }
+        { MAKE_OBJ($$, Type, move($1), true); }
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_OBJ($$, Type, $1, true); }
+        { MAKE_OBJ($$, Type, move($1), true); }
     ;
 
 /*---------------------- Interfaces ----------------------*/
@@ -696,7 +720,7 @@ AbstractMethodDeclaration:
     AbstractMethodModifiersOpt Type MethodDeclarator SEMI_COLON
         { MAKE_OBJ($$, MethodDeclaration, $1, $2, $3.first, $3.second, EMPTY); }
     | AbstractMethodModifiersOpt VOID MethodDeclarator SEMI_COLON
-        { MAKE_OBJ($$, MethodDeclaration, $1, NEW_OBJ(Type, $2, false), $3.first, $3.second, EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, $1, NEW_OBJ(Type, move($2), false), $3.first, $3.second, EMPTY); }
     ;
 
 AbstractMethodModifiersOpt:

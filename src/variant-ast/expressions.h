@@ -25,7 +25,6 @@ enum class InfixOperator {
     GREATER_THAN,
     LESS_THAN_EQUAL,
     GREATER_THAN_EQUAL,
-    INSTANCEOF,
     MODULO
 };
 
@@ -48,7 +47,8 @@ typedef std::variant<
     struct ArrayAccess,
     struct QualifiedThis,
     struct ArrayCreationExpression,
-    struct QualifiedIdentifier
+    struct QualifiedIdentifier,
+    struct InstanceOfExpression
 > Expression;
 
 struct Assignment: public AstNodeCommon {
@@ -57,8 +57,8 @@ struct Assignment: public AstNodeCommon {
     std::unique_ptr<Expression> assigned_from;
 
     Assignment(
-        std::unique_ptr<Expression>& assigned_to,
-        std::unique_ptr<Expression>& assigned_from
+        std::unique_ptr<Expression> assigned_to,
+        std::unique_ptr<Expression> assigned_from
     );
 };
 
@@ -137,7 +137,7 @@ struct PrefixExpression {
     PrefixOperator op;
 
     PrefixExpression(
-        std::unique_ptr<Expression>& expression,
+        std::unique_ptr<Expression> expression,
         PrefixOperator op
     );
 };
@@ -147,7 +147,21 @@ struct CastExpression {
     std::unique_ptr<Expression> expression;
 
     CastExpression(
-        std::unique_ptr<Type>& type,
-        std::unique_ptr<Expression>& expression
+        std::unique_ptr<Type> type,
+        std::unique_ptr<Expression> expression
+    );
+};
+
+struct InstanceOfExpression {
+    std::unique_ptr<Expression> expression;
+    std::unique_ptr<Type> type;
+
+    InstanceOfExpression(
+        std::unique_ptr<Expression>& expression,
+        std::unique_ptr<Type>& type
+    );
+    InstanceOfExpression(
+        std::unique_ptr<Expression>&& expression,
+        std::unique_ptr<Type>&& type
     );
 };
