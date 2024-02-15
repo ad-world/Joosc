@@ -16,6 +16,8 @@ enum class VarType {
     METHOD
 };
 
+class RootEnvironment;
+
 typedef std::variant<std::monostate, bool, int64_t, char, std::string, RootEnvironment*> VarValue;
 
 struct Variable {
@@ -32,7 +34,7 @@ class RootEnvironment {
     public:
         RootEnvironment(std::unique_ptr<RootEnvironment>& parent);
         // add variable to environment
-        int addVariable(const std::string& name, const Variable& variable);
+        bool addVariable(const std::string& name, const Variable& variable);
         // lookup a variable in that environment and parent environments
         std::optional<Variable> lookupVariable(const std::string& name);
         // lookup all variables with matching name, in the current environment and parent environments

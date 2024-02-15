@@ -2,18 +2,18 @@
 
 RootEnvironment::RootEnvironment(std::unique_ptr<RootEnvironment>& parent): parent{std::move(parent)} {}
 
-// returns 0 if successful and 42 if variable name exists already but is not of type class/interface/method
-int RootEnvironment::addVariable(const std::string& name, const Variable& variable) {
+// returns true if successful and false if variable name exists already but is not of type class/interface/method
+bool RootEnvironment::addVariable(const std::string& name, const Variable& variable) {
     std::optional<std::vector<Variable>> exists = lookupVariables(name);
     if(exists.has_value()) {
         for(const Variable& var: exists.value()) {
             if(var.type != VarType::CLASS || var.type != VarType::INTERFACE || var.type != VarType::METHOD) {
-                return 42;
+                return false;
             }
         }
     }
     variables[name] = variable;
-    return 0;
+    return true;
 };
 
 std::optional<Variable> RootEnvironment::lookupVariable(const std::string& name) {
@@ -79,4 +79,4 @@ MethodEnvironment::MethodEnvironment(
     return_type{std::move(return_type)}
 {}
 
-BlockEnvironment::BlockEnvironment(std::unique_ptr<RootEnvironment>& parent): BlockEnvironment(parent) {}
+BlockEnvironment::BlockEnvironment(std::unique_ptr<RootEnvironment>& parent): RootEnvironment(parent) {}
