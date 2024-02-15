@@ -704,7 +704,7 @@ ExtendsInterfaceOpt:
 
 InterfaceBody:
     OPENING_BRACE InterfaceMemberDeclarationsOpt CLOSING_BRACE
-        { $$ = $2; }
+        { COPY_OBJ($$, $2); }
     ;
 
 InterfaceMemberDeclarationsOpt:
@@ -1013,7 +1013,7 @@ Block:
 
 BlockStatementsOpt:
     /* Empty - represents zero BlockStatements */ { MAKE_STACK_OBJ($$, vector<Statement>); }
-    | BlockStatements { $$ = $1; }
+    | BlockStatements { COPY_OBJ($$, $1); }
     ;
 
 BlockStatements:
@@ -1025,7 +1025,7 @@ BlockStatements:
     ;
 
 BlockStatement:
-    LocalVariableDeclarationStatement  { MAKE_STATEMENT_OBJ($$, LocalVariableDeclaration, $1); }
+    LocalVariableDeclarationStatement  { $$ = OBJ_TO_VARIANT(Statement, *$1); }
     | Statement { COPY_OBJ($$, $1); }
     ;
 
@@ -1034,8 +1034,8 @@ LocalVariableDeclarationStatement:
     ;
 
 VariableDeclarator:
-    VariableDeclaratorId { MAKE_OBJ($$, VariableDeclarator, $1, EMPTY); }
-    | VariableDeclaratorId ASSIGNMENT VariableInitializer { MAKE_OBJ($$, VariableDeclarator, $1, $3); }
+    VariableDeclaratorId { MAKE_OBJ($$, VariableDeclarator, move($1), EMPTY); }
+    | VariableDeclaratorId ASSIGNMENT VariableInitializer { MAKE_OBJ($$, VariableDeclarator, move($1), move($3)); }
     ;
 
 // -------------------------------------------------------------
