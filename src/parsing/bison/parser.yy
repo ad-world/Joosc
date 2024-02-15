@@ -191,7 +191,7 @@
         %nterm <PrimitiveType> IntegralType
         %nterm <PrimitiveType> BooleanType
     %nterm <unique_ptr<Type>> ReferenceType
-        %nterm <QualifiedIdentifier> ClassOrInterfaceType
+        %nterm <unique_ptr<QualifiedIdentifier>> ClassOrInterfaceType
 
 // VariableDeclarator (done)
 %nterm <unique_ptr<VariableDeclarator>> VariableDeclarator
@@ -531,9 +531,9 @@ CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
         { MAKE_CASTEXPR_OBJ($$, move($2), move($4)); }
     | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
-        { MAKE_CASTEXPR_OBJ($$, NEW_OBJ(Type, make_unique<NonArrayType>(get<QualifiedIdentifier>(*$2)), false), move($4)); } // throws err if Expression not QI
+        { MAKE_CASTEXPR_OBJ($$, NEW_OBJ(Type, NEW_OBJ(NonArrayType, get<QualifiedIdentifier>(*$2)), false), move($4)); } // throws err if Expression not QI
     | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
-        { MAKE_CASTEXPR_OBJ($$, NEW_OBJ(Type, make_unique<NonArrayType>(*$2), true), move($6)); }
+        { MAKE_CASTEXPR_OBJ($$, NEW_OBJ(Type, NEW_OBJ(NonArrayType, *$2), true), move($6)); }
     | OPENING_PAREN
         PrimitiveType OPENING_BRACKET CLOSING_BRACKET // ReferenceType as PrimitiveType with array
             CLOSING_PAREN UnaryExpressionNotPlusMinus
@@ -553,13 +553,13 @@ Primary:
 
 ArrayCreationExpression:
     NEW PrimitiveType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, $2, EMPTY); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, move($2), EMPTY); }
     | NEW PrimitiveType OPENING_BRACKET Expression CLOSING_BRACKET
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, $2, $4); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, move($2), move($4)); }
     | NEW QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET // TypeName
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, $2, EMPTY); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_OBJ(Type, NEW_OBJ(NonArrayType, *$2), false), EMPTY); }
     | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // TypeName
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, $2, $4); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_OBJ(Type, NEW_OBJ(NonArrayType, *$2), false), move($4)); }
     ;
 
 ClassInstanceCreationExpression:
@@ -567,10 +567,10 @@ ClassInstanceCreationExpression:
         { MAKE_EXPRESSION_OBJ($$, ClassInstanceCreationExpression, $2, $4); }
 
 PrimaryNoNewArray:
-    Literal { MAKE_EXPRESSION_OBJ($$, Literal, $1); }
+    Literal { MAKE_EXPRESSION_OBJ($$, Literal, *$1); }
     | THIS { MAKE_EXPRESSION_OBJ($$, QualifiedThis, EMPTY); }
     | QualifiedIdentifier DOT THIS // ClassName     TODO: REMOVE
-        { MAKE_EXPRESSION_OBJ($$, QualifiedThis, $1); }
+        { MAKE_EXPRESSION_OBJ($$, QualifiedThis, move($1)); }
     | OPENING_PAREN Expression CLOSING_PAREN
         { COPY_OBJ($$, $2); }
     | ClassInstanceCreationExpression { COPY_OBJ($$, $1); }
@@ -646,15 +646,15 @@ BooleanType:
 
 ClassOrInterfaceType:
     QualifiedIdentifier // ClassType, InterfaceType -> TypeName
-        { $$ = *$1; }
+        { COPY_OBJ($$, $1); }
 
 ReferenceType: // Done this way to disallow multidimensional arrays
     ClassOrInterfaceType
-        { MAKE_OBJ($$, Type, move($1), false); }
+        { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, *$1), false); }
     | ClassOrInterfaceType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_OBJ($$, Type, move($1), true); }
+        { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, *$1), true); }
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_OBJ($$, Type, move($1), true); }
+        { COPY_OBJ($$, $1); $$->is_array = true; }
     ;
 
 /*---------------------- Interfaces ----------------------*/
@@ -721,9 +721,9 @@ InterfaceMemberDeclaration: // Nested types and interface constants not supporte
 
 AbstractMethodDeclaration:
     AbstractMethodModifiersOpt Type MethodDeclarator SEMI_COLON
-        { MAKE_OBJ($$, MethodDeclaration, $1, $2, $3.first, $3.second, EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, $1, move($2), move($3.first), $3.second, EMPTY); }
     | AbstractMethodModifiersOpt VOID MethodDeclarator SEMI_COLON
-        { MAKE_OBJ($$, MethodDeclaration, $1, NEW_OBJ(Type, move($2), false), $3.first, $3.second, EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, $1, NEW_OBJ(Type, NEW_OBJ(NonArrayType, $2), false), move($3.first), $3.second, EMPTY); }
     ;
 
 AbstractMethodModifiersOpt:

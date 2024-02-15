@@ -59,11 +59,11 @@ struct MethodDeclaration {
     std::unique_ptr<Block> body;
 
     MethodDeclaration(
-        std::vector<Modifier>& modifiers,
-        std::unique_ptr<Type>& type,
-        std::unique_ptr<Identifier>& function_name,
-        std::vector<FormalParameter>& parameters,
-        std::unique_ptr<Block>& body
+        std::vector<Modifier> modifiers,
+        std::unique_ptr<Type> type,
+        std::unique_ptr<Identifier> function_name,
+        std::vector<FormalParameter> parameters,
+        std::unique_ptr<Block> body
     );
 };
 

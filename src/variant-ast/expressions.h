@@ -66,7 +66,7 @@ struct QualifiedThis: public AstNodeCommon {
     std::unique_ptr<QualifiedIdentifier> qualified_this;
 
     QualifiedThis(
-        std::unique_ptr<QualifiedIdentifier>& qt
+        std::unique_ptr<QualifiedIdentifier> qt
     );
 };
 
@@ -75,8 +75,8 @@ struct ArrayCreationExpression: public AstNodeCommon {
     std::unique_ptr<Expression> expression;
 
     ArrayCreationExpression(
-        std::unique_ptr<Type>& type,
-        std::unique_ptr<Expression>& expr
+        std::unique_ptr<Type> type,
+        std::unique_ptr<Expression> expr
     );
 };
 
@@ -105,8 +105,8 @@ struct ArrayAccess: public AstNodeCommon {
     std::unique_ptr<Expression> selector;
 
     ArrayAccess(
-        std::unique_ptr<Expression>& array,
-        std::unique_ptr<Expression>& selector  
+        std::unique_ptr<Expression> array,
+        std::unique_ptr<Expression> selector  
     );
 };
 
