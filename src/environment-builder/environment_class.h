@@ -4,6 +4,7 @@
 #include <optional>
 #include <vector>
 #include <variant>
+#include "../ast/ast.h"
 
 enum class VarType {
     BOOL,
@@ -31,8 +32,9 @@ class Environment {
         std::unique_ptr<Environment> parent = nullptr;
         std::unordered_map<std::string, std::vector<Variable>> variables;
         std::vector<Environment*> children;
+        AstNode* astNode;
     public:
-        Environment(std::unique_ptr<Environment>& parent);
+        Environment(std::unique_ptr<Environment>& parent, AstNode*& astNode);
         // add variable to environment
         bool addVariable(const std::string& name, const Variable& variable);
         // lookup a variable in that environment and parent environments
@@ -40,12 +42,12 @@ class Environment {
         // lookup all variables with matching name, in the current environment and parent environments
         std::optional<std::vector<Variable>> lookupVariables(const std::string& name);
         // add child environment to parent environment
-        void addChild(Environment* child);
+        void addChild(Environment*& child);
 };
 
 class PackageEnvironment: public Environment {
     public:
-        PackageEnvironment(std::unique_ptr<Environment>& parent);
+        PackageEnvironment(std::unique_ptr<Environment>& parent, AstNode*& astNode);
 };
 
 class ClassEnvironment: public Environment {
@@ -55,6 +57,7 @@ class ClassEnvironment: public Environment {
     public:
         ClassEnvironment(
             std::unique_ptr<Environment>& parent,
+            AstNode*& astNode,
             std::string& name,
             Environment*& extends,
             std::vector<Environment*>& implements
@@ -67,6 +70,7 @@ class InterfaceEnvironment: public Environment {
     public:
         InterfaceEnvironment(
             std::unique_ptr<Environment>& parent,
+            AstNode*& astNode,
             std::string& name,
             std::vector<Environment*>& extends
         );
@@ -78,6 +82,7 @@ class MethodEnvironment: public Environment {
     public:
         MethodEnvironment(
             std::unique_ptr<Environment>& parent,
+            AstNode*& astNode,
             std::string& name,
             std::string& return_type
         );
@@ -85,5 +90,5 @@ class MethodEnvironment: public Environment {
 
 class BlockEnvironment: public Environment {
     public:
-        BlockEnvironment(std::unique_ptr<Environment>& parent);
+        BlockEnvironment(std::unique_ptr<Environment>& parent, AstNode*& astNode);
 };

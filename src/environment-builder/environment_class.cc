@@ -1,6 +1,12 @@
 #include "environment_class.h"
 
-Environment::Environment(std::unique_ptr<Environment>& parent): parent{std::move(parent)} {}
+Environment::Environment(
+    std::unique_ptr<Environment>& parent,
+    AstNode*& astNode
+) :
+    parent{std::move(parent)},
+    astNode{std::move(astNode)}
+{}
 
 // returns true if successful and false if variable name exists already but is not of type class/interface/method
 bool Environment::addVariable(const std::string& name, const Variable& variable) {
@@ -43,19 +49,25 @@ std::optional<std::vector<Variable>> Environment::lookupVariables(const std::str
     }
 };
 
-void Environment::addChild(Environment* child) {
+void Environment::addChild(Environment*& child) {
     children.push_back(child);
 }
 
-PackageEnvironment::PackageEnvironment(std::unique_ptr<Environment>& parent): Environment(parent) {}
+PackageEnvironment::PackageEnvironment(
+    std::unique_ptr<Environment>& parent,
+    AstNode*& astNode
+) :
+    Environment(parent, astNode)
+{}
 
 ClassEnvironment::ClassEnvironment(
     std::unique_ptr<Environment>& parent,
+    AstNode*& astNode,
     std::string& name,
     Environment*& extends,
     std::vector<Environment*>& implements
 ) :
-    Environment(parent),
+    Environment(parent, astNode),
     name{std::move(name)},
     extends{std::move(extends)},
     implements{std::move(implements)}
@@ -63,22 +75,29 @@ ClassEnvironment::ClassEnvironment(
 
 InterfaceEnvironment::InterfaceEnvironment(
     std::unique_ptr<Environment>& parent,
+    AstNode*& astNode,
     std::string& name,
     std::vector<Environment*>& extends
 ) :
-    Environment(parent),
+    Environment(parent, astNode),
     name{std::move(name)},
     extends{std::move(extends)}
 {}
 
 MethodEnvironment::MethodEnvironment(
     std::unique_ptr<Environment>& parent,
+    AstNode*& astNode,
     std::string& name,
     std::string& return_type
 ) :
-    Environment(parent),
+    Environment(parent, astNode),
     name{std::move(name)},
     return_type{std::move(return_type)}
 {}
 
-BlockEnvironment::BlockEnvironment(std::unique_ptr<Environment>& parent): Environment(parent) {}
+BlockEnvironment::BlockEnvironment(
+    std::unique_ptr<Environment>& parent,
+    AstNode*& astNode
+) :
+    Environment(parent, astNode)
+{}
