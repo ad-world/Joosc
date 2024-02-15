@@ -5,6 +5,7 @@
 #include "astnodecommon.h"
 #include "expressions.h"
 
+struct Environment;
 struct Identifier;
 struct QualifiedIdentifier;
 struct Type;
@@ -71,6 +72,8 @@ struct MethodDeclaration {
     std::vector<FormalParameter> parameters;
     std::unique_ptr<Block> body;
 
+    Environment* environment;
+
     MethodDeclaration(
         std::vector<Modifier>& modifiers,
         std::unique_ptr<Type>& type,
@@ -95,6 +98,8 @@ struct ClassDeclaration: public AstNodeCommon {
     std::vector<FieldDeclaration> field_declarations; // Class field declarations
     std::vector<MethodDeclaration> method_declarations; // Class method declarations
 
+    Environment* environment;
+
     ClassDeclaration(
         std::vector<Modifier>& modifiers,
         std::unique_ptr<struct Identifier>& class_name,
@@ -118,6 +123,8 @@ struct InterfaceDeclaration: public AstNodeCommon {
     std::unique_ptr<Identifier> interface_name; // interface name
     std::unique_ptr<QualifiedIdentifier> extends_class; // class that this interface extends off of
     std::vector<MethodDeclaration> method_declarations; // interface method declarations
+
+    Environment *environment;
 
     InterfaceDeclaration(
         std::vector<Modifier>& modifiers,

@@ -8,6 +8,7 @@
 
 struct Type;
 struct VariableDeclarator;
+struct Environment;
 
 typedef std::monostate EmptyStatement;
 
@@ -97,6 +98,7 @@ struct ForStatement: public AstNodeCommon {
 struct Block: public AstNodeCommon {
     std::vector<LocalVariableDeclaration> variable_declarations;
     std::vector<Statement> statements;
+    Environment *environment;
 
     Block(
         std::vector<LocalVariableDeclaration>& variable_declarations, 

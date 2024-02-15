@@ -16,9 +16,9 @@ enum class VarType {
     METHOD
 };
 
-class RootEnvironment;
+class Environment;
 
-typedef std::variant<std::monostate, bool, int64_t, char, std::string, RootEnvironment*> VarValue;
+typedef std::variant<std::monostate, bool, int64_t, char, std::string, Environment*> VarValue;
 
 struct Variable {
     VarType type;
@@ -26,64 +26,64 @@ struct Variable {
     bool is_array;
 };
 
-class RootEnvironment {
+class Environment {
     protected:
-        std::unique_ptr<RootEnvironment> parent = nullptr;
-        std::unordered_map<std::string, Variable> variables;
-        std::vector<RootEnvironment*> children;
+        std::unique_ptr<Environment> parent = nullptr;
+        std::unordered_map<std::string, std::vector<Variable>> variables;
+        std::vector<Environment*> children;
     public:
-        RootEnvironment(std::unique_ptr<RootEnvironment>& parent);
+        Environment(std::unique_ptr<Environment>& parent);
         // add variable to environment
         bool addVariable(const std::string& name, const Variable& variable);
         // lookup a variable in that environment and parent environments
-        std::optional<Variable> lookupVariable(const std::string& name);
+        std::optional<std::vector<Variable>> lookupVariable(const std::string& name);
         // lookup all variables with matching name, in the current environment and parent environments
         std::optional<std::vector<Variable>> lookupVariables(const std::string& name);
         // add child environment to parent environment
-        void addChild(RootEnvironment* child);
+        void addChild(Environment* child);
 };
 
-class PackageEnvironment: public RootEnvironment {
+class PackageEnvironment: public Environment {
     public:
-        PackageEnvironment(std::unique_ptr<RootEnvironment>& parent);
+        PackageEnvironment(std::unique_ptr<Environment>& parent);
 };
 
-class ClassEnvironment: public RootEnvironment {
+class ClassEnvironment: public Environment {
     std::string name;
-    RootEnvironment* extends;
-    std::vector<RootEnvironment*> implements;
+    Environment* extends;
+    std::vector<Environment*> implements;
     public:
         ClassEnvironment(
-            std::unique_ptr<RootEnvironment>& parent,
+            std::unique_ptr<Environment>& parent,
             std::string& name,
-            RootEnvironment*& extends,
-            std::vector<RootEnvironment*>& implements
+            Environment*& extends,
+            std::vector<Environment*>& implements
         );
 };
 
-class InterfaceEnvironment: public RootEnvironment {
+class InterfaceEnvironment: public Environment {
     std::string name;
-    std::vector<RootEnvironment*> extends;
+    std::vector<Environment*> extends;
     public:
         InterfaceEnvironment(
-            std::unique_ptr<RootEnvironment>& parent,
+            std::unique_ptr<Environment>& parent,
             std::string& name,
-            std::vector<RootEnvironment*>& extends
+            std::vector<Environment*>& extends
         );
 };
 
-class MethodEnvironment: public RootEnvironment {
+class MethodEnvironment: public Environment {
     std::string name;
     std::string return_type;
     public:
         MethodEnvironment(
-            std::unique_ptr<RootEnvironment>& parent,
+            std::unique_ptr<Environment>& parent,
             std::string& name,
             std::string& return_type
         );
 };
 
-class BlockEnvironment: public RootEnvironment {
+class BlockEnvironment: public Environment {
     public:
-        BlockEnvironment(std::unique_ptr<RootEnvironment>& parent);
+        BlockEnvironment(std::unique_ptr<Environment>& parent);
 };
