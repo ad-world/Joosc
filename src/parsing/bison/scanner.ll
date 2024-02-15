@@ -83,7 +83,7 @@ return    return yy::parser::make_RETURN(loc);
 
 %{ // Types %}
 int     return yy::parser::make_INT(PrimitiveType::INT, loc);
-boolean    return yy::parser::make_BOOLEAN(PrimitiveType::BOOL, loc);
+boolean    return yy::parser::make_BOOLEAN(PrimitiveType::BOOLEAN, loc);
 char    return yy::parser::make_CHAR(PrimitiveType::CHAR, loc); 
 byte    return yy::parser::make_BYTE(PrimitiveType::BYTE, loc);
 short   return yy::parser::make_SHORT(PrimitiveType::SHORT, loc);
