@@ -13,7 +13,10 @@ enum class VarType {
     CHAR,
     CLASS,
     INTERFACE,
+    METHOD
 };
+
+class RootEnvironment;
 
 typedef std::variant<std::monostate, bool, int64_t, char, std::string, RootEnvironment*> VarValue;
 
@@ -31,9 +34,11 @@ class RootEnvironment {
     public:
         RootEnvironment(std::unique_ptr<RootEnvironment>& parent);
         // add variable to environment
-        void addVariable(const std::string& name, const Variable& variable);
+        bool addVariable(const std::string& name, const Variable& variable);
         // lookup a variable in that environment and parent environments
         std::optional<Variable> lookupVariable(const std::string& name);
+        // lookup all variables with matching name, in the current environment and parent environments
+        std::optional<std::vector<Variable>> lookupVariables(const std::string& name);
         // add child environment to parent environment
         void addChild(RootEnvironment* child);
 };
