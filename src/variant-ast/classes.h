@@ -39,8 +39,6 @@ struct FieldDeclaration: public AstNodeCommon {
     std::unique_ptr<Type> type;
     std::unique_ptr<VariableDeclarator> variable_declarator;
 
-    Environment* environment;
-
     FieldDeclaration(
         std::vector<Modifier>& modifiers,
         std::unique_ptr<Type>& type,
