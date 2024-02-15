@@ -105,23 +105,23 @@ null                return yy::parser::make_NULL_TOKEN(loc);
 \/\*\*.*\*\/    { } 
 
 %{ // Operators %}
-"||"    return yy::parser::make_BOOLEAN_OR(loc);
-"&&"    return yy::parser::make_BOOLEAN_AND(loc);
-"|"     return yy::parser::make_PIPE(loc);
-"&"     return yy::parser::make_AMPERSAND(loc);
-"=="    return yy::parser::make_BOOLEAN_EQUAL(loc);
-"!="    return yy::parser::make_NOT_EQUAL(loc);
-"+"     return yy::parser::make_PLUS(loc);
-"-"     return yy::parser::make_MINUS(loc);
-"/"     return yy::parser::make_DIVIDE(loc);
-"*"     return yy::parser::make_ASTERISK(loc);
-"<"     return yy::parser::make_LESS_THAN(loc);
-">"     return yy::parser::make_GREATER_THAN(loc);
-"<="    return yy::parser::make_LESS_THAN_EQUAL(loc);
-">="    return yy::parser::make_GREATER_THAN_EQUAL(loc);
+"||"    return yy::parser::make_BOOLEAN_OR(InfixOperator::BOOLEAN_OR, loc);
+"&&"    return yy::parser::make_BOOLEAN_AND(InfixOperator::BOOLEAN_AND, loc);
+"|"     return yy::parser::make_PIPE(InfixOperator::EAGER_OR, loc);
+"&"     return yy::parser::make_AMPERSAND(InfixOperator::EAGER_AND, loc);
+"=="    return yy::parser::make_BOOLEAN_EQUAL(InfixOperator::BOOLEAN_EQUAL, loc);
+"!="    return yy::parser::make_NOT_EQUAL(InfixOperator::BOOLEAN_NOT_EQUAL, loc);
+"+"     return yy::parser::make_PLUS(InfixOperator::PLUS, loc);
+"-"     return yy::parser::make_MINUS(InfixOperator::MINUS, loc);
+"/"     return yy::parser::make_DIVIDE(InfixOperator::DIVIDE, loc);
+"*"     return yy::parser::make_ASTERISK(InfixOperator::MULTIPLY, loc);
+"<"     return yy::parser::make_LESS_THAN(InfixOperator::LESS_THAN, loc);
+">"     return yy::parser::make_GREATER_THAN(InfixOperator::GREATER_THAN, loc);
+"<="    return yy::parser::make_LESS_THAN_EQUAL(InfixOperator::LESS_THAN_EQUAL, loc);
+">="    return yy::parser::make_GREATER_THAN_EQUAL(InfixOperator::GREATER_THAN_EQUAL, loc);
 instanceof      return yy::parser::make_INSTANCEOF(loc);
-"%"     return yy::parser::make_MODULO(loc);
-"!"     return yy::parser::make_NEGATE(loc);
+"%"     return yy::parser::make_MODULO(InfixOperator::MODULO, loc);
+"!"     return yy::parser::make_NEGATE(PrefixOperator::NEGATE, loc);
 
 {Whitespace}+      loc.step ();
 {Identifier}       return yy::parser::make_IDENTIFIER(loc);

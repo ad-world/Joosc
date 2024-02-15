@@ -18,7 +18,7 @@ enum class InfixOperator {
     BOOLEAN_EQUAL,
     BOOLEAN_NOT_EQUAL,
     PLUS,
-    MINUS = '-',
+    MINUS,
     DIVIDE,
     MULTIPLY,
     LESS_THAN,
@@ -29,7 +29,7 @@ enum class InfixOperator {
 };
 
 enum class PrefixOperator {
-    MINUS = '-',
+    MINUS,
     NEGATE
 };
 

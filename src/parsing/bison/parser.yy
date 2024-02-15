@@ -105,7 +105,7 @@
 %token <InfixOperator> GREATER_THAN
 %token <InfixOperator> LESS_THAN_EQUAL
 %token <InfixOperator> GREATER_THAN_EQUAL
-%token <InfixOperator> INSTANCEOF
+%token INSTANCEOF
 %token <InfixOperator> MODULO           // TODO: not in the astnode common class
 %token <PrefixOperator> NEGATE
 
