@@ -56,20 +56,18 @@ else    return yy::parser::make_ELSE(loc);
 extends     return yy::parser::make_EXTENDS(loc);
 new     return yy::parser::make_NEW(loc);
 public    return yy::parser::make_PUBLIC(loc);
-implements    return yy::parser::make_IMPLEMENTS(loc);
 protected     return yy::parser::make_PROTECTED(loc);
 static    return yy::parser::make_STATIC(loc);
 abstract      return yy::parser::make_ABSTRACT(loc);
-this      return yy::parser::make_THIS(loc);
-void      return yy::parser::make_VOID(loc);
+native    return yy::parser::make_NATIVE(loc);
 final     return yy::parser::make_FINAL(loc);
+implements    return yy::parser::make_IMPLEMENTS(loc);
+this      return yy::parser::make_THIS(loc);
 import      return yy::parser::make_IMPORT(loc);
 class      return yy::parser::make_CLASS(loc);
 package     return yy::parser::make_PACKAGE(loc);
 interface     return yy::parser::make_INTERFACE(loc);
-native    return yy::parser::make_NATIVE(loc);
 return    return yy::parser::make_RETURN(loc);
-instanceof return yy::parser::make_INSTANCEOF(loc);
 "{"       return yy::parser::make_OPENING_BRACE(loc);
 "}"       return yy::parser::make_CLOSING_BRACE(loc);
 "["       return yy::parser::make_OPENING_BRACKET(loc);
@@ -79,6 +77,7 @@ instanceof return yy::parser::make_INSTANCEOF(loc);
 ";"       return yy::parser::make_SEMI_COLON(loc);
 "."     return yy::parser::make_DOT(loc);
 "="     return yy::parser::make_ASSIGNMENT(loc);
+","     return yy::parser::make_COMMA(loc);
 
 %{ // Types %}
 int     return yy::parser::make_INT(loc);
@@ -86,6 +85,7 @@ boolean    return yy::parser::make_BOOLEAN(loc);
 char    return yy::parser::make_CHAR(loc); 
 byte    return yy::parser::make_BYTE(loc);
 short   return yy::parser::make_SHORT(loc);
+void      return yy::parser::make_VOID(loc);
 
 %{ // Literals %}
 true                return yy::parser::make_TRUE(loc);
@@ -105,23 +105,23 @@ null                return yy::parser::make_NULL_TOKEN(loc);
 \/\*\*.*\*\/    { } 
 
 %{ // Operators %}
-"!"     return yy::parser::make_NEGATE(loc);
+"||"    return yy::parser::make_BOOLEAN_OR(loc);
+"&&"    return yy::parser::make_BOOLEAN_AND(loc);
+"|"     return yy::parser::make_PIPE(loc);
+"&"     return yy::parser::make_AMPERSAND(loc);
+"=="    return yy::parser::make_BOOLEAN_EQUAL(loc);
+"!="    return yy::parser::make_NOT_EQUAL(loc);
 "+"     return yy::parser::make_PLUS(loc);
 "-"     return yy::parser::make_MINUS(loc);
-"*"     return yy::parser::make_ASTERISK(loc);
 "/"     return yy::parser::make_DIVIDE(loc);
-"%"     return yy::parser::make_MODULO(loc);
+"*"     return yy::parser::make_ASTERISK(loc);
 "<"     return yy::parser::make_LESS_THAN(loc);
 ">"     return yy::parser::make_GREATER_THAN(loc);
 "<="    return yy::parser::make_LESS_THAN_EQUAL(loc);
 ">="    return yy::parser::make_GREATER_THAN_EQUAL(loc);
-"=="    return yy::parser::make_BOOLEAN_EQUAL(loc);
-"!="    return yy::parser::make_NOT_EQUAL(loc);
-"&&"    return yy::parser::make_BOOLEAN_AND(loc);
-"&"     return yy::parser::make_AMPERSAND(loc);
-"||"    return yy::parser::make_BOOLEAN_OR(loc);
-"|"     return yy::parser::make_PIPE(loc);
-","     return yy::parser::make_COMMA(loc);
+instanceof      return yy::parser::make_INSTANCEOF(loc);
+"%"     return yy::parser::make_MODULO(loc);
+"!"     return yy::parser::make_NEGATE(loc);
 
 {Whitespace}+      loc.step ();
 {Identifier}       return yy::parser::make_IDENTIFIER(loc);
