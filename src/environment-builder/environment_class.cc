@@ -1,9 +1,9 @@
 #include "environment_class.h"
 
-RootEnvironment::RootEnvironment(std::unique_ptr<RootEnvironment>& parent): parent{std::move(parent)} {}
+Environment::Environment(std::unique_ptr<Environment>& parent): parent{std::move(parent)} {}
 
 // returns true if successful and false if variable name exists already but is not of type class/interface/method
-bool RootEnvironment::addVariable(const std::string& name, const Variable& variable) {
+bool Environment::addVariable(const std::string& name, const Variable& variable) {
     std::optional<std::vector<Variable>> exists = lookupVariables(name);
     if(exists.has_value()) {
         for(const Variable& var: exists.value()) {
@@ -16,7 +16,7 @@ bool RootEnvironment::addVariable(const std::string& name, const Variable& varia
     return true;
 };
 
-std::optional<Variable> RootEnvironment::lookupVariable(const std::string& name) {
+std::optional<Variable> Environment::lookupVariable(const std::string& name) {
     auto it = variables.find(name);
     if (it != variables.end()) {
         return it->second;
@@ -26,7 +26,7 @@ std::optional<Variable> RootEnvironment::lookupVariable(const std::string& name)
     return std::nullopt;
 };
 
-std::optional<std::vector<Variable>> RootEnvironment::lookupVariables(const std::string& name) {
+std::optional<std::vector<Variable>> Environment::lookupVariables(const std::string& name) {
     std::vector<Variable> foundVariables;
     for (auto env = this; env != nullptr; env = env->parent.get()) {
         auto it = env->variables.find(name);
@@ -41,42 +41,42 @@ std::optional<std::vector<Variable>> RootEnvironment::lookupVariables(const std:
     }
 };
 
-void RootEnvironment::addChild(RootEnvironment* child) {
+void Environment::addChild(Environment* child) {
     children.push_back(child);
 }
 
-PackageEnvironment::PackageEnvironment(std::unique_ptr<RootEnvironment>& parent): RootEnvironment(parent) {}
+PackageEnvironment::PackageEnvironment(std::unique_ptr<Environment>& parent): Environment(parent) {}
 
 ClassEnvironment::ClassEnvironment(
-    std::unique_ptr<RootEnvironment>& parent,
+    std::unique_ptr<Environment>& parent,
     std::string& name,
-    RootEnvironment*& extends,
-    std::vector<RootEnvironment*>& implements
+    Environment*& extends,
+    std::vector<Environment*>& implements
 ) :
-    RootEnvironment(parent),
+    Environment(parent),
     name{std::move(name)},
     extends{std::move(extends)},
     implements{std::move(implements)}
 {}
 
 InterfaceEnvironment::InterfaceEnvironment(
-    std::unique_ptr<RootEnvironment>& parent,
+    std::unique_ptr<Environment>& parent,
     std::string& name,
-    std::vector<RootEnvironment*>& extends
+    std::vector<Environment*>& extends
 ) :
-    RootEnvironment(parent),
+    Environment(parent),
     name{std::move(name)},
     extends{std::move(extends)}
 {}
 
 MethodEnvironment::MethodEnvironment(
-    std::unique_ptr<RootEnvironment>& parent,
+    std::unique_ptr<Environment>& parent,
     std::string& name,
     std::string& return_type
 ) :
-    RootEnvironment(parent),
+    Environment(parent),
     name{std::move(name)},
     return_type{std::move(return_type)}
 {}
 
-BlockEnvironment::BlockEnvironment(std::unique_ptr<RootEnvironment>& parent): RootEnvironment(parent) {}
+BlockEnvironment::BlockEnvironment(std::unique_ptr<Environment>& parent): Environment(parent) {}
