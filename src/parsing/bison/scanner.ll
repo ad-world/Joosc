@@ -88,13 +88,13 @@ short   return yy::parser::make_SHORT(loc);
 void      return yy::parser::make_VOID(loc);
 
 %{ // Literals %}
-true                return yy::parser::make_TRUE(loc);
-false               return yy::parser::make_FALSE(loc);
+true                return yy::parser::make_TRUE(true, loc);
+false               return yy::parser::make_FALSE(false, loc);
 \"({Ascii}|{OctalEscape}|{Escape}|\\\"|\')*\"  {
     return yy::parser::make_STRING_LITERAL(loc);
 }
-{Integer}           return yy::parser::make_INTEGER(loc);
-null                return yy::parser::make_NULL_TOKEN(loc);
+{Integer}           return yy::parser::make_INTEGER(stol(yytext), loc);
+null                return yy::parser::make_NULL_TOKEN(nullptr, loc);
 \'({Ascii}|{OctalEscape}|{Escape}|\\\"|\\\')\'         {
     return yy::parser::make_CHAR_LITERAL(loc);
 }
