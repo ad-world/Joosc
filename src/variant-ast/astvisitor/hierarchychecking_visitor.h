@@ -5,6 +5,9 @@
 #include "environment_class.h"
 
 class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
+    RootEnvironment root_env;
+    
+
     using DefaultSkipVisitor<void>::operator();
     void operator()(ClassDeclaration &node) override {
         // A class must not extend an interface. (JLS 8.1.3)
@@ -62,4 +65,7 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
 
         this->visit_children(node);
     }
+
+    public:
+        HierarchyCheckingVisitor(RootEnvironment root_env) : root_env{std::move(root_env)} {};
 };
