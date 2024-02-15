@@ -292,6 +292,9 @@
 #define NEW_OBJ(type, constructor...) \
     make_unique<type>(constructor)
 
+#define NEW_VARIANT_OBJ(outer_type, inner_type, inner_constructor...) \
+    make_unique<outer_type>(in_place_type<inner_type>, inner_constructor)
+
 #define MAKE_OBJ(me, type, constructor...) \
     me = make_unique<type>(constructor)
 
@@ -313,8 +316,8 @@
 #define MAKE_PREFIX_OBJ(me, op, expr) \
     MAKE_EXPRESSION_OBJ(me, PrefixExpression, ( expr ), ( op ))
 
-#define MAKE_CASTEXPR_OBJ(me, type, expr, isarray) \
-    MAKE_EXPRESSION_OBJ(me, CastExpression, NEW_OBJ(Type, move(type), isarray), (expr))
+#define MAKE_CASTEXPR_OBJ(me, innertype, type, expr, isarray) \
+    MAKE_EXPRESSION_OBJ(me, CastExpression, NEW_OBJ(Type, make_unique<NonArrayType>((NonArrayType) type), isarray), expr)
 
 #define MAKE_QIEXPR_OBJ(me, qid) \
     MAKE_EXPRESSION_OBJ(me, QualifiedIdentifier, (*qid))
@@ -526,15 +529,15 @@ UnaryExpressionNotPlusMinus:
 
 CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
-        { MAKE_CASTEXPR_OBJ($$, $2, move($4), false); }
+        { MAKE_CASTEXPR_OBJ($$, PrimitiveType, $2, move($4), false); }
     | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
-        { MAKE_CASTEXPR_OBJ($$, get<QualifiedIdentifier>(*$2), $4, false); } // throws err if Expression not QI
+        { MAKE_CASTEXPR_OBJ($$, QualifiedIdentifier, get<QualifiedIdentifier>(*$2), move($4), false); } // throws err if Expression not QI
     | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
-        { MAKE_CASTEXPR_OBJ($$, $2, $6, true); }
+        { MAKE_CASTEXPR_OBJ($$, QualifiedIdentifier, *$2, move($6), true); }
     | OPENING_PAREN
         PrimitiveType OPENING_BRACKET CLOSING_BRACKET // ReferenceType as PrimitiveType with array
             CLOSING_PAREN UnaryExpressionNotPlusMinus
-        { MAKE_CASTEXPR_OBJ($$, $2, $6, true); }
+        { MAKE_CASTEXPR_OBJ($$, PrimitiveType, $2, move($6), true); }
     ;
 
 PrimaryOrExpressionName:
