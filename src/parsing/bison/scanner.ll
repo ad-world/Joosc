@@ -55,12 +55,14 @@ for     return yy::parser::make_FOR(loc);
 else    return yy::parser::make_ELSE(loc);
 extends     return yy::parser::make_EXTENDS(loc);
 new     return yy::parser::make_NEW(loc);
-public    return yy::parser::make_PUBLIC(loc);
-protected     return yy::parser::make_PROTECTED(loc);
-static    return yy::parser::make_STATIC(loc);
-abstract      return yy::parser::make_ABSTRACT(loc);
-native    return yy::parser::make_NATIVE(loc);
-final     return yy::parser::make_FINAL(loc);
+
+public    return yy::parser::make_PUBLIC(Modifier::PUBLIC, loc);
+protected     return yy::parser::make_PROTECTED(Modifier::PROTECTED, loc);
+static    return yy::parser::make_STATIC(Modifier::STATIC, loc);
+abstract      return yy::parser::make_ABSTRACT(Modifier::ABSTRACT, loc);
+native    return yy::parser::make_NATIVE(Modifier::NATIVE, loc);
+final     return yy::parser::make_FINAL(Modifier::FINAL, loc);
+
 implements    return yy::parser::make_IMPLEMENTS(loc);
 this      return yy::parser::make_THIS(loc);
 import      return yy::parser::make_IMPORT(loc);
@@ -124,7 +126,7 @@ instanceof      return yy::parser::make_INSTANCEOF(loc);
 "!"     return yy::parser::make_NEGATE(PrefixOperator::NEGATE, loc);
 
 {Whitespace}+      loc.step ();
-{Identifier}       return yy::parser::make_IDENTIFIER(loc);
+{Identifier}       return yy::parser::make_IDENTIFIER(yytext, loc);
 
 .          {
              throw yy::parser::syntax_error
