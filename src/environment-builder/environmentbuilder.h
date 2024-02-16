@@ -3,82 +3,45 @@
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
 #include "exceptions/semanticerror.h"
 
-class Environment;
-
 // Visit each declaration in an AST, and build an environment for it.
 // Ignore non declaration nodes and pass through them.
 class EnvironmentBuilder : public DefaultSkipVisitor<void> {
-    Environment* program_environment;
-    Environment* current_environment;
+    using TypeDeclaration = std::variant<class ClassDeclarationObject*, class InterfaceDeclarationObject*>;
 
-    // Traverses from the current environment to the fully qualified package
-    // environment if it exists, or adds it to the current environment.
-    //
-    // Throws SemanticError if name conflicts with a class.
-    void lookupOrCreatePackage(QualifiedIdentifier &package_name) {
-        // for (auto &identifier : package_name.identifiers) {
-        //     current_environment = current_environment->localLookupOrCreate(identifier.name, Environment::PACKAGE);
-        // }
-    }
+    class SymbolTable *program_symbol_table;
 
-    void operator()(CompilationUnit &node) override {
-        if (node.package_declaration) {
-            // Walk down symbol table and set current symbol table to table of package
-            lookupOrCreatePackage(*node.package_declaration);
-        } else {
-            // CompilationUnit is using the default package
-        }
-        visit_children(node);
-    }
+    // Used to track current declaration new declarations are inside, so e.g. methods can be added to symbol
+    // table for current class
+    class PackageDeclarationObject *current_package;
+    TypeDeclaration current_type;
+    class MethodDeclarationObject *current_method;
 
-    void operator()(ClassDeclaration &node) override {
-        // Insert class in current package table
-
-        // Set current table to class's method table
-        for (auto &method_dec : node.method_declarations) {
-            this->operator()(method_dec);
-        }
-        // Set current table to class's field table
-        for (auto &field_dec : node.field_declarations) {
-            this->operator()(field_dec);
-        }
-
-        // Set current table back to current package table
-    }
-
-    void operator()(InterfaceDeclaration &node) override {
-        visit_children(node);
-    }
-
-    void operator()(FieldDeclaration &node) override {
-        visit_children(node);
-    }
-
-    void operator()(MethodDeclaration &node) override {
-        visit_children(node);
-    }
-
-    void operator()(FormalParameter &node) override {
-        visit_children(node);
-    }
-
-    void operator()(Block &node) override {
-        // Open scope
-        visit_children(node);
-        // Close scope
-    }
-
-    void operator()(LocalVariableDeclaration &node) override {
-        visit_children(node);
+    // Link AstNode with its declaration object, giving both pointers to each other
+    template <typename AstNodeType, typename SymbolTableEntryType> 
+    void linkDeclaration(AstNodeType &node, SymbolTableEntryType &env) {
+        node.environment = &env;
+        env.ast_reference = &node;
     }
 
   public:
-    // env: Evironment to populate with pass of AST
-    EnvironmentBuilder(Environment *env) 
-        : program_environment{env}, current_environment{env} {};
+    // Should never be called on their own in this class, but must be public for std::visit
+    using DefaultSkipVisitor<void>::operator();
 
-    void visit(AstNodeVariant &node) {
-        std::visit(*this, node);
-        current_environment = nullptr;
-    }
+    void operator()(CompilationUnit &node) override;
+
+    void operator()(ClassDeclaration &node) override;
+
+    void operator()(InterfaceDeclaration &node) override;
+
+    void operator()(FieldDeclaration &node) override;
+
+    void operator()(MethodDeclaration &node) override;
+
+    void operator()(FormalParameter &node) override;
+
+    void operator()(LocalVariableDeclaration &node) override;
+
+    EnvironmentBuilder(SymbolTable *program_symbol_table);
+
+    void visit(AstNodeVariant &node) override;
 };
