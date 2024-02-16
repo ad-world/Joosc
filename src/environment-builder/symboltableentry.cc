@@ -29,7 +29,7 @@ FieldDeclarationObject::FieldDeclarationObject(const std::string &identifier) :
     identifier{identifier} {}
 
 MethodDeclarationObject::MethodDeclarationObject(const std::string &identifier) :
-    identifier{identifier}, parameters{init_table()}, local_variables{init_table()} {}
+    identifier{identifier}, parameters{init_table()} {}
 
 FormalParameterDeclarationObject::FormalParameterDeclarationObject(const std::string &identifier) :
     identifier{identifier} {}

@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 #include <variant>
+#include "scope.h"
 
 class SymbolTable;
 
@@ -70,7 +71,7 @@ struct MethodDeclarationObject {
     class MethodDeclaration* ast_reference;
 
     std::unique_ptr<SymbolTable> parameters; // SymbolTable mapping to FormalParameterDeclarationObject
-    std::unique_ptr<SymbolTable> local_variables; // SymbolTable mapping to LocalVariableDeclarationObject
+    LocalVariableScopeManager scope_manager; // Manager of SymbolTables mapping to LocalVariableDeclarationObject
 
     // Fields resolved at type linking stage
     SymbolTableEntry *return_type;

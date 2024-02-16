@@ -118,12 +118,19 @@ void EnvironmentBuilder::operator()(MethodDeclaration &node) {
     visit_children(node);
 }
 
+void EnvironmentBuilder::operator()(Block &node) {
+    node.scope_id = current_method->scope_manager.createNewScope();
+    current_method->scope_manager.openScope(node.scope_id);
+    visit_children(node);
+    current_method->scope_manager.closeScope(node.scope_id);
+}
+
 void EnvironmentBuilder::operator()(FormalParameter &node) {
     std::string parameter_name = node.parameter_name->name;
 
     // Local variables and parameters must not conflict with each other
     if (current_method->parameters->lookupSymbol(parameter_name) || 
-            current_method->local_variables->lookupSymbol(parameter_name)) {
+            current_method->scope_manager.lookupVariable(parameter_name)) {
                 throw SemanticError("Parameter name " + parameter_name + " redeclared");
             }
     
@@ -140,13 +147,16 @@ void EnvironmentBuilder::operator()(LocalVariableDeclaration &node) {
 
     // Local variables and parameters must not conflict with each other
     if (current_method->parameters->lookupSymbol(local_variable_name) || 
-            current_method->local_variables->lookupSymbol(local_variable_name)) {
+            current_method->scope_manager.lookupVariable(local_variable_name)) {
                 throw SemanticError("Local variable name " + local_variable_name + " redeclared");
             }
     
     // Add parameter to method
     auto var_env 
-        = this->current_method->local_variables->addSymbol<LocalVariableDeclarationObject>(local_variable_name);
+        = this->current_method->scope_manager.addVariable(local_variable_name);
+    if (!var_env) {
+        
+    }
 
     linkDeclaration(node, *var_env);
     visit_children(node);
