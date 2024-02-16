@@ -37,7 +37,8 @@ def get_all_files(directory):
     file_list = []
     for root, _, files in os.walk(directory):
         for file in files:
-            file_list.append(os.path.join(root, file))
+            if file.endswith('.java'):
+                file_list.append(os.path.join(root, file))
     return file_list
 
 def valid_invalid_prog_test():
@@ -47,8 +48,11 @@ def valid_invalid_prog_test():
     """
     integration_dir = os.path.dirname(__file__)
     programs_dir = os.path.join(integration_dir, "../../programs")
+    stdlib_dir = os.path.join(integration_dir, "../../stdlib")
     valid_programs = os.path.join(programs_dir, "valid")
     invalid_programs = os.path.join(programs_dir, "invalid")
+
+    stdlib_files = get_all_files(stdlib_dir)
 
     joosc_executable = resolve_path(programs_dir, "../../joosc")
 
@@ -90,7 +94,7 @@ def valid_invalid_prog_test():
 
                             else:
                                 with open(integration_log_file, "w") as outfile:
-                                    result = subprocess.run([joosc_executable, *files], stderr=outfile)
+                                    result = subprocess.run([joosc_executable, *files, *stdlib_files], stderr=outfile)
 
                                 if result.returncode == expected_code:
                                     if print_pass_cases: # Test passed, display output if -f is not set
