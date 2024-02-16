@@ -62,12 +62,12 @@ TypeDeclaration resolveQualifiedIdentifier(QualifiedIdentifier *node, PackageDec
     SymbolTableEntry *interface_entry = interfaces.get()->lookupUniqueSymbol(type_name);
     if(class_entry != nullptr) {
         // result = classes.get()->lookupUniqueSymbol(type_name); // If the class is in the environment, set the result to the class
-        if(holds_alternative<ClassDeclarationObject*>(*class_entry)) {
-            result = std::get<ClassDeclarationObject*>(*class_entry);
+        if(holds_alternative<ClassDeclarationObject>(*class_entry)) {
+            result = &std::get<ClassDeclarationObject>(*class_entry);
         }
     } else if(interface_entry != nullptr) {
         if(holds_alternative<InterfaceDeclarationObject>(*interface_entry)) {
-            result = std::get<InterfaceDeclarationObject*>(*interface_entry); // If the interface is in the environment, set the result to the interface
+            result = &std::get<InterfaceDeclarationObject>(*interface_entry); // If the interface is in the environment, set the result to the interface
         }
     }
 
@@ -224,12 +224,12 @@ TypeDeclaration resolveIdentifier(Identifier *node, PackageDeclarationObject &en
     SymbolTableEntry *interface_entry = interfaces.get()->lookupUniqueSymbol(type_name);
     if(class_entry != nullptr) {
         // result = classes.get()->lookupUniqueSymbol(type_name); // If the class is in the environment, set the result to the class
-        if(holds_alternative<ClassDeclarationObject*>(*class_entry)) {
-            result = std::get<ClassDeclarationObject*>(*class_entry);
+        if(holds_alternative<ClassDeclarationObject>(*class_entry)) {
+            result = &std::get<ClassDeclarationObject>(*class_entry);
         }
     } else if(interface_entry != nullptr) {
         if(holds_alternative<InterfaceDeclarationObject>(*interface_entry)) {
-            result = std::get<InterfaceDeclarationObject*>(*interface_entry); // If the interface is in the environment, set the result to the interface
+            result = &std::get<InterfaceDeclarationObject>(*interface_entry); // If the interface is in the environment, set the result to the interface
         }
     }
 
