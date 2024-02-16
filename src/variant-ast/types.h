@@ -1,8 +1,9 @@
 #pragma once
 
-#include "environment-builder/environmentbuilder.h"
 #include <variant>
 #include <memory>
+#include "type-decl/type_declaration.h"
+
 
 enum PrimitiveType {
     BYTE, SHORT, INT, CHAR, BOOLEAN, VOID

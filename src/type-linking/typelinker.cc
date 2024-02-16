@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include <set>
 #include <iostream>
-#include <symboltable.h>
+#include <environment-builder/symboltable.h>
 #include <variant>
 
 using namespace std;
@@ -53,7 +53,7 @@ set<string> getPackageTypes(string package_name, vector<CompilationUnit> asts) {
 TypeDeclaration resolveQualifiedIdentifier(QualifiedIdentifier *node, PackageDeclarationObject &env, string package_name, vector<CompilationUnit> asts) {
     string type_name = node->getQualifiedName(); // The qualified name of the type
 
-    TypeDeclaration result = monostate{};
+    TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
     // get classes and interfaces from default package
     auto &classes = env.classes; // Get classes in env
     auto &interfaces = env.interfaces; // Get interfaces in env
@@ -78,7 +78,7 @@ TypeDeclaration resolveQualifiedIdentifier(QualifiedIdentifier *node, PackageDec
     // } 
 
     // We did not find the type in the environment. Return nullptr. Class doesn't exist, we can't resolve it.
-    if(holds_alternative<monostate>(result)) return monostate{};    
+    if(holds_alternative<monostate>(result)) return static_cast<ClassDeclarationObject*>(nullptr);    
 
     set<string> package_types = getPackageTypes(package_name, asts); // Get the types in the package
 
@@ -142,7 +142,7 @@ TypeDeclaration checkCurrentPackage(vector<CompilationUnit> asts, string package
         }
     }
 
-    return monostate{};
+    return static_cast<ClassDeclarationObject*>(nullptr);
 }
 
 TypeDeclaration checkSingleImports(vector<QualifiedIdentifier> single_type_import_declarations, vector<CompilationUnit> asts, string type_name) {
@@ -165,13 +165,13 @@ TypeDeclaration checkSingleImports(vector<QualifiedIdentifier> single_type_impor
         }
     }
 
-    return monostate{};
+    return static_cast<ClassDeclarationObject*>(nullptr);
 }
 
 TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import_on_demand_declarations,  vector<CompilationUnit> asts, string type_name, CompilationUnit *current_ast) {
    // Check on demand imports for current idenfitier
     bool found = false;
-    TypeDeclaration result = monostate{};
+    TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
 
     // For each on demand import
     for (auto &import: type_import_on_demand_declarations) {
@@ -214,7 +214,7 @@ TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import
 
 // This function resolves simple type names "Class c;" or "Interface i;
 TypeDeclaration resolveIdentifier(Identifier *node, PackageDeclarationObject &env, string package_name, vector<CompilationUnit> asts, CompilationUnit *current_ast) {
-    TypeDeclaration result = monostate{};
+    TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
     string type_name = node->name; // string of the type name
     
     auto &classes = env.classes; // Get classes in env
@@ -266,7 +266,7 @@ TypeLinker::TypeLinker(PackageDeclarationObject &env, CompilationUnit *ast_root,
 void TypeLinker::operator()(Type &node) {
     if(holds_alternative<QualifiedIdentifier>(*node.non_array_type)) { // Check that the non_array_type is a QualifiedIdentifier
         QualifiedIdentifier id = *get<unique_ptr<QualifiedIdentifier>>(*node.non_array_type); 
-        TypeDeclaration result = monostate{};
+        TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
         if (id.identifiers.size() > 1) {
             result = resolveQualifiedIdentifier(&id, root_env, package_name, asts); // Resolve the qualified identifier
         } else {

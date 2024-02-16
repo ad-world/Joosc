@@ -1,10 +1,10 @@
 #pragma once
 
-#include "defaultskipvisitor.h"
+#include "variant-ast/astvisitor/defaultskipvisitor.h"
 #include "exceptions/semanticerror.h"
 #include "variant-ast/astnode.h"
-#include "symboltableentry.h"
-#include "environmentbuilder.h"
+#include "environment-builder/symboltableentry.h"
+#include "environment-builder/environmentbuilder.h"
 #include <vector>
 #include <string>
 #include <variant>

@@ -2,8 +2,9 @@
 
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
 #include "exceptions/semanticerror.h"
+#include "type-decl/type_declaration.h"
 
-typedef std::variant<class ClassDeclarationObject*, class InterfaceDeclarationObject*> TypeDeclaration;
+
 // Visit each declaration in an AST, and build an environment for it.
 // Ignore non declaration nodes and pass through them.
 class EnvironmentBuilder : public DefaultSkipVisitor<void> {
