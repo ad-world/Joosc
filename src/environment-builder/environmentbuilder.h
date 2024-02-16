@@ -35,6 +35,8 @@ class EnvironmentBuilder : public DefaultSkipVisitor<void> {
 
     void operator()(MethodDeclaration &node) override;
 
+    void operator()(Block &node) override;
+
     void operator()(FormalParameter &node) override;
 
     void operator()(LocalVariableDeclaration &node) override;

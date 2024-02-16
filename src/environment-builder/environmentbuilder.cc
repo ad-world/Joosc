@@ -114,8 +114,19 @@ void EnvironmentBuilder::operator()(MethodDeclaration &node) {
         this->current_method = cls_or_int_obj->methods->template addSymbol<MethodDeclarationObject>(method_name);
     }, current_type);
 
+    this->current_method->scope_manager.closeAllScopes();
+
     linkDeclaration(node, *this->current_method);
     visit_children(node);
+
+    this->current_method->scope_manager.closeAllScopes();
+}
+
+void EnvironmentBuilder::operator()(Block &node) {
+    node.scope_id = current_method->scope_manager.createNewScope();
+    current_method->scope_manager.openScope(node.scope_id);
+    visit_children(node);
+    current_method->scope_manager.closeScope(node.scope_id);
 }
 
 void EnvironmentBuilder::operator()(FormalParameter &node) {
@@ -123,7 +134,7 @@ void EnvironmentBuilder::operator()(FormalParameter &node) {
 
     // Local variables and parameters must not conflict with each other
     if (current_method->parameters->lookupSymbol(parameter_name) || 
-            current_method->local_variables->lookupSymbol(parameter_name)) {
+            current_method->scope_manager.lookupVariable(parameter_name)) {
                 throw SemanticError("Parameter name " + parameter_name + " redeclared");
             }
     
@@ -140,13 +151,13 @@ void EnvironmentBuilder::operator()(LocalVariableDeclaration &node) {
 
     // Local variables and parameters must not conflict with each other
     if (current_method->parameters->lookupSymbol(local_variable_name) || 
-            current_method->local_variables->lookupSymbol(local_variable_name)) {
+            current_method->scope_manager.lookupVariable(local_variable_name)) {
                 throw SemanticError("Local variable name " + local_variable_name + " redeclared");
             }
     
     // Add parameter to method
     auto var_env 
-        = this->current_method->local_variables->addSymbol<LocalVariableDeclarationObject>(local_variable_name);
+        = this->current_method->scope_manager.addVariable(local_variable_name);
 
     linkDeclaration(node, *var_env);
     visit_children(node);
