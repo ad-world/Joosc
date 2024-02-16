@@ -15,7 +15,7 @@ class AstWeeder {
 public: 
     int weed(AstNodeVariant& root, string fileName);
 
-    AstWeeder();
+    AstWeeder() {}
 
 private:
     vector<string> violations;

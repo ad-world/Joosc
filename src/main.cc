@@ -4,7 +4,7 @@
 #include "parsing/bison/location.hh"
 #include "parsing/bison/driver.h"
 #include "parsing/bison/parser.hh"
-#include "weeder/weeder.h"
+#include "weeder/astweeder.h"
 using namespace std;
 
 enum return_codes {
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
     int rc = 0;
     Driver drv;
-    Weeder weeder;
+    AstWeeder weeder;
 
     try {
         drv.trace_scanning = trace_scanning;
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     int parsing_rc = ((rc == 0) ? PARSING_SUCCESS : PARSING_FAILURE);
 
     // TODO: pass this function the root of the parse tree / AST
-    parsing_rc = weeder.weed(drv.root, infile);
+    parsing_rc = weeder.weed(*drv.root, infile);
 
     if ( output_rc ) { cerr << "RETURN CODE " << parsing_rc << endl; }
     return parsing_rc;

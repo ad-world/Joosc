@@ -1,7 +1,7 @@
 project(joosc)
 cmake_minimum_required(VERSION 3.16)
 
-# add_compile_options("-g")
+add_compile_options("-g")
 
 # Graphing
 option(GRAPHVIZ "Generate a graph of the parse tree" OFF)
