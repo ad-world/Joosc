@@ -278,7 +278,7 @@
 
 /******************** END NONTERMINALS ********************/
 
-%parse-param {CompilationUnit **root}
+%parse-param {AstNodeVariant **root}
 
 %{
 #define MAKE_EMPTY(me)      ; // me = new AstNodeVariant((symbol_kind::S_YYEMPTY))
@@ -370,8 +370,9 @@
 
 Start:
     CompilationUnit {
-        *root = new CompilationUnit(nullptr, vector<QualifiedIdentifier>(), vector<QualifiedIdentifier>(), vector<ClassDeclaration>(), vector<InterfaceDeclaration>());
-        **root = (move(*$1));
+        auto test = new CompilationUnit(nullptr, vector<QualifiedIdentifier>(), vector<QualifiedIdentifier>(), vector<ClassDeclaration>(), vector<InterfaceDeclaration>());
+        *test = (move(*$1));
+        *root = (AstNodeVariant*) test;
     }
 
 // root = AstNodeVariant**
@@ -473,7 +474,7 @@ Assignment:
 
 LeftHandSide:
     QualifiedIdentifier // ExpressionName
-        { MAKE_QIEXPR_OBJ($$, move($1)); }
+        { MAKE_OBJ($$, Expression, (Expression) move(*$1)); }
     | FieldAccess { COPY_OBJ($$, $1); }
     | ArrayAccess { COPY_OBJ($$, $1); }
     ;
@@ -532,7 +533,15 @@ MultiplicativeExpression:
     ;
 
 UnaryExpression:
-    MINUS UnaryExpression { MAKE_PREFIX_OBJ($$, PrefixOperator::MINUS, move($2)); }
+    MINUS UnaryExpression {
+            if (    // handle negative literals
+                holds_alternative<Literal>(*$2) &&
+                holds_alternative<int64_t>(get<Literal>(*$2))
+            ) {
+                get<int64_t>(get<Literal>(*$2)) *= -1;
+            }
+            MAKE_PREFIX_OBJ($$, PrefixOperator::MINUS, move($2));
+        }
     | UnaryExpressionNotPlusMinus { COPY_OBJ($$, $1); }
     ;
 
@@ -546,7 +555,15 @@ CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
         { MAKE_CASTEXPR_OBJ($$, move($2), move($4)); }
     | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
-        { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(get<QualifiedIdentifier>(move(*$2)), false), move($4)); } // throws err if Expression not QI
+        {
+            if ( holds_alternative<QualifiedThis>(*$2) ) {
+                cout << "WOOOOOOW" << endl;
+            } else {
+                cout << $2->index() << endl;
+                cout << "NOOOOOOOO" << endl;
+            }
+            MAKE_CASTEXPR_OBJ($$, NEW_TYPE(get<QualifiedIdentifier>(move(*$2)), false), move($4));
+        } // throws err if Expression not QI
     | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
         { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(move(*$2), true), move($6)); }
     | OPENING_PAREN
@@ -558,7 +575,7 @@ CastExpression: // Done this way to avoid conflicts
 PrimaryOrExpressionName:
     Primary { COPY_OBJ($$, $1); }
     | QualifiedIdentifier // ExpressionName
-        { MAKE_QIEXPR_OBJ($$, move($1)); }
+        { MAKE_OBJ($$, Expression, (Expression) move(*$1)); }
     ;
 
 Primary:
@@ -583,9 +600,9 @@ ClassInstanceCreationExpression:
 
 PrimaryNoNewArray:
     Literal { MAKE_EXPRESSION_OBJ($$, Literal, move(*$1)); }
-    | THIS { MAKE_EXPRESSION_OBJ($$, QualifiedThis, EMPTY); }
-    | QualifiedIdentifier DOT THIS // ClassName     TODO: REMOVE
-        { MAKE_EXPRESSION_OBJ($$, QualifiedThis, move($1)); }
+    // | THIS { MAKE_EXPRESSION_OBJ($$, QualifiedThis, EMPTY); }
+    // | QualifiedIdentifier DOT THIS // ClassName     TODO: REMOVE
+        // { MAKE_EXPRESSION_OBJ($$, QualifiedThis, move($1)); }
     | OPENING_PAREN Expression CLOSING_PAREN
         { COPY_OBJ($$, $2); }
     | ClassInstanceCreationExpression { COPY_OBJ($$, $1); }
