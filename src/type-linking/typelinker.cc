@@ -9,7 +9,7 @@ using namespace std;
 
 
 // This function gets the types in the package
-set<string> getPackageTypes(string package_name, vector<CompilationUnit> asts) {
+set<string> getPackageTypes(string package_name, vector<CompilationUnit> &asts) {
     set<string> types;
     
     // For each ast in the asts
@@ -60,7 +60,7 @@ bool checkNullTypeDeclaration(TypeDeclaration decl) {
 
 
 // This function resolves qualified type names "package.Class c;" or "package.Interface i;
-TypeDeclaration resolveQualifiedIdentifier(QualifiedIdentifier *node, PackageDeclarationObject &env, string package_name, vector<CompilationUnit> asts) {
+TypeDeclaration resolveQualifiedIdentifier(QualifiedIdentifier *node, PackageDeclarationObject &env, string package_name, vector<CompilationUnit> &asts) {
     string type_name = node->getQualifiedName(); // The qualified name of the type
 
     TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
@@ -133,7 +133,7 @@ PackageDeclarationObject *getPackageObjectFromDeclaration(QualifiedIdentifier* p
     return result;
 } 
 
-TypeDeclaration checkCurrentPackage(vector<CompilationUnit> asts, string package_name, string type_name) {
+TypeDeclaration checkCurrentPackage(vector<CompilationUnit> &asts, string package_name, string type_name) {
     // Checking current package
     for (auto &ast: asts) {
         // If the package name is the same as the current package
@@ -155,7 +155,7 @@ TypeDeclaration checkCurrentPackage(vector<CompilationUnit> asts, string package
     return static_cast<ClassDeclarationObject*>(nullptr);
 }
 
-TypeDeclaration checkSingleImports(vector<QualifiedIdentifier> single_type_import_declarations, vector<CompilationUnit> asts, string type_name) {
+TypeDeclaration checkSingleImports(vector<QualifiedIdentifier> single_type_import_declarations, vector<CompilationUnit> &asts, string type_name) {
     for (auto &import: single_type_import_declarations) {
         string import_prefix = import.getPackagePrefix(); // get package prefix
         // java.lang.String -> package name = java.lang
@@ -178,7 +178,7 @@ TypeDeclaration checkSingleImports(vector<QualifiedIdentifier> single_type_impor
     return static_cast<ClassDeclarationObject*>(nullptr);
 }
 
-TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import_on_demand_declarations,  vector<CompilationUnit> asts, string type_name, CompilationUnit *current_ast) {
+TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import_on_demand_declarations,  vector<CompilationUnit> &asts, string type_name, CompilationUnit *current_ast) {
    // Check on demand imports for current idenfitier
     bool found = false;
     TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
@@ -223,7 +223,7 @@ TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import
 }
 
 // This function resolves simple type names "Class c;" or "Interface i;
-TypeDeclaration resolveIdentifier(Identifier *node, PackageDeclarationObject &env, string package_name, vector<CompilationUnit> asts, CompilationUnit *current_ast) {
+TypeDeclaration resolveIdentifier(Identifier *node, PackageDeclarationObject &env, string package_name, vector<CompilationUnit> &asts, CompilationUnit *current_ast) {
     TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
     string type_name = node->name; // string of the type name
     
