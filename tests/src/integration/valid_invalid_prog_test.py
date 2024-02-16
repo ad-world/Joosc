@@ -13,6 +13,19 @@ class colors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+# Function to load environment variables from .env file
+def load_env_file(filename=".env"):
+    with open(filename, "r") as f:
+        for line in f:
+            # Skip comments and empty lines
+            if line.strip() and not line.strip().startswith("#"):
+                key, value = line.strip().split("=")
+                os.environ[key] = value
+
+# Load variables from .env file
+load_env_file()
+
+
 def resolve_path(path1, path2):
     return str(Path(os.path.join(path1, path2)).resolve())
 
@@ -40,34 +53,39 @@ def valid_invalid_prog_test():
         print_pass_cases = False
         failures = False
 
+    # get current assignments from env
+    currently_testing = os.getenv('TESTING_COVERAGE', '') # todo: replace with environment variable
+    split_assignments = currently_testing.split(',')
+
     for assignment in os.listdir(programs_dir):
-        assignment_path = os.path.join(programs_dir, assignment)
-        local_valid_tests = os.path.join(assignment_path, "local/valid")
-        local_invalid_tests = os.path.join(assignment_path, "local/invalid")
+        if assignment in split_assignments:
+            assignment_path = os.path.join(programs_dir, assignment)
+            local_valid_tests = os.path.join(assignment_path, "local/valid")
+            local_invalid_tests = os.path.join(assignment_path, "local/invalid")
 
-        marmo_valid_tests = os.path.join(assignment_path, "marmoset/valid")
-        marmo_invalid_tests = os.path.join(assignment_path, "marmoset/invalid")
+            marmo_valid_tests = os.path.join(assignment_path, "marmoset/valid")
+            marmo_invalid_tests = os.path.join(assignment_path, "marmoset/invalid")
 
-        for directory, expected_code in ((local_valid_tests, 0), (local_invalid_tests, 42), (marmo_valid_tests, 0), (marmo_invalid_tests, 42)):
-            header_bold_underline = colors.HEADER + colors.BOLD + colors.UNDERLINE
-            print(f"\n{header_bold_underline}Testing all programs in {resolve_path(directory, '')}:{colors.ENDC}")
+            for directory, expected_code in ((local_valid_tests, 0), (local_invalid_tests, 42), (marmo_valid_tests, 0), (marmo_invalid_tests, 42)):
+                header_bold_underline = colors.HEADER + colors.BOLD + colors.UNDERLINE
+                print(f"\n{header_bold_underline}Testing all programs in {resolve_path(directory, '')}:{colors.ENDC}")
 
-            if os.path.exists(directory):
-                for program in os.listdir(directory):
-                    program_path = resolve_path(directory, program)
+                if os.path.exists(directory):
+                    for program in os.listdir(directory):
+                        program_path = resolve_path(directory, program)
 
-                    if os.path.exists(program_path):
-                        with open(integration_log_file, "w") as outfile:
-                            result = subprocess.run([joosc_executable, program_path], stderr=outfile)
+                        if os.path.exists(program_path):
+                            with open(integration_log_file, "w") as outfile:
+                                result = subprocess.run([joosc_executable, program_path], stderr=outfile)
 
-                        if result.returncode == expected_code:
-                            if print_pass_cases: # Test passed, display output if -f is not set
-                                print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
+                            if result.returncode == expected_code:
+                                if print_pass_cases: # Test passed, display output if -f is not set
+                                    print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
+                                    print_file_contents(integration_log_file)
+                            else:
+                                print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
                                 print_file_contents(integration_log_file)
-                        else:
-                            print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
-                            print_file_contents(integration_log_file)
-                            failures = True
+                                failures = True
         
     if failures:
         print(f"{colors.FAIL}\nERROR: Tests had failures.{colors.ENDC}")

@@ -30,7 +30,8 @@ Identifier      {Letter}({Digit}|{Letter}|_)*
 Integer         0|[1-9]{Digit}*
 Float           {Digit}+"."{Digit}+
 Ascii           [ -!]|[#-&]|[(-~]
-OctalEscape     \\[0-3]?[0-7]?[0-7]?
+OctalEscapeString   \\[0-7]{1,3}
+OctalEscapeChar     \\([0-3][0-7]{0,2}|[0-7][0-7]?)
 Escape          \\[tbnrf\\]
 InvalidEscape \\[^0-7tbnrf\"'\\]
 
@@ -99,19 +100,22 @@ void      return yy::parser::make_VOID(PrimitiveType::VOID, loc);
 %{ // Literals %}
 true                return yy::parser::make_TRUE(true, loc);
 false               return yy::parser::make_FALSE(false, loc);
-\"({Ascii}|{OctalEscape}|{Escape}|\\\"|\')*\"  {
+\"({OctalEscapeString}|{Escape}|\\\"|\')*{InvalidEscape}.*\" {
+    throw yy::parser::syntax_error(loc, "invalid escape:"+ std::string(yytext));
+}
+\"({Ascii}|{OctalEscapeString}|{Escape}|\\\"|\')*\"  {
     return yy::parser::make_STRING_LITERAL(((std::string) yytext).substr(1, ((std::string) yytext).size() - 2), loc);
 }
 {Integer}           return yy::parser::make_INTEGER(stol(yytext), loc);
 null                return yy::parser::make_NULL_TOKEN(nullptr, loc);
-\'({Ascii}|{OctalEscape}|{Escape}|\\\"|\\\')\'         {
+\'({Ascii}|{OctalEscapeChar}|{Escape}|\\\"|\\\')\'         {
     return yy::parser::make_CHAR_LITERAL(((std::string) yytext).substr(1, ((std::string) yytext).size() - 2), loc);
 }
 
 %{ // Comments %}
 "//".*     { }
 [/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]      { }
-\/\*\*.*\*\/    { } 
+[/][*][*][^/][^*]*[*]+([^*/][^*]*[*]+)*[/] {}
 
 %{ // Operators %}
 "||"    return yy::parser::make_BOOLEAN_OR(InfixOperator::BOOLEAN_OR, loc);

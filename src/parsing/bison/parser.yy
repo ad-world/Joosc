@@ -163,8 +163,8 @@
 %nterm <unique_ptr<InterfaceDeclaration>> InterfaceDeclaration
     %nterm <vector<Modifier>> InterfaceModifiersOpt
     // Identifier
-    %nterm <unique_ptr<QualifiedIdentifier>> ExtendsInterfaceOpt
-        %nterm <unique_ptr<QualifiedIdentifier>> ExtendsInterface
+    %nterm <vector<QualifiedIdentifier>> ExtendsInterfacesOpt
+        %nterm <vector<QualifiedIdentifier>> ExtendsInterfaces
             %nterm <unique_ptr<QualifiedIdentifier>> InterfaceType
     %nterm <vector<MethodDeclaration>> InterfaceBody
         %nterm <vector<MethodDeclaration>> InterfaceMemberDeclarationsOpt
@@ -678,7 +678,7 @@ ReferenceType: // Done this way to disallow multidimensional arrays
 /*---------------------- Interfaces ----------------------*/
 
 InterfaceDeclaration:
-    InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfaceOpt InterfaceBody
+    InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfacesOpt InterfaceBody
         { MAKE_OBJ($$, InterfaceDeclaration, move($1), move($3), move($4), move($5)); }
     ;
 
@@ -705,13 +705,14 @@ InterfaceType:
     QualifiedIdentifier { COPY_OBJ($$, $1); }
     ;
 
-ExtendsInterface:
-    EXTENDS InterfaceType { COPY_OBJ($$, $2); }
+ExtendsInterfaces:
+    EXTENDS InterfaceType { MAKE_STACK_OBJ($$, vector<QualifiedIdentifier>); MAKE_VECTOR($$, $$, *$2); }
+    | ExtendsInterfaces COMMA InterfaceType { MAKE_VECTOR($$, $1, *$3); }
     ;
 
-ExtendsInterfaceOpt:
-    /* Empty - optional interface */ { $$ = EMPTY; }
-    | ExtendsInterface { COPY_OBJ($$, $1); }
+ExtendsInterfacesOpt:
+    /* Empty - optional interface */ { MAKE_STACK_OBJ($$, vector<QualifiedIdentifier>); }
+    | ExtendsInterfaces { COPY_OBJ($$, $1); }
     ;
 
 InterfaceBody:
@@ -739,9 +740,9 @@ InterfaceMemberDeclaration: // Nested types and interface constants not supporte
 
 AbstractMethodDeclaration:
     AbstractMethodModifiersOpt Type MethodDeclarator SEMI_COLON
-        { MAKE_OBJ($$, MethodDeclaration, $1, move($2), move($3.first), move($3.second), EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, move($1), move($2), move($3.first), move($3.second), EMPTY); }
     | AbstractMethodModifiersOpt VOID MethodDeclarator SEMI_COLON
-        { MAKE_OBJ($$, MethodDeclaration, $1, NEW_TYPE($2, false), move($3.first), move($3.second), EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, move($1), NEW_TYPE($2, false), move($3.first), move($3.second), EMPTY); }
     ;
 
 AbstractMethodModifiersOpt:
@@ -767,9 +768,9 @@ AbstractMethodModifiers:
 // weeder: must contain public?
 ClassDeclaration:
     CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_OBJ($$, ClassDeclaration, EMPTY_VECTOR(Modifier), move($2), move($3), $4, move($5.first), move($5.second)); }
+        { MAKE_OBJ($$, ClassDeclaration, EMPTY_VECTOR(Modifier), move($2), move($3), move($4), move($5.first), move($5.second)); }
     | Modifiers CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_OBJ($$, ClassDeclaration, $1, move($3), move($4), $5, move($6.first), move($6.second)); }
+        { MAKE_OBJ($$, ClassDeclaration, move($1), move($3), move($4), move($5), move($6.first), move($6.second)); }
     ;
 
 /* Class interfaces */
@@ -830,7 +831,7 @@ ClassBody:
 // Only one variable declaration is allowed at a time
 FieldDeclaration:
     Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, EMPTY_VECTOR(Modifier), move($1), move($2)); }
-    | Modifiers Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, $1, move($2), move($3)); }
+    | Modifiers Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, move($1), move($2), move($3)); }
     ;
 
 VariableInitializer:
@@ -847,11 +848,11 @@ MethodDeclaration: // One of these must be constructor
 // weeder: see A1 specs for weeding modifiers
 MethodHeader:
     Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), move($1), move($2.first), move($2.second), EMPTY); }
-    | Modifiers Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, move($2), move($3.first), move($3.second), EMPTY); }
+    | Modifiers Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, move($1), move($2), move($3.first), move($3.second), EMPTY); }
     | VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), NEW_TYPE($1, false), move($2.first), move($2.second), EMPTY); }
-    | Modifiers VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, $1, NEW_TYPE($2, false), move($3.first), move($3.second), EMPTY); }
+    | Modifiers VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, move($1), NEW_TYPE($2, false), move($3.first), move($3.second), EMPTY); }
     | Modifiers MethodDeclarator // Represents constructor, todo weeding: reject if identifier is not class name
-        { MAKE_OBJ($$, MethodDeclaration, $1, EMPTY, move($2.first), move($2.second), EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, move($1), EMPTY, move($2.first), move($2.second), EMPTY); }
     ;
 
 MethodDeclarator:

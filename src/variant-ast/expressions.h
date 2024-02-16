@@ -57,8 +57,12 @@ struct Assignment: public AstNodeCommon {
     std::unique_ptr<Expression> assigned_from;
 
     Assignment(
-        std::unique_ptr<Expression> assigned_to,
-        std::unique_ptr<Expression> assigned_from
+        std::unique_ptr<Expression>& assigned_to,
+        std::unique_ptr<Expression>& assigned_from
+    );
+    Assignment(
+        std::unique_ptr<Expression>&& assigned_to,
+        std::unique_ptr<Expression>&& assigned_from
     );
 };
 
@@ -66,7 +70,10 @@ struct QualifiedThis: public AstNodeCommon {
     std::unique_ptr<QualifiedIdentifier> qualified_this;
 
     QualifiedThis(
-        std::unique_ptr<QualifiedIdentifier> qt
+        std::unique_ptr<QualifiedIdentifier>& qt
+    );
+    QualifiedThis(
+        std::unique_ptr<QualifiedIdentifier>&& qt
     );
 };
 
@@ -75,8 +82,12 @@ struct ArrayCreationExpression: public AstNodeCommon {
     std::unique_ptr<Expression> expression;
 
     ArrayCreationExpression(
-        std::unique_ptr<Type> type,
-        std::unique_ptr<Expression> expr
+        std::unique_ptr<Type>& type,
+        std::unique_ptr<Expression>& expr
+    );
+    ArrayCreationExpression(
+        std::unique_ptr<Type>&& type,
+        std::unique_ptr<Expression>&& expr
     );
 };
 
@@ -85,8 +96,12 @@ struct ClassInstanceCreationExpression: public AstNodeCommon {
     std::vector<Expression> arguments;
 
     ClassInstanceCreationExpression(
-        std::unique_ptr<QualifiedIdentifier> class_name,
-        std::vector<Expression> arguments
+        std::unique_ptr<QualifiedIdentifier>& class_name,
+        std::vector<Expression>& arguments
+    );
+    ClassInstanceCreationExpression(
+        std::unique_ptr<QualifiedIdentifier>&& class_name,
+        std::vector<Expression>&& arguments
     );
 };
 
@@ -95,8 +110,12 @@ struct FieldAccess: public AstNodeCommon {
     std::unique_ptr<Identifier> identifier;
 
     FieldAccess(
-        std::unique_ptr<Expression> expression,
-        std::unique_ptr<Identifier> identifier
+        std::unique_ptr<Expression>& expression,
+        std::unique_ptr<Identifier>& identifier
+    );
+    FieldAccess(
+        std::unique_ptr<Expression>&& expression,
+        std::unique_ptr<Identifier>&& identifier
     );
 };
 
@@ -105,8 +124,12 @@ struct ArrayAccess: public AstNodeCommon {
     std::unique_ptr<Expression> selector;
 
     ArrayAccess(
-        std::unique_ptr<Expression> array,
-        std::unique_ptr<Expression> selector  
+        std::unique_ptr<Expression>& array,
+        std::unique_ptr<Expression>& selector  
+    );
+    ArrayAccess(
+        std::unique_ptr<Expression>&& array,
+        std::unique_ptr<Expression>&& selector  
     );
 };
 
@@ -115,8 +138,12 @@ struct MethodInvocation: public AstNodeCommon {
     std::vector<Expression> arguments;
 
     MethodInvocation(
-        std::unique_ptr<Expression> method_name,
-        std::vector<Expression> arguments
+        std::unique_ptr<Expression>& method_name,
+        std::vector<Expression>& arguments
+    );
+    MethodInvocation(
+        std::unique_ptr<Expression>&& method_name,
+        std::vector<Expression>&& arguments
     );
 };
 
@@ -126,8 +153,13 @@ struct InfixExpression {
     InfixOperator op;
 
     InfixExpression(
-        std::unique_ptr<Expression> ex1,
-        std::unique_ptr<Expression> ex2,
+        std::unique_ptr<Expression>& ex1,
+        std::unique_ptr<Expression>& ex2,
+        InfixOperator op
+    );
+    InfixExpression(
+        std::unique_ptr<Expression>&& ex1,
+        std::unique_ptr<Expression>&& ex2,
         InfixOperator op
     );
 };
@@ -137,7 +169,11 @@ struct PrefixExpression {
     PrefixOperator op;
 
     PrefixExpression(
-        std::unique_ptr<Expression> expression,
+        std::unique_ptr<Expression>& expression,
+        PrefixOperator op
+    );
+    PrefixExpression(
+        std::unique_ptr<Expression>&& expression,
         PrefixOperator op
     );
 };
@@ -147,8 +183,12 @@ struct CastExpression {
     std::unique_ptr<Expression> expression;
 
     CastExpression(
-        std::unique_ptr<Type> type,
-        std::unique_ptr<Expression> expression
+        std::unique_ptr<Type>& type,
+        std::unique_ptr<Expression>& expression
+    );
+    CastExpression(
+        std::unique_ptr<Type>&& type,
+        std::unique_ptr<Expression>&& expression
     );
 };
 
@@ -157,11 +197,11 @@ struct InstanceOfExpression {
     std::unique_ptr<Type> type;
 
     InstanceOfExpression(
-        std::unique_ptr<Expression> expression,
-        std::unique_ptr<Type> type
-    );
-    InstanceOfExpression(
         std::unique_ptr<Expression>& expression,
         std::unique_ptr<Type>& type
+    );
+    InstanceOfExpression(
+        std::unique_ptr<Expression>&& expression,
+        std::unique_ptr<Type>&& type
     );
 };
