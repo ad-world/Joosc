@@ -5,7 +5,7 @@
 #include "environment_class.h"
 
 class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
-    RootEnvironment root_env;
+    Environment* root_env;
     
 
     using DefaultSkipVisitor<void>::operator();
@@ -67,5 +67,5 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
     }
 
     public:
-        HierarchyCheckingVisitor(RootEnvironment root_env) : root_env{std::move(root_env)} {};
+        HierarchyCheckingVisitor(Environment *root_env) : root_env{std::move(root_env)} {};
 };
