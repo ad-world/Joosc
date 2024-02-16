@@ -114,8 +114,12 @@ void EnvironmentBuilder::operator()(MethodDeclaration &node) {
         this->current_method = cls_or_int_obj->methods->template addSymbol<MethodDeclarationObject>(method_name);
     }, current_type);
 
+    this->current_method->scope_manager.closeAllScopes();
+
     linkDeclaration(node, *this->current_method);
     visit_children(node);
+
+    this->current_method->scope_manager.closeAllScopes();
 }
 
 void EnvironmentBuilder::operator()(Block &node) {
@@ -154,9 +158,6 @@ void EnvironmentBuilder::operator()(LocalVariableDeclaration &node) {
     // Add parameter to method
     auto var_env 
         = this->current_method->scope_manager.addVariable(local_variable_name);
-    if (!var_env) {
-        
-    }
 
     linkDeclaration(node, *var_env);
     visit_children(node);
