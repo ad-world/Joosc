@@ -5,6 +5,11 @@
 #include "parsing/bison/driver.h"
 #include "parsing/bison/parser.hh"
 #include "weeder/astweeder.h"
+#include "environment-builder/environmentbuilder.h"
+#include "environment-builder/symboltable.h"
+#include "exceptions/compilerdevelopmenterror.h"
+#include "exceptions/semanticerror.h"
+
 using namespace std;
 
 enum return_codes {
@@ -15,7 +20,7 @@ enum return_codes {
 struct cmd_error {};
 
 int main(int argc, char *argv[]) {
-    string infile;
+    vector<string> infiles;
     bool trace_parsing = false,
         trace_scanning = false,
         output_rc = false;
@@ -39,12 +44,19 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        switch ( argc - optind ) {
-            case 1:
-                infile = argv[optind];
-                break;
-            default:
-                throw cmd_error();
+        // For each non-option argument, add to infiles
+        for (int i = optind; i < argc; i++) {
+            // Check that the file exists
+            if (access(argv[i], F_OK) == -1) {
+                cerr << "File " << argv[i] << " does not exist" << endl;
+                return PARSING_FAILURE;
+            }
+
+            infiles.push_back(argv[i]);
+        }
+
+        if (infiles.size() == 0) {
+            throw cmd_error();
         }
     } catch ( cmd_error & e ) {
         cerr << "Usage:\n\t"
@@ -61,21 +73,57 @@ int main(int argc, char *argv[]) {
     int rc = 0;
     Driver drv;
     AstWeeder weeder;
+    vector<AstNodeVariant*> asts;
 
+    // Lexing and parsing
     try {
         drv.trace_scanning = trace_scanning;
         drv.trace_parsing = trace_parsing;
-        rc = drv.parse(infile);
+
+        for (auto infile : infiles) {
+            rc = drv.parse(infile);
+
+            if(rc != 0) {
+                cerr << "Parsing failed" << endl;
+                if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
+
+                return PARSING_FAILURE;
+            }
+
+            rc = weeder.weed(*drv.root, infile);
+
+            if(rc != 0) {
+                cerr << "Parsing failed" << endl;
+                if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
+
+                return PARSING_FAILURE;
+            }
+
+            asts.push_back(drv.root);
+        }
+
     } catch ( ... ) {
         cerr << "Exception occured" << endl;
         return PARSING_FAILURE;
     }
 
-    int parsing_rc = ((rc == 0) ? PARSING_SUCCESS : PARSING_FAILURE);
+    // Environment building
+    PackageDeclarationObject default_package;
+    try {
+        for (auto &ast : asts) {
+            EnvironmentBuilder(default_package).visit(*ast);
+        }
+    } catch (const SemanticError &e) {
+        cerr << "SemanticError Exception occured: " << e.message << "\n";
+    } catch (const CompilerDevelopmentError &e) {
+        cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
+    } catch (...) {
+        cerr << "Unknown Exception occured\n";
+    }
 
-    // TODO: pass this function the root of the parse tree / AST
-    parsing_rc = weeder.weed(*drv.root, infile);
+    // Type linking
 
-    if ( output_rc ) { cerr << "RETURN CODE " << parsing_rc << endl; }
-    return parsing_rc;
+    if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
+
+    return rc;
 }
