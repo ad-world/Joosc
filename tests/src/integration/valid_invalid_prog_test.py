@@ -81,23 +81,25 @@ def valid_invalid_prog_test():
                     for program in os.listdir(directory):
                         program_path = resolve_path(directory, program)
 
-                        # if program is a directory, get all files from the direcory and add to a list
-                        if os.path.isdir(program):
-                            files = get_all_files(program)
-                            print(files)    
-                            
+                      
                         if os.path.exists(program_path):
-                            with open(integration_log_file, "w") as outfile:
-                                result = subprocess.run([joosc_executable, program_path], stderr=outfile)
+                            # if program is a directory, get all files from the direcory and add to a list
+                            files = [program_path]
+                            if os.path.isdir(program_path):
+                                files = get_all_files(program_path)
 
-                            if result.returncode == expected_code:
-                                if print_pass_cases: # Test passed, display output if -f is not set
-                                    print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
-                                    print_file_contents(integration_log_file)
                             else:
-                                print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
-                                print_file_contents(integration_log_file)
-                                failures = True
+                                with open(integration_log_file, "w") as outfile:
+                                    result = subprocess.run([joosc_executable, *files], stderr=outfile)
+
+                                if result.returncode == expected_code:
+                                    if print_pass_cases: # Test passed, display output if -f is not set
+                                        print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
+                                        print_file_contents(integration_log_file)
+                                else:
+                                    print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
+                                    print_file_contents(integration_log_file)
+                                    failures = True
         
     if failures:
         print(f"{colors.FAIL}\nERROR: Tests had failures.{colors.ENDC}")
