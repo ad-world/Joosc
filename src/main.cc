@@ -7,6 +7,8 @@
 #include "weeder/astweeder.h"
 #include "environment-builder/environmentbuilder.h"
 #include "environment-builder/symboltable.h"
+#include "exceptions/compilerdevelopmenterror.h"
+#include "exceptions/semanticerror.h"
 
 using namespace std;
 
@@ -73,6 +75,7 @@ int main(int argc, char *argv[]) {
     AstWeeder weeder;
     vector<AstNodeVariant*> asts;
 
+    // Lexing and parsing
     try {
         drv.trace_scanning = trace_scanning;
         drv.trace_parsing = trace_parsing;
@@ -104,8 +107,21 @@ int main(int argc, char *argv[]) {
         return PARSING_FAILURE;
     }
 
+    // Environment building
+    PackageDeclarationObject default_package;
+    try {
+        for (auto &ast : asts) {
+            EnvironmentBuilder(default_package).visit(*ast);
+        }
+    } catch (const SemanticError &e) {
+        cerr << "SemanticError Exception occured: " << e.message << "\n";
+    } catch (const CompilerDevelopmentError &e) {
+        cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
+    } catch (...) {
+        cerr << "Unknown Exception occured\n";
+    }
 
-    // TODO: pass this function the root of the parse tree / AST
+    // Type linking
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 

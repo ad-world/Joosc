@@ -8,8 +8,6 @@
 class EnvironmentBuilder : public DefaultSkipVisitor<void> {
     using TypeDeclaration = std::variant<class ClassDeclarationObject*, class InterfaceDeclarationObject*>;
 
-    class SymbolTable *program_symbol_table;
-
     // Used to track current declaration new declarations are inside, so e.g. methods can be added to symbol
     // table for current class
     class PackageDeclarationObject *current_package;
@@ -41,7 +39,7 @@ class EnvironmentBuilder : public DefaultSkipVisitor<void> {
 
     void operator()(LocalVariableDeclaration &node) override;
 
-    EnvironmentBuilder(SymbolTable *program_symbol_table);
+    EnvironmentBuilder(PackageDeclarationObject &default_package);
 
     void visit(AstNodeVariant &node) override;
 };

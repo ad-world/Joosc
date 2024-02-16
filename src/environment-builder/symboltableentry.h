@@ -25,9 +25,8 @@ struct PackageDeclarationObject {
     std::unique_ptr<SymbolTable> classes;
     std::unique_ptr<SymbolTable> interfaces;
 
-    PackageDeclarationObject(const std::string &identifier) : identifier{identifier} {}
-    PackageDeclarationObject(const std::string &identifier, bool is_default_package) : 
-        identifier{identifier}, is_default_package{is_default_package} {}
+    PackageDeclarationObject(const std::string &identifier);
+    PackageDeclarationObject();
 };
 
 struct ClassDeclarationObject {
@@ -41,7 +40,7 @@ struct ClassDeclarationObject {
     ClassDeclarationObject* extended;
     std::vector<InterfaceDeclarationObject*> implemented;
 
-    ClassDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    ClassDeclarationObject(const std::string &identifier);
 };
 
 struct InterfaceDeclarationObject {
@@ -53,7 +52,7 @@ struct InterfaceDeclarationObject {
     // Fields resolved at type linking stage
     std::vector<InterfaceDeclarationObject*> extended;
 
-    InterfaceDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    InterfaceDeclarationObject(const std::string &identifier);
 };
 
 struct FieldDeclarationObject {
@@ -63,7 +62,7 @@ struct FieldDeclarationObject {
     // Fields resolved at type linking stage
     SymbolTableEntry *type;
 
-    FieldDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    FieldDeclarationObject(const std::string &identifier);
 };
 
 struct MethodDeclarationObject {
@@ -76,7 +75,7 @@ struct MethodDeclarationObject {
     // Fields resolved at type linking stage
     SymbolTableEntry *return_type;
 
-    MethodDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    MethodDeclarationObject(const std::string &identifier);
 };
 
 struct FormalParameterDeclarationObject {
@@ -86,7 +85,7 @@ struct FormalParameterDeclarationObject {
     // Fields resolved at type linking stage
     SymbolTableEntry *type;
 
-    FormalParameterDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    FormalParameterDeclarationObject(const std::string &identifier);
 };
 
 struct LocalVariableDeclarationObject {
@@ -96,5 +95,5 @@ struct LocalVariableDeclarationObject {
     // Fields resolved at type linking stage
     SymbolTableEntry *type;
 
-    LocalVariableDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    LocalVariableDeclarationObject(const std::string &identifier);
 };

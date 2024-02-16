@@ -152,10 +152,9 @@ void EnvironmentBuilder::operator()(LocalVariableDeclaration &node) {
     visit_children(node);
 }
 
-EnvironmentBuilder::EnvironmentBuilder(SymbolTable *program_symbol_table) :
-    program_symbol_table{program_symbol_table}, 
-    current_package{nullptr}, 
-    current_type{(ClassDeclarationObject*) nullptr},
+EnvironmentBuilder::EnvironmentBuilder(PackageDeclarationObject &default_package) :
+    current_package{&default_package}, 
+    current_type{static_cast<ClassDeclarationObject*>(nullptr)},
     current_method{nullptr} 
 {}
 
