@@ -48,6 +48,16 @@ set<string> getPackageTypes(string package_name, vector<CompilationUnit> asts) {
     return types;
 }
 
+bool checkNullTypeDeclaration(TypeDeclaration decl) {
+    if(holds_alternative<ClassDeclarationObject*>(decl)) {
+        return get<ClassDeclarationObject*>(decl) == nullptr;
+    } else if(holds_alternative<InterfaceDeclarationObject*>(decl)) {
+       return get<InterfaceDeclarationObject*>(decl) == nullptr;
+    }
+
+    return true;
+}
+
 
 // This function resolves qualified type names "package.Class c;" or "package.Interface i;
 TypeDeclaration resolveQualifiedIdentifier(QualifiedIdentifier *node, PackageDeclarationObject &env, string package_name, vector<CompilationUnit> asts) {
@@ -78,7 +88,7 @@ TypeDeclaration resolveQualifiedIdentifier(QualifiedIdentifier *node, PackageDec
     // } 
 
     // We did not find the type in the environment. Return nullptr. Class doesn't exist, we can't resolve it.
-    if(holds_alternative<std::nullptr_t>(result)) return static_cast<ClassDeclarationObject*>(nullptr);    
+    if(checkNullTypeDeclaration(result)) return static_cast<ClassDeclarationObject*>(nullptr);    
 
     set<string> package_types = getPackageTypes(package_name, asts); // Get the types in the package
 
@@ -241,10 +251,10 @@ TypeDeclaration resolveIdentifier(Identifier *node, PackageDeclarationObject &en
 
     // Check single type imports for current identifier
     result = checkSingleImports(single_type_import_declarations, asts, type_name); // check single imports
-    if (holds_alternative<std::nullptr_t>(result)) return result;
+    if (checkNullTypeDeclaration(result)) return result;
 
     result = checkCurrentPackage(asts, package_name, type_name); // check current package
-    if (holds_alternative<std::nullptr_t>(result)) return result; 
+    if (checkNullTypeDeclaration(result)) return result; 
 
     result = checkTypeOnDemandImports(type_import_on_demand_declarations, asts, type_name, current_ast); // check on demand imports
   
@@ -274,7 +284,7 @@ void TypeLinker::operator()(Type &node) {
             result = resolveIdentifier(&one_id, root_env, package_name, asts, ast_root); // Resolve the simple identifier
         }
 
-        if(holds_alternative<std::nullptr_t>(result)) {
+        if(checkNullTypeDeclaration(result)) {
             throw SemanticError("Type " + id.getQualifiedName() + " not found"); // Type not found
         }
 
