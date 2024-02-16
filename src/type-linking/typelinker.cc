@@ -276,20 +276,15 @@ void TypeLinker::operator()(CompilationUnit &node) {
 TypeLinker::TypeLinker(
     PackageDeclarationObject &env, 
     CompilationUnit &ast_root, 
-    vector<AstNodeVariant*> &asts
+    vector<AstNodeVariant> &asts
 ) :       
-    root_env{env} 
+    root_env{env},
+    asts{asts}
 {
     ast_root = move(ast_root);
     package_name = "";
     if (ast_root.package_declaration.get() != nullptr) {
         package_name = ast_root.package_declaration.get()->getQualifiedName();
-    }
-
-    asts = {}; // Assign an empty vector of CompilationUnit to asts
-
-    for (auto root: asts) {
-        asts.push_back(std::move(root)); // Add the root to the asts
     }
 };
 
