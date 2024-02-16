@@ -41,12 +41,12 @@ def run_test(test_path):
     else:
         test_files = [test_path]
     
-        result = subprocess.run([joosc_executable, *test_files, *stdlib_files])
+    result = subprocess.run([joosc_executable, *test_files, *stdlib_files])
 
-        if result.returncode == 0:
-            print(f"{colors.OKGREEN}SUCCESS: Running joosc on {test_path} successfully returned {result.returncode}{colors.ENDC}")
-        else:
-            print(f"{colors.FAIL}FAIL: Running joosc on {test_path} returned {result.returncode}.{colors.ENDC}")
+    if result.returncode == 0:
+        print(f"{colors.OKGREEN}SUCCESS: Running joosc on {test_path} successfully returned {result.returncode}{colors.ENDC}")
+    else:
+        print(f"{colors.FAIL}FAIL: Running joosc on {test_path} returned {result.returncode}.{colors.ENDC}")
 
 
 
