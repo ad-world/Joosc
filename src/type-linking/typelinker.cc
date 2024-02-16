@@ -11,6 +11,8 @@ using namespace std;
 // This function gets the types in the package
 set<string> getPackageTypes(string package_name, vector<CompilationUnit> &asts) {
     set<string> types;
+
+    
     
     // For each ast in the asts
     for (auto &ast: asts) {
