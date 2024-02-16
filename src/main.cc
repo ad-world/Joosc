@@ -13,8 +13,8 @@
 using namespace std;
 
 enum return_codes {
-    PARSING_SUCCESS = 0,
-    PARSING_FAILURE = 42,
+    VALID_PROGRAM = 0,
+    INVALID_PROGRAM = 42,
 };
 
 struct cmd_error {};
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
             // Check that the file exists
             if (access(argv[i], F_OK) == -1) {
                 cerr << "File " << argv[i] << " does not exist" << endl;
-                return PARSING_FAILURE;
+                return INVALID_PROGRAM;
             }
 
             infiles.push_back(argv[i]);
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
                 cerr << "Parsing failed" << endl;
                 if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 
-                return PARSING_FAILURE;
+                return INVALID_PROGRAM;
             }
 
             rc = weeder.weed(*drv.root, infile);
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
                 cerr << "Parsing failed" << endl;
                 if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 
-                return PARSING_FAILURE;
+                return INVALID_PROGRAM;
             }
 
             asts.push_back(drv.root);
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
 
     } catch ( ... ) {
         cerr << "Exception occured" << endl;
-        return PARSING_FAILURE;
+        return INVALID_PROGRAM;
     }
 
     // Environment building
@@ -115,6 +115,7 @@ int main(int argc, char *argv[]) {
         }
     } catch (const SemanticError &e) {
         cerr << "SemanticError Exception occured: " << e.message << "\n";
+        return INVALID_PROGRAM;
     } catch (const CompilerDevelopmentError &e) {
         cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
     } catch (...) {
