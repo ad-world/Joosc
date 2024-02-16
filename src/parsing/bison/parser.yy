@@ -83,7 +83,7 @@
 %token <string> STRING_LITERAL
 %token <int64_t> INTEGER
 %token <nullptr_t> NULL_TOKEN
-%token <char> CHAR_LITERAL
+%token <string> CHAR_LITERAL
 
 // comments
 %token MULTI_LINE_COMMENT
@@ -591,7 +591,7 @@ Literal:
     INTEGER  { MAKE_LITERAL_OBJ($$, int64_t, $1); }
     | TRUE  { MAKE_LITERAL_OBJ($$, bool, $1); }
     | FALSE  { MAKE_LITERAL_OBJ($$, bool, $1); }
-    | CHAR_LITERAL  { MAKE_LITERAL_OBJ($$, char, $1); }
+    | CHAR_LITERAL  { MAKE_LITERAL_OBJ($$, string, $1); }
     | STRING_LITERAL  { MAKE_LITERAL_OBJ($$, string, $1); }
     | NULL_TOKEN   { MAKE_LITERAL_OBJ($$, nullptr_t, $1); }
     ;

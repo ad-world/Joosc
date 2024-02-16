@@ -32,11 +32,18 @@ Float           {Digit}+"."{Digit}+
 Ascii           [ -!]|[#-&]|[(-~]
 OctalEscape     \\[0-3]?[0-7]?[0-7]?
 Escape          \\[tbnrf\\]
+InvalidEscape \\[^0-7tbnrf\"'\\]
 
 %{
   // Code run each time a pattern is matched.
   # define YY_USER_ACTION  loc.columns (yyleng);
 %}
+
+%s str
+%s chr
+    string str_buf;
+    string char_buf;
+
 %%
 %{
   // A handy shortcut to the location held by the driver.
@@ -93,12 +100,12 @@ void      return yy::parser::make_VOID(PrimitiveType::VOID, loc);
 true                return yy::parser::make_TRUE(true, loc);
 false               return yy::parser::make_FALSE(false, loc);
 \"({Ascii}|{OctalEscape}|{Escape}|\\\"|\')*\"  {
-    return yy::parser::make_STRING_LITERAL(loc);
+    return yy::parser::make_STRING_LITERAL(yytext, loc);
 }
 {Integer}           return yy::parser::make_INTEGER(stol(yytext), loc);
 null                return yy::parser::make_NULL_TOKEN(nullptr, loc);
 \'({Ascii}|{OctalEscape}|{Escape}|\\\"|\\\')\'         {
-    return yy::parser::make_CHAR_LITERAL(loc);
+    return yy::parser::make_CHAR_LITERAL(yytext, loc);
 }
 
 %{ // Comments %}
