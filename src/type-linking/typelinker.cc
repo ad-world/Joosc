@@ -273,10 +273,16 @@ void TypeLinker::operator()(CompilationUnit &node) {
     this->visit_children(node);
 }
 
-TypeLinker::TypeLinker(PackageDeclarationObject &env, CompilationUnit &ast_root, vector<AstNodeVariant*> &asts) : root_env{env} {
+TypeLinker::TypeLinker(
+    PackageDeclarationObject &env, 
+    CompilationUnit &ast_root, 
+    vector<AstNodeVariant*> &asts
+) :       
+    root_env{env} 
+{
     ast_root = move(ast_root);
     package_name = "";
-    if(ast_root.package_declaration.get() != nullptr) {
+    if (ast_root.package_declaration.get() != nullptr) {
         package_name = ast_root.package_declaration.get()->getQualifiedName();
     }
 

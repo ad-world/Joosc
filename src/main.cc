@@ -91,7 +91,13 @@ int main(int argc, char *argv[]) {
                 return INVALID_PROGRAM;
             }
 
-            rc = weeder.weed(*drv.root, infile);
+            // AstNodeVariant& var = *drv.root;
+
+            // if (std::holds_alternative<CompilationUnit>(var)) {
+            //     std::cout << "Holds the alternative\n";
+            // }
+
+            // rc = weeder.weed(*drv.root, infile);
 
             if(rc != 0) {
                 cerr << "Parsing failed" << endl;
@@ -100,7 +106,8 @@ int main(int argc, char *argv[]) {
                 return INVALID_PROGRAM;
             }
 
-            asts.push_back(drv.root);
+            // asts.push_back(drv.root);
+            break;
         }
 
     } catch ( ... ) {
@@ -109,32 +116,33 @@ int main(int argc, char *argv[]) {
     }
 
     // Environment building
-    PackageDeclarationObject default_package;
-    try {
-        for (auto &ast : asts) {
-            EnvironmentBuilder(default_package).visit(*ast);
-        }
-    } catch (const SemanticError &e) {
-        cerr << "SemanticError Exception occured: " << e.message << "\n";
-        return INVALID_PROGRAM;
-    } catch (const CompilerDevelopmentError &e) {
-        cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
-    } catch (...) {
-        cerr << "Unknown Exception occured\n";
-    }
+    // PackageDeclarationObject default_package;
+    // try {
+    //     for (auto &ast : asts) {
+    //         EnvironmentBuilder(default_package).visit(*ast);
+    //         break;
+    //     }
+    // } catch (const SemanticError &e) {
+    //     cerr << "SemanticError Exception occured: " << e.message << "\n";
+    //     return INVALID_PROGRAM;
+    // } catch (const CompilerDevelopmentError &e) {
+    //     cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
+    // } catch (...) {
+    //     cerr << "Unknown Exception occured\n";
+    // }
 
 
-    // Type linking
-    try {
-        for (auto ast : asts) {
-            CompilationUnit &current_ast = get<CompilationUnit>(*ast);
-            TypeLinker(default_package, current_ast, asts).visit(*ast);
-        } 
-    } catch (const SemanticError &e) {
-        cerr << "SemanticError Exception occured: " << e.message << "\n";
-    } catch (...) {
-        cerr << "Unknown Exception occured\n";
-    }
+    // // Type linking
+    // try {
+    //     for (auto ast : asts) {
+    //         CompilationUnit &current_ast = get<CompilationUnit>(*ast);
+    //         TypeLinker(default_package, current_ast, asts).visit(*ast);
+    //     } 
+    // } catch (const SemanticError &e) {
+    //     cerr << "SemanticError Exception occured: " << e.message << "\n";
+    // } catch (...) {
+    //     cerr << "Unknown Exception occured\n";
+    // }
 
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
