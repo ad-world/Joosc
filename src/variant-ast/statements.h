@@ -96,16 +96,14 @@ struct ForStatement: public AstNodeCommon {
 };
 
 struct Block: public AstNodeCommon {
-    std::vector<LocalVariableDeclaration> variable_declarations;
     std::vector<Statement> statements;
     Environment *environment;
 
     Block(
-        std::vector<LocalVariableDeclaration>& variable_declarations, 
         std::vector<Statement>& statements
     );
     Block(
-        std::vector<LocalVariableDeclaration>&& variable_declarations, 
+        std::vector<LocalVariableDeclaration>&& useless,
         std::vector<Statement>&& statements
     );
 };

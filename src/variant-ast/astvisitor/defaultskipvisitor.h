@@ -45,4 +45,5 @@ class DefaultSkipVisitor : public AstVisitor<ReturnType> {
     virtual void operator()(FieldAccess &node) override { this->visit_children(node); }
     virtual void operator()(ArrayAccess &node) override { this->visit_children(node); }
     virtual void operator()(MethodInvocation &node) override { this->visit_children(node); }
+    virtual void operator()(InstanceOfExpression &node) override { this->visit_children(node); }
 };

@@ -78,8 +78,8 @@ void AstVisitor<ReturnType>::visit_children(InterfaceDeclaration &node) {
     if (node.interface_name) {
         this->operator()(*node.interface_name);
     }
-    if (node.extends_class) {
-        this->operator()(*node.extends_class);
+    for (auto &child : node.extends_class) {
+        this->operator()(child);
     }
     for (auto &child : node.method_declarations) {
         this->operator()(child);
@@ -154,9 +154,6 @@ void AstVisitor<ReturnType>::visit_children(LocalVariableDeclaration &node) {
 
 template <typename ReturnType>
 void AstVisitor<ReturnType>::visit_children(Block &node) {
-    for (auto &child : node.variable_declarations) {
-        this->operator()(child);
-    }
     for (auto &child : node.statements) {
         this->operator()(child);
     }
@@ -316,6 +313,16 @@ void AstVisitor<ReturnType>::visit_children(MethodInvocation &node) {
     }
     for (auto &child : node.arguments) {
         this->operator()(child);
+    }
+}
+
+template <typename ReturnType>
+void AstVisitor<ReturnType>::visit_children(InstanceOfExpression &node) {
+    if (node.expression) {
+        this->operator()(*node.expression);
+    }
+    if (node.type) {
+        this->operator()(*node.type);
     }
 }
 

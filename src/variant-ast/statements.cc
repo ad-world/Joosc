@@ -43,10 +43,8 @@ ForStatement::ForStatement(
 {}
 
 Block::Block(
-    std::vector<LocalVariableDeclaration>& variable_declarations, 
     std::vector<Statement>& statements
 ) :
-    variable_declarations{std::move(variable_declarations)}, 
     statements{std::move(statements)}
 {}
 
@@ -105,10 +103,9 @@ ForStatement::ForStatement(
 {}
 
 Block::Block(
-    std::vector<LocalVariableDeclaration>&& variable_declarations, 
+    std::vector<LocalVariableDeclaration>&& useless,
     std::vector<Statement>&& statements
 ) :
-    variable_declarations{std::move(variable_declarations)}, 
     statements{std::move(statements)}
 {}
 

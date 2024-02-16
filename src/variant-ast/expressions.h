@@ -24,8 +24,7 @@ enum class InfixOperator {
     LESS_THAN,
     GREATER_THAN,
     LESS_THAN_EQUAL,
-    GREATER_THAN_EQUAL,
-    INSTANCEOF
+    GREATER_THAN_EQUAL
 };
 
 enum class PrefixOperator {
@@ -47,7 +46,8 @@ typedef std::variant<
     struct ArrayAccess,
     struct QualifiedThis,
     struct ArrayCreationExpression,
-    struct QualifiedIdentifier
+    struct QualifiedIdentifier,
+    struct InstanceOfExpression
 > Expression;
 
 struct Assignment: public AstNodeCommon {
@@ -188,5 +188,19 @@ struct CastExpression {
     CastExpression(
         std::unique_ptr<Type>&& type,
         std::unique_ptr<Expression>&& expression
+    );
+};
+
+struct InstanceOfExpression {
+    std::unique_ptr<Expression> expression;
+    std::unique_ptr<Type> type;
+
+    InstanceOfExpression(
+        std::unique_ptr<Expression>& expression,
+        std::unique_ptr<Type>& type
+    );
+    InstanceOfExpression(
+        std::unique_ptr<Expression>&& expression,
+        std::unique_ptr<Type>&& type
     );
 };
