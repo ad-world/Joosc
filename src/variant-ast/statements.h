@@ -34,8 +34,8 @@ struct IfThenStatement: public AstNodeCommon {
     std::unique_ptr<Statement> then_clause;
 
     IfThenStatement(
-        std::unique_ptr<Expression>& if_clause,
-        std::unique_ptr<Statement>& then_clause
+        std::unique_ptr<Expression> if_clause,
+        std::unique_ptr<Statement> then_clause
     );
 };
 
@@ -45,9 +45,9 @@ struct IfThenElseStatement: public AstNodeCommon {
     std::unique_ptr<Statement> else_clause;
 
     IfThenElseStatement(
-        std::unique_ptr<Expression>& if_clause,
-        std::unique_ptr<Statement>& then_clause,
-        std::unique_ptr<Statement>& else_clause
+        std::unique_ptr<Expression> if_clause,
+        std::unique_ptr<Statement> then_clause,
+        std::unique_ptr<Statement> else_clause
     );
 };
 
@@ -56,8 +56,8 @@ struct WhileStatement: public AstNodeCommon {
     std::unique_ptr<Statement> body_statement;
 
     WhileStatement(
-        std::unique_ptr<Expression>& condition_expression,
-        std::unique_ptr<Statement>& body_statement
+        std::unique_ptr<Expression> condition_expression,
+        std::unique_ptr<Statement> body_statement
     );
 };
 
@@ -68,10 +68,10 @@ struct ForStatement: public AstNodeCommon {
     std::unique_ptr<Statement> body_statement;
 
     ForStatement(
-        std::unique_ptr<Statement>& init_statement,
-        std::unique_ptr<Expression>& condition_expression,
-        std::unique_ptr<Statement>& update_statement,
-        std::unique_ptr<Statement>& body_statement
+        std::unique_ptr<Statement> init_statement,
+        std::unique_ptr<Expression> condition_expression,
+        std::unique_ptr<Statement> update_statement,
+        std::unique_ptr<Statement> body_statement
     );
 };
 
@@ -89,7 +89,7 @@ struct ReturnStatement: public AstNodeCommon {
     std::unique_ptr<Expression> return_expression;
 
     ReturnStatement(
-        std::unique_ptr<Expression>& return_expression
+        std::unique_ptr<Expression> return_expression
     );
 };
 

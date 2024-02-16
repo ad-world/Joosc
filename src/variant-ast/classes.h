@@ -46,8 +46,8 @@ struct FormalParameter {
     std::unique_ptr<Identifier> parameter_name;
 
     FormalParameter(
-        std::unique_ptr<Type>& type, 
-        std::unique_ptr<Identifier>& parameter_name
+        std::unique_ptr<Type> type, 
+        std::unique_ptr<Identifier> parameter_name
     );
 };
 
@@ -92,9 +92,9 @@ struct InterfaceDeclaration: public AstNodeCommon {
     std::vector<MethodDeclaration> method_declarations; // interface method declarations
 
     InterfaceDeclaration(
-        std::vector<Modifier>& modifiers,
-        std::unique_ptr<Identifier>& interface_name,
-        std::unique_ptr<QualifiedIdentifier>& extends_class,
-        std::vector<MethodDeclaration>& method_declarations
+        std::vector<Modifier> modifiers,
+        std::unique_ptr<Identifier> interface_name,
+        std::unique_ptr<QualifiedIdentifier> extends_class,
+        std::vector<MethodDeclaration> method_declarations
     );
 };

@@ -278,7 +278,7 @@
 
 /******************** END NONTERMINALS ********************/
 
-%parse-param {AstNodeVariant **root}
+%parse-param {CompilationUnit **root}
 
 %{
 #define MAKE_EMPTY(me)      ; // me = new AstNodeVariant((symbol_kind::S_YYEMPTY))
@@ -317,7 +317,7 @@
     MAKE_VARIANT_OBJ(me, Statement, inner_type, inner_constructor)
 
 #define MAKE_INFIX_OBJ(me, expr1, op, expr2) \
-    MAKE_EXPRESSION_OBJ(me, InfixExpression, ( expr1 ), ( expr2 ), ( op ))
+    MAKE_EXPRESSION_OBJ(me, InfixExpression, move( expr1 ), move( expr2 ), ( op ))
 
 #define MAKE_PREFIX_OBJ(me, op, expr) \
     MAKE_EXPRESSION_OBJ(me, PrefixExpression, ( expr ), ( op ))
@@ -368,7 +368,13 @@
 /*---------------------- Packages ----------------------*/
 
 Start:
-     CompilationUnit { /* *root = $1; */ }
+    CompilationUnit {
+        CompilationUnit test = move(*$1);
+        **root = move(test);
+    }
+
+// root = AstNodeVariant**
+// $1 = unique_ptr<CompilationUnit>
 
 CompilationUnit:
     PackageDeclaration ImportDeclarations TypeDeclarations
@@ -508,7 +514,7 @@ RelationalExpression:
     | RelationalExpression GREATER_THAN_EQUAL AdditiveExpression
         { MAKE_INFIX_OBJ($$, $1, $2, $3); }
     | RelationalExpression INSTANCEOF ReferenceType // ReferenceType
-        { MAKE_EXPRESSION_OBJ($$, InstanceOfExpression, $1, $3); }
+        { MAKE_EXPRESSION_OBJ($$, InstanceOfExpression, move($1), move($3)); }
     ;
 
 AdditiveExpression:
@@ -572,7 +578,7 @@ ArrayCreationExpression:
 
 ClassInstanceCreationExpression:
     NEW QualifiedIdentifier OPENING_PAREN ArgumentListOpt CLOSING_PAREN
-        { MAKE_EXPRESSION_OBJ($$, ClassInstanceCreationExpression, $2, $4); }
+        { MAKE_EXPRESSION_OBJ($$, ClassInstanceCreationExpression, move($2), move($4)); }
 
 PrimaryNoNewArray:
     Literal { MAKE_EXPRESSION_OBJ($$, Literal, *$1); }
@@ -672,7 +678,7 @@ ReferenceType: // Done this way to disallow multidimensional arrays
 
 InterfaceDeclaration:
     InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfaceOpt InterfaceBody
-        { MAKE_OBJ($$, InterfaceDeclaration, $1, $3, $4, $5); }
+        { MAKE_OBJ($$, InterfaceDeclaration, move($1), move($3), move($4), move($5)); }
     ;
 
 Modifiers:
@@ -875,7 +881,7 @@ AbstractMethodModifier:
     ;
 
 FormalParameter:
-	Type VariableDeclaratorId { MAKE_OBJ($$, FormalParameter, $1, $2); }
+	Type VariableDeclaratorId { MAKE_OBJ($$, FormalParameter, move($1), move($2)); }
     ;
 
 VariableDeclaratorId:
@@ -925,33 +931,33 @@ EmptyStatement:
 	;
 
 IfThenStatement:
-	IF ParExpression Statement { MAKE_STATEMENT_OBJ($$, IfThenStatement, $2, $3); }
+	IF ParExpression Statement { MAKE_STATEMENT_OBJ($$, IfThenStatement, move($2), move($3)); }
     ;
 
 IfThenElseStatement:
-	IF ParExpression StatementNoShortIf ELSE Statement { MAKE_STATEMENT_OBJ($$, IfThenElseStatement, $2, $3, $5); }
+	IF ParExpression StatementNoShortIf ELSE Statement { MAKE_STATEMENT_OBJ($$, IfThenElseStatement, move($2), move($3), move($5)); }
     ;
 
 IfThenElseStatementNoShortIf:
-	IF ParExpression StatementNoShortIf ELSE StatementNoShortIf { MAKE_STATEMENT_OBJ($$, IfThenElseStatement, $2, $3, $5); }
+	IF ParExpression StatementNoShortIf ELSE StatementNoShortIf { MAKE_STATEMENT_OBJ($$, IfThenElseStatement, move($2), move($3), move($5)); }
     ;
 
 WhileStatement:
-	  WHILE ParExpression Statement { MAKE_STATEMENT_OBJ($$, WhileStatement, $2, $3); }
+	  WHILE ParExpression Statement { MAKE_STATEMENT_OBJ($$, WhileStatement, move($2), move($3)); }
     ;
 
 WhileStatementNoShortIf:
-	  WHILE ParExpression StatementNoShortIf { MAKE_STATEMENT_OBJ($$, WhileStatement, $2, $3); }
+	  WHILE ParExpression StatementNoShortIf { MAKE_STATEMENT_OBJ($$, WhileStatement, move($2), move($3)); }
     ;
 
 ForStatement:
 	  FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
-          { MAKE_STATEMENT_OBJ($$, ForStatement, $3, $5, $7, $9); }
+          { MAKE_STATEMENT_OBJ($$, ForStatement, move($3), move($5), move($7), move($9)); }
     ;
 
 ForStatementNoShortIf:
 	  FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN StatementNoShortIf
-          { MAKE_STATEMENT_OBJ($$, ForStatement, $3, $5, $7, $9); }
+          { MAKE_STATEMENT_OBJ($$, ForStatement, move($3), move($5), move($7), move($9)); }
     ;
 		
 ForInitOpt:
@@ -975,7 +981,7 @@ ExpressionOpt:
     ;
 
 ReturnStatement:
-    RETURN ExpressionOpt SEMI_COLON { MAKE_STATEMENT_OBJ($$, ReturnStatement, $2); }
+    RETURN ExpressionOpt SEMI_COLON { MAKE_STATEMENT_OBJ($$, ReturnStatement, move($2)); }
     ;
 
 ParExpression:

@@ -21,10 +21,10 @@ ClassDeclaration::ClassDeclaration(
 {}
 
 InterfaceDeclaration::InterfaceDeclaration(
-    std::vector<Modifier>& modifiers,
-    std::unique_ptr<Identifier>& interface_name,
-    std::unique_ptr<QualifiedIdentifier>& extends_class,
-    std::vector<MethodDeclaration>& method_declarations
+    std::vector<Modifier> modifiers,
+    std::unique_ptr<Identifier> interface_name,
+    std::unique_ptr<QualifiedIdentifier> extends_class,
+    std::vector<MethodDeclaration> method_declarations
 ) :
     modifiers{std::move(modifiers)},
     interface_name{std::move(interface_name)},
@@ -65,8 +65,8 @@ VariableDeclarator::VariableDeclarator(
 {}
 
 FormalParameter::FormalParameter(
-    std::unique_ptr<Type>& type, 
-    std::unique_ptr<Identifier>& parameter_name
+    std::unique_ptr<Type> type, 
+    std::unique_ptr<Identifier> parameter_name
 ) :
     type{std::move(type)}, 
     parameter_name{std::move(parameter_name)} 

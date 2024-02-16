@@ -7,7 +7,7 @@
 struct Identifier: public AstNodeCommon {
     std::string name; // Identifier name
 
-    Identifier(std::string& name) : name(std::move(name)) {}
+    Identifier(std::string name) : name(std::move(name)) {}
 };
 
 struct QualifiedIdentifier: public AstNodeCommon {

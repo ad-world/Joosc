@@ -25,8 +25,8 @@ ArrayCreationExpression::ArrayCreationExpression(
 {}
 
 ClassInstanceCreationExpression::ClassInstanceCreationExpression(
-    std::unique_ptr<QualifiedIdentifier>& class_name,
-    std::vector<Expression>& arguments
+    std::unique_ptr<QualifiedIdentifier> class_name,
+    std::vector<Expression> arguments
 ): 
     class_name{std::move(class_name)},
     arguments{std::move(arguments)} 
@@ -57,8 +57,8 @@ MethodInvocation::MethodInvocation(
 {}
 
 InfixExpression::InfixExpression(
-    std::unique_ptr<Expression>& ex1,
-    std::unique_ptr<Expression>& ex2,
+    std::unique_ptr<Expression> ex1,
+    std::unique_ptr<Expression> ex2,
     InfixOperator op
 ) :
     expression1{std::move(ex1)},
@@ -83,16 +83,16 @@ CastExpression::CastExpression(
 {}
 
 InstanceOfExpression::InstanceOfExpression(
-    std::unique_ptr<Expression>& expression,
-    std::unique_ptr<Type>& type
+    std::unique_ptr<Expression> expression,
+    std::unique_ptr<Type> type
 ): 
     expression{std::move(expression)},
     type{std::move(type)}
 {}
 
 InstanceOfExpression::InstanceOfExpression(
-    std::unique_ptr<Expression>&& expression,
-    std::unique_ptr<Type>&& type
+    std::unique_ptr<Expression>& expression,
+    std::unique_ptr<Type>& type
 ): 
     expression{std::move(expression)},
     type{std::move(type)}

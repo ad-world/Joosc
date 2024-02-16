@@ -85,8 +85,8 @@ struct ClassInstanceCreationExpression: public AstNodeCommon {
     std::vector<Expression> arguments;
 
     ClassInstanceCreationExpression(
-        std::unique_ptr<QualifiedIdentifier>& class_name,
-        std::vector<Expression>& arguments
+        std::unique_ptr<QualifiedIdentifier> class_name,
+        std::vector<Expression> arguments
     );
 };
 
@@ -126,8 +126,8 @@ struct InfixExpression {
     InfixOperator op;
 
     InfixExpression(
-        std::unique_ptr<Expression>& ex1,
-        std::unique_ptr<Expression>& ex2,
+        std::unique_ptr<Expression> ex1,
+        std::unique_ptr<Expression> ex2,
         InfixOperator op
     );
 };
@@ -157,11 +157,11 @@ struct InstanceOfExpression {
     std::unique_ptr<Type> type;
 
     InstanceOfExpression(
-        std::unique_ptr<Expression>& expression,
-        std::unique_ptr<Type>& type
+        std::unique_ptr<Expression> expression,
+        std::unique_ptr<Type> type
     );
     InstanceOfExpression(
-        std::unique_ptr<Expression>&& expression,
-        std::unique_ptr<Type>&& type
+        std::unique_ptr<Expression>& expression,
+        std::unique_ptr<Type>& type
     );
 };
