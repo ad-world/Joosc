@@ -234,7 +234,7 @@ void AstWeeder::checkMethodModifiersAndBody(const std::vector<MethodDeclaration>
         }
 
         // Check that methdod does not call super() or this()
-        vector<MethodInvocation*> invocations = vector<MethodInvocation*>(); // <MethodInvocation>().visit((AstNodeVariant& )body);
+        vector<MethodInvocation*> invocations = GrabAllVisitor<MethodInvocation>().visit(*body);
          
         for (auto &invoc: invocations) {
             if (holds_alternative<QualifiedIdentifier>(*invoc->method_name)) {
