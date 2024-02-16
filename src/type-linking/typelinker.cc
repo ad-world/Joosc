@@ -264,7 +264,10 @@ TypeDeclaration resolveIdentifier(Identifier *node, PackageDeclarationObject &en
 
 
 void TypeLinker::operator()(CompilationUnit &node) {
-    package_name = node.package_declaration->getQualifiedName();
+    package_name = "";
+    if(node.package_declaration.get() != nullptr) {
+        package_name = node.package_declaration->getQualifiedName();
+    }
     single_type_import_declarations = node.single_type_import_declaration;
     type_import_on_demand_declarations = node.type_import_on_demand_declaration;
     this->visit_children(node);
