@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
             //     std::cout << "Holds the alternative\n";
             // }
 
-            // rc = weeder.weed(*drv.root, infile);
+            rc = weeder.weed(*drv.root, infile);
 
             if(rc != 0) {
                 cerr << "Parsing failed" << endl;

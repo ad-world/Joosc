@@ -62,33 +62,29 @@ void AstWeeder::printViolations() {
     }
 }
 
-int AstWeeder::weed(AstNodeVariant& root, string fileName) {
+int AstWeeder::weed(CompilationUnit& root, string fileName) {
     string file = getFileName(fileName);
 
-    if (holds_alternative<CompilationUnit>(root)) {
-        auto& cu = get<CompilationUnit>(root);
+    // check at most one type per file
+    checkOneTypePerFile(root);
+    
+    // check program ascii range
+    checkAsciiRange(readFileToString(fileName));
 
-        // check at most one type per file
-        checkOneTypePerFile(cu);
-        
-        // check program ascii range
-        checkAsciiRange(readFileToString(fileName));
+    // check programm interfaces
+    checkInterfaces(root.interface_declarations, file);
 
-        // check programm interfaces
-        checkInterfaces(cu.interface_declarations, file);
+    // check if program has any classes
+    checkClassModifiersAndConstructors(root.class_declarations, file);
 
-        // check if program has any classes
-        checkClassModifiersAndConstructors(cu.class_declarations, file);
-
-        // check if program has any literals
-        checkLiterals(GrabAllVisitor<Literal>()(root));
+    // check if program has any literals
+    checkLiterals(GrabAllVisitor<Literal>().visit(root));
 
 
-        if(!violations.empty()) {
-            printViolations();
-            return 42;
-        }    
-    }
+    if(!violations.empty()) {
+        printViolations();
+        return 42;
+    }    
     
     return 0;
 }
