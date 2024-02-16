@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     // Type linking
     try {
         for (auto &ast : asts) {
-            TypeLinker(default_package, &get<CompilationUnit>(*ast), asts).visit(*ast);
+            TypeLinker(default_package, get<CompilationUnit>(*ast), asts).visit(*ast);
         } 
     } catch (const SemanticError &e) {
         cerr << "SemanticError Exception occured: " << e.message << "\n";
