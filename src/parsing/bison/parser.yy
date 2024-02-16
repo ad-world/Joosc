@@ -106,7 +106,7 @@
 %token <InfixOperator> LESS_THAN_EQUAL
 %token <InfixOperator> GREATER_THAN_EQUAL
 %token INSTANCEOF
-%token <InfixOperator> MODULO           // TODO: not in the astnode common class
+%token <InfixOperator> MODULO
 %token <PrefixOperator> NEGATE
 
 // END OF FILE TOKEN
