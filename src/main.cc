@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     int rc = 0;
     Driver drv;
     AstWeeder weeder;
-    vector<AstNodeVariant*> asts;
+    vector<AstNodeVariant> asts;
 
     // Lexing and parsing
     try {
@@ -91,13 +91,9 @@ int main(int argc, char *argv[]) {
                 return INVALID_PROGRAM;
             }
 
-            // AstNodeVariant& var = *drv.root;
+            AstNodeVariant ast = std::move(*drv.root);
 
-            // if (std::holds_alternative<CompilationUnit>(var)) {
-            //     std::cout << "Holds the alternative\n";
-            // }
-
-            // rc = weeder.weed(*drv.root, infile);
+            rc = weeder.weed(a, infile);
 
             if(rc != 0) {
                 cerr << "Parsing failed" << endl;
@@ -106,8 +102,7 @@ int main(int argc, char *argv[]) {
                 return INVALID_PROGRAM;
             }
 
-            // asts.push_back(drv.root);
-            break;
+            asts.emplace_back(std::move(a));
         }
 
     } catch ( ... ) {
