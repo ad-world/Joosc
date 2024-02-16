@@ -100,12 +100,12 @@ void      return yy::parser::make_VOID(PrimitiveType::VOID, loc);
 true                return yy::parser::make_TRUE(true, loc);
 false               return yy::parser::make_FALSE(false, loc);
 \"({Ascii}|{OctalEscape}|{Escape}|\\\"|\')*\"  {
-    return yy::parser::make_STRING_LITERAL(yytext, loc);
+    return yy::parser::make_STRING_LITERAL(((std::string) yytext).substr(1, ((std::string) yytext).size() - 2), loc);
 }
 {Integer}           return yy::parser::make_INTEGER(stol(yytext), loc);
 null                return yy::parser::make_NULL_TOKEN(nullptr, loc);
 \'({Ascii}|{OctalEscape}|{Escape}|\\\"|\\\')\'         {
-    return yy::parser::make_CHAR_LITERAL(yytext, loc);
+    return yy::parser::make_CHAR_LITERAL(((std::string) yytext).substr(1, ((std::string) yytext).size() - 2), loc);
 }
 
 %{ // Comments %}

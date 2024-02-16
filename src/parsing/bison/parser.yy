@@ -293,7 +293,7 @@
     make_unique<type>(constructor)
 
 #define NEW_TYPE(type, isarray) \
-    NEW_OBJ(Type, NEW_OBJ(NonArrayType, type), isarray)
+    NEW_OBJ(Type, move(NEW_OBJ(NonArrayType, type)), isarray)
 
 #define NEW_VARIANT_OBJ(outer_type, inner_type, inner_constructor...) \
     make_unique<outer_type>(in_place_type<inner_type>, inner_constructor)
@@ -326,7 +326,8 @@
     MAKE_EXPRESSION_OBJ(me, CastExpression, type, expr)
 
 #define MAKE_QIEXPR_OBJ(me, qid) \
-    MAKE_EXPRESSION_OBJ(me, QualifiedIdentifier, (*qid))
+    me = OBJ_TO_VARIANT(Expression, qid)
+    // MAKE_EXPRESSION_OBJ(me, QualifiedIdentifier, (*qid))
 
 #define COPY_OBJ(me, you) \
     me = move(you)
@@ -369,8 +370,8 @@
 
 Start:
     CompilationUnit {
-        CompilationUnit test = move(*$1);
-        **root = move(test);
+        *root = new CompilationUnit(nullptr, vector<QualifiedIdentifier>(), vector<QualifiedIdentifier>(), vector<ClassDeclaration>(), vector<InterfaceDeclaration>());
+        **root = (move(*$1));
     }
 
 // root = AstNodeVariant**
@@ -472,7 +473,7 @@ Assignment:
 
 LeftHandSide:
     QualifiedIdentifier // ExpressionName
-        { MAKE_QIEXPR_OBJ($$, $1); }
+        { MAKE_QIEXPR_OBJ($$, move($1)); }
     | FieldAccess { COPY_OBJ($$, $1); }
     | ArrayAccess { COPY_OBJ($$, $1); }
     ;
@@ -545,9 +546,9 @@ CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
         { MAKE_CASTEXPR_OBJ($$, move($2), move($4)); }
     | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
-        { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(get<QualifiedIdentifier>(*$2), false), move($4)); } // throws err if Expression not QI
+        { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(get<QualifiedIdentifier>(move(*$2)), false), move($4)); } // throws err if Expression not QI
     | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
-        { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(*$2, true), move($6)); }
+        { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(move(*$2), true), move($6)); }
     | OPENING_PAREN
         PrimitiveType OPENING_BRACKET CLOSING_BRACKET // ReferenceType as PrimitiveType with array
             CLOSING_PAREN UnaryExpressionNotPlusMinus
@@ -557,7 +558,7 @@ CastExpression: // Done this way to avoid conflicts
 PrimaryOrExpressionName:
     Primary { COPY_OBJ($$, $1); }
     | QualifiedIdentifier // ExpressionName
-        { MAKE_QIEXPR_OBJ($$, $1); }
+        { MAKE_QIEXPR_OBJ($$, move($1)); }
     ;
 
 Primary:
@@ -571,9 +572,9 @@ ArrayCreationExpression:
     | NEW PrimitiveType OPENING_BRACKET Expression CLOSING_BRACKET
         { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, move($2), move($4)); }
     | NEW QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET // TypeName
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_TYPE(*$2, false), EMPTY); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_TYPE(move(*$2), false), EMPTY); }
     | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // TypeName
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_TYPE(*$2, false), move($4)); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_TYPE(move(*$2), false), move($4)); }
     ;
 
 ClassInstanceCreationExpression:
@@ -581,7 +582,7 @@ ClassInstanceCreationExpression:
         { MAKE_EXPRESSION_OBJ($$, ClassInstanceCreationExpression, move($2), move($4)); }
 
 PrimaryNoNewArray:
-    Literal { MAKE_EXPRESSION_OBJ($$, Literal, *$1); }
+    Literal { MAKE_EXPRESSION_OBJ($$, Literal, move(*$1)); }
     | THIS { MAKE_EXPRESSION_OBJ($$, QualifiedThis, EMPTY); }
     | QualifiedIdentifier DOT THIS // ClassName     TODO: REMOVE
         { MAKE_EXPRESSION_OBJ($$, QualifiedThis, move($1)); }
@@ -637,7 +638,7 @@ MethodInvocation:
     QualifiedIdentifier Arguments // MethodName
         { MAKE_EXPRESSION_OBJ($$, MethodInvocation, OBJ_TO_VARIANT(Expression, *$1), move($2)); }
     | Primary DOT Identifier Arguments // Could we call this FieldAccess instead?
-        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, OBJ_TO_VARIANT(Expression, *NEW_OBJ(FieldAccess, move($1), move($3))), move($4)); }
+        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, OBJ_TO_VARIANT(Expression, move(*NEW_OBJ(FieldAccess, move($1), move($3)))), move($4)); }
     ;
 
 Type:
@@ -667,9 +668,9 @@ ClassOrInterfaceType:
 
 ReferenceType: // Done this way to disallow multidimensional arrays
     ClassOrInterfaceType
-        { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, *$1), false); }
+        { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, move(*$1)), false); }
     | ClassOrInterfaceType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, *$1), true); }
+        { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, move(*$1)), true); }
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET
         { COPY_OBJ($$, $1); $$->is_array = true; }
     ;
@@ -912,11 +913,11 @@ ExpressionStatement:
 
 StatementExpression:
     Assignment
-        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<Assignment>(*$1)); }
+        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<Assignment>(move(*$1))); }
     | MethodInvocation
-        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<MethodInvocation>(*$1)); }
+        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<MethodInvocation>(move(*$1))); }
     | ClassInstanceCreationExpression
-        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<ClassInstanceCreationExpression>(*$1)); }
+        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<ClassInstanceCreationExpression>(move(*$1))); }
     ;
 
 StatementNoShortIf:
@@ -992,12 +993,12 @@ QualifiedIdentifier:
     Identifier
         {
             MAKE_OBJ($$, QualifiedIdentifier, EMPTY_VECTOR(Identifier));
-            $$->identifiers.push_back(*$1);
+            $$->identifiers.push_back(move(*$1));
         }
     | QualifiedIdentifier DOT Identifier
         { 
             COPY_OBJ($$, $1);
-            $$->identifiers.push_back(*$3);
+            $$->identifiers.push_back(move(*$3));
         }
     ;
 
@@ -1009,9 +1010,9 @@ Identifier:
 LocalVariableDeclaration:
     // Type VariableDeclarators
     QualifiedIdentifier VariableDeclarator // ClassOrInterfaceType VariableDeclarators
-        { MAKE_OBJ($$, LocalVariableDeclaration, NEW_TYPE(*$1, false), move($2)); }
+        { MAKE_OBJ($$, LocalVariableDeclaration, NEW_TYPE(move(*$1), false), move($2)); }
     | QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // ClassOrInterfaceTypeArray VariableDeclarators
-        { MAKE_OBJ($$, LocalVariableDeclaration, NEW_TYPE(*$1, true), move($4)); }
+        { MAKE_OBJ($$, LocalVariableDeclaration, NEW_TYPE(move(*$1), true), move($4)); }
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // PrimitiveArray VariableDeclarators
         { $1->is_array = true; MAKE_OBJ($$, LocalVariableDeclaration, move($1), move($4)); }
     | PrimitiveType VariableDeclarator
