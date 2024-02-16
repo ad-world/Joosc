@@ -3,10 +3,11 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <optional>
 #include "symboltableentry.h"
+#include "variant-ast/names.h"
 
 class SymbolTable {
-    SymbolTable* outer_scope_table;
     std::unordered_map<std::string, std::vector<SymbolTableEntry>> hashmap;
     
   public:
@@ -16,11 +17,7 @@ class SymbolTable {
     // Return true if symbol existed
     bool addSymbol(const std::string& name);
 
-    // Lookup a symbol in the environment and parent environments
+    // Lookup a symbol in the environment
     // Return nullopt if no symbol found
-    std::optional<std::vector<SymbolTableEntry>> lookupSymbol(const std::string& name);
-
-    // Lookup a symbol in the current environment only, and not in the outer scopes
-    // Return nullopt if no symbol found
-    std::optional<std::vector<SymbolTableEntry>> lookupSymbolsLocally(const std::string& name);
+    std::optional<std::vector<SymbolTableEntry*>> lookupSymbol(const std::string& name);
 };
