@@ -270,12 +270,21 @@ void TypeLinker::operator()(CompilationUnit &node) {
     this->visit_children(node);
 }
 
-TypeLinker::TypeLinker(PackageDeclarationObject &env, CompilationUnit *ast_root, vector<CompilationUnit> &asts) : root_env{env}, ast_root{move(ast_root)},  asts{asts} {};
+TypeLinker::TypeLinker(PackageDeclarationObject &env, CompilationUnit *ast_root, vector<AstNodeVariant*> &asts) : root_env{env} {
+    ast_root = move(ast_root);
+    package_name = ast_root->package_declaration.get()->getQualifiedName();
 
+    auto ast_roots = vector<CompilationUnit>();
+    for (auto *root: asts) {
+        ast_roots.push_back(get<CompilationUnit>(*root));
+    }
+
+    ast_roots = ast_roots;
+};
 
 void TypeLinker::operator()(Type &node) {
-    if(holds_alternative<QualifiedIdentifier>(*node.non_array_type)) { // Check that the non_array_type is a QualifiedIdentifier
-        QualifiedIdentifier id = *get<unique_ptr<QualifiedIdentifier>>(*node.non_array_type); 
+      if(holds_alternative<QualifiedIdentifier>(*node.non_array_type.get())) { // Check that the non_array_type is a QualifiedIdentifier
+        QualifiedIdentifier id = get<QualifiedIdentifier>(*node.non_array_type.get()); 
         TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
         if (id.identifiers.size() > 1) {
             result = resolveQualifiedIdentifier(&id, root_env, package_name, asts); // Resolve the qualified identifier

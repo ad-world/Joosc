@@ -23,7 +23,7 @@ public:
     using DefaultSkipVisitor<void>::operator();
     void operator()(CompilationUnit &node) override;
     void operator()(Type &node) override;
-    TypeLinker(PackageDeclarationObject &root_env, CompilationUnit *ast_root, vector<CompilationUnit> &asts);
+    TypeLinker(PackageDeclarationObject &root_env, CompilationUnit *ast_root, vector<AstNodeVariant*> &asts);
 
     void visit(AstNodeVariant &node) override {
         std::visit(*this, node);
