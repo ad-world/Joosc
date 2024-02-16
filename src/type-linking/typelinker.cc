@@ -2,49 +2,10 @@
 #include <unordered_map>
 #include <set>
 #include <iostream>
+#include <symboltable.h>
+#include <variant>
 
 using namespace std;
-
-unordered_map<string, ClassEnvironment> getClassesFromEnvironment(Environment *env) {
-    unordered_map<string, ClassEnvironment> result; // Map to store the classes
-    // For each child in the environment
-    for (auto child: env->getChildren()) {
-        // If the child is a class environment
-        if (static_cast<ClassEnvironment*>(child) != nullptr) {
-            auto &cast = *static_cast<ClassEnvironment*>(child);
-            result.emplace(cast.name, cast); // Add the class to the result
-        }
-
-        auto classes = getClassesFromEnvironment(child);
-        // For each class in the classes
-        for (auto &c: classes) {
-            result.emplace(c.first, c.second); // This shouldn't be necessary, since all classes should be at the same level
-        }
-    }
-
-    return result;
-}
-
-unordered_map<string, InterfaceEnvironment> getInterfacesFromEnvironment(Environment *env) {
-    unordered_map<string, InterfaceEnvironment> result; // Map to store the interfaces
-    // For each child in the environment
-    for (auto child: env->getChildren()) {
-        // If the child is an interface environment
-        if (static_cast<InterfaceEnvironment*>(child) != nullptr) {
-            auto &cast = *static_cast<InterfaceEnvironment*>(child);
-            result.emplace(cast.name, cast); // Add the interface to the result
-        }
-
-        // Get the interfaces from the child
-        auto interfaces = getInterfacesFromEnvironment(child);
-        
-        for (auto &interface: interfaces) {
-            result.emplace(interface.first, interface.second); // This shouldn't be necessary, since all interfaces should be at the same level
-        }
-    }
-
-    return result;
-}
 
 
 // This function gets the types in the package
@@ -89,28 +50,38 @@ set<string> getPackageTypes(string package_name, vector<CompilationUnit> asts) {
 
 
 // This function resolves qualified type names "package.Class c;" or "package.Interface i;
-AstNodeCommon* resolveQualifiedIdentifier(QualifiedIdentifier *node, Environment *env, string package_name, vector<CompilationUnit> asts) {
-    Environment* result = nullptr;
+TypeDeclaration resolveQualifiedIdentifier(QualifiedIdentifier *node, PackageDeclarationObject &env, string package_name, vector<CompilationUnit> asts) {
+    // SymbolTableEntry* result = nullptr;
     string type_name = node->getQualifiedName(); // The qualified name of the type
 
-    unordered_map<string, ClassEnvironment> classes = getClassesFromEnvironment(env); // Get classes in env
-    unordered_map<string, InterfaceEnvironment> interfaces = getInterfacesFromEnvironment(env); // Get interfaces in env
+    TypeDeclaration result = nullptr;
+    // get classes and interfaces from default package
+    auto &classes = env.classes; // Get classes in env
+    auto &interfaces = env.interfaces; // Get interfaces in env
 
-    if(classes.find(type_name) != classes.end()) {
-        result = &classes[type_name]; // If the class is in the environment, set the result to the class
-    } else if(interfaces.find(type_name) != interfaces.end()) {
-        result = &interfaces[type_name]; // If the interface is in the environment, set the result to the interface
-    } 
+    SymbolTableEntry* class_entry = classes.get()->lookupUniqueSymbol(type_name);
+    SymbolTableEntry *interface_entry = interfaces.get()->lookupUniqueSymbol(type_name);
+    if(class_entry != nullptr) {
+        // result = classes.get()->lookupUniqueSymbol(type_name); // If the class is in the environment, set the result to the class
+        if(holds_alternative<ClassDeclarationObject*>(*class_entry)) {
+            result = std::get<ClassDeclarationObject*>(*class_entry);
+        }
+    } else if(interface_entry != nullptr) {
+        if(holds_alternative<InterfaceDeclarationObject>(*interface_entry)) {
+            result = std::get<InterfaceDeclarationObject*>(*interface_entry); // If the interface is in the environment, set the result to the interface
+        }
+    }
+
+    // if(classes.find(type_name) != classes.end()) {
+    //     result = &classes[type_name]; // If the class is in the environment, set the result to the class
+    // } else if(interfaces.find(type_name) != interfaces.end()) {
+    //     result = &interfaces[type_name]; // If the interface is in the environment, set the result to the interface
+    // } 
 
     // We did not find the type in the environment. Return nullptr. Class doesn't exist, we can't resolve it.
-    if(result == nullptr) return nullptr;    
+    if(holds_alternative<std::nullptr_t>(result)) return nullptr;    
 
-    // Need to get current scope
-    unique_ptr<Environment> &current_scope = result->parent; // Get the current scope
     set<string> package_types = getPackageTypes(package_name, asts); // Get the types in the package
-
-    unordered_map<string, ClassEnvironment> current_classes = getClassesFromEnvironment(current_scope.get());
-    unordered_map<string, InterfaceEnvironment> current_interfaces = getInterfacesFromEnvironment(current_scope.get());
 
     string cur_prefix = package_name;
 
@@ -124,29 +95,51 @@ AstNodeCommon* resolveQualifiedIdentifier(QualifiedIdentifier *node, Environment
         cur_prefix = cur_prefix.substr(0, last_period); // Create a new prefix
 
         // Check if the prefix exists in current classes, current interfaces, or package types
-        if (current_classes.find(cur_prefix) != current_classes.end() || current_interfaces.find(cur_prefix) != current_interfaces.end() || package_types.find(cur_prefix) != package_types.end()) {
+        if (classes.get()->lookupSymbol(cur_prefix) || interfaces.get()->lookupSymbol(cur_prefix)|| package_types.find(cur_prefix) != package_types.end()) {
             cout << "Found a prefix class : " << cur_prefix << " of " << type_name << endl;
             exit(42);
         }
     }
 
     // Return the result AstNodeCommon
-    return result->node;
+    return result;
 }
 
-AstNodeCommon* checkCurrentPackage(vector<CompilationUnit> asts, string package_name, string type_name) {
+PackageDeclarationObject *getPackageObjectFromDeclaration(QualifiedIdentifier* package_decl, PackageDeclarationObject &env) {
+    // Starting from the root env, get the package object from a package declaratino
+    PackageDeclarationObject *result = &env;
+    for (auto &id: package_decl->identifiers) {
+        string package_name = id.name;
+        // Find the package at the current level of package decl
+        if(result->sub_packages.get()->lookupUniqueSymbol(package_name)) {
+            // If found, set that as new parent, and then continue
+            result = &std::get<PackageDeclarationObject>(*result->sub_packages.get()->lookupUniqueSymbol(package_name));
+        } else {
+            // Else not found;
+            cout << "Package " << package_name << " not found" << endl;
+            exit(42);
+        }
+    }
+
+    return result;
+} 
+
+TypeDeclaration checkCurrentPackage(vector<CompilationUnit> asts, string package_name, string type_name) {
     // Checking current package
+    ClassDeclarationObject* result = nullptr;
     for (auto &ast: asts) {
         // If the package name is the same as the current package
         if(ast.package_declaration->getQualifiedName() == package_name) {
             // If the class name is the same as the type name, return that class
             if (ast.class_declarations.size() > 0 && ast.class_declarations[0].class_name->name == type_name) {
-                return ast.class_declarations[0].environment->node;
+                // If we found a class in the package, get the package decl object from the root package, and return the class declaration object
+                return ast.class_declarations[0].environment;
             }
 
             // If the interface name is the same as the type name, return that interface
             if(ast.interface_declarations.size() > 0 && ast.interface_declarations[0].interface_name->name == type_name) {
-                return ast.interface_declarations[0].environment->node;
+                // If we found an interface  in the package, get the package decl object from the root package, and return the class declaration object
+                return ast.interface_declarations[0].environment;
             }
         }
     }
@@ -154,7 +147,7 @@ AstNodeCommon* checkCurrentPackage(vector<CompilationUnit> asts, string package_
     return nullptr;
 }
 
-AstNodeCommon *checkSingleImports(vector<QualifiedIdentifier> single_type_import_declarations, vector<CompilationUnit> asts, string type_name) {
+TypeDeclaration checkSingleImports(vector<QualifiedIdentifier> single_type_import_declarations, vector<CompilationUnit> asts, string type_name) {
     for (auto &import: single_type_import_declarations) {
         string import_prefix = import.getPackagePrefix(); // get package prefix
         // java.lang.String -> package name = java.lang
@@ -163,12 +156,12 @@ AstNodeCommon *checkSingleImports(vector<QualifiedIdentifier> single_type_import
             if(ast.package_declaration->getQualifiedName() == import_prefix) { // if the package name is the same as the import prefix
                 if (ast.class_declarations.size() > 0 && ast.class_declarations[0].class_name->name == type_name) {
                     // check that ast class declaration
-                    return ast.class_declarations[0].environment->node;
+                    return ast.class_declarations[0].environment;
                 }
 
                 if(ast.interface_declarations.size() > 0 && ast.interface_declarations[0].interface_name->name == type_name) {
                     // check that ast interface declaration
-                    return ast.interface_declarations[0].environment->node;
+                    return ast.interface_declarations[0].environment;
                 }
             }
         }
@@ -177,10 +170,10 @@ AstNodeCommon *checkSingleImports(vector<QualifiedIdentifier> single_type_import
     return nullptr;
 }
 
-AstNodeCommon *checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import_on_demand_declarations,  vector<CompilationUnit> asts, string type_name, CompilationUnit *current_ast) {
+TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import_on_demand_declarations,  vector<CompilationUnit> asts, string type_name, CompilationUnit *current_ast) {
    // Check on demand imports for current idenfitier
     bool found = false;
-    AstNodeCommon* result = nullptr;
+    TypeDeclaration result = nullptr;
 
     // For each on demand import
     for (auto &import: type_import_on_demand_declarations) {
@@ -198,7 +191,7 @@ AstNodeCommon *checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import_
                         }
 
                         // Set the result to the class declaration, and mark the type as found
-                        result = ast.class_declarations[0].environment->node;
+                        result = ast.class_declarations[0].environment;
                         found = true;
                     }
 
@@ -210,7 +203,7 @@ AstNodeCommon *checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import_
                         }
 
                         // Set the result to the interface declaration, and mark the type as found
-                        result = ast.interface_declarations[0].environment->node;
+                        result = ast.interface_declarations[0].environment;
                         found = true;
                     }
                 }
@@ -222,18 +215,25 @@ AstNodeCommon *checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import_
 }
 
 // This function resolves simple type names "Class c;" or "Interface i;
-AstNodeCommon* resolveIdentifier(Identifier *node, Environment *env, string package_name, vector<CompilationUnit> asts, CompilationUnit *current_ast) {
-    AstNodeCommon* result = nullptr;
+TypeDeclaration resolveIdentifier(Identifier *node, PackageDeclarationObject &env, string package_name, vector<CompilationUnit> asts, CompilationUnit *current_ast) {
+    TypeDeclaration result = nullptr;
     string type_name = node->name; // string of the type name
     
-    unordered_map<string, ClassEnvironment> classes = getClassesFromEnvironment(env); // get classes from environment
-    unordered_map<string, InterfaceEnvironment> interfaces = getInterfacesFromEnvironment(env); // get interfaces from environment
+    auto &classes = env.classes; // Get classes in env
+    auto &interfaces = env.interfaces; // Get interfaces in env
 
-    if(classes.find(type_name) != classes.end()) {
-        return classes[type_name].node; // if class is in current environment, return it
-    } else if(interfaces.find(type_name) != interfaces.end()) {
-        return interfaces[type_name].node; // if interface is in current environment, return it
-    } 
+     SymbolTableEntry* class_entry = classes.get()->lookupUniqueSymbol(type_name);
+    SymbolTableEntry *interface_entry = interfaces.get()->lookupUniqueSymbol(type_name);
+    if(class_entry != nullptr) {
+        // result = classes.get()->lookupUniqueSymbol(type_name); // If the class is in the environment, set the result to the class
+        if(holds_alternative<ClassDeclarationObject*>(*class_entry)) {
+            result = std::get<ClassDeclarationObject*>(*class_entry);
+        }
+    } else if(interface_entry != nullptr) {
+        if(holds_alternative<InterfaceDeclarationObject>(*interface_entry)) {
+            result = std::get<InterfaceDeclarationObject*>(*interface_entry); // If the interface is in the environment, set the result to the interface
+        }
+    }
 
     vector<QualifiedIdentifier> single_type_import_declarations = current_ast->single_type_import_declaration; // get single imports
     vector<QualifiedIdentifier> type_import_on_demand_declarations = current_ast->type_import_on_demand_declaration; // get on demand imports
@@ -243,10 +243,10 @@ AstNodeCommon* resolveIdentifier(Identifier *node, Environment *env, string pack
 
     // Check single type imports for current identifier
     result = checkSingleImports(single_type_import_declarations, asts, type_name); // check single imports
-    if (result != nullptr) return result;
+    if (holds_alternative<std::nullptr_t>(result)) return result;
 
     result = checkCurrentPackage(asts, package_name, type_name); // check current package
-    if (result != nullptr) return result; 
+    if (holds_alternative<std::nullptr_t>(result)) return result; 
 
     result = checkTypeOnDemandImports(type_import_on_demand_declarations, asts, type_name, current_ast); // check on demand imports
   
@@ -262,21 +262,21 @@ void TypeLinker::operator()(CompilationUnit &node) {
     this->visit_children(node);
 }
 
-TypeLinker::TypeLinker(Environment *env, CompilationUnit *ast_root, vector<CompilationUnit> &asts) : environment{move(env)}, ast_root{move(ast_root)},  asts{asts} {};
+TypeLinker::TypeLinker(PackageDeclarationObject &env, CompilationUnit *ast_root, vector<CompilationUnit> &asts) : root_env{env}, ast_root{move(ast_root)},  asts{asts} {};
 
-// Todo: change this to Type
+
 void TypeLinker::operator()(Type &node) {
     if(holds_alternative<QualifiedIdentifier>(*node.non_array_type)) { // Check that the non_array_type is a QualifiedIdentifier
         QualifiedIdentifier id = *get<unique_ptr<QualifiedIdentifier>>(*node.non_array_type); 
-        AstNodeCommon* result;
+        TypeDeclaration result = nullptr;
         if (id.identifiers.size() > 1) {
-            result = resolveQualifiedIdentifier(&id, environment, package_name, asts); // Resolve the qualified identifier
+            result = resolveQualifiedIdentifier(&id, root_env, package_name, asts); // Resolve the qualified identifier
         } else {
             Identifier one_id = id.identifiers[0];
-            result = resolveIdentifier(&one_id, environment, package_name, asts, ast_root); // Resolve the simple identifier
+            result = resolveIdentifier(&one_id, root_env, package_name, asts, ast_root); // Resolve the simple identifier
         }
 
-        if(result == nullptr) {
+        if(holds_alternative<std::nullptr_t>(result)) {
             throw SemanticError("Type " + id.getQualifiedName() + " not found"); // Type not found
         }
 

@@ -2,6 +2,8 @@
 
 #include <variant>
 #include <memory>
+#include "environmentbuilder.h"
+#include "symboltableentry.h"
 
 enum PrimitiveType {
     BYTE, SHORT, INT, CHAR, BOOLEAN, VOID
@@ -10,7 +12,7 @@ enum PrimitiveType {
 typedef std::variant<PrimitiveType, struct QualifiedIdentifier> NonArrayType;
 
 struct Type {
-    AstNodeCommon* node; // Todo: change this to ClassDecl that Amrit is working on
+    TypeDeclaration node; // Todo: change this to ClassDecl that Amrit is working on
     std::unique_ptr<NonArrayType> non_array_type;
     bool is_array;
 

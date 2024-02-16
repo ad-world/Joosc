@@ -3,10 +3,10 @@
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
 #include "exceptions/semanticerror.h"
 
+typedef std::variant<class ClassDeclarationObject*, class InterfaceDeclarationObject*, std::nullptr_t> TypeDeclaration;
 // Visit each declaration in an AST, and build an environment for it.
 // Ignore non declaration nodes and pass through them.
 class EnvironmentBuilder : public DefaultSkipVisitor<void> {
-    using TypeDeclaration = std::variant<class ClassDeclarationObject*, class InterfaceDeclarationObject*>;
 
     // Used to track current declaration new declarations are inside, so e.g. methods can be added to symbol
     // table for current class

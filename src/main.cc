@@ -9,6 +9,7 @@
 #include "environment-builder/symboltable.h"
 #include "exceptions/compilerdevelopmenterror.h"
 #include "exceptions/semanticerror.h"
+#include "type-linking/typelinker.h"
 
 using namespace std;
 
@@ -118,6 +119,17 @@ int main(int argc, char *argv[]) {
         return INVALID_PROGRAM;
     } catch (const CompilerDevelopmentError &e) {
         cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
+    } catch (...) {
+        cerr << "Unknown Exception occured\n";
+    }
+
+
+    try {
+        for (auto &ast : asts) {
+            TypeLinker(default_package, &get<CompilationUnit>(*ast), asts).visit(*ast);
+        } 
+    } catch (const SemanticError &e) {
+        cerr << "SemanticError Exception occured: " << e.message << "\n";
     } catch (...) {
         cerr << "Unknown Exception occured\n";
     }
