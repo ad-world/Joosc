@@ -9,39 +9,42 @@ using namespace std;
 
 
 // This function gets the types in the package
-set<string> getPackageTypes(string package_name, vector<CompilationUnit> &asts) {
+set<string> getPackageTypes(string package_name, vector<AstNodeVariant> &asts) {
     set<string> types;
 
     
     
     // For each ast in the asts
     for (auto &ast: asts) {
-        // If the package name matches
-        if (ast.package_declaration->getQualifiedName() == package_name) {
-            // If there are class declarations, add the class name to the types
-            if (ast.class_declarations.size() > 0) {
-                string type_name = ast.class_declarations[0].class_name->name;
+        if(holds_alternative<CompilationUnit>(ast)) {
+            auto &cu_variant = get<CompilationUnit>(ast);
+             // If the package name matches
+            if (cu_variant.package_declaration->getQualifiedName() == package_name) {
+                // If there are class declarations, add the class name to the types
+                if (cu_variant.class_declarations.size() > 0) {
+                    string type_name = cu_variant.class_declarations[0].class_name->name;
 
-                // If type with same name exists in the package
-                if(types.find(type_name) != types.end()) {
-                    cout << "Duplicate type " << type_name << endl;
-                    exit(42);
+                    // If type with same name exists in the package
+                    if(types.find(type_name) != types.end()) {
+                        cout << "Duplicate type " << type_name << endl;
+                        exit(42);
+                    }
+
+                    types.insert(cu_variant.class_declarations[0].class_name->name);
                 }
 
-                types.insert(ast.class_declarations[0].class_name->name);
-            }
+                // If there are interface declarations, add the interface name to the types
+                if (cu_variant.interface_declarations.size() > 0) {
+                    string type_name = cu_variant.interface_declarations[0].interface_name->name;
 
-            // If there are interface declarations, add the interface name to the types
-            if (ast.interface_declarations.size() > 0) {
-                string type_name = ast.interface_declarations[0].interface_name->name;
+                    // If type with same name exists in the package
+                    if(types.find(type_name) != types.end()) {
+                        cout << "Duplicate type " << type_name << endl;
+                        exit(42);
+                    }
 
-                // If type with same name exists in the package
-                if(types.find(type_name) != types.end()) {
-                    cout << "Duplicate type " << type_name << endl;
-                    exit(42);
+                    types.insert(cu_variant.interface_declarations[0].interface_name->name);
                 }
-
-                types.insert(ast.interface_declarations[0].interface_name->name);
             }
         }
     }
@@ -62,7 +65,7 @@ bool checkNullTypeDeclaration(TypeDeclaration decl) {
 
 
 // This function resolves qualified type names "package.Class c;" or "package.Interface i;
-TypeDeclaration resolveQualifiedIdentifier(QualifiedIdentifier *node, PackageDeclarationObject &env, string package_name, vector<CompilationUnit> &asts) {
+TypeDeclaration resolveQualifiedIdentifier(QualifiedIdentifier *node, PackageDeclarationObject &env, string package_name, vector<AstNodeVariant> &asts) {
     string type_name = node->getQualifiedName(); // The qualified name of the type
 
     TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
@@ -135,52 +138,60 @@ PackageDeclarationObject *getPackageObjectFromDeclaration(QualifiedIdentifier* p
     return result;
 } 
 
-TypeDeclaration checkCurrentPackage(vector<CompilationUnit> &asts, string package_name, string type_name) {
+TypeDeclaration checkCurrentPackage(vector<AstNodeVariant> &asts, string package_name, string type_name) {
     // Checking current package
     for (auto &ast: asts) {
-        // If the package name is the same as the current package
-        if(ast.package_declaration->getQualifiedName() == package_name) {
-            // If the class name is the same as the type name, return that class
-            if (ast.class_declarations.size() > 0 && ast.class_declarations[0].class_name->name == type_name) {
-                // If we found a class in the package, get the package decl object from the root package, and return the class declaration object
-                return ast.class_declarations[0].environment;
-            }
+        if(holds_alternative<CompilationUnit>(ast)) {
+            auto &cu_variant = get<CompilationUnit>(ast);
+            if(cu_variant.package_declaration->getQualifiedName() == package_name) {
+                // If the class name is the same as the type name, return that class
+                if (cu_variant.class_declarations.size() > 0 && cu_variant.class_declarations[0].class_name->name == type_name) {
+                    // If we found a class in the package, get the package decl object from the root package, and return the class declaration object
+                    return cu_variant.class_declarations[0].environment;
+                }
 
-            // If the interface name is the same as the type name, return that interface
-            if(ast.interface_declarations.size() > 0 && ast.interface_declarations[0].interface_name->name == type_name) {
-                // If we found an interface  in the package, get the package decl object from the root package, and return the class declaration object
-                return ast.interface_declarations[0].environment;
+                // If the interface name is the same as the type name, return that interface
+                if(cu_variant.interface_declarations.size() > 0 && cu_variant.interface_declarations[0].interface_name->name == type_name) {
+                    // If we found an interface  in the package, get the package decl object from the root package, and return the class declaration object
+                    return cu_variant.interface_declarations[0].environment;
+                }
             }
         }
+        // If the package name is the same as the current package
+        
     }
 
     return static_cast<ClassDeclarationObject*>(nullptr);
 }
 
-TypeDeclaration checkSingleImports(vector<QualifiedIdentifier> single_type_import_declarations, vector<CompilationUnit> &asts, string type_name) {
+TypeDeclaration checkSingleImports(vector<QualifiedIdentifier> single_type_import_declarations, vector<AstNodeVariant> &asts, string type_name) {
     for (auto &import: single_type_import_declarations) {
         string import_prefix = import.getPackagePrefix(); // get package prefix
         // java.lang.String -> package name = java.lang
             
-        for (const CompilationUnit &ast: asts) {
-            if(ast.package_declaration->getQualifiedName() == import_prefix) { // if the package name is the same as the import prefix
-                if (ast.class_declarations.size() > 0 && ast.class_declarations[0].class_name->name == type_name) {
-                    // check that ast class declaration
-                    return ast.class_declarations[0].environment;
-                }
+        for (const AstNodeVariant &ast: asts) {
+            if(holds_alternative<CompilationUnit>(ast)) {
+                auto &cu_variant = get<CompilationUnit>(ast);
+                 if(cu_variant.package_declaration->getQualifiedName() == import_prefix) { // if the package name is the same as the import prefix
+                    if (cu_variant.class_declarations.size() > 0 && cu_variant.class_declarations[0].class_name->name == type_name) {
+                        // check that cu_variant class declaration
+                        return cu_variant.class_declarations[0].environment;
+                    }
 
-                if(ast.interface_declarations.size() > 0 && ast.interface_declarations[0].interface_name->name == type_name) {
-                    // check that ast interface declaration
-                    return ast.interface_declarations[0].environment;
+                    if(cu_variant.interface_declarations.size() > 0 && cu_variant.interface_declarations[0].interface_name->name == type_name) {
+                        // check that cu_variant interface declaration
+                        return cu_variant.interface_declarations[0].environment;
+                    }
                 }
             }
+           
         }
     }
 
     return static_cast<ClassDeclarationObject*>(nullptr);
 }
 
-TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import_on_demand_declarations,  vector<CompilationUnit> &asts, string type_name, CompilationUnit *current_ast) {
+TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import_on_demand_declarations,  vector<AstNodeVariant> &asts, string type_name, CompilationUnit *current_ast) {
    // Check on demand imports for current idenfitier
     bool found = false;
     TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
@@ -189,35 +200,39 @@ TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import
     for (auto &import: type_import_on_demand_declarations) {
         string import_prefix = import.getPackagePrefix(); // Get the prefix, ie. the qualified name of the package
 
-        for (const CompilationUnit &ast: asts) {
-            if(&ast != current_ast) { // We don't want to check the current ast, since we only care about the imported packages / classes
-                if(ast.package_declaration->getQualifiedName() == import_prefix) {
-                    // If the package name of the AST is the same as the import prefix
-                    if (ast.class_declarations.size() > 0 && ast.class_declarations[0].class_name->name == type_name) {
-                        // If we have already found the type, we have an ambiguous type
-                        if(found) {
-                            cout << "Ambiguous type" << endl;
-                            exit(42);
+        for (const AstNodeVariant &ast: asts) {
+            if(holds_alternative<CompilationUnit>(ast)) {
+                auto &cu_variant = get<CompilationUnit>(ast);
+                if(&cu_variant != current_ast) { // We don't want to check the current ast, since we only care about the imported packages / classes
+                    if(cu_variant.package_declaration->getQualifiedName() == import_prefix) {
+                        // If the package name of the cu_variant is the same as the import prefix
+                        if (cu_variant.class_declarations.size() > 0 && cu_variant.class_declarations[0].class_name->name == type_name) {
+                            // If we have already found the type, we have an ambiguous type
+                            if(found) {
+                                cout << "Ambiguous type" << endl;
+                                exit(42);
+                            }
+
+                            // Set the result to the class declaration, and mark the type as found
+                            result = cu_variant.class_declarations[0].environment;
+                            found = true;
                         }
 
-                        // Set the result to the class declaration, and mark the type as found
-                        result = ast.class_declarations[0].environment;
-                        found = true;
-                    }
+                        if(cu_variant.interface_declarations.size() > 0 && cu_variant.interface_declarations[0].interface_name->name == type_name) {
+                            // If we have already found the type, we have an ambiguous type
+                            if(found) {
+                                cout << "Ambiguous type" << endl;
+                                exit(42);
+                            }
 
-                    if(ast.interface_declarations.size() > 0 && ast.interface_declarations[0].interface_name->name == type_name) {
-                        // If we have already found the type, we have an ambiguous type
-                        if(found) {
-                            cout << "Ambiguous type" << endl;
-                            exit(42);
+                            // Set the result to the interface declaration, and mark the type as found
+                            result = cu_variant.interface_declarations[0].environment;
+                            found = true;
                         }
-
-                        // Set the result to the interface declaration, and mark the type as found
-                        result = ast.interface_declarations[0].environment;
-                        found = true;
                     }
                 }
             }
+            
         }
     }
 
@@ -225,7 +240,7 @@ TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import
 }
 
 // This function resolves simple type names "Class c;" or "Interface i;
-TypeDeclaration resolveIdentifier(Identifier *node, PackageDeclarationObject &env, string package_name, vector<CompilationUnit> &asts, CompilationUnit *current_ast) {
+TypeDeclaration resolveIdentifier(Identifier *node, PackageDeclarationObject &env, string package_name, vector<AstNodeVariant> &asts, CompilationUnit *current_ast) {
     TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
     string type_name = node->name; // string of the type name
     
