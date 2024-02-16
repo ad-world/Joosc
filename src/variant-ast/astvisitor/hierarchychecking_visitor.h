@@ -55,6 +55,7 @@ bool checkMethodWithSameSignature(std::vector<MethodDeclaration>& methods) {
     return methods.size() != methodSignatureSet.size();
 }
 
+
 template <typename T>
 bool checkCyclicHierarchy(T* obj) {
     std::unordered_set<ClassDeclarationObject*> visitedClasses{};
@@ -114,6 +115,35 @@ bool checkCyclicHierarchy(T* obj) {
     return dfsClass(obj);
 }
 
+// Get all methods contained (declared or inherited) in a class
+std::vector<MethodDeclarationObject*> getAllMethods(ClassDeclarationObject* classObj) {
+    std::vector<MethodDeclarationObject*> allMethods{};
+    std::function<void(ClassDeclarationObject*)> dfsClass; // Declare dfsClass lambda function
+    std::function<void(InterfaceDeclarationObject*)> dfsInterface; // Declare dfsInterface lambda function
+
+    dfsClass = [&](ClassDeclarationObject* currentClassObj) {
+        for (auto& method : classObj->ast_reference->method_declarations) {
+            allMethods.push_back(method.environment);
+        }
+        if (currentClassObj->extended != nullptr) {
+            dfsClass(currentClassObj->extended);
+        }
+        for(auto& implementedInterface : currentClassObj->implemented) {
+            dfsInterface(implementedInterface);
+        }
+    };
+    dfsInterface = [&](InterfaceDeclarationObject* currentInterfaceObj) {
+        for (auto& method : currentInterfaceObj->ast_reference->method_declarations) {
+            allMethods.push_back(method.environment);
+        }
+        for(auto& extendedInterface : currentInterfaceObj->extended) {
+            dfsInterface(extendedInterface);
+        }
+    };
+    dfsClass(classObj);
+    return allMethods;
+}
+
 class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
     PackageDeclarationObject* root_symbol_table;
     
@@ -130,6 +160,7 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
         for(const auto &modifier : extendedClassModifiers) {
             if(modifier == Modifier::FINAL) {
                 std::cerr << "Error: Class " << className << " extends final class " << extendedClass->identifier << std::endl;
+                std::exit(42);
             }
         }
 
@@ -145,6 +176,7 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
         }
         if(implements.size() != implementsSet.size()) {
             std::cerr << "Error: Class " << node.class_name->name << " repeats an interface in its implements clause" << std::endl;
+            std::exit(42);
         }        
 
         // A class must not declare two constructors with the same parameter types (JLS 8.8.2)
@@ -153,11 +185,26 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
         // Check that no two methods have the same name and parameter types
         if(checkMethodWithSameSignature(methods)) {
             std::cerr << "Error: Class " << node.class_name->name << " declares two methods with the same signature" << std::endl;
+            std::exit(42);
         }
 
         // The hierarchy must be acyclic. (JLS 8.1.3, 9.1.2)
         if(checkCyclicHierarchy(classEnv)) {
             std::cerr << "Error: Class " << node.class_name->name << " has a cyclic hierarchy" << std::endl;
+            std::exit(42);
+        }
+
+        // A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1)
+        // get all the methods from the class (declared or inherited) and check if any of them are abstract
+        std::vector<MethodDeclarationObject*> allMethods{};
+        if(std::find(node.modifiers.begin(), node.modifiers.end(), Modifier::ABSTRACT) == node.modifiers.end()) {
+            allMethods = getAllMethods(classEnv);
+            for(auto& method: allMethods) {
+                if(std::find(method->ast_reference->modifiers.begin(), method->ast_reference->modifiers.end(), Modifier::ABSTRACT) != method->ast_reference->modifiers.end()) {
+                    std::cerr << "Error: Class " << className << " contains abstract method " << method->identifier << " and is not abstract" << std::endl;
+                    std::exit(42);
+                }
+            }
         }
 
         this->visit_children(node);
@@ -174,6 +221,7 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
         }
         if(extended.size() != extendedSet.size()) {
             std::cerr << "Error: Interface " << node.interface_name->name << " repeats an interface in its extends clause" << std::endl;
+            std::exit(42);
         }
 
         // A class must not declare two constructors with the same parameter types (JLS 8.8.2)
@@ -182,11 +230,13 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
         // Check that no two methods have the same name and parameter types
         if(checkMethodWithSameSignature(methods)) {
             std::cerr << "Error: Interface " << node.interface_name->name << " declares two methods with the same signature" << std::endl;
+            std::exit(42);
         }
 
         // The hierarchy must be acyclic. (JLS 8.1.3, 9.1.2)
         if(checkCyclicHierarchy(interfaceEnv)) {
             std::cerr << "Error: Interface " << node.interface_name->name << " has a cyclic hierarchy" << std::endl;
+            std::exit(42);
         }
 
         this->visit_children(node);
