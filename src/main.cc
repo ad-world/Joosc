@@ -124,6 +124,7 @@ int main(int argc, char *argv[]) {
     }
 
 
+    // Type linking
     try {
         for (auto &ast : asts) {
             TypeLinker(default_package, &get<CompilationUnit>(*ast), asts).visit(*ast);
@@ -134,7 +135,6 @@ int main(int argc, char *argv[]) {
         cerr << "Unknown Exception occured\n";
     }
 
-    // Type linking
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 
