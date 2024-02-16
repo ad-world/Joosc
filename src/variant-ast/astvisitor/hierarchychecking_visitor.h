@@ -5,6 +5,7 @@
 #include "variant-ast/astnode.h"
 #include "defaultskipvisitor.h"
 #include "symboltable.h"
+#include <functional>
 
 std::string QualifiedIdentifierToString(QualifiedIdentifier& qi) {
     std::string result = "";
@@ -45,12 +46,72 @@ bool checkMethodWithSameSignature(std::vector<MethodDeclaration>& methods) {
             if(formalParameter.type->is_array) {
                 methodSignature += "[]";
             }
+            methodSignature += ",";
         }
         methodSignature.pop_back();
         methodSignature += ")";
         methodSignatureSet.insert(methodSignature);
     }
     return methods.size() != methodSignatureSet.size();
+}
+
+template <typename T>
+bool checkCyclicHierarchy(T* obj) {
+    std::unordered_set<ClassDeclarationObject*> visitedClasses{};
+    std::unordered_set<InterfaceDeclarationObject*> visitedInterfaces{};
+    std::unordered_set<ClassDeclarationObject*> visitingClasses{};
+    std::unordered_set<InterfaceDeclarationObject*> visitingInterfaces{};
+
+    // Lambda for checking classes
+    std::function<bool(ClassDeclarationObject*)> dfsClass;
+    // Lambda for checking interfaces
+    std::function<bool(InterfaceDeclarationObject*)> dfsInterface;
+
+    dfsClass = [&](ClassDeclarationObject* currentClassObj) -> bool {
+        if (visitedClasses.find(currentClassObj) != visitedClasses.end()) {
+            return false;
+        }
+        if (visitingClasses.find(currentClassObj) != visitingClasses.end()) {
+            return true;
+        }
+        visitingClasses.insert(currentClassObj);
+
+        if (currentClassObj->extended != nullptr && dfsClass(currentClassObj->extended)) {
+            return true;
+        }
+
+        for (auto& implementedInterface : currentClassObj->implemented) {
+            if (implementedInterface != nullptr && dfsInterface(implementedInterface)) {
+                return true;
+            }
+        }
+
+        visitingClasses.erase(currentClassObj);
+        visitedClasses.insert(currentClassObj);
+        return false;
+    };
+
+    dfsInterface = [&](InterfaceDeclarationObject* currentInterfaceObj) -> bool {
+        if (visitedInterfaces.find(currentInterfaceObj) != visitedInterfaces.end()) {
+            return false;
+        }
+        if (visitingInterfaces.find(currentInterfaceObj) != visitingInterfaces.end()) {
+            return true;
+        }
+        visitingInterfaces.insert(currentInterfaceObj);
+
+        for (auto& extendedInterface : currentInterfaceObj->extended) {
+            if (extendedInterface != nullptr && dfsInterface(extendedInterface)) {
+                return true;
+            }
+        }
+
+        visitingInterfaces.erase(currentInterfaceObj);
+        visitedInterfaces.insert(currentInterfaceObj);
+        return false;
+    };
+
+    return dfsClass(obj);
 }
 
 class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
@@ -90,20 +151,43 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
         // A class or interface must not declare two methods with the same signature (name and parameter types). (JLS 8.4, 9.4)
         std::vector<MethodDeclaration>& methods = node.method_declarations;
         // Check that no two methods have the same name and parameter types
-        bool checkMethodSignature = checkMethodWithSameSignature(methods);
+        if(checkMethodWithSameSignature(methods)) {
+            std::cerr << "Error: Class " << node.class_name->name << " declares two methods with the same signature" << std::endl;
+        }
+
+        // The hierarchy must be acyclic. (JLS 8.1.3, 9.1.2)
+        if(checkCyclicHierarchy(classEnv)) {
+            std::cerr << "Error: Class " << node.class_name->name << " has a cyclic hierarchy" << std::endl;
+        }
 
         this->visit_children(node);
     };
 
     void operator()(InterfaceDeclaration &node) override {
-        // An interface must not extend a class. (JLS 9.1.2)
-        auto &extends = node.extends_class;
-        // Check that extends EXISTS in environment, and that extends IS NOT a class
+        // An interface must not be repeated in an extends clause (JLS 8.1.4)
+        auto& interfaceEnv= node.environment;
+        auto& extended = interfaceEnv->extended;
+        std::unordered_set<std::string> extendedSet{};
+        for(const auto& identifier: extended) {
+            std::string interfaceName = "";
+            extendedSet.insert(interfaceName);
+        }
+        if(extended.size() != extendedSet.size()) {
+            std::cerr << "Error: Interface " << node.interface_name->name << " repeats an interface in its extends clause" << std::endl;
+        }
 
         // A class must not declare two constructors with the same parameter types (JLS 8.8.2)
         // A class or interface must not declare two methods with the same signature (name and parameter types). (JLS 8.4, 9.4)
-        auto &methods = node.method_declarations;
+        std::vector<MethodDeclaration>& methods = node.method_declarations;
         // Check that no two methods have the same name and parameter types
+        if(checkMethodWithSameSignature(methods)) {
+            std::cerr << "Error: Interface " << node.interface_name->name << " declares two methods with the same signature" << std::endl;
+        }
+
+        // The hierarchy must be acyclic. (JLS 8.1.3, 9.1.2)
+        if(checkCyclicHierarchy(interfaceEnv)) {
+            std::cerr << "Error: Interface " << node.interface_name->name << " has a cyclic hierarchy" << std::endl;
+        }
 
         this->visit_children(node);
     }
