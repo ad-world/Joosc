@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <map>
 #include <unordered_set>
 #include "variant-ast/astnode.h"
 #include "defaultskipvisitor.h"
@@ -33,23 +34,33 @@ std::string PrimitiveTypeToString(PrimitiveType& pt) {
     }
 }
 
+std::string getMethodSignature(const MethodDeclaration& method) {
+    std::string methodSignature = method.function_name->name + "(";
+    for(const auto& formalParameter: method.parameters) {
+        if(std::get_if<QualifiedIdentifier>(&(*formalParameter.type->non_array_type))) {
+            methodSignature += QualifiedIdentifierToString(std::get<QualifiedIdentifier>(*formalParameter.type->non_array_type));
+        } else {
+            methodSignature += PrimitiveTypeToString(std::get<PrimitiveType>(*formalParameter.type->non_array_type));
+        }
+        if(formalParameter.type->is_array) {
+            methodSignature += "[]";
+        }
+        methodSignature += ",";
+    }
+    methodSignature.pop_back();
+    methodSignature += ")";
+    return methodSignature;
+}
+
+// Return true if they have the same signature
+bool operator==(const MethodDeclaration& lhs, const MethodDeclaration& rhs) {
+    return getMethodSignature(lhs) == getMethodSignature(rhs);
+}
+
 bool checkMethodWithSameSignature(std::vector<MethodDeclaration>& methods) {
     std::unordered_set<std::string> methodSignatureSet{};
     for(const auto& method: methods) {
-        std::string methodSignature = method.function_name->name + "(";
-        for(const auto& formalParameter: method.parameters) {
-            if(std::get_if<QualifiedIdentifier>(&(*formalParameter.type->non_array_type))) {
-                methodSignature += QualifiedIdentifierToString(std::get<QualifiedIdentifier>(*formalParameter.type->non_array_type));
-            } else {
-                methodSignature += PrimitiveTypeToString(std::get<PrimitiveType>(*formalParameter.type->non_array_type));
-            }
-            if(formalParameter.type->is_array) {
-                methodSignature += "[]";
-            }
-            methodSignature += ",";
-        }
-        methodSignature.pop_back();
-        methodSignature += ")";
+        std::string methodSignature = getMethodSignature(method);
         methodSignatureSet.insert(methodSignature);
     }
     return methods.size() != methodSignatureSet.size();
@@ -112,6 +123,47 @@ bool checkCyclicHierarchy(T* obj) {
     };
 
     return dfsClass(obj);
+}
+
+
+// 3. (JLS 8.1.1.1, 8.4, 8.4.2, 8.4.6.3, 8.4.6.4, 9.2, 9.4.1)
+void checkMethodReplaceReturnType(MethodDeclaration& method, std::vector<MethodDeclaration*>& replaced_methods) {
+
+}
+
+// 1. (JLS 8.4.6.1)
+// 2. (JLS 8.4.6.2)
+// 4. (JLS 8.4.6.3)
+// 5. (JLS 8.4.3.3)
+void checkMethodReplaceModifiers(MethodDeclaration& method, std::vector<MethodDeclaration*>& replaced_methods, std::unordered_set<Modifier> &method_modifiers) {
+
+}
+
+void checkMethods(std::vector<MethodDeclaration>& methods, ClassDeclaration& parent_class) {
+    for ( const auto& method : methods ) {
+        std::unordered_set<Modifier> modifier_set;
+        for ( const auto& modifier : method.modifiers ) {
+            modifier_set.insert(modifier);
+        }
+
+
+        // Get all replacable methods
+        std::vector<MethodDeclaration*> replaced_methods;
+        for (
+            auto& classEnv = parent_class.environment;
+            classEnv->extended != nullptr;
+            classEnv = classEnv->extended
+        ) {
+            for ( auto& extend_method : classEnv->ast_reference->method_declarations ) {
+                if ( method == extend_method ) {
+                    replaced_methods.push_back(&extend_method);
+                }
+            }
+        }
+
+        checkMethodReplaceReturnType(method, replaced_methods);
+        checkMethodReplaceModifiers(method, replaced_methods, modifier_set);
+    }
 }
 
 class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
