@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 
             AstNodeVariant ast = std::move(*drv.root);
 
-            rc = weeder.weed(a, infile);
+            rc = weeder.weed(ast, infile);
 
             if(rc != 0) {
                 cerr << "Parsing failed" << endl;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
                 return INVALID_PROGRAM;
             }
 
-            asts.emplace_back(std::move(a));
+            asts.emplace_back(std::move(ast));
         }
 
     } catch ( ... ) {
@@ -111,20 +111,19 @@ int main(int argc, char *argv[]) {
     }
 
     // Environment building
-    // PackageDeclarationObject default_package;
-    // try {
-    //     for (auto &ast : asts) {
-    //         EnvironmentBuilder(default_package).visit(*ast);
-    //         break;
-    //     }
-    // } catch (const SemanticError &e) {
-    //     cerr << "SemanticError Exception occured: " << e.message << "\n";
-    //     return INVALID_PROGRAM;
-    // } catch (const CompilerDevelopmentError &e) {
-    //     cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
-    // } catch (...) {
-    //     cerr << "Unknown Exception occured\n";
-    // }
+    PackageDeclarationObject default_package;
+    try {
+        for (auto &ast : asts) {
+            EnvironmentBuilder(default_package).visit(ast);
+        }
+    } catch (const SemanticError &e) {
+        cerr << "SemanticError Exception occured: " << e.message << "\n";
+        return INVALID_PROGRAM;
+    } catch (const CompilerDevelopmentError &e) {
+        cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
+    } catch (...) {
+        cerr << "Unknown Exception occured\n";
+    }
 
 
     // // Type linking
