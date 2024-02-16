@@ -33,6 +33,13 @@ def print_file_contents(file):
     with open(file, "r") as outfile: 
         print(outfile.read())
 
+def get_all_files(directory):
+    file_list = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            file_list.append(os.path.join(root, file))
+    return file_list
+
 def valid_invalid_prog_test():
     """
     Runs joosc on all programs in valid and invalid directories.
@@ -74,6 +81,11 @@ def valid_invalid_prog_test():
                     for program in os.listdir(directory):
                         program_path = resolve_path(directory, program)
 
+                        # if program is a directory, get all files from the direcory and add to a list
+                        if os.path.isdir(program):
+                            files = get_all_files(program)
+                            print(files)    
+                            
                         if os.path.exists(program_path):
                             with open(integration_log_file, "w") as outfile:
                                 result = subprocess.run([joosc_executable, program_path], stderr=outfile)
