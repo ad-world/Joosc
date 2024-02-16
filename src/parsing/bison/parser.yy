@@ -894,7 +894,7 @@ Statement:
     ;
 
 StatementWithoutTrailingSubstatement:
-    Block { MAKE_STATEMENT_OBJ($$, Block, move($1->statements)); }
+    Block { MAKE_STATEMENT_OBJ($$, Block, EMPTY_VECTOR(LocalVariableDeclaration), move($1->statements)); }
     | EmptyStatement { MAKE_STATEMENT_OBJ($$, EmptyStatement, $1); }
     | ExpressionStatement { MAKE_OBJ($$, Statement, move(*$1)); }
     | ReturnStatement { COPY_OBJ($$, $1); }
@@ -1013,7 +1013,7 @@ LocalVariableDeclaration:
     ;
 
 Block:
-    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE { MAKE_OBJ($$, Block, move($2)); }
+    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE { MAKE_OBJ($$, Block, EMPTY_VECTOR(LocalVariableDeclaration), move($2)); }
     ;
 
 BlockStatementsOpt:

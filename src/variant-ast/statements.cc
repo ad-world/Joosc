@@ -43,10 +43,10 @@ ForStatement::ForStatement(
 {}
 
 Block::Block(
-    std::vector<LocalVariableDeclaration>& variable_declarations, 
-    std::vector<Statement>& statements
+    std::vector<LocalVariableDeclaration> variable_declarations, 
+    std::vector<Statement> statements
 ) :
-    variable_declarations{std::move(variable_declarations)}, 
+    // variable_declarations{std::move(variable_declarations)}, 
     statements{std::move(statements)}
 {}
 
@@ -57,8 +57,8 @@ ReturnStatement::ReturnStatement(
 {}
 
 LocalVariableDeclaration::LocalVariableDeclaration(
-    std::unique_ptr<Type>& type,
-    std::unique_ptr<VariableDeclarator>& variable_declarator
+    std::unique_ptr<Type> type,
+    std::unique_ptr<VariableDeclarator> variable_declarator
 ) : 
     type(std::move(type)),
     variable_declarator(std::move(variable_declarator))

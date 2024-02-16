@@ -80,7 +80,7 @@ struct Block: public AstNodeCommon {
     std::vector<Statement> statements;
 
     Block(
-        // std::vector<LocalVariableDeclaration>& variable_declarations, 
+        std::vector<LocalVariableDeclaration> variable_declarations, 
         std::vector<Statement> statements
     );
 };
