@@ -1,33 +1,96 @@
 #pragma once
 
+#include <iostream>
+#include <unordered_set>
 #include "variant-ast/astnode.h"
 #include "defaultskipvisitor.h"
-#include "environment_class.h"
+#include "symboltable.h"
+
+std::string QualifiedIdentifierToString(QualifiedIdentifier& qi) {
+    std::string result = "";
+    for(const auto& identifier: qi.identifiers) {
+        result += identifier.name + ".";
+    }
+    result.pop_back();
+    return result;
+}
+
+std::string PrimitiveTypeToString(PrimitiveType& pt) {
+    switch(pt) {
+        case PrimitiveType::BYTE:
+            return "byte";
+        case PrimitiveType::SHORT:
+            return "short";
+        case PrimitiveType::INT:
+            return "int";
+        case PrimitiveType::CHAR:
+            return "char";
+        case PrimitiveType::BOOLEAN:
+            return "boolean";
+        case PrimitiveType::VOID:
+            return "void";
+    }
+}
+
+bool checkMethodWithSameSignature(std::vector<MethodDeclaration>& methods) {
+    std::unordered_set<std::string> methodSignatureSet{};
+    for(const auto& method: methods) {
+        std::string methodSignature = method.function_name->name + "(";
+        for(const auto& formalParameter: method.parameters) {
+            if(std::get_if<QualifiedIdentifier>(&(*formalParameter.type->non_array_type))) {
+                methodSignature += QualifiedIdentifierToString(std::get<QualifiedIdentifier>(*formalParameter.type->non_array_type));
+            } else {
+                methodSignature += PrimitiveTypeToString(std::get<PrimitiveType>(*formalParameter.type->non_array_type));
+            }
+            if(formalParameter.type->is_array) {
+                methodSignature += "[]";
+            }
+        }
+        methodSignature.pop_back();
+        methodSignature += ")";
+        methodSignatureSet.insert(methodSignature);
+    }
+    return methods.size() != methodSignatureSet.size();
+}
 
 class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
-    RootEnvironment root_env;
+    PackageDeclarationObject* root_symbol_table;
     
-
     using DefaultSkipVisitor<void>::operator();
     void operator()(ClassDeclaration &node) override {
-        // A class must not extend an interface. (JLS 8.1.3)
         auto &extends = node.extends_class;
-        // Check that extends EXISTS in environment, and that extends IS NOT an interface
+        auto &classEnv = node.environment;
+        auto &extendedClass = classEnv->extended;
+        std::string className = node.class_name->name;
         
         // A class must not extend a final class. (JLS 8.1.1.2, 8.1.3)
         // Check that extends is NOT final
+        auto extendedClassModifiers = extendedClass->ast_reference->modifiers;
+        for(const auto &modifier : extendedClassModifiers) {
+            if(modifier == Modifier::FINAL) {
+                std::cerr << "Error: Class " << className << " extends final class " << extendedClass->identifier << std::endl;
+            }
+        }
 
-        // A class must not implement a class. (JLS 8.1.4)
+        // An interface must not be repeated in an implements clause (JLS 8.1.4)
         auto &implements = node.implements;
-        // Check that implements EXISTS in environment, and that implements IS NOT a class
-        // Also check that implements does not have duplicate interfaces
+        std::unordered_set<std::string> implementsSet{};
+        for(const auto& qi: implements) {
+            std::string interfaceName = "";
+            for(const auto& identifierVec: qi.identifiers) {
+                interfaceName += identifierVec.name;
+            }
+            implementsSet.insert(interfaceName);
+        }
+        if(implements.size() != implementsSet.size()) {
+            std::cerr << "Error: Class " << node.class_name->name << " repeats an interface in its implements clause" << std::endl;
+        }        
 
         // A class must not declare two constructors with the same parameter types (JLS 8.8.2)
         // A class or interface must not declare two methods with the same signature (name and parameter types). (JLS 8.4, 9.4)
-        auto &methods = node.method_declarations;
+        std::vector<MethodDeclaration>& methods = node.method_declarations;
         // Check that no two methods have the same name and parameter types
-
-
+        bool checkMethodSignature = checkMethodWithSameSignature(methods);
 
         this->visit_children(node);
     };
@@ -67,5 +130,5 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
     }
 
     public:
-        HierarchyCheckingVisitor(RootEnvironment root_env) : root_env{std::move(root_env)} {};
+        HierarchyCheckingVisitor(PackageDeclarationObject* root_symbol_table) : root_symbol_table{std::move(root_symbol_table)} {};
 };
