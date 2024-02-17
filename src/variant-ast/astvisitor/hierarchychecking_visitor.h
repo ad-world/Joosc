@@ -2,12 +2,16 @@
 
 #include <iostream>
 #include <map>
+#include <stdexcept>
 #include <unordered_set>
 #include "variant-ast/astnode.h"
 #include "defaultskipvisitor.h"
 #include "symboltable.h"
 #include "variant-ast/classes.h"
+#include "variant-ast/names.h"
+#include "variant-ast/types.h"
 #include <functional>
+#include <variant>
 
 std::string QualifiedIdentifierToString(QualifiedIdentifier& qi) {
     std::string result = "";
@@ -127,17 +131,79 @@ bool checkCyclicHierarchy(T* obj) {
     return dfsClass(obj);
 }
 
-// 3. (JLS 8.1.1.1, 8.4, 8.4.2, 8.4.6.3, 8.4.6.4, 9.2, 9.4.1)
-void checkMethodReplaceReturnType(MethodDeclaration& method, std::vector<MethodDeclaration*>& replaced_methods) {
+bool operator==(const Type & lhs, const Type & rhs) {
+    if ( lhs.is_array != rhs.is_array ) {
+        return false;
+    }
 
+    if ( std::holds_alternative<QualifiedIdentifier>(*lhs.non_array_type) && std::holds_alternative<QualifiedIdentifier>(*rhs.non_array_type) ) {
+        return (
+            QualifiedIdentifierToString(std::get<QualifiedIdentifier>(*lhs.non_array_type))
+            == QualifiedIdentifierToString(std::get<QualifiedIdentifier>(*rhs.non_array_type))
+        );
+    } else if ( std::holds_alternative<PrimitiveType>(*lhs.non_array_type) && std::holds_alternative<PrimitiveType>(*rhs.non_array_type) ) {
+        return (
+            std::get<PrimitiveType>(*lhs.non_array_type)
+            == std::get<PrimitiveType>(*rhs.non_array_type)
+        );
+    } else {
+        return false;
+    }
+}
+
+bool operator!=(const Type & lhs, const Type & rhs) {
+    return !(lhs == rhs);
+}
+
+// 3. (JLS 8.1.1.1, 8.4, 8.4.2, 8.4.6.3, 8.4.6.4, 9.2, 9.4.1)
+void checkMethodReplaceReturnType(const MethodDeclaration& method, std::vector<MethodDeclaration*>& replaced_methods) {
+    for  ( const auto & extend_method : replaced_methods ) {
+        if (method.type != extend_method->type) {
+            throw std::runtime_error("Hierarchy checking: overriding same method signature, different return type.");
+        }
+    }
 }
 
 // 1. (JLS 8.4.6.1)
 // 2. (JLS 8.4.6.2)
 // 4. (JLS 8.4.6.3)
 // 5. (JLS 8.4.3.3)
-void checkMethodReplaceModifiers(MethodDeclaration& method, std::vector<MethodDeclaration*>& replaced_methods, std::unordered_set<Modifier> &method_modifiers) {
+void checkMethodReplaceModifiers(
+    const MethodDeclaration &method,
+    std::vector<MethodDeclaration*> &replaced_methods,
+    std::unordered_set<Modifier> &method_modifiers,
+    std::unordered_set<Modifier> &replaced_modifiers,
+    std::unordered_map<MethodDeclaration*, std::unordered_set<Modifier>> &replaced_modifiers_map
+) {
+    if ( method_modifiers.find(Modifier::STATIC) != method_modifiers.end() ) {
+        // static method
+        for ( const auto & extend_method : replaced_methods ) {
+            std::unordered_set<Modifier> *extend_modifiers = replaced_modifiers_map.at(extend_method);
+            if ( extend_modifiers->find(Modifier::STATIC) == extend_modifiers->end() ) {
+                // replaced non-static
+                throw std::runtime_error("Hierarchy checking: A static method must not replace a nonstatic method.");
+            }
+        }
+    } else {
+        // non-static method
+        if ( replaced_modifiers.find(Modifier::STATIC) != replaced_modifiers.end() ) {
+            // replaced static
+            throw std::runtime_error("Hierarchy checking: A nonstatic method must not replace a static method.");
+        }
+    }
 
+    if ( method_modifiers.find(Modifier::PROTECTED) != method_modifiers.end() ) {
+        // protected method
+        if ( replaced_modifiers.find(Modifier::PUBLIC) != replaced_modifiers.end() ) {
+            // replaced public
+            throw std::runtime_error("Hierarchy checking: A protected method must not replace a public method.");
+        }
+    }
+
+    if ( replaced_modifiers.find(Modifier::FINAL) != replaced_modifiers.end() ) {
+        // replaced final
+        throw std::runtime_error("Hierarchy checking: A method must not replace a final method.");
+    }
 }
 
 void checkMethods(std::vector<MethodDeclaration>& methods, ClassDeclaration& parent_class) {
@@ -147,9 +213,10 @@ void checkMethods(std::vector<MethodDeclaration>& methods, ClassDeclaration& par
             modifier_set.insert(modifier);
         }
 
-
         // Get all replacable methods
         std::vector<MethodDeclaration*> replaced_methods;
+        std::unordered_set<Modifier> replaced_modifiers;
+        std::unordered_map<MethodDeclaration*, std::unordered_set<Modifier>> replaced_modifiers_map;
         for (
             auto& classEnv = parent_class.environment;
             classEnv->extended != nullptr;
@@ -158,12 +225,18 @@ void checkMethods(std::vector<MethodDeclaration>& methods, ClassDeclaration& par
             for ( auto& extend_method : classEnv->ast_reference->method_declarations ) {
                 if ( method == extend_method ) {
                     replaced_methods.push_back(&extend_method);
+                    std::unordered_set<Modifier> extend_modifiers;
+                    for ( const auto& modifier : extend_method.modifiers ) {
+                        replaced_modifiers.insert(modifier);
+                        extend_modifiers.insert(modifier);
+                    }
+                    replaced_modifiers.insert({&extend_method, extend_modifiers});
                 }
             }
         }
 
         checkMethodReplaceReturnType(method, replaced_methods);
-        checkMethodReplaceModifiers(method, replaced_methods, modifier_set);
+        checkMethodReplaceModifiers(method, replaced_methods, modifier_set, replaced_modifiers, replaced_modifiers_map);
     }
 }
 
