@@ -23,7 +23,7 @@ public:
     using DefaultSkipVisitor<void>::operator();
     void operator()(CompilationUnit &node) override;
     void operator()(Type &node) override;
-
+    void operator()(ClassInstanceCreationExpression &node) override;
     void operator()(ClassDeclaration &node) override;
     void operator()(InterfaceDeclaration &node) override;
     void operator()(FieldDeclaration &node) override;

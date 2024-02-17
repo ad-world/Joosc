@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
                 return INVALID_PROGRAM;
             }
 
-            AstNodeVariant ast = std::move(*drv.root);
+            AstNodeVariant ast = std::move(*drv.root);            
 
             rc = weeder.weed(ast, infile);
 
@@ -126,16 +126,17 @@ int main(int argc, char *argv[]) {
     }
 
     // Type linking
-    try {
-        for (auto& ast : asts) {
-            CompilationUnit &current_ast = std::get<CompilationUnit>(ast);
-            TypeLinker(default_package, current_ast, asts).visit(ast);
-        } 
-    } catch (const SemanticError &e) {
-        cerr << "SemanticError Exception occured: " << e.message << "\n";
-    } catch (...) {
-        cerr << "Unknown Exception occured\n";
-    }
+    // try {
+    //     for (auto& ast : asts) {
+    //         CompilationUnit &current_ast = std::get<CompilationUnit>(ast);
+    //         TypeLinker(default_package, current_ast, asts).visit(ast);
+    //     } 
+    // } catch (const SemanticError &e) {
+    //     cerr << "SemanticError Exception occured: " << e.message << "\n";
+    //     return INVALID_PROGRAM;
+    // } catch (...) {
+    //     cerr << "Unknown Exception occured\n";
+    // }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 

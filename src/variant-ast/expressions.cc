@@ -29,7 +29,8 @@ ClassInstanceCreationExpression::ClassInstanceCreationExpression(
     std::vector<Expression>& arguments
 ): 
     class_name{std::move(class_name)},
-    arguments{std::move(arguments)} 
+    arguments{std::move(arguments)},
+    node{static_cast<ClassDeclarationObject*>(nullptr)}
 {}
 
 FieldAccess::FieldAccess(
@@ -119,7 +120,8 @@ ClassInstanceCreationExpression::ClassInstanceCreationExpression(
     std::vector<Expression>&& arguments
 ): 
     class_name{std::move(class_name)},
-    arguments{std::move(arguments)} 
+    arguments{std::move(arguments)},
+    node{static_cast<ClassDeclarationObject*>(nullptr)}
 {}
 
 FieldAccess::FieldAccess(

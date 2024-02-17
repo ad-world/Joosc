@@ -4,6 +4,8 @@
 #include <iostream>
 #include <environment-builder/symboltable.h>
 #include <variant>
+#include "exceptions/compilerdevelopmenterror.h"
+
 
 using namespace std;
 
@@ -12,8 +14,6 @@ using namespace std;
 set<string> getPackageTypes(string package_name, vector<AstNodeVariant> &asts) {
     set<string> types;
 
-    
-    
     // For each ast in the asts
     for (auto &ast: asts) {
         if(holds_alternative<CompilationUnit>(ast)) {
@@ -143,7 +143,7 @@ TypeDeclaration checkCurrentPackage(vector<AstNodeVariant> &asts, string package
     for (auto &ast: asts) {
         if(holds_alternative<CompilationUnit>(ast)) {
             auto &cu_variant = get<CompilationUnit>(ast);
-            if(cu_variant.package_declaration->getQualifiedName() == package_name) {
+            if(cu_variant.package_declaration && cu_variant.package_declaration->getQualifiedName() == package_name) {
                 // If the class name is the same as the type name, return that class
                 if (cu_variant.class_declarations.size() > 0 && cu_variant.class_declarations[0].class_name->name == type_name) {
                     // If we found a class in the package, get the package decl object from the root package, and return the class declaration object
@@ -166,13 +166,13 @@ TypeDeclaration checkCurrentPackage(vector<AstNodeVariant> &asts, string package
 
 TypeDeclaration checkSingleImports(vector<QualifiedIdentifier> single_type_import_declarations, vector<AstNodeVariant> &asts, string type_name) {
     for (auto &import: single_type_import_declarations) {
-        string import_prefix = import.getPackagePrefix(); // get package prefix
+        string import_prefix = import.getQualifiedName(); // get package prefix
         // java.lang.String -> package name = java.lang
             
         for (const AstNodeVariant &ast: asts) {
             if(holds_alternative<CompilationUnit>(ast)) {
                 auto &cu_variant = get<CompilationUnit>(ast);
-                 if(cu_variant.package_declaration->getQualifiedName() == import_prefix) { // if the package name is the same as the import prefix
+                 if(cu_variant.package_declaration && cu_variant.package_declaration->getQualifiedName() == import_prefix) { // if the package name is the same as the import prefix
                     if (cu_variant.class_declarations.size() > 0 && cu_variant.class_declarations[0].class_name->name == type_name) {
                         // check that cu_variant class declaration
                         return cu_variant.class_declarations[0].environment;
@@ -198,8 +198,7 @@ TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import
 
     // For each on demand import
     for (auto &import: type_import_on_demand_declarations) {
-        string import_prefix = import.getPackagePrefix(); // Get the prefix, ie. the qualified name of the package
-
+        string import_prefix = import.getQualifiedName(); // Get the prefix, ie. the qualified name of the package
         for (const AstNodeVariant &ast: asts) {
             if(holds_alternative<CompilationUnit>(ast)) {
                 auto &cu_variant = get<CompilationUnit>(ast);
@@ -265,28 +264,36 @@ TypeDeclaration resolveIdentifier(Identifier *node, PackageDeclarationObject &en
 
     // On demand declarations
     // import java.lang.*
-
     // Check single type imports for current identifier
     result = checkSingleImports(single_type_import_declarations, asts, type_name); // check single imports
-    if (checkNullTypeDeclaration(result)) return result;
+    if (!checkNullTypeDeclaration(result)) return result;
 
     result = checkCurrentPackage(asts, package_name, type_name); // check current package
-    if (checkNullTypeDeclaration(result)) return result; 
+    if (!checkNullTypeDeclaration(result)) return result; 
 
     result = checkTypeOnDemandImports(type_import_on_demand_declarations, asts, type_name, current_ast); // check on demand imports
-  
+    
     return result;
 }
 
 
 
 void TypeLinker::operator()(CompilationUnit &node) {
+    // cout << "TypeLinker going through ast root right now ";
+    // if(node.package_declaration) {
+    //     cout << node.package_declaration.get()->getQualifiedName();
+    // }
+
+    // cout << endl;
+
     package_name = "";
     if(node.package_declaration.get() != nullptr) {
         package_name = node.package_declaration->getQualifiedName();
     }
     single_type_import_declarations = node.single_type_import_declaration;
     type_import_on_demand_declarations = node.type_import_on_demand_declaration;
+
+    // cout << "this ast has " << node.class_declarations.size() + node.interface_declarations.size() << " type decls" << endl;
     this->visit_children(node);
 }
 
@@ -296,22 +303,47 @@ TypeLinker::TypeLinker(
     vector<AstNodeVariant> &asts
 ) :       
     root_env{env},
-    asts{asts}
+    asts{asts},
+    ast_root{&ast_root}
 {
-    ast_root = move(ast_root);
     package_name = "";
     if (ast_root.package_declaration.get() != nullptr) {
         package_name = ast_root.package_declaration.get()->getQualifiedName();
     }
 };
 
+void TypeLinker::operator()(ClassInstanceCreationExpression &node) {
+    // cout << "type linking class instance expression " << node.class_name.get()->getQualifiedName() << endl;
+    QualifiedIdentifier id = *node.class_name;
+    TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
+    if(id.identifiers.size() > 1) {
+        result = resolveQualifiedIdentifier(&id, root_env, package_name, asts);
+    } else {
+        Identifier one_id = id.identifiers[0];
+        result = resolveIdentifier(&one_id, root_env, package_name, asts, ast_root);
+    }
+
+    if(checkNullTypeDeclaration(result)) {
+        throw SemanticError("Type " + id.getQualifiedName() + " not found"); // Type not found
+    }
+
+    node.node = result; // Set the result
+    this->visit_children(node);
+}
+
 void TypeLinker::operator()(Type &node) {
-      if(holds_alternative<QualifiedIdentifier>(*node.non_array_type.get())) { // Check that the non_array_type is a QualifiedIdentifier
+    
+    // cout << "Trying to resolve type now " << endl;
+    if(node.non_array_type == nullptr) {
+        throw CompilerDevelopmentError("Non array type is null");
+    } else if(holds_alternative<QualifiedIdentifier>(*node.non_array_type.get())) { // Check that the non_array_type is a QualifiedIdentifier
         QualifiedIdentifier id = get<QualifiedIdentifier>(*node.non_array_type.get()); 
         TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
         if (id.identifiers.size() > 1) {
+            // std::cout << "resolving qualified" << std::endl;
             result = resolveQualifiedIdentifier(&id, root_env, package_name, asts); // Resolve the qualified identifier
         } else {
+            // std::cout << "resolving simple type" << std::endl;
             Identifier one_id = id.identifiers[0];
             result = resolveIdentifier(&one_id, root_env, package_name, asts, ast_root); // Resolve the simple identifier
         }
@@ -322,7 +354,7 @@ void TypeLinker::operator()(Type &node) {
 
         node.node = result; // Set the result
     }
-    
+    this->visit_children(node);
 }
 
 void TypeLinker::operator()(ClassDeclaration &node) {
