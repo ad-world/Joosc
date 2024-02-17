@@ -357,3 +357,69 @@ void TypeLinker::operator()(Type &node) {
     this->visit_children(node);
 }
 
+void TypeLinker::operator()(ClassDeclaration &node) {
+    // Resolve implemented types to interfaces
+    for (auto &implements_qualified_identifier : node.implements) {
+        TypeDeclaration implemented 
+            = resolveQualifiedIdentifier(&implements_qualified_identifier, root_env, package_name, asts);
+
+        if (auto interface_type = std::get_if<InterfaceDeclarationObject*>(&implemented)) {
+            node.environment->implemented.emplace_back(*interface_type);
+        } else {
+            throw SemanticError("Class attempting to implement class");
+        }
+    }
+
+    // Resolve extended type to class
+    if (node.extends_class) {
+        TypeDeclaration extended 
+            = resolveQualifiedIdentifier(node.extends_class.get(), root_env, package_name, asts);
+        if (auto class_type = std::get_if<ClassDeclarationObject*>(&extended)) {
+            node.environment->extended = *class_type;
+        } else {
+            throw SemanticError("Class attempting to extend interface");
+        }
+    }
+
+    visit_children(node);
+}
+
+void TypeLinker::operator()(InterfaceDeclaration &node) {
+    // Resolve extended types to interfaces
+    for (auto &extends_qualified_identifier : node.extends_class) {
+        TypeDeclaration extended 
+            = resolveQualifiedIdentifier(&extends_qualified_identifier, root_env, package_name, asts);
+
+        if (auto interface_type = std::get_if<InterfaceDeclarationObject*>(&extended)) {
+            node.environment->extended.emplace_back(*interface_type);
+        } else {
+            throw SemanticError("Interface attempting to extend class");
+        }
+    }
+
+    visit_children(node);
+}
+
+void TypeLinker::operator()(FieldDeclaration &node) {
+    // Resolve type
+    visit_children(node);
+    node.environment->type = node.type->node;
+}
+
+void TypeLinker::operator()(MethodDeclaration &node) {
+    // Resolve return type
+    visit_children(node);
+    node.environment->return_type = node.type->node;
+}
+
+void TypeLinker::operator()(FormalParameter &node) {
+    // Resolve type
+    visit_children(node);
+    node.environment->type = node.type->node;
+}
+
+void TypeLinker::operator()(LocalVariableDeclaration &node) {
+    // Resolve type
+    visit_children(node);
+    node.environment->type = node.type->node;
+}
