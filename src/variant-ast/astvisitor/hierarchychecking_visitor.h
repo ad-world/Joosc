@@ -6,6 +6,7 @@
 #include "variant-ast/astnode.h"
 #include "defaultskipvisitor.h"
 #include "symboltable.h"
+#include "variant-ast/classes.h"
 #include <functional>
 
 std::string QualifiedIdentifierToString(QualifiedIdentifier& qi) {
