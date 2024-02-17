@@ -5,6 +5,7 @@
 #include <vector>
 #include <variant>
 #include "scope.h"
+#include "type-decl/type_declaration.h"
 
 class SymbolTable;
 
@@ -61,7 +62,7 @@ struct FieldDeclarationObject {
     class FieldDeclaration* ast_reference;
 
     // Fields resolved at type linking stage
-    SymbolTableEntry *type;
+    TypeDeclaration type;
 
     FieldDeclarationObject(const std::string &identifier);
 };
@@ -74,7 +75,7 @@ struct MethodDeclarationObject {
     LocalVariableScopeManager scope_manager; // Manager of SymbolTables mapping to LocalVariableDeclarationObject
 
     // Fields resolved at type linking stage
-    SymbolTableEntry *return_type;
+    TypeDeclaration return_type;
 
     MethodDeclarationObject(const std::string &identifier);
 };
@@ -84,7 +85,7 @@ struct FormalParameterDeclarationObject {
     class FormalParameter* ast_reference;
 
     // Fields resolved at type linking stage
-    SymbolTableEntry *type;
+    TypeDeclaration type;
 
     FormalParameterDeclarationObject(const std::string &identifier);
 };
@@ -94,7 +95,7 @@ struct LocalVariableDeclarationObject {
     class LocalVariableDeclaration* ast_reference;
 
     // Fields resolved at type linking stage
-    SymbolTableEntry *type;
+    TypeDeclaration type;
 
     LocalVariableDeclarationObject(const std::string &identifier);
 };
