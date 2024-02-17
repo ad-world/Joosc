@@ -94,6 +94,7 @@ struct ArrayCreationExpression: public AstNodeCommon {
 struct ClassInstanceCreationExpression: public AstNodeCommon {
     std::unique_ptr<QualifiedIdentifier> class_name;
     std::vector<Expression> arguments;
+    TypeDeclaration node;
 
     ClassInstanceCreationExpression(
         std::unique_ptr<QualifiedIdentifier>& class_name,

@@ -305,6 +305,24 @@ TypeLinker::TypeLinker(
     }
 };
 
+void TypeLinker::operator()(ClassInstanceCreationExpression &node) {
+    cout << "type linking class instance expression " << node.class_name.get()->getQualifiedName() << endl;
+    QualifiedIdentifier id = *node.class_name;
+    TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
+    if(id.identifiers.size() > 1) {
+        result = resolveQualifiedIdentifier(&id, root_env, package_name, asts);
+    } else {
+        Identifier one_id = id.identifiers[0];
+        result = resolveIdentifier(&one_id, root_env, package_name, asts, ast_root);
+    }
+
+    if(checkNullTypeDeclaration(result)) {
+        throw SemanticError("Type " + id.getQualifiedName() + " not found"); // Type not found
+    }
+
+    node.node = result; // Set the result
+}
+
 void TypeLinker::operator()(Type &node) {
       if(holds_alternative<QualifiedIdentifier>(*node.non_array_type.get())) { // Check that the non_array_type is a QualifiedIdentifier
         QualifiedIdentifier id = get<QualifiedIdentifier>(*node.non_array_type.get()); 
