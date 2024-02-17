@@ -2,13 +2,13 @@
 
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
 #include "exceptions/semanticerror.h"
+#include "type-decl/type_declaration.h"
+
 
 // Visit each declaration in an AST, and build an environment for it.
 // Ignore non declaration nodes and pass through them.
 class EnvironmentBuilder : public DefaultSkipVisitor<void> {
-    using TypeDeclaration = std::variant<class ClassDeclarationObject*, class InterfaceDeclarationObject*>;
-
-    class SymbolTable *program_symbol_table;
+    //using TypeDeclaration = std::variant<class ClassDeclarationObject*, class InterfaceDeclarationObject*, std::monostate>;
 
     // Used to track current declaration new declarations are inside, so e.g. methods can be added to symbol
     // table for current class
@@ -37,11 +37,13 @@ class EnvironmentBuilder : public DefaultSkipVisitor<void> {
 
     void operator()(MethodDeclaration &node) override;
 
+    void operator()(Block &node) override;
+
     void operator()(FormalParameter &node) override;
 
     void operator()(LocalVariableDeclaration &node) override;
 
-    EnvironmentBuilder(SymbolTable *program_symbol_table);
+    EnvironmentBuilder(PackageDeclarationObject &default_package);
 
     void visit(AstNodeVariant &node) override;
 };

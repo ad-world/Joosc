@@ -270,7 +270,8 @@ std::vector<MethodDeclarationObject*> getAllMethods(ClassDeclarationObject* clas
 }
 
 class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
-    PackageDeclarationObject* root_symbol_table;
+    // PackageDeclarationObject* root_symbol_table;
+    Environment* root_env;
     
     using DefaultSkipVisitor<void>::operator();
     void operator()(ClassDeclaration &node) override {
@@ -389,5 +390,6 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
     }
 
     public:
-        HierarchyCheckingVisitor(PackageDeclarationObject* root_symbol_table) : root_symbol_table{std::move(root_symbol_table)} {};
+        // HierarchyCheckingVisitor(PackageDeclarationObject* root_symbol_table) : root_symbol_table{std::move(root_symbol_table)} {};
+        HierarchyCheckingVisitor(Environment *root_env) : root_env{std::move(root_env)} {};
 };

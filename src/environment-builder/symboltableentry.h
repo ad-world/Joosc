@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 #include <variant>
+#include "scope.h"
+#include "type-decl/type_declaration.h"
 
 class SymbolTable;
 
@@ -25,9 +27,8 @@ struct PackageDeclarationObject {
     std::unique_ptr<SymbolTable> classes;
     std::unique_ptr<SymbolTable> interfaces;
 
-    PackageDeclarationObject(const std::string &identifier) : identifier{identifier} {}
-    PackageDeclarationObject(const std::string &identifier, bool is_default_package) : 
-        identifier{identifier}, is_default_package{is_default_package} {}
+    PackageDeclarationObject(const std::string &identifier);
+    PackageDeclarationObject();
 };
 
 struct ClassDeclarationObject {
@@ -41,7 +42,7 @@ struct ClassDeclarationObject {
     ClassDeclarationObject* extended;
     std::vector<InterfaceDeclarationObject*> implemented;
 
-    ClassDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    ClassDeclarationObject(const std::string &identifier);
 };
 
 struct InterfaceDeclarationObject {
@@ -53,7 +54,7 @@ struct InterfaceDeclarationObject {
     // Fields resolved at type linking stage
     std::vector<InterfaceDeclarationObject*> extended;
 
-    InterfaceDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    InterfaceDeclarationObject(const std::string &identifier);
 };
 
 struct FieldDeclarationObject {
@@ -61,9 +62,9 @@ struct FieldDeclarationObject {
     class FieldDeclaration* ast_reference;
 
     // Fields resolved at type linking stage
-    SymbolTableEntry *type;
+    TypeDeclaration type;
 
-    FieldDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    FieldDeclarationObject(const std::string &identifier);
 };
 
 struct MethodDeclarationObject {
@@ -71,12 +72,12 @@ struct MethodDeclarationObject {
     class MethodDeclaration* ast_reference;
 
     std::unique_ptr<SymbolTable> parameters; // SymbolTable mapping to FormalParameterDeclarationObject
-    std::unique_ptr<SymbolTable> local_variables; // SymbolTable mapping to LocalVariableDeclarationObject
+    LocalVariableScopeManager scope_manager; // Manager of SymbolTables mapping to LocalVariableDeclarationObject
 
     // Fields resolved at type linking stage
-    SymbolTableEntry *return_type;
+    TypeDeclaration return_type;
 
-    MethodDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    MethodDeclarationObject(const std::string &identifier);
 };
 
 struct FormalParameterDeclarationObject {
@@ -84,9 +85,9 @@ struct FormalParameterDeclarationObject {
     class FormalParameter* ast_reference;
 
     // Fields resolved at type linking stage
-    SymbolTableEntry *type;
+    TypeDeclaration type;
 
-    FormalParameterDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    FormalParameterDeclarationObject(const std::string &identifier);
 };
 
 struct LocalVariableDeclarationObject {
@@ -94,7 +95,7 @@ struct LocalVariableDeclarationObject {
     class LocalVariableDeclaration* ast_reference;
 
     // Fields resolved at type linking stage
-    SymbolTableEntry *type;
+    TypeDeclaration type;
 
-    LocalVariableDeclarationObject(const std::string &identifier) : identifier{identifier} {}
+    LocalVariableDeclarationObject(const std::string &identifier);
 };
