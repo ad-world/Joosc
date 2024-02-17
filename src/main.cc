@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <iostream>
+#include <exception>
 #include "parsing/bison/location.hh"
 #include "parsing/bison/driver.h"
 #include "parsing/bison/parser.hh"
@@ -126,17 +127,19 @@ int main(int argc, char *argv[]) {
     }
 
     // Type linking
-    // try {
-    //     for (auto& ast : asts) {
-    //         CompilationUnit &current_ast = std::get<CompilationUnit>(ast);
-    //         TypeLinker(default_package, current_ast, asts).visit(ast);
-    //     } 
-    // } catch (const SemanticError &e) {
-    //     cerr << "SemanticError Exception occured: " << e.message << "\n";
-    //     return INVALID_PROGRAM;
-    // } catch (...) {
-    //     cerr << "Unknown Exception occured\n";
-    // }
+    try {
+        for (auto& ast : asts) {
+            CompilationUnit &current_ast = std::get<CompilationUnit>(ast);
+            TypeLinker(default_package, current_ast, asts).visit(ast);
+        } 
+    } catch (const SemanticError &e) {
+        cerr << "SemanticError Exception occured: " << e.message << "\n";
+        return INVALID_PROGRAM;
+    } catch (const std::exception &e) {
+        cerr << e.what() << "\n";
+    } catch (...) {
+        cerr << "Unknown Exception occured\n";
+    }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 
