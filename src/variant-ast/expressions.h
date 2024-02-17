@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "astnodecommon.h"
+#include "type-decl/type_declaration.h"
 
 struct Identifier;
 struct QualifiedIdentifier;
