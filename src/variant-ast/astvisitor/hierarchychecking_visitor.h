@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <map>
 #include <stdexcept>
 #include <unordered_set>
@@ -293,8 +292,7 @@ public:
         auto extendedClassModifiers = extendedClass->ast_reference->modifiers;
         for(const auto &modifier : extendedClassModifiers) {
             if(modifier == Modifier::FINAL) {
-                std::cerr << "Error: Class " << className << " extends final class " << extendedClass->identifier << std::endl;
-                std::exit(42);
+                throw std::runtime_error("Error: Class extends final class.");
             }
         }
 
@@ -309,8 +307,7 @@ public:
             implementsSet.insert(interfaceName);
         }
         if(implements.size() != implementsSet.size()) {
-            std::cerr << "Error: Class " << node.class_name->name << " repeats an interface in its implements clause" << std::endl;
-            std::exit(42);
+            throw std::runtime_error("Error: Class repeats an interface in its implements clause");
         }        
 
         // A class must not declare two constructors with the same parameter types (JLS 8.8.2)
@@ -318,14 +315,12 @@ public:
         std::vector<MethodDeclaration>& methods = node.method_declarations;
         // Check that no two methods have the same name and parameter types
         if(checkMethodWithSameSignature(methods)) {
-            std::cerr << "Error: Class " << node.class_name->name << " declares two methods with the same signature" << std::endl;
-            std::exit(42);
+            throw std::runtime_error("Error: Class declares two methods with the same signature");
         }
 
         // The hierarchy must be acyclic. (JLS 8.1.3, 9.1.2)
         if(checkCyclicHierarchy(classEnv)) {
-            std::cerr << "Error: Class " << node.class_name->name << " has a cyclic hierarchy" << std::endl;
-            std::exit(42);
+            throw std::runtime_error("Error: Class has a cyclic hierarchy");
         }
 
         // A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1)
@@ -335,8 +330,7 @@ public:
             allMethods = getAllMethods(classEnv);
             for(auto& method: allMethods) {
                 if(std::find(method->ast_reference->modifiers.begin(), method->ast_reference->modifiers.end(), Modifier::ABSTRACT) != method->ast_reference->modifiers.end()) {
-                    std::cerr << "Error: Class " << className << " contains abstract method " << method->identifier << " and is not abstract" << std::endl;
-                    std::exit(42);
+                    throw std::runtime_error("Error: Class contains abstract method but is not abstract");
                 }
             }
         }
@@ -354,8 +348,7 @@ public:
             extendedSet.insert(interfaceName);
         }
         if(extended.size() != extendedSet.size()) {
-            std::cerr << "Error: Interface " << node.interface_name->name << " repeats an interface in its extends clause" << std::endl;
-            std::exit(42);
+            throw std::runtime_error("Error: Interface repeats an interface in its extends clause");
         }
 
         // A class must not declare two constructors with the same parameter types (JLS 8.8.2)
@@ -363,14 +356,12 @@ public:
         std::vector<MethodDeclaration>& methods = node.method_declarations;
         // Check that no two methods have the same name and parameter types
         if(checkMethodWithSameSignature(methods)) {
-            std::cerr << "Error: Interface " << node.interface_name->name << " declares two methods with the same signature" << std::endl;
-            std::exit(42);
+            throw std::runtime_error("Error: Interface declares two methods with the same signature");
         }
 
         // The hierarchy must be acyclic. (JLS 8.1.3, 9.1.2)
         if(checkCyclicHierarchy(interfaceEnv)) {
-            std::cerr << "Error: Interface " << node.interface_name->name << " has a cyclic hierarchy" << std::endl;
-            std::exit(42);
+            throw std::runtime_error("Error: Interface has a cyclic hierarchy");
         }
 
         this->visit_children(node);
