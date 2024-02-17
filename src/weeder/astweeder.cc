@@ -63,10 +63,9 @@ void AstWeeder::printViolations() {
 }
 
 int AstWeeder::weed(AstNodeVariant& root, string fileName) {
-    string file = getFileName(fileName);
-
-    if (holds_alternative<CompilationUnit>(root)) {
-        auto& cu = get<CompilationUnit>(root);
+    if(holds_alternative<CompilationUnit>(root)) {
+        auto &cu = get<CompilationUnit>(root);
+        string file = getFileName(fileName);
 
         // check at most one type per file
         checkOneTypePerFile(cu);
@@ -81,14 +80,14 @@ int AstWeeder::weed(AstNodeVariant& root, string fileName) {
         checkClassModifiersAndConstructors(cu.class_declarations, file);
 
         // check if program has any literals
-        checkLiterals(GrabAllVisitor<Literal>()(root));
+        checkLiterals(GrabAllVisitor<Literal>().visit(root));
 
 
         if(!violations.empty()) {
             printViolations();
             return 42;
         }    
-    }
+    } 
     
     return 0;
 }

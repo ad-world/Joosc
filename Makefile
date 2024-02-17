@@ -21,6 +21,9 @@ integration-test: build
 integration-test-full: build
 	python3 tests/src/integration/valid_invalid_prog_test.py
 
+single-test:
+	python3 tests/src/integration/single_test.py ${path}
+
 clean:
 	rm -f joosc && rm -f *.log && rm -f *.zip
 	make clean -C src/parsing/bison

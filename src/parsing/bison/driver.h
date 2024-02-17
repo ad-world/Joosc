@@ -17,7 +17,8 @@ public:
   // Return code from last parse; 0 if success and non-zero otherwise
   int result;
   // Parse tree from last parse
-  AstNodeVariant *root;
+  // AstNodeVariant *root;
+  CompilationUnit *root;
   // Run the parser on file F. Return 0 on success
   int parse(const std::string& f);
   // The name of the file being parsed

@@ -278,7 +278,7 @@
 
 /******************** END NONTERMINALS ********************/
 
-%parse-param {AstNodeVariant **root}
+%parse-param {CompilationUnit **root}
 
 %{
 #define MAKE_EMPTY(me)      ; // me = new AstNodeVariant((symbol_kind::S_YYEMPTY))
@@ -372,7 +372,8 @@ Start:
     CompilationUnit {
         auto test = new CompilationUnit(nullptr, vector<QualifiedIdentifier>(), vector<QualifiedIdentifier>(), vector<ClassDeclaration>(), vector<InterfaceDeclaration>());
         *test = (move(*$1));
-        *root = (AstNodeVariant*) test;
+        *root = test;
+        // *root = (AstNodeVariant*) test;
     }
 
 // root = AstNodeVariant**
