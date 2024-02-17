@@ -24,15 +24,20 @@ struct QualifiedIdentifier: public AstNodeCommon {
 public: 
     std::string getQualifiedName() {
         std::string result = "";
-        for(auto &id : identifiers) {
-            result += id.name + ".";
+        for (int i = 0; i < identifiers.size(); i++) {
+            auto id = identifiers[i];
+            if (i == identifiers.size() - 1) {
+                result += id.name;
+            } else {
+                result += id.name + ".";
+            }
         }
         return result;
     }
 
     std::string getPackagePrefix() {
         std::string result = "";
-        for (int i = 0; i < identifiers.size() - 1; i++) {
+        for (int i = 0; i < identifiers.size(); i++) {
             result += identifiers[i].name + ".";
         }
 
