@@ -10,6 +10,7 @@
 #include "exceptions/compilerdevelopmenterror.h"
 #include "exceptions/semanticerror.h"
 #include "type-linking/typelinker.h"
+#include "variant-ast/astvisitor/hierarchychecking_visitor.h"
 
 using namespace std;
 

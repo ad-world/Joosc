@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include "variant-ast/astnode.h"
 #include "defaultskipvisitor.h"
-#include "symboltable.h"
+#include "environment-builder/symboltable.h"
 #include "variant-ast/classes.h"
 #include "variant-ast/names.h"
 #include "variant-ast/types.h"
@@ -36,6 +36,8 @@ std::string PrimitiveTypeToString(PrimitiveType& pt) {
             return "boolean";
         case PrimitiveType::VOID:
             return "void";
+        default:
+            throw std::runtime_error("Unrecognized primitive type");
     }
 }
 
@@ -72,8 +74,7 @@ bool checkMethodWithSameSignature(std::vector<MethodDeclaration>& methods) {
 }
 
 
-template <typename T>
-bool checkCyclicHierarchy(T* obj) {
+bool checkCyclicHierarchy(std::variant<ClassDeclarationObject*, InterfaceDeclarationObject*> obj) {
     std::unordered_set<ClassDeclarationObject*> visitedClasses{};
     std::unordered_set<InterfaceDeclarationObject*> visitedInterfaces{};
     std::unordered_set<ClassDeclarationObject*> visitingClasses{};
@@ -128,7 +129,13 @@ bool checkCyclicHierarchy(T* obj) {
         return false;
     };
 
-    return dfsClass(obj);
+    if ( std::holds_alternative<ClassDeclarationObject*>(obj) ) {
+        // Classdecl
+        return dfsClass(get<ClassDeclarationObject*>(obj));
+    } else {
+        // Interfacedecl
+        return dfsInterface(get<InterfaceDeclarationObject*>(obj));
+    }
 }
 
 bool operator==(const Type & lhs, const Type & rhs) {
@@ -178,7 +185,7 @@ void checkMethodReplaceModifiers(
     if ( method_modifiers.find(Modifier::STATIC) != method_modifiers.end() ) {
         // static method
         for ( const auto & extend_method : replaced_methods ) {
-            std::unordered_set<Modifier> *extend_modifiers = replaced_modifiers_map.at(extend_method);
+            std::unordered_set<Modifier> *extend_modifiers = &replaced_modifiers_map.at(extend_method);
             if ( extend_modifiers->find(Modifier::STATIC) == extend_modifiers->end() ) {
                 // replaced non-static
                 throw std::runtime_error("Hierarchy checking: A static method must not replace a nonstatic method.");
@@ -230,7 +237,7 @@ void checkMethods(std::vector<MethodDeclaration>& methods, ClassDeclaration& par
                         replaced_modifiers.insert(modifier);
                         extend_modifiers.insert(modifier);
                     }
-                    replaced_modifiers.insert({&extend_method, extend_modifiers});
+                    replaced_modifiers_map.insert({&extend_method, extend_modifiers});
                 }
             }
         }
@@ -270,8 +277,8 @@ std::vector<MethodDeclarationObject*> getAllMethods(ClassDeclarationObject* clas
 }
 
 class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
-    // PackageDeclarationObject* root_symbol_table;
-    Environment* root_env;
+    PackageDeclarationObject* root_symbol_table;
+    // Environment* root_env;
     
     using DefaultSkipVisitor<void>::operator();
     void operator()(ClassDeclaration &node) override {
@@ -390,6 +397,6 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
     }
 
     public:
-        // HierarchyCheckingVisitor(PackageDeclarationObject* root_symbol_table) : root_symbol_table{std::move(root_symbol_table)} {};
-        HierarchyCheckingVisitor(Environment *root_env) : root_env{std::move(root_env)} {};
+        HierarchyCheckingVisitor(PackageDeclarationObject* root_symbol_table) : root_symbol_table{std::move(root_symbol_table)} {};
+        // HierarchyCheckingVisitor(Environment *root_env) : root_env{std::move(root_env)} {};
 };
