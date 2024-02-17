@@ -138,7 +138,13 @@ int main(int argc, char *argv[]) {
         cerr << "Unknown Exception occured\n";
     }
 
-    HierarchyCheckingVisitor(default_package).visit();
+    try {
+        for ( auto& ast : asts ) {
+            HierarchyCheckingVisitor(default_package).visit(ast);
+        }
+    } catch (...) {
+        cerr << "Unknown hierarchy checking error occurred\n";
+    }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 

@@ -280,6 +280,7 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
     PackageDeclarationObject* root_symbol_table;
     // Environment* root_env;
     
+public:
     using DefaultSkipVisitor<void>::operator();
     void operator()(ClassDeclaration &node) override {
         auto &extends = node.extends_class;
@@ -396,8 +397,10 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
         this->visit_children(node);
     }
 
-    public:
+    void visit(AstNodeVariant &node) override {
+        std::visit(*this, node);
+    }
 
-        HierarchyCheckingVisitor(PackageDeclarationObject &root_symbol_table) : root_symbol_table{&root_symbol_table} {};
+    HierarchyCheckingVisitor(PackageDeclarationObject &root_symbol_table) : root_symbol_table{&root_symbol_table} {};
         // HierarchyCheckingVisitor(Environment *root_env) : root_env{std::move(root_env)} {};
 };
