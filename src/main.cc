@@ -138,6 +138,8 @@ int main(int argc, char *argv[]) {
         cerr << "Unknown Exception occured\n";
     }
 
+    HierarchyCheckingVisitor(default_package).visit();
+
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 
     return rc;

@@ -397,6 +397,7 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
     }
 
     public:
-        HierarchyCheckingVisitor(PackageDeclarationObject* root_symbol_table) : root_symbol_table{std::move(root_symbol_table)} {};
+
+        HierarchyCheckingVisitor(PackageDeclarationObject &root_symbol_table) : root_symbol_table{&root_symbol_table} {};
         // HierarchyCheckingVisitor(Environment *root_env) : root_env{std::move(root_env)} {};
 };
