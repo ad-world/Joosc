@@ -92,18 +92,17 @@ def valid_invalid_prog_test():
                             if os.path.isdir(program_path):
                                 files = get_all_files(program_path)
 
-                            else:
-                                with open(integration_log_file, "w") as outfile:
-                                    result = subprocess.run([joosc_executable, *files, *stdlib_files], stderr=outfile)
+                            with open(integration_log_file, "w") as outfile:
+                                result = subprocess.run([joosc_executable, *files, *stdlib_files], stderr=outfile)
 
-                                if result.returncode == expected_code:
-                                    if print_pass_cases: # Test passed, display output if -f is not set
-                                        print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
-                                        print_file_contents(integration_log_file)
-                                else:
-                                    print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
+                            if result.returncode == expected_code:
+                                if print_pass_cases: # Test passed, display output if -f is not set
+                                    print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
                                     print_file_contents(integration_log_file)
-                                    failures = True
+                            else:
+                                print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
+                                print_file_contents(integration_log_file)
+                                failures = True
         
     if failures:
         print(f"{colors.FAIL}\nERROR: Tests had failures.{colors.ENDC}")
