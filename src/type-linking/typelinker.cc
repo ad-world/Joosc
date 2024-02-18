@@ -236,6 +236,10 @@ void TypeLinker::operator()(ClassDeclaration &node) {
 
     std::string name = node.class_name->name;
 
+    // Check this class resolves unambiguously with imported classes
+    auto qid = QualifiedIdentifier(std::vector{Identifier(name)});
+    lookupType(qid);
+
     // Resolve implemented types to interfaces
     for (auto &implements_qualified_identifier : node.implements) {
         TypeDeclaration implemented = lookupType(implements_qualified_identifier);
@@ -262,6 +266,10 @@ void TypeLinker::operator()(ClassDeclaration &node) {
 void TypeLinker::operator()(InterfaceDeclaration &node) {
 
     std::string name = node.interface_name->name;
+
+    // Check this interface resolves unambiguously with imported classes
+    auto qid = QualifiedIdentifier(std::vector{Identifier(name)});
+    lookupType(qid);
 
     // Resolve extended types to interfaces
     for (auto &extends_qualified_identifier : node.extends_class) {
