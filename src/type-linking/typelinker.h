@@ -13,13 +13,6 @@
 using namespace std;
 
 class TypeLinker : public DefaultSkipVisitor<void> {
-    PackageDeclarationObject &root_env;
-    CompilationUnit *ast_root;
-    vector<QualifiedIdentifier> single_type_import_declarations;
-    vector<AstNodeVariant>& asts;
-    vector<QualifiedIdentifier> type_import_on_demand_declarations;
-    string package_name;
-
     PackageDeclarationObject *current_package;
     PackageDeclarationObject *default_package;
     std::vector<TypeDeclaration> single_imports;
@@ -27,19 +20,25 @@ class TypeLinker : public DefaultSkipVisitor<void> {
     
     std::unordered_map<std::string, TypeDeclaration> simple_types_available;
 
-    // Resolve qualified identifier to package, or throw semantic error if it resolves to a type
-    PackageDeclarationObject* resolveToPackage(QualifiedIdentifier &qualified_identifier);
+    // Resolve qualified_identifier to package from source_package.
+    // Throws semantic error if any prefix, including the full name, resolves to a type
+    // not in the default package.
+    PackageDeclarationObject* resolveToPackage(
+        QualifiedIdentifier &qualified_identifier, 
+        PackageDeclarationObject* source_package
+    );
 
-    // Resolve qualified identifer to type, or throw semantic error if it resolves to a package
+    // Resolve qualified_identifier to fully qualified type from default package.
+    // Throws semantic error if any strict prefix resolves to a type.
     TypeDeclaration resolveToType(QualifiedIdentifier &qualified_identifier);
 
-    // Resolve simple identifer to type
-    TypeDeclaration simpleResolveToType(std::string &identifier);
+    // Look up qualifed_identifier as a type in compilation unit's namespace.
+    // Throws semantic error if there are multiple candidates in the namespace.
+    TypeDeclaration lookupType(QualifiedIdentifier &qualified_identifier);
 
-    // Resolve qualified identifier to fully qualified type
-    TypeDeclaration resolveToTypeInPackage(QualifiedIdentifier &qualified_identifier);
-
-    void checkTypeOverlap();
+    // Look up identifier as a type in compilation unit's namespace.
+    // Throws semantic error if there are multiple candidates in the namespace.
+    TypeDeclaration lookupToSimpleType(std::string &identifier);
 
 public:
     using DefaultSkipVisitor<void>::operator();
@@ -53,7 +52,7 @@ public:
     void operator()(FormalParameter &node) override;
     void operator()(LocalVariableDeclaration &node) override;
 
-    TypeLinker(PackageDeclarationObject &root_env, CompilationUnit &ast_root, vector<AstNodeVariant> &asts);
+    TypeLinker(PackageDeclarationObject &default_package);
 
     void visit(AstNodeVariant &node) override {
         std::visit(*this, node);

@@ -130,15 +130,15 @@ int main(int argc, char *argv[]) {
     try {
         for (auto& ast : asts) {
             CompilationUnit &current_ast = std::get<CompilationUnit>(ast);
-            TypeLinker(default_package, current_ast, asts).visit(ast);
+            TypeLinker(default_package).visit(ast);
         } 
     } catch (const SemanticError &e) {
         cerr << "SemanticError Exception occured: " << e.message << "\n";
         return INVALID_PROGRAM;
+    } catch (const CompilerDevelopmentError &e) {
+        cerr << "Development error occured: " << e.message << "\n";
     } catch (const std::exception &e) {
         cerr << e.what() << "\n";
-    } catch (...) {
-        cerr << "Unknown Exception occured\n";
     }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }

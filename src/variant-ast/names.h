@@ -43,4 +43,10 @@ public:
 
         return result;
     }
+
+    QualifiedIdentifier getQualifiedIdentifierWithoutLast() {
+        auto identifiers_copy = identifiers;
+        identifiers_copy.pop_back();
+        return identifiers_copy;
+    }
 };
