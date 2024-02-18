@@ -17,18 +17,16 @@ class TypeLinker : public DefaultSkipVisitor<void> {
     PackageDeclarationObject *default_package;
     std::vector<TypeDeclaration> single_imports;
     std::vector<PackageDeclarationObject*> star_imports;
-    
-    std::unordered_map<std::string, TypeDeclaration> simple_types_available;
 
     // Resolve qualified_identifier to package from source_package.
     // Throws semantic error if any prefix, including the full name, resolves to a type
-    // not in the default package.
+    // not in source_package.
     PackageDeclarationObject* resolveToPackage(
         QualifiedIdentifier &qualified_identifier, 
         PackageDeclarationObject* source_package
     );
 
-    // Resolve qualified_identifier to fully qualified type from default package.
+    // Resolve qualified_identifier to fully qualified type from default_package.
     // Throws semantic error if any strict prefix resolves to a type.
     TypeDeclaration resolveToType(QualifiedIdentifier &qualified_identifier);
 
