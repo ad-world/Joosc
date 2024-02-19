@@ -46,7 +46,7 @@ PackageDeclarationObject* TypeLinker::resolveToPackage(
             temp_package = &(std::get<PackageDeclarationObject>(*possible_package));
         } else {
             // Reference to undeclared package
-            throw SemanticError("Undeclared package");
+            throw SemanticError("Undeclared package: " + identifier.name + " in package " + temp_package->identifier);
         }
     }
 
@@ -148,9 +148,17 @@ TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
     std::vector<TypeDeclaration> valid_candidates;
 
     // 1. Try the enclosing class or interface
+    std::visit([&](auto class_or_interface) {
+        if (class_or_interface->identifier == identifier) {
+            valid_candidates.push_back(class_or_interface);
+        }
+    }, current_type);
 
+    if(valid_candidates.size() > 0) {
+        return resolveCandidates(valid_candidates, identifier);
+    }
 
-    // Look up in list of all single type imports
+    // 2. Look up in list of all single type imports
     for (auto type_dec : single_imports) {
         std::visit([&](auto class_or_int_dec) {
             if (class_or_int_dec->identifier == identifier) {
@@ -159,7 +167,20 @@ TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
         }, type_dec);
     }
 
-    // Look up in imported packages
+    if(valid_candidates.size() > 0) {
+        return resolveCandidates(valid_candidates, identifier);
+    }
+
+    // 3. Look up in current package
+    if (auto possible_type = tryFindTypeInPackage(identifier, current_package)) {
+        valid_candidates.push_back(*possible_type);
+    }
+
+    if(valid_candidates.size() > 0) {
+        return resolveCandidates(valid_candidates, identifier);
+    }
+
+    // 4. Look up in imported packages
     for (auto package_dec : star_imports) {
         auto possible_classes = package_dec->classes->lookupSymbol(identifier);
         auto possible_interfaces = package_dec->interfaces->lookupSymbol(identifier);
