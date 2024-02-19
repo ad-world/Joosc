@@ -68,8 +68,13 @@ def valid_invalid_prog_test():
     currently_testing = os.getenv('TESTING_COVERAGE', '') # todo: replace with environment variable
     split_assignments = currently_testing.split(',')
 
+    test_numbers = {}
+
     for assignment in os.listdir(programs_dir):
         if assignment in split_assignments:
+            pass_count = 0
+            fail_count = 0
+
             assignment_path = os.path.join(programs_dir, assignment)
             local_valid_tests = os.path.join(assignment_path, "local/valid")
             local_invalid_tests = os.path.join(assignment_path, "local/invalid")
@@ -99,13 +104,23 @@ def valid_invalid_prog_test():
                                 if print_pass_cases: # Test passed, display output if -f is not set
                                     print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
                                     print_file_contents(integration_log_file)
+                                pass_count += 1
                             else:
                                 print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
                                 print_file_contents(integration_log_file)
                                 failures = True
-        
+                                fail_count += 1
+    
+            test_numbers[assignment] = { 'pass_count': pass_count, 'fail_count': fail_count, 'total_count': pass_count + fail_count }
+
     if failures:
-        print(f"{colors.FAIL}\nERROR: Tests had failures.{colors.ENDC}")
+        print(f"{colors.FAIL}\nERROR: Tests had failures")
+        for assignment, results in test_numbers.items():
+            pass_count, fail_count, total_count = results['pass_count'], results['fail_count'], results['total_count']
+            print(f"{colors.HEADER}\nTest suite for assignment {assignment}")
+            print(f"{colors.OKGREEN}Passing tests: {pass_count}/{total_count}")
+            print(f"{colors.FAIL}Failing tests: {fail_count}/{total_count}")
+            print(f"{colors.ENDC}")
         return 1
     else:
         print(f"{colors.OKGREEN}All tests succeeded!{colors.ENDC}")
