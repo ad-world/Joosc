@@ -117,6 +117,15 @@ TypeDeclaration resolveCandidates(std::vector<TypeDeclaration>& valid_candidates
 TypeDeclaration TypeLinker::lookupType(QualifiedIdentifier &qualified_identifier) {
     std::string canoncial_name = qualified_identifier.identifiers.back().name;
 
+    /*
+        * Typelinking:
+        * - Unqualified names are handled by these rules: 
+        *   1. try the enclosing class or interface 
+        *   2. try any single-type-import (A.B.C.D) 
+        *   3. try the same package 
+        *   4. try any import-on-demand package (A.B.C.*), including java.lang.* 
+    */
+
     if (qualified_identifier.identifiers.size() == 1) {
         return lookupToSimpleType(canoncial_name);
     }
@@ -137,6 +146,9 @@ TypeDeclaration TypeLinker::lookupType(QualifiedIdentifier &qualified_identifier
 
 TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
     std::vector<TypeDeclaration> valid_candidates;
+
+    // 1. Try the enclosing class or interface
+
 
     // Look up in list of all single type imports
     for (auto type_dec : single_imports) {
@@ -171,6 +183,23 @@ void TypeLinker::operator()(CompilationUnit &node) {
     auto java_lang = QualifiedIdentifier(std::vector<Identifier>{Identifier("java"), Identifier("lang")});
     star_imports.emplace_back(resolveToPackage(java_lang, default_package));
 
+    std::string current_type_name;
+
+    if (node.class_declarations.size() > 0) {
+        current_type_name = node.class_declarations[0].class_name->name;
+    } else if (node.interface_declarations.size() > 0) {
+        current_type_name = node.interface_declarations[0].interface_name->name;
+    } else {
+        throw CompilerDevelopmentError("No class or interface in compilation unit");
+    }
+
+    if(auto result = tryFindTypeInPackage(current_type_name, current_package)) {
+        current_type = *result;
+        cout << "Current type is " << current_type_name << endl;
+    } else {
+        throw CompilerDevelopmentError("Current type not found in current package");
+    }
+
     // Make import-on-demand packages accessible
     for (auto &qualified_identifier : node.type_import_on_demand_declaration) {
         star_imports.emplace_back(resolveToPackage(qualified_identifier, default_package));
@@ -180,7 +209,9 @@ void TypeLinker::operator()(CompilationUnit &node) {
     if (node.package_declaration) {
         current_package = resolveToPackage(*node.package_declaration, default_package);
     }
-    star_imports.emplace_back(current_package);
+    
+    // This should not happen, as we check current package before checking star imports
+    // star_imports.emplace_back(current_package);
 
     // Make imported types accessible
     for (auto &qualified_identifier : node.single_type_import_declaration) {

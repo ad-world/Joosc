@@ -15,6 +15,7 @@ using namespace std;
 class TypeLinker : public DefaultSkipVisitor<void> {
     PackageDeclarationObject *current_package;
     PackageDeclarationObject *default_package;
+    TypeDeclaration current_type;
     std::vector<TypeDeclaration> single_imports;
     std::vector<PackageDeclarationObject*> star_imports;
 
