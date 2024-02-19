@@ -61,8 +61,9 @@ TypeDeclaration TypeLinker::resolveToType(QualifiedIdentifier &qualified_identif
         auto possible_class = temp_package->classes->lookupUniqueSymbol(identifier.name);
         auto possible_interface = temp_package->interfaces->lookupUniqueSymbol(identifier.name);
 
-        if (possible_class || possible_interface) {
-            if (&identifier != &qualified_identifier.identifiers.back()) {
+        if ((possible_class || possible_interface)) {
+            if (&identifier != &qualified_identifier.identifiers.back() && current_package != default_package) {
+                // This is only problematic if the possible class / interface is NOT in the default package
                 throw SemanticError("Prefix of fully qualified type resolves to type");
             }
             if (possible_class) {
@@ -116,7 +117,6 @@ TypeDeclaration resolveCandidates(std::vector<TypeDeclaration>& valid_candidates
 
 TypeDeclaration TypeLinker::lookupType(QualifiedIdentifier &qualified_identifier) {
     std::string canoncial_name = qualified_identifier.identifiers.back().name;
-
     /*
         * Typelinking:
         * - Unqualified names are handled by these rules: 
@@ -149,7 +149,7 @@ TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
 
     // 1. Try the enclosing class or interface
     std::visit([&](auto class_or_interface) {
-        if (class_or_interface->identifier == identifier) {
+        if (class_or_interface && class_or_interface->identifier == identifier) {
             valid_candidates.push_back(class_or_interface);
         }
     }, current_type);
@@ -206,6 +206,7 @@ void TypeLinker::operator()(CompilationUnit &node) {
 
     std::string current_type_name;
 
+    // Get the current type name
     if (node.class_declarations.size() > 0) {
         current_type_name = node.class_declarations[0].class_name->name;
     } else if (node.interface_declarations.size() > 0) {
@@ -214,11 +215,17 @@ void TypeLinker::operator()(CompilationUnit &node) {
         throw CompilerDevelopmentError("No class or interface in compilation unit");
     }
 
-    if(auto result = tryFindTypeInPackage(current_type_name, current_package)) {
+
+     // Make package of compilation unit accessible
+    if (node.package_declaration) {
+        current_package = resolveToPackage(*node.package_declaration, default_package);
+    }
+
+    // Find current type (i.e the type that the current file specifies)
+    if (auto result = tryFindTypeInPackage(current_type_name, current_package)) {
         current_type = *result;
-        cout << "Current type is " << current_type_name << endl;
     } else {
-        throw CompilerDevelopmentError("Current type not found in current package");
+        throw CompilerDevelopmentError("Current type " + current_type_name + " not found in current package.");
     }
 
     // Make import-on-demand packages accessible
@@ -226,12 +233,7 @@ void TypeLinker::operator()(CompilationUnit &node) {
         star_imports.emplace_back(resolveToPackage(qualified_identifier, default_package));
     }
 
-    // Make package of compilation unit accessible
-    if (node.package_declaration) {
-        current_package = resolveToPackage(*node.package_declaration, default_package);
-    }
-    
-    // This should not happen, as we check current package before checking star imports
+    // This should not happen, as we check current package before checking star imports on a different precedence level
     // star_imports.emplace_back(current_package);
 
     // Make imported types accessible
