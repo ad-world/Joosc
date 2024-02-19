@@ -8,16 +8,35 @@
 #include <vector>
 #include <string>
 #include <variant>
+#include <unordered_map>
 
 using namespace std;
 
 class TypeLinker : public DefaultSkipVisitor<void> {
-    PackageDeclarationObject &root_env;
-    CompilationUnit *ast_root;
-    vector<QualifiedIdentifier> single_type_import_declarations;
-    vector<AstNodeVariant>& asts;
-    vector<QualifiedIdentifier> type_import_on_demand_declarations;
-    string package_name;
+    PackageDeclarationObject *current_package;
+    PackageDeclarationObject *default_package;
+    std::vector<TypeDeclaration> single_imports;
+    std::vector<PackageDeclarationObject*> star_imports;
+
+    // Resolve qualified_identifier to package from source_package.
+    // Throws semantic error if any prefix, including the full name, resolves to a type
+    // not in source_package.
+    PackageDeclarationObject* resolveToPackage(
+        QualifiedIdentifier &qualified_identifier, 
+        PackageDeclarationObject* source_package
+    );
+
+    // Resolve qualified_identifier to fully qualified type from default_package.
+    // Throws semantic error if any strict prefix resolves to a type.
+    TypeDeclaration resolveToType(QualifiedIdentifier &qualified_identifier);
+
+    // Look up qualifed_identifier as a type in compilation unit's namespace.
+    // Throws semantic error if there are multiple candidates in the namespace.
+    TypeDeclaration lookupType(QualifiedIdentifier &qualified_identifier);
+
+    // Look up identifier as a type in compilation unit's namespace.
+    // Throws semantic error if there are multiple candidates in the namespace.
+    TypeDeclaration lookupToSimpleType(std::string &identifier);
 
 public:
     using DefaultSkipVisitor<void>::operator();
@@ -31,7 +50,7 @@ public:
     void operator()(FormalParameter &node) override;
     void operator()(LocalVariableDeclaration &node) override;
 
-    TypeLinker(PackageDeclarationObject &root_env, CompilationUnit &ast_root, vector<AstNodeVariant> &asts);
+    TypeLinker(PackageDeclarationObject &default_package);
 
     void visit(AstNodeVariant &node) override {
         std::visit(*this, node);

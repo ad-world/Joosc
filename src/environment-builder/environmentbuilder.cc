@@ -73,7 +73,7 @@ void EnvironmentBuilder::operator()(InterfaceDeclaration &node) {
     }
 
     // Interface does not conflict in package and can be added
-    auto int_env = current_package->classes->addSymbol<InterfaceDeclarationObject>(interface_name);
+    auto int_env = current_package->interfaces->addSymbol<InterfaceDeclarationObject>(interface_name);
     this->current_type = int_env;
     
     linkDeclaration(node, *int_env);

@@ -4,365 +4,245 @@
 #include <iostream>
 #include <environment-builder/symboltable.h>
 #include <variant>
+#include <algorithm>
+#include <unordered_map>
 #include "exceptions/compilerdevelopmenterror.h"
-
+#include "utillities/util.h"
 
 using namespace std;
 
-
-// This function gets the types in the package
-set<string> getPackageTypes(string package_name, vector<AstNodeVariant> &asts) {
-    set<string> types;
-
-    // For each ast in the asts
-    for (auto &ast: asts) {
-        if(holds_alternative<CompilationUnit>(ast)) {
-            auto &cu_variant = get<CompilationUnit>(ast);
-             // If the package name matches
-            if (cu_variant.package_declaration->getQualifiedName() == package_name) {
-                // If there are class declarations, add the class name to the types
-                if (cu_variant.class_declarations.size() > 0) {
-                    string type_name = cu_variant.class_declarations[0].class_name->name;
-
-                    // If type with same name exists in the package
-                    if(types.find(type_name) != types.end()) {
-                        cout << "Duplicate type " << type_name << endl;
-                        exit(42);
-                    }
-
-                    types.insert(cu_variant.class_declarations[0].class_name->name);
-                }
-
-                // If there are interface declarations, add the interface name to the types
-                if (cu_variant.interface_declarations.size() > 0) {
-                    string type_name = cu_variant.interface_declarations[0].interface_name->name;
-
-                    // If type with same name exists in the package
-                    if(types.find(type_name) != types.end()) {
-                        cout << "Duplicate type " << type_name << endl;
-                        exit(42);
-                    }
-
-                    types.insert(cu_variant.interface_declarations[0].interface_name->name);
-                }
-            }
-        }
-    }
-
-    // Return a set of types
-    return types;
-}
-
-bool checkNullTypeDeclaration(TypeDeclaration decl) {
-    if(holds_alternative<ClassDeclarationObject*>(decl)) {
-        return get<ClassDeclarationObject*>(decl) == nullptr;
-    } else if(holds_alternative<InterfaceDeclarationObject*>(decl)) {
-       return get<InterfaceDeclarationObject*>(decl) == nullptr;
-    }
-
-    return true;
-}
-
-
-// This function resolves qualified type names "package.Class c;" or "package.Interface i;
-TypeDeclaration resolveQualifiedIdentifier(QualifiedIdentifier *node, PackageDeclarationObject &env, string package_name, vector<AstNodeVariant> &asts) {
-    string type_name = node->getQualifiedName(); // The qualified name of the type
-
-    TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
-    // get classes and interfaces from default package
-    auto &classes = env.classes; // Get classes in env
-    auto &interfaces = env.interfaces; // Get interfaces in env
-
-    SymbolTableEntry* class_entry = classes.get()->lookupUniqueSymbol(type_name);
-    SymbolTableEntry *interface_entry = interfaces.get()->lookupUniqueSymbol(type_name);
-    if(class_entry != nullptr) {
-        // result = classes.get()->lookupUniqueSymbol(type_name); // If the class is in the environment, set the result to the class
-        if(holds_alternative<ClassDeclarationObject>(*class_entry)) {
-            result = &std::get<ClassDeclarationObject>(*class_entry);
-        }
-    } else if(interface_entry != nullptr) {
-        if(holds_alternative<InterfaceDeclarationObject>(*interface_entry)) {
-            result = &std::get<InterfaceDeclarationObject>(*interface_entry); // If the interface is in the environment, set the result to the interface
-        }
-    }
-
-    // if(classes.find(type_name) != classes.end()) {
-    //     result = &classes[type_name]; // If the class is in the environment, set the result to the class
-    // } else if(interfaces.find(type_name) != interfaces.end()) {
-    //     result = &interfaces[type_name]; // If the interface is in the environment, set the result to the interface
-    // } 
-
-    // We did not find the type in the environment. Return nullptr. Class doesn't exist, we can't resolve it.
-    if(checkNullTypeDeclaration(result)) return static_cast<ClassDeclarationObject*>(nullptr);    
-
-    set<string> package_types = getPackageTypes(package_name, asts); // Get the types in the package
-
-    string cur_prefix = package_name;
-
-    while (cur_prefix.size() > 0) {
-        int last_period = cur_prefix.find_last_of('.');
-        
-        if (last_period == string::npos) {
-            break;
-        }
-
-        cur_prefix = cur_prefix.substr(0, last_period); // Create a new prefix
-
-        // Check if the prefix exists in current classes, current interfaces, or package types
-        if (classes.get()->lookupSymbol(cur_prefix) || interfaces.get()->lookupSymbol(cur_prefix)|| package_types.find(cur_prefix) != package_types.end()) {
-            cout << "Found a prefix class : " << cur_prefix << " of " << type_name << endl;
-            exit(42);
-        }
-    }
-
-    // Return the result AstNodeCommon
-    return result;
-}
-
-PackageDeclarationObject *getPackageObjectFromDeclaration(QualifiedIdentifier* package_decl, PackageDeclarationObject &env) {
-    // Starting from the root env, get the package object from a package declaratino
-    PackageDeclarationObject *result = &env;
-    for (auto &id: package_decl->identifiers) {
-        string package_name = id.name;
-        // Find the package at the current level of package decl
-        if(result->sub_packages.get()->lookupUniqueSymbol(package_name)) {
-            // If found, set that as new parent, and then continue
-            result = &std::get<PackageDeclarationObject>(*result->sub_packages.get()->lookupUniqueSymbol(package_name));
-        } else {
-            // Else not found;
-            cout << "Package " << package_name << " not found" << endl;
-            exit(42);
-        }
-    }
-
-    return result;
-} 
-
-TypeDeclaration checkCurrentPackage(vector<AstNodeVariant> &asts, string package_name, string type_name) {
-    // Checking current package
-    for (auto &ast: asts) {
-        if(holds_alternative<CompilationUnit>(ast)) {
-            auto &cu_variant = get<CompilationUnit>(ast);
-            if(cu_variant.package_declaration && cu_variant.package_declaration->getQualifiedName() == package_name) {
-                // If the class name is the same as the type name, return that class
-                if (cu_variant.class_declarations.size() > 0 && cu_variant.class_declarations[0].class_name->name == type_name) {
-                    // If we found a class in the package, get the package decl object from the root package, and return the class declaration object
-                    return cu_variant.class_declarations[0].environment;
-                }
-
-                // If the interface name is the same as the type name, return that interface
-                if(cu_variant.interface_declarations.size() > 0 && cu_variant.interface_declarations[0].interface_name->name == type_name) {
-                    // If we found an interface  in the package, get the package decl object from the root package, and return the class declaration object
-                    return cu_variant.interface_declarations[0].environment;
-                }
-            }
-        }
-        // If the package name is the same as the current package
-        
-    }
-
-    return static_cast<ClassDeclarationObject*>(nullptr);
-}
-
-TypeDeclaration checkSingleImports(vector<QualifiedIdentifier> single_type_import_declarations, vector<AstNodeVariant> &asts, string type_name) {
-    for (auto &import: single_type_import_declarations) {
-        string import_prefix = import.getQualifiedName(); // get package prefix
-        // java.lang.String -> package name = java.lang
-            
-        for (const AstNodeVariant &ast: asts) {
-            if(holds_alternative<CompilationUnit>(ast)) {
-                auto &cu_variant = get<CompilationUnit>(ast);
-                 if(cu_variant.package_declaration && cu_variant.package_declaration->getQualifiedName() == import_prefix) { // if the package name is the same as the import prefix
-                    if (cu_variant.class_declarations.size() > 0 && cu_variant.class_declarations[0].class_name->name == type_name) {
-                        // check that cu_variant class declaration
-                        return cu_variant.class_declarations[0].environment;
-                    }
-
-                    if(cu_variant.interface_declarations.size() > 0 && cu_variant.interface_declarations[0].interface_name->name == type_name) {
-                        // check that cu_variant interface declaration
-                        return cu_variant.interface_declarations[0].environment;
-                    }
-                }
-            }
-           
-        }
-    }
-
-    return static_cast<ClassDeclarationObject*>(nullptr);
-}
-
-TypeDeclaration checkTypeOnDemandImports(vector<QualifiedIdentifier> type_import_on_demand_declarations,  vector<AstNodeVariant> &asts, string type_name, CompilationUnit *current_ast) {
-   // Check on demand imports for current idenfitier
-    bool found = false;
-    TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
-
-    // For each on demand import
-    for (auto &import: type_import_on_demand_declarations) {
-        string import_prefix = import.getQualifiedName(); // Get the prefix, ie. the qualified name of the package
-        for (const AstNodeVariant &ast: asts) {
-            if(holds_alternative<CompilationUnit>(ast)) {
-                auto &cu_variant = get<CompilationUnit>(ast);
-                if(&cu_variant != current_ast) { // We don't want to check the current ast, since we only care about the imported packages / classes
-                    if(cu_variant.package_declaration->getQualifiedName() == import_prefix) {
-                        // If the package name of the cu_variant is the same as the import prefix
-                        if (cu_variant.class_declarations.size() > 0 && cu_variant.class_declarations[0].class_name->name == type_name) {
-                            // If we have already found the type, we have an ambiguous type
-                            if(found) {
-                                cout << "Ambiguous type" << endl;
-                                exit(42);
-                            }
-
-                            // Set the result to the class declaration, and mark the type as found
-                            result = cu_variant.class_declarations[0].environment;
-                            found = true;
-                        }
-
-                        if(cu_variant.interface_declarations.size() > 0 && cu_variant.interface_declarations[0].interface_name->name == type_name) {
-                            // If we have already found the type, we have an ambiguous type
-                            if(found) {
-                                cout << "Ambiguous type" << endl;
-                                exit(42);
-                            }
-
-                            // Set the result to the interface declaration, and mark the type as found
-                            result = cu_variant.interface_declarations[0].environment;
-                            found = true;
-                        }
-                    }
-                }
-            }
-            
-        }
-    }
-
-    return result;
-}
-
-// This function resolves simple type names "Class c;" or "Interface i;
-TypeDeclaration resolveIdentifier(Identifier *node, PackageDeclarationObject &env, string package_name, vector<AstNodeVariant> &asts, CompilationUnit *current_ast) {
-    TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
-    string type_name = node->name; // string of the type name
-    
-    auto &classes = env.classes; // Get classes in env
-    auto &interfaces = env.interfaces; // Get interfaces in env
-
-    SymbolTableEntry* class_entry = classes.get()->lookupUniqueSymbol(type_name);
-    SymbolTableEntry *interface_entry = interfaces.get()->lookupUniqueSymbol(type_name);
-    if(class_entry != nullptr) {
-        // result = classes.get()->lookupUniqueSymbol(type_name); // If the class is in the environment, set the result to the class
-        if(holds_alternative<ClassDeclarationObject>(*class_entry)) {
-            result = &std::get<ClassDeclarationObject>(*class_entry);
-        }
-    } else if(interface_entry != nullptr) {
-        if(holds_alternative<InterfaceDeclarationObject>(*interface_entry)) {
-            result = &std::get<InterfaceDeclarationObject>(*interface_entry); // If the interface is in the environment, set the result to the interface
-        }
-    }
-
-    vector<QualifiedIdentifier> single_type_import_declarations = current_ast->single_type_import_declaration; // get single imports
-    vector<QualifiedIdentifier> type_import_on_demand_declarations = current_ast->type_import_on_demand_declaration; // get on demand imports
-
-    // On demand declarations
-    // import java.lang.*
-    // Check single type imports for current identifier
-    result = checkSingleImports(single_type_import_declarations, asts, type_name); // check single imports
-    if (!checkNullTypeDeclaration(result)) return result;
-
-    result = checkCurrentPackage(asts, package_name, type_name); // check current package
-    if (!checkNullTypeDeclaration(result)) return result; 
-
-    result = checkTypeOnDemandImports(type_import_on_demand_declarations, asts, type_name, current_ast); // check on demand imports
-    
-    return result;
-}
-
-
-
-void TypeLinker::operator()(CompilationUnit &node) {
-    // cout << "TypeLinker going through ast root right now ";
-    // if(node.package_declaration) {
-    //     cout << node.package_declaration.get()->getQualifiedName();
-    // }
-
-    // cout << endl;
-
-    package_name = "";
-    if(node.package_declaration.get() != nullptr) {
-        package_name = node.package_declaration->getQualifiedName();
-    }
-    single_type_import_declarations = node.single_type_import_declaration;
-    type_import_on_demand_declarations = node.type_import_on_demand_declaration;
-
-    // cout << "this ast has " << node.class_declarations.size() + node.interface_declarations.size() << " type decls" << endl;
-    this->visit_children(node);
+std::string getIdentifier(TypeDeclaration type_dec) {
+    return std::visit([&](auto type) { return type->identifier; }, type_dec);
 }
 
 TypeLinker::TypeLinker(
-    PackageDeclarationObject &env, 
-    CompilationUnit &ast_root, 
-    vector<AstNodeVariant> &asts
-) :       
-    root_env{env},
-    asts{asts},
-    ast_root{&ast_root}
-{
-    package_name = "";
-    if (ast_root.package_declaration.get() != nullptr) {
-        package_name = ast_root.package_declaration.get()->getQualifiedName();
+    PackageDeclarationObject &default_package
+) : 
+    default_package{&default_package},
+    current_package{&default_package}
+{};
+
+PackageDeclarationObject* TypeLinker::resolveToPackage(
+    QualifiedIdentifier &qualified_identifier, 
+    PackageDeclarationObject* source_package
+) {
+    PackageDeclarationObject* temp_package = default_package;
+
+    for (auto &identifier : qualified_identifier.identifiers) {
+        // Verify doesn't resolve to class not in default package
+        if (!temp_package->is_default_package) {
+            auto possible_class = temp_package->classes->lookupUniqueSymbol(identifier.name);
+            auto possible_interface = temp_package->interfaces->lookupUniqueSymbol(identifier.name);
+            if (possible_class || possible_interface) {
+                auto get_type_name = [&](auto type) { return getIdentifier(util::getAsTypeDeclaration(type)); };
+                auto type_name = possible_class ? get_type_name(possible_class) : get_type_name(possible_interface);
+                throw SemanticError("Package prefix resolves to type " + type_name);
+            }
+        }
+
+        // Resolve to subpackage
+        auto possible_package = temp_package->sub_packages->lookupUniqueSymbol(identifier.name);
+        if (possible_package) {
+            temp_package = &(std::get<PackageDeclarationObject>(*possible_package));
+        } else {
+            // Reference to undeclared package
+            throw SemanticError("Undeclared package");
+        }
     }
-};
+
+    return temp_package;
+}
+
+TypeDeclaration TypeLinker::resolveToType(QualifiedIdentifier &qualified_identifier) {
+    PackageDeclarationObject* temp_package = default_package;
+
+    for (auto &identifier : qualified_identifier.identifiers) {
+        // Verify the qualified identifier resolves to a type at the last identifier, and the last only
+        auto possible_class = temp_package->classes->lookupUniqueSymbol(identifier.name);
+        auto possible_interface = temp_package->interfaces->lookupUniqueSymbol(identifier.name);
+
+        if (possible_class || possible_interface) {
+            if (&identifier != &qualified_identifier.identifiers.back()) {
+                throw SemanticError("Prefix of fully qualified type resolves to type");
+            }
+            if (possible_class) {
+                return util::getAsTypeDeclaration(possible_class);
+            } else if (possible_interface) {
+                return util::getAsTypeDeclaration(possible_interface);
+            }
+            throw CompilerDevelopmentError("was not class or interface");
+        }
+
+        // Resolve to subpackage
+        auto possible_package = temp_package->sub_packages->lookupUniqueSymbol(identifier.name);
+        if (possible_package) {
+            temp_package = &(std::get<PackageDeclarationObject>(*possible_package));
+        } else {
+            // Reference to undeclared package
+            throw SemanticError("Undeclared package");
+        }
+    }
+    throw SemanticError("Undeclared type imported");
+}
+
+std::optional<TypeDeclaration> tryFindTypeInPackage(std::string &identifier, PackageDeclarationObject* package_dec) {
+    auto possible_classes = package_dec->classes->lookupSymbol(identifier);
+    auto possible_interfaces = package_dec->interfaces->lookupSymbol(identifier);
+
+    if (possible_classes) {
+        return &std::get<ClassDeclarationObject>(possible_classes->back());
+    } else if (possible_interfaces) {
+        return &std::get<InterfaceDeclarationObject>(possible_interfaces->back());
+    }
+    return std::nullopt;
+}
+
+TypeDeclaration resolveCandidates(std::vector<TypeDeclaration>& valid_candidates, std::string identifier) {
+    util::removeDuplicates(valid_candidates);
+    if (valid_candidates.size() == 0) {
+        throw SemanticError("Type declaration for " + identifier + " not found");
+    } else if (valid_candidates.size() > 1) {
+        std::string error_message = "Type '" + identifier + "' is ambigious. Possible candidates are ";
+        for (auto candidate : valid_candidates) {
+            std::visit([&](auto type){ error_message += "'" + type->identifier + "'"; }, candidate);
+            if (candidate != valid_candidates.back()) {
+                error_message += ", ";
+            }
+        }
+        throw SemanticError(error_message);
+    }
+    return valid_candidates.back();
+}
+
+TypeDeclaration TypeLinker::lookupType(QualifiedIdentifier &qualified_identifier) {
+    std::string canoncial_name = qualified_identifier.identifiers.back().name;
+
+    if (qualified_identifier.identifiers.size() == 1) {
+        return lookupToSimpleType(canoncial_name);
+    }
+
+    std::vector<TypeDeclaration> valid_candidates;
+    QualifiedIdentifier package_qid = qualified_identifier.getQualifiedIdentifierWithoutLast();
+
+    // Check each package in compilation units namespace
+    for (auto package : star_imports) {
+        auto candidate_package = resolveToPackage(package_qid, package);
+        if (auto possible_type = tryFindTypeInPackage(canoncial_name, candidate_package)) {
+            valid_candidates.push_back(*possible_type);
+        }
+    }
+
+    return resolveCandidates(valid_candidates, canoncial_name);
+}
+
+TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
+    std::vector<TypeDeclaration> valid_candidates;
+
+    // Look up in list of all single type imports
+    for (auto type_dec : single_imports) {
+        std::visit([&](auto class_or_int_dec) {
+            if (class_or_int_dec->identifier == identifier) {
+                valid_candidates.push_back(type_dec);
+            }
+        }, type_dec);
+    }
+
+    // Look up in imported packages
+    for (auto package_dec : star_imports) {
+        auto possible_classes = package_dec->classes->lookupSymbol(identifier);
+        auto possible_interfaces = package_dec->interfaces->lookupSymbol(identifier);
+
+        if (possible_classes) {
+            TypeDeclaration found_type = &std::get<ClassDeclarationObject>(possible_classes->back());
+            valid_candidates.push_back(found_type);
+        } else if (possible_interfaces) {
+            TypeDeclaration found_type = &std::get<InterfaceDeclarationObject>(possible_interfaces->back());
+            valid_candidates.push_back(found_type);
+        }
+    }
+
+    return resolveCandidates(valid_candidates, identifier);
+}
+
+/* Visitor implementation */
+
+void TypeLinker::operator()(CompilationUnit &node) {
+    // Import java.lang implicitly
+    auto java_lang = QualifiedIdentifier(std::vector<Identifier>{Identifier("java"), Identifier("lang")});
+    star_imports.emplace_back(resolveToPackage(java_lang, default_package));
+
+    // Make import-on-demand packages accessible
+    for (auto &qualified_identifier : node.type_import_on_demand_declaration) {
+        star_imports.emplace_back(resolveToPackage(qualified_identifier, default_package));
+    }
+
+    // Make package of compilation unit accessible
+    if (node.package_declaration) {
+        current_package = resolveToPackage(*node.package_declaration, default_package);
+    }
+    star_imports.emplace_back(current_package);
+
+    // Make imported types accessible
+    for (auto &qualified_identifier : node.single_type_import_declaration) {
+        TypeDeclaration imported_type = resolveToType(qualified_identifier);
+
+        auto package_qualifier = qualified_identifier.getQualifiedIdentifierWithoutLast();
+        PackageDeclarationObject* imported_types_package = resolveToPackage(package_qualifier, default_package);
+
+        // Add single import if we didn't import a package with that type; ignore otherwise
+        if (std::find(star_imports.begin(), star_imports.end(), imported_types_package) == star_imports.end()) {
+            single_imports.emplace_back(imported_type);
+        }
+    }
+
+    // Ignore duplicate imports
+    util::removeDuplicates(single_imports);
+    util::removeDuplicates(star_imports);
+
+    // Check that no canonincal name of two types overlaps
+    for (auto imported_type1 : single_imports) {
+        auto it = std::find_if(single_imports.begin(), single_imports.end(), [&](auto imported_type2){
+            bool names_match = (getIdentifier(imported_type1) == getIdentifier(imported_type2));
+            bool different_types = (imported_type1 != imported_type2);
+            return names_match && different_types;
+        });
+        if (it != single_imports.end()) {
+            throw SemanticError(
+                "Canonical name of imported type " + getIdentifier(imported_type1) + " ambiguous.");
+        }
+    }
+
+    this->visit_children(node);
+}
 
 void TypeLinker::operator()(ClassInstanceCreationExpression &node) {
-    // cout << "type linking class instance expression " << node.class_name.get()->getQualifiedName() << endl;
-    QualifiedIdentifier id = *node.class_name;
-    TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
-    if(id.identifiers.size() > 1) {
-        result = resolveQualifiedIdentifier(&id, root_env, package_name, asts);
-    } else {
-        Identifier one_id = id.identifiers[0];
-        result = resolveIdentifier(&one_id, root_env, package_name, asts, ast_root);
-    }
-
-    if(checkNullTypeDeclaration(result)) {
-        throw SemanticError("Type " + id.getQualifiedName() + " not found"); // Type not found
-    }
-
-    node.node = result; // Set the result
     this->visit_children(node);
 }
 
 void TypeLinker::operator()(Type &node) {
-    
-    // cout << "Trying to resolve type now " << endl;
     if(node.non_array_type == nullptr) {
         throw CompilerDevelopmentError("Non array type is null");
-    } else if(holds_alternative<QualifiedIdentifier>(*node.non_array_type.get())) { // Check that the non_array_type is a QualifiedIdentifier
-        QualifiedIdentifier id = get<QualifiedIdentifier>(*node.non_array_type.get()); 
-        TypeDeclaration result = static_cast<ClassDeclarationObject*>(nullptr);
-        if (id.identifiers.size() > 1) {
-            // std::cout << "resolving qualified" << std::endl;
-            result = resolveQualifiedIdentifier(&id, root_env, package_name, asts); // Resolve the qualified identifier
-        } else {
-            // std::cout << "resolving simple type" << std::endl;
-            Identifier one_id = id.identifiers[0];
-            result = resolveIdentifier(&one_id, root_env, package_name, asts, ast_root); // Resolve the simple identifier
-        }
-
-        if(checkNullTypeDeclaration(result)) {
-            throw SemanticError("Type " + id.getQualifiedName() + " not found"); // Type not found
-        }
-
-        node.node = result; // Set the result
     }
+    
+    // Resolve type if it refers to an identifier
+    if (auto qualified_identifier = std::get_if<QualifiedIdentifier>(node.non_array_type.get())) {
+        node.node = lookupType(*qualified_identifier);
+    }
+
     this->visit_children(node);
 }
 
 void TypeLinker::operator()(ClassDeclaration &node) {
+
+    std::string name = node.class_name->name;
+
+    // Check this class resolves unambiguously with imported classes
+    auto qid = QualifiedIdentifier(std::vector{Identifier(name)});
+    lookupType(qid);
+
     // Resolve implemented types to interfaces
     for (auto &implements_qualified_identifier : node.implements) {
-        TypeDeclaration implemented 
-            = resolveQualifiedIdentifier(&implements_qualified_identifier, root_env, package_name, asts);
-
+        TypeDeclaration implemented = lookupType(implements_qualified_identifier);
         if (auto interface_type = std::get_if<InterfaceDeclarationObject*>(&implemented)) {
             node.environment->implemented.emplace_back(*interface_type);
         } else {
@@ -372,8 +252,7 @@ void TypeLinker::operator()(ClassDeclaration &node) {
 
     // Resolve extended type to class
     if (node.extends_class) {
-        TypeDeclaration extended 
-            = resolveQualifiedIdentifier(node.extends_class.get(), root_env, package_name, asts);
+        TypeDeclaration extended = lookupType(*node.extends_class);
         if (auto class_type = std::get_if<ClassDeclarationObject*>(&extended)) {
             node.environment->extended = *class_type;
         } else {
@@ -385,11 +264,16 @@ void TypeLinker::operator()(ClassDeclaration &node) {
 }
 
 void TypeLinker::operator()(InterfaceDeclaration &node) {
+
+    std::string name = node.interface_name->name;
+
+    // Check this interface resolves unambiguously with imported classes
+    auto qid = QualifiedIdentifier(std::vector{Identifier(name)});
+    lookupType(qid);
+
     // Resolve extended types to interfaces
     for (auto &extends_qualified_identifier : node.extends_class) {
-        TypeDeclaration extended 
-            = resolveQualifiedIdentifier(&extends_qualified_identifier, root_env, package_name, asts);
-
+        TypeDeclaration extended = lookupType(extends_qualified_identifier);
         if (auto interface_type = std::get_if<InterfaceDeclarationObject*>(&extended)) {
             node.environment->extended.emplace_back(*interface_type);
         } else {
@@ -409,7 +293,10 @@ void TypeLinker::operator()(FieldDeclaration &node) {
 void TypeLinker::operator()(MethodDeclaration &node) {
     // Resolve return type
     visit_children(node);
-    node.environment->return_type = node.type->node;
+    if (node.type) {
+        // This method is not a constructor
+        node.environment->return_type = node.type->node;
+    }
 }
 
 void TypeLinker::operator()(FormalParameter &node) {
