@@ -287,23 +287,26 @@ void TypeLinker::operator()(InterfaceDeclaration &node) {
 void TypeLinker::operator()(FieldDeclaration &node) {
     // Resolve type
     visit_children(node);
-    // node.environment->type = node.type->node;
+    node.environment->type = node.type->node;
 }
 
 void TypeLinker::operator()(MethodDeclaration &node) {
     // Resolve return type
     visit_children(node);
-    // node.environment->return_type = node.type->node;
+    if (node.type) {
+        // This method is not a constructor
+        node.environment->return_type = node.type->node;
+    }
 }
 
 void TypeLinker::operator()(FormalParameter &node) {
     // Resolve type
     visit_children(node);
-    // node.environment->type = node.type->node;
+    node.environment->type = node.type->node;
 }
 
 void TypeLinker::operator()(LocalVariableDeclaration &node) {
     // Resolve type
     visit_children(node);
-    // node.environment->type = node.type->node;
+    node.environment->type = node.type->node;
 }
