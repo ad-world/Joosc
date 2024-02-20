@@ -271,6 +271,7 @@ void TypeLinker::operator()(CompilationUnit &node) {
 
 void TypeLinker::operator()(ClassInstanceCreationExpression &node) {
     this->visit_children(node);
+    node.node = lookupType(*node.class_name);
 }
 
 void TypeLinker::operator()(Type &node) {
