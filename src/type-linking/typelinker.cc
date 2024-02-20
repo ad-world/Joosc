@@ -154,10 +154,6 @@ TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
         }
     }, current_type);
 
-    if(valid_candidates.size() > 0) {
-        return resolveCandidates(valid_candidates, identifier);
-    }
-
     // 2. Look up in list of all single type imports
     for (auto type_dec : single_imports) {
         std::visit([&](auto class_or_int_dec) {
@@ -166,6 +162,8 @@ TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
             }
         }, type_dec);
     }
+
+    // 1 & 2 happen at same precedence
 
     if(valid_candidates.size() > 0) {
         return resolveCandidates(valid_candidates, identifier);
