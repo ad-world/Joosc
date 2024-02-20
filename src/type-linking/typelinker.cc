@@ -46,7 +46,7 @@ PackageDeclarationObject* TypeLinker::resolveToPackage(
             temp_package = &(std::get<PackageDeclarationObject>(*possible_package));
         } else {
             // Reference to undeclared package
-            throw SemanticError("Undeclared package");
+            throw SemanticError("Undeclared package: " + identifier.name + " in package " + temp_package->identifier);
         }
     }
 
@@ -61,8 +61,9 @@ TypeDeclaration TypeLinker::resolveToType(QualifiedIdentifier &qualified_identif
         auto possible_class = temp_package->classes->lookupUniqueSymbol(identifier.name);
         auto possible_interface = temp_package->interfaces->lookupUniqueSymbol(identifier.name);
 
-        if (possible_class || possible_interface) {
-            if (&identifier != &qualified_identifier.identifiers.back()) {
+        if ((possible_class || possible_interface)) {
+            if (&identifier != &qualified_identifier.identifiers.back() && current_package != default_package) {
+                // This is only problematic if the possible class / interface is NOT in the default package
                 throw SemanticError("Prefix of fully qualified type resolves to type");
             }
             if (possible_class) {
@@ -116,6 +117,14 @@ TypeDeclaration resolveCandidates(std::vector<TypeDeclaration>& valid_candidates
 
 TypeDeclaration TypeLinker::lookupType(QualifiedIdentifier &qualified_identifier) {
     std::string canoncial_name = qualified_identifier.identifiers.back().name;
+    /*
+        * Typelinking:
+        * - Unqualified names are handled by these rules: 
+        *   1. try the enclosing class or interface 
+        *   2. try any single-type-import (A.B.C.D) 
+        *   3. try the same package 
+        *   4. try any import-on-demand package (A.B.C.*), including java.lang.* 
+    */
 
     if (qualified_identifier.identifiers.size() == 1) {
         return lookupToSimpleType(canoncial_name);
@@ -138,7 +147,14 @@ TypeDeclaration TypeLinker::lookupType(QualifiedIdentifier &qualified_identifier
 TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
     std::vector<TypeDeclaration> valid_candidates;
 
-    // Look up in list of all single type imports
+    // 1. Try the enclosing class or interface
+    std::visit([&](auto class_or_interface) {
+        if (class_or_interface && class_or_interface->identifier == identifier) {
+            valid_candidates.push_back(class_or_interface);
+        }
+    }, current_type);
+
+    // 2. Look up in list of all single type imports
     for (auto type_dec : single_imports) {
         std::visit([&](auto class_or_int_dec) {
             if (class_or_int_dec->identifier == identifier) {
@@ -147,7 +163,22 @@ TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
         }, type_dec);
     }
 
-    // Look up in imported packages
+    // 1 & 2 happen at same precedence
+
+    if(valid_candidates.size() > 0) {
+        return resolveCandidates(valid_candidates, identifier);
+    }
+
+    // 3. Look up in current package
+    if (auto possible_type = tryFindTypeInPackage(identifier, current_package)) {
+        valid_candidates.push_back(*possible_type);
+    }
+
+    if(valid_candidates.size() > 0) {
+        return resolveCandidates(valid_candidates, identifier);
+    }
+
+    // 4. Look up in imported packages
     for (auto package_dec : star_imports) {
         auto possible_classes = package_dec->classes->lookupSymbol(identifier);
         auto possible_interfaces = package_dec->interfaces->lookupSymbol(identifier);
@@ -171,16 +202,37 @@ void TypeLinker::operator()(CompilationUnit &node) {
     auto java_lang = QualifiedIdentifier(std::vector<Identifier>{Identifier("java"), Identifier("lang")});
     star_imports.emplace_back(resolveToPackage(java_lang, default_package));
 
+    std::string current_type_name;
+
+    // Get the current type name
+    if (node.class_declarations.size() > 0) {
+        current_type_name = node.class_declarations[0].class_name->name;
+    } else if (node.interface_declarations.size() > 0) {
+        current_type_name = node.interface_declarations[0].interface_name->name;
+    } else {
+        throw CompilerDevelopmentError("No class or interface in compilation unit");
+    }
+
+
+     // Make package of compilation unit accessible
+    if (node.package_declaration) {
+        current_package = resolveToPackage(*node.package_declaration, default_package);
+    }
+
+    // Find current type (i.e the type that the current file specifies)
+    if (auto result = tryFindTypeInPackage(current_type_name, current_package)) {
+        current_type = *result;
+    } else {
+        throw CompilerDevelopmentError("Current type " + current_type_name + " not found in current package.");
+    }
+
     // Make import-on-demand packages accessible
     for (auto &qualified_identifier : node.type_import_on_demand_declaration) {
         star_imports.emplace_back(resolveToPackage(qualified_identifier, default_package));
     }
 
-    // Make package of compilation unit accessible
-    if (node.package_declaration) {
-        current_package = resolveToPackage(*node.package_declaration, default_package);
-    }
-    star_imports.emplace_back(current_package);
+    // This should not happen, as we check current package before checking star imports on a different precedence level
+    // star_imports.emplace_back(current_package);
 
     // Make imported types accessible
     for (auto &qualified_identifier : node.single_type_import_declaration) {
@@ -217,6 +269,7 @@ void TypeLinker::operator()(CompilationUnit &node) {
 
 void TypeLinker::operator()(ClassInstanceCreationExpression &node) {
     this->visit_children(node);
+    node.node = lookupType(*node.class_name);
 }
 
 void TypeLinker::operator()(Type &node) {
