@@ -42,11 +42,13 @@ def run_test(test_path):
         test_files = [test_path]
     
     result = subprocess.run([joosc_executable, *test_files, *stdlib_files])
+    
+    expected_returncode = 42 if "invalid" in test_path else 0
 
-    if result.returncode == 0:
+    if result.returncode == expected_returncode:
         print(f"{colors.OKGREEN}SUCCESS: Running joosc on {test_path} successfully returned {result.returncode}{colors.ENDC}")
     else:
-        print(f"{colors.FAIL}FAIL: Running joosc on {test_path} returned {result.returncode}.{colors.ENDC}")
+        print(f"{colors.FAIL}FAIL: Running joosc on {test_path} returned {result.returncode}, expected {expected_returncode}.{colors.ENDC}")
 
 
 
