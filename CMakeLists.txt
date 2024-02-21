@@ -22,16 +22,20 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-# --- Target joosc ----
+# --- Main library ----
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*/*.cc") # All files in subdirectories of src
+add_library(CommonLib OBJECT ${SOURCES})
+target_include_directories(CommonLib PRIVATE src)
+
+# --- Target joosc ----
 add_executable(joosc)
-target_sources(joosc PRIVATE ${SOURCES} "src/main.cc")
+target_sources(joosc PRIVATE $<TARGET_OBJECTS:CommonLib> "src/main.cc")
 target_include_directories(joosc PRIVATE src)
 
 # ---- Target unit_tests ----
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "tests/src/*.cc")
 add_executable(unit_tests)
-target_sources(unit_tests PRIVATE ${SOURCES} ${TEST_SOURCES})
+target_sources(unit_tests PRIVATE $<TARGET_OBJECTS:CommonLib> ${TEST_SOURCES})
 target_include_directories(unit_tests PRIVATE src tests)
 target_link_libraries(unit_tests gtest_main)
 
@@ -42,5 +46,5 @@ gtest_discover_tests(unit_tests)
 # ---- Target lex_tester ----
 # file(READ "tests/lexing/lex_tester.cpp" LEX_TESTER)
 add_executable(lex_tester)
-target_sources(lex_tester PRIVATE ${SOURCES} "tests/lexing/lex_tester.cc")
+target_sources(lex_tester PRIVATE $<TARGET_OBJECTS:CommonLib> "tests/lexing/lex_tester.cc")
 target_include_directories(lex_tester PRIVATE src)
