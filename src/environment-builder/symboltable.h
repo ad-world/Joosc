@@ -19,7 +19,7 @@ class SymbolTable {
   public:
     SymbolTable() = default;
 
-    // Lookup a symbol in the environment and return pointer to vector of all matches if found
+    // Lookup a symbol in the environment and return pointer to list of all matches if found
     // Return nullptr if no symbol found
     std::list<SymbolTableEntry>* lookupSymbol(const std::string& name);
 
