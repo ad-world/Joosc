@@ -14,7 +14,9 @@
 before_script:
   - apt-get update -qq && apt-get install -y -qq python3 python3-pip ninja-build gcc flex bison valgrind time git zip cmake
 
-image: gcc
+image:
+  name: gcc
+  pull_policy: [always, if-not-present]
 
 PROJECT_BUILD:
   stage: build
@@ -27,20 +29,53 @@ PROJECT_BUILD:
   artifacts:
     paths:
       - joosc
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
       # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
       # cache:
       #   paths:
       #     - "*.o"
 
-# run tests using the binary built before
-CI_TESTING:
+UNIT_TEST:
   stage: test
-  script:
-    - make test
-    - make scanner-test
-    - make integration-test
+  script: make unit-test
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
 
+SCANNER_TEST:
+  stage: test
+  script: make scanner-test
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
 
+INTEGRATION_TEST:
+  stage: test
+  script: make integration-test-full
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
 
-
-
+SUBMISSION:
+  stage: .post
+  needs:
+    - PROJECT_BUILD
+  script: make submission anum=3
+  artifacts:
+    paths:
+      - a3.zip
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: pull
+    paths:
+      - build
