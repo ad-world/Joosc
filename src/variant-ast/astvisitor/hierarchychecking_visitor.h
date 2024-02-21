@@ -287,6 +287,12 @@ public:
         auto &extendedClass = classEnv->extended;
         std::string className = node.class_name->name;
         
+        // Not extending anything
+        if ( extendedClass == nullptr ) {
+            this->visit_children(node);
+            return;
+        }
+
         // A class must not extend a final class. (JLS 8.1.1.2, 8.1.3)
         // Check that extends is NOT final
         auto extendedClassModifiers = extendedClass->ast_reference->modifiers;
