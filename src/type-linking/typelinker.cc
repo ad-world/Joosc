@@ -209,10 +209,7 @@ void TypeLinker::operator()(CompilationUnit &node) {
         current_type_name = node.class_declarations[0].class_name->name;
     } else if (node.interface_declarations.size() > 0) {
         current_type_name = node.interface_declarations[0].interface_name->name;
-    } else {
-        throw CompilerDevelopmentError("No class or interface in compilation unit");
     }
-
 
      // Make package of compilation unit accessible
     if (node.package_declaration) {
@@ -220,10 +217,10 @@ void TypeLinker::operator()(CompilationUnit &node) {
     }
 
     // Find current type (i.e the type that the current file specifies)
-    if (auto result = tryFindTypeInPackage(current_type_name, current_package)) {
-        current_type = *result;
-    } else {
-        throw CompilerDevelopmentError("Current type " + current_type_name + " not found in current package.");
+    if (current_type_name != "" ) {
+        if(auto result = tryFindTypeInPackage(current_type_name, current_package)) {
+            current_type = *result;
+        } 
     }
 
     // Make import-on-demand packages accessible
