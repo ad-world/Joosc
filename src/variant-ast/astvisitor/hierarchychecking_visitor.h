@@ -11,6 +11,7 @@
 #include "variant-ast/types.h"
 #include <functional>
 #include <variant>
+#include <iostream>
 
 std::string QualifiedIdentifierToString(QualifiedIdentifier& qi) {
     std::string result = "";
@@ -74,10 +75,10 @@ bool operator==(const MethodDeclaration& lhs, const MethodDeclaration& rhs) {
     return getMethodSignature(lhs) == getMethodSignature(rhs);
 }
 
-bool checkMethodWithSameSignature(std::vector<MethodDeclaration>& methods) {
+bool checkMethodWithSameSignature(std::vector<MethodDeclaration*>& methods) {
     std::unordered_set<std::string> methodSignatureSet{};
     for(const auto& method: methods) {
-        std::string methodSignature = getMethodSignature(method);
+        std::string methodSignature = getMethodSignature(*method);
         methodSignatureSet.insert(methodSignature);
     }
     return methods.size() != methodSignatureSet.size();
@@ -265,6 +266,8 @@ std::vector<MethodDeclarationObject*> getAllMethods(ClassDeclarationObject* clas
 
     dfsClass = [&](ClassDeclarationObject* currentClassObj) {
         for (auto& method : classObj->ast_reference->method_declarations) {
+            // TODO: ensure this is not a constructor
+            std::cerr << "TODO: ensure this is not a constructor\n";
             allMethods.push_back(method.environment);
         }
         if (currentClassObj->extended != nullptr) {
@@ -276,6 +279,8 @@ std::vector<MethodDeclarationObject*> getAllMethods(ClassDeclarationObject* clas
     };
     dfsInterface = [&](InterfaceDeclarationObject* currentInterfaceObj) {
         for (auto& method : currentInterfaceObj->ast_reference->method_declarations) {
+            // TODO: ensure this is not a constructor
+            std::cerr << "TODO: ensure this is not a constructor\n";
             allMethods.push_back(method.environment);
         }
         for(auto& extendedInterface : currentInterfaceObj->extended) {
@@ -293,6 +298,9 @@ class HierarchyCheckingVisitor : public DefaultSkipVisitor<void> {
 public:
     using DefaultSkipVisitor<void>::operator();
     void operator()(ClassDeclaration &node) override {
+        std::unordered_set<MethodDeclaration*> constructor_set;
+        std::unordered_set<MethodDeclaration*> method_set;
+
         auto &extends = node.extends_class;
         auto &classEnv = node.environment;
         auto &extendedClass = classEnv->extended;
@@ -323,10 +331,32 @@ public:
             throw std::runtime_error("Error: Class repeats an interface in its implements clause");
         }        
 
+        std::vector<MethodDeclaration*> constructors;
+        std::vector<MethodDeclaration*> methods;
+
+        for ( auto& method : node.method_declarations ) {
+            if ( std::get_if<ClassDeclarationObject*>(&method.environment->return_type) == nullptr
+                && std::get_if<InterfaceDeclarationObject*>(&method.environment->return_type) == nullptr
+            ) {
+                // constructor
+                std::cerr << "We have a constructor\n";
+                constructors.push_back(&method);
+            } else {
+                // method
+                std::cerr << "We have a method\n";
+                methods.push_back(&method);
+            }
+        }
+
         // A class must not declare two constructors with the same parameter types (JLS 8.8.2)
         // A class or interface must not declare two methods with the same signature (name and parameter types). (JLS 8.4, 9.4)
-        std::vector<MethodDeclaration>& methods = node.method_declarations;
-        // Check that no two methods have the same name and parameter types
+
+        // Check constructor signatures
+        if(checkMethodWithSameSignature(constructors)) {
+            throw std::runtime_error("Error: Class declares two constructors with the same signature");
+        }
+
+        // Check method signatures
         if(checkMethodWithSameSignature(methods)) {
             throw std::runtime_error("Error: Class declares two methods with the same signature");
         }
@@ -348,6 +378,9 @@ public:
             }
         }
 
+        // Perform method checks
+        checkMethods(node.method_declarations, node);
+
         this->visit_children(node);
     };
 
@@ -366,7 +399,11 @@ public:
 
         // A class must not declare two constructors with the same parameter types (JLS 8.8.2)
         // A class or interface must not declare two methods with the same signature (name and parameter types). (JLS 8.4, 9.4)
-        std::vector<MethodDeclaration>& methods = node.method_declarations;
+        std::vector<MethodDeclaration*> methods;
+        for ( auto& method : node.method_declarations ) {
+            methods.push_back(&method);
+        }
+
         // Check that no two methods have the same name and parameter types
         if(checkMethodWithSameSignature(methods)) {
             throw std::runtime_error("Error: Interface declares two methods with the same signature");
