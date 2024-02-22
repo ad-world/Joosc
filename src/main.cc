@@ -17,6 +17,7 @@ using namespace std;
 enum return_codes {
     VALID_PROGRAM = 0,
     INVALID_PROGRAM = 42,
+    COMPILER_DEVELOPMENT_ERROR = 1
 };
 
 struct cmd_error {};
@@ -122,6 +123,7 @@ int main(int argc, char *argv[]) {
         return INVALID_PROGRAM;
     } catch (const CompilerDevelopmentError &e) {
         cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
+        return COMPILER_DEVELOPMENT_ERROR;
     } catch (...) {
         cerr << "Unknown Exception occured\n";
     }
@@ -137,6 +139,7 @@ int main(int argc, char *argv[]) {
         return INVALID_PROGRAM;
     } catch (const CompilerDevelopmentError &e) {
         cerr << "Development error occured: " << e.message << "\n";
+        return COMPILER_DEVELOPMENT_ERROR; 
     } catch (const std::exception &e) {
         cerr << e.what() << "\n";
     }
