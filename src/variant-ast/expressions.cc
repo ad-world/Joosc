@@ -30,7 +30,7 @@ ClassInstanceCreationExpression::ClassInstanceCreationExpression(
 ): 
     class_name{std::move(class_name)},
     arguments{std::move(arguments)},
-    node{static_cast<ClassDeclarationObject*>(nullptr)}
+    linked_class_type{}
 {}
 
 FieldAccess::FieldAccess(
@@ -121,7 +121,7 @@ ClassInstanceCreationExpression::ClassInstanceCreationExpression(
 ): 
     class_name{std::move(class_name)},
     arguments{std::move(arguments)},
-    node{static_cast<ClassDeclarationObject*>(nullptr)}
+    linked_class_type{}
 {}
 
 FieldAccess::FieldAccess(
