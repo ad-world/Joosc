@@ -18,6 +18,7 @@ using namespace std;
 enum return_codes {
     VALID_PROGRAM = 0,
     INVALID_PROGRAM = 42,
+    COMPILER_ERROR = 60,
 };
 
 struct cmd_error {};
@@ -146,8 +147,12 @@ int main(int argc, char *argv[]) {
         for ( auto& ast : asts ) {
             HierarchyCheckingVisitor(default_package).visit(ast);
         }
+    } catch (const std::exception &e) {
+        cerr << e.what() << "\n";
+        return INVALID_PROGRAM;
     } catch (...) {
         cerr << "Unknown hierarchy checking error occurred\n";
+        return COMPILER_ERROR;
     }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
