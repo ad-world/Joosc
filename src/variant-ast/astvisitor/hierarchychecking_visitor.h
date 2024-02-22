@@ -40,17 +40,28 @@ std::string PrimitiveTypeToString(PrimitiveType& pt) {
     }
 }
 
+std::string getFormalParameterType(const FormalParameter& formalParameter) {
+    std::string formalParameterType = "";
+    if(std::get_if<QualifiedIdentifier>(&(*formalParameter.type->non_array_type))) {
+        auto typeDecl = formalParameter.type->node;
+        if(std::get_if<ClassDeclarationObject*>(&typeDecl)) {
+            formalParameterType += std::get<ClassDeclarationObject*>(typeDecl)->identifier;
+        } else {
+            formalParameterType += std::get<InterfaceDeclarationObject*>(typeDecl)->identifier;
+        }
+    } else {
+        formalParameterType += PrimitiveTypeToString(std::get<PrimitiveType>(*formalParameter.type->non_array_type));
+    }
+    if(formalParameter.type->is_array) {
+        formalParameterType += "[]";
+    }
+    return formalParameterType;
+}
+
 std::string getMethodSignature(const MethodDeclaration& method) {
     std::string methodSignature = method.function_name->name + "(";
     for(const auto& formalParameter: method.parameters) {
-        if(std::get_if<QualifiedIdentifier>(&(*formalParameter.type->non_array_type))) {
-            methodSignature += QualifiedIdentifierToString(std::get<QualifiedIdentifier>(*formalParameter.type->non_array_type));
-        } else {
-            methodSignature += PrimitiveTypeToString(std::get<PrimitiveType>(*formalParameter.type->non_array_type));
-        }
-        if(formalParameter.type->is_array) {
-            methodSignature += "[]";
-        }
+        methodSignature += getFormalParameterType(formalParameter);
         methodSignature += ",";
     }
     methodSignature.pop_back();
@@ -130,10 +141,10 @@ bool checkCyclicHierarchy(std::variant<ClassDeclarationObject*, InterfaceDeclara
 
     if ( std::holds_alternative<ClassDeclarationObject*>(obj) ) {
         // Classdecl
-        return dfsClass(get<ClassDeclarationObject*>(obj));
+        return dfsClass(std::get<ClassDeclarationObject*>(obj));
     } else {
         // Interfacedecl
-        return dfsInterface(get<InterfaceDeclarationObject*>(obj));
+        return dfsInterface(std::get<InterfaceDeclarationObject*>(obj));
     }
 }
 
