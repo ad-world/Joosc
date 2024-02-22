@@ -2,13 +2,13 @@
 
 #include <string>
 #include <unordered_map>
-#include <vector>
+#include <list>
 #include <optional>
 #include "symboltableentry.h"
 #include "variant-ast/names.h"
 
 class SymbolTable {
-    std::unordered_map<std::string, std::vector<SymbolTableEntry>> hashmap;
+    std::unordered_map<std::string, std::list<SymbolTableEntry>> hashmap;
 
     // Compile time asserts that T is a member of SymbolTableEntry variant
     template <typename T>
@@ -19,9 +19,9 @@ class SymbolTable {
   public:
     SymbolTable() = default;
 
-    // Lookup a symbol in the environment and return pointer to vector of all matches if found
+    // Lookup a symbol in the environment and return pointer to list of all matches if found
     // Return nullptr if no symbol found
-    std::vector<SymbolTableEntry>* lookupSymbol(const std::string& name);
+    std::list<SymbolTableEntry>* lookupSymbol(const std::string& name);
 
     // Lookup a symbol in the environment and return pointer to just one match if found
     // If more than one match, the most recent match is returned

@@ -6,7 +6,7 @@
 #include "symboltable.h"
 #include "variant-ast/names.h"
 
-std::vector<SymbolTableEntry>* SymbolTable::lookupSymbol(const std::string& name) {
+std::list<SymbolTableEntry>* SymbolTable::lookupSymbol(const std::string& name) {
     auto& matches = hashmap[name];
 
     if (matches.size() == 0) {
