@@ -1,6 +1,5 @@
 #include "driver.h"
 #include "parser.hh"
-#include "../../ast/ast.h"
 #include <deque>
 #include <fstream>
 #include <stdexcept>
