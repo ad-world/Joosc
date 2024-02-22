@@ -12,7 +12,7 @@ using namespace std;
 
 // on catch, do not return valid or invalid exit code ( return something else )
 #define THROW_CompilerError(message) throw CompilerError(message, __FILE__, __LINE__)
-class CompilerError : runtime_error {
+class CompilerError : public runtime_error {
 public:
     string message;
     CompilerError(string& message) : runtime_error("Compiler error: " + message) {}
@@ -27,7 +27,7 @@ public:
  ************************************************/
 
 #define THROW_LexerError(message) throw LexerError(message, __FILE__, __LINE__)
-class LexerError : runtime_error {
+class LexerError : public runtime_error {
 public:
     string message;
     LexerError(string& message) : runtime_error("Lexer error: " + message) {}
@@ -37,7 +37,7 @@ public:
 
 
 #define THROW_ParserError(message) throw LexerError(message, __FILE__, __LINE__)
-class ParserError : runtime_error {
+class ParserError : public runtime_error {
 public:
     string message;
     ParserError(string& message) : runtime_error("Parser error: " + message) {}
@@ -46,7 +46,7 @@ public:
 };
 
 #define THROW_WeederError(message) throw WeederError(message, __FILE__, __LINE__)
-class WeederError : runtime_error {
+class WeederError : public runtime_error {
 public:
     string message;
     WeederError(string& message) : runtime_error("Weeder error: " + message) {}
@@ -55,7 +55,7 @@ public:
 };
 
 #define THROW_EnvBuilderError(message) throw EnvBuilderError(message, __FILE__, __LINE__)
-class EnvBuilderError : runtime_error {
+class EnvBuilderError : public runtime_error {
 public:
     string message;
     EnvBuilderError(string& message) : runtime_error("EnvBuilder error: " + message) {}
@@ -64,7 +64,7 @@ public:
 };
 
 #define THROW_TypeLinkerError(message) throw TypeLinkerError(message, __FILE__, __LINE__)
-class TypeLinkerError : runtime_error {
+class TypeLinkerError : public runtime_error {
 public:
     string message;
     TypeLinkerError(string& message) : runtime_error("TypeLinker error: " + message) {}
@@ -73,7 +73,7 @@ public:
 };
 
 #define THROW_HierarchyError(message) throw HierarchyError(message, __FILE__, __LINE__)
-class HierarchyError : runtime_error {
+class HierarchyError : public runtime_error {
 public:
     string message;
     HierarchyError(string& message) : runtime_error("HierarchyChecker error: " + message) {}

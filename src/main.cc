@@ -11,11 +11,13 @@
 #include "exceptions/compilerdevelopmenterror.h"
 #include "exceptions/semanticerror.h"
 #include "type-linking/typelinker.h"
+#include "exceptions/exceptions.h"
 
 using namespace std;
 
 enum return_codes {
     VALID_PROGRAM = 0,
+    COMPILER_ERROR = 1,
     INVALID_PROGRAM = 42,
 };
 
@@ -77,8 +79,8 @@ int main(int argc, char *argv[]) {
     AstWeeder weeder;
     vector<AstNodeVariant> asts;
 
-    // Lexing and parsing
     try {
+        // Lexing and parsing
         drv.trace_scanning = trace_scanning;
         drv.trace_parsing = trace_parsing;
 
@@ -106,39 +108,36 @@ int main(int argc, char *argv[]) {
             asts.emplace_back(std::move(ast));
         }
 
-    } catch ( ... ) {
-        cerr << "Exception occured" << endl;
-        return INVALID_PROGRAM;
-    }
 
-    // Environment building
-    PackageDeclarationObject default_package;
-    try {
+
+        // Environment building
+        PackageDeclarationObject default_package;
+
         for (auto &ast : asts) {
             EnvironmentBuilder(default_package).visit(ast);
         }
+
+
+
+        // Type linking
+        for (auto& ast : asts) {
+            CompilationUnit &current_ast = std::get<CompilationUnit>(ast);
+            TypeLinker(default_package).visit(ast);
+        } 
+
+    // Exception handling
     } catch (const SemanticError &e) {
         cerr << "SemanticError Exception occured: " << e.message << "\n";
         return INVALID_PROGRAM;
     } catch (const CompilerDevelopmentError &e) {
         cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
-    } catch (...) {
-        cerr << "Unknown Exception occured\n";
-    }
-
-    // Type linking
-    try {
-        for (auto& ast : asts) {
-            CompilationUnit &current_ast = std::get<CompilationUnit>(ast);
-            TypeLinker(default_package).visit(ast);
-        } 
-    } catch (const SemanticError &e) {
-        cerr << "SemanticError Exception occured: " << e.message << "\n";
+        return COMPILER_ERROR;
+    } catch (const CompilerError &e) {
+        cerr << e.what() << endl;
+        return COMPILER_ERROR;
+    } catch ( const exception &e ) {
+        cerr << e.what() << endl;
         return INVALID_PROGRAM;
-    } catch (const CompilerDevelopmentError &e) {
-        cerr << "Development error occured: " << e.message << "\n";
-    } catch (const std::exception &e) {
-        cerr << e.what() << "\n";
     }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
