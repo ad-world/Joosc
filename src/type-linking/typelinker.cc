@@ -311,8 +311,6 @@ void TypeLinker::operator()(ClassDeclaration &node) {
         } else {
             throw SemanticError("Class attempting to extend interface");
         }
-    } else {
-        node.environment->extended = nullptr;
     }
 
     visit_children(node);
