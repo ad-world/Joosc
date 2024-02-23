@@ -14,4 +14,8 @@ struct LinkedType {
     LinkedType(TypeDeclaration type_declaration) {
         std::visit([&](auto type_dec){ this->linked_type = type_dec; }, type_declaration);
     }
+    // Return whether the type stored is a primitive type rather than a class/interface link
+    bool isPrimitive() {
+        return bool(std::get_if<PrimitiveType>(&linked_type));
+    }
 };

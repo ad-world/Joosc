@@ -86,8 +86,6 @@ struct FormalParameterDeclarationObject {
     std::string identifier;
     class FormalParameter* ast_reference;
 
-    bool has_primitive_type;
-
     // Fields resolved at type linking stage
     LinkedType type;
 
