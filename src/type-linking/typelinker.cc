@@ -115,11 +115,18 @@ TypeDeclaration resolveCandidates(std::vector<TypeDeclaration>& valid_candidates
     return valid_candidates.back();
 }
 
-TypeDeclaration TypeLinker::lookupType(QualifiedIdentifier &qualified_identifier) {
+TypeDeclaration TypeLinker::lookupQualifiedType(QualifiedIdentifier &qualified_identifier) {
+    /*
+        * Typelinking:
+        * - Qualified names of the form Q.id are handled by these rules: 
+        *   1. Q must be a package name in the environment.
+        *   2. No prefix of Q, including Q, can be a type name.
+        *   3. id must be exactly one type that is a member of Q.
+    */
     std::string canoncial_name = qualified_identifier.identifiers.back().name;
 
     if (qualified_identifier.identifiers.size() == 1) {
-        return lookupToSimpleType(canoncial_name);
+        return lookupSimpleType(canoncial_name);
     }
 
     std::vector<TypeDeclaration> valid_candidates;
@@ -136,7 +143,7 @@ TypeDeclaration TypeLinker::lookupType(QualifiedIdentifier &qualified_identifier
     return resolveCandidates(valid_candidates, canoncial_name);
 }
 
-TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
+TypeDeclaration TypeLinker::lookupSimpleType(std::string &identifier) {
     /*
         * Typelinking:
         * - Unqualified names are handled by these rules: 
@@ -196,6 +203,11 @@ TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
 
     return resolveCandidates(valid_candidates, identifier);
 }
+
+
+
+
+
 
 /* Visitor implementation */
 
@@ -265,7 +277,7 @@ void TypeLinker::operator()(CompilationUnit &node) {
 
 void TypeLinker::operator()(ClassInstanceCreationExpression &node) {
     this->visit_children(node);
-    node.linked_class_type = lookupType(*node.class_name);
+    node.linked_class_type = lookupQualifiedType(*node.class_name);
 }
 
 void TypeLinker::operator()(Type &node) {
@@ -275,7 +287,7 @@ void TypeLinker::operator()(Type &node) {
     
     // Resolve type if it refers to an identifier
     if (auto qualified_identifier = std::get_if<QualifiedIdentifier>(node.non_array_type.get())) {
-        node.link = lookupType(*qualified_identifier);
+        node.link = lookupQualifiedType(*qualified_identifier);
     }
 
     this->visit_children(node);
@@ -287,11 +299,11 @@ void TypeLinker::operator()(ClassDeclaration &node) {
 
     // Check this class resolves unambiguously with imported classes
     auto qid = QualifiedIdentifier(std::vector{Identifier(name)});
-    lookupType(qid);
+    lookupQualifiedType(qid);
 
     // Resolve implemented types to interfaces
     for (auto &implements_qualified_identifier : node.implements) {
-        TypeDeclaration implemented = lookupType(implements_qualified_identifier);
+        TypeDeclaration implemented = lookupQualifiedType(implements_qualified_identifier);
         if (auto interface_type = std::get_if<InterfaceDeclarationObject*>(&implemented)) {
             node.environment->implemented.emplace_back(*interface_type);
         } else {
@@ -301,7 +313,7 @@ void TypeLinker::operator()(ClassDeclaration &node) {
 
     // Resolve extended type to class
     if (node.extends_class) {
-        TypeDeclaration extended = lookupType(*node.extends_class);
+        TypeDeclaration extended = lookupQualifiedType(*node.extends_class);
         if (auto class_type = std::get_if<ClassDeclarationObject*>(&extended)) {
             node.environment->extended = *class_type;
         } else {
@@ -318,11 +330,11 @@ void TypeLinker::operator()(InterfaceDeclaration &node) {
 
     // Check this interface resolves unambiguously with imported classes
     auto qid = QualifiedIdentifier(std::vector{Identifier(name)});
-    lookupType(qid);
+    lookupQualifiedType(qid);
 
     // Resolve extended types to interfaces
     for (auto &extends_qualified_identifier : node.extends_class) {
-        TypeDeclaration extended = lookupType(extends_qualified_identifier);
+        TypeDeclaration extended = lookupQualifiedType(extends_qualified_identifier);
         if (auto interface_type = std::get_if<InterfaceDeclarationObject*>(&extended)) {
             node.environment->extended.emplace_back(*interface_type);
         } else {

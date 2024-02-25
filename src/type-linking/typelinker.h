@@ -33,11 +33,11 @@ class TypeLinker : public DefaultSkipVisitor<void> {
 
     // Look up qualifed_identifier as a type in compilation unit's namespace.
     // Throws semantic error if there are multiple candidates in the namespace.
-    TypeDeclaration lookupType(QualifiedIdentifier &qualified_identifier);
+    TypeDeclaration lookupQualifiedType(QualifiedIdentifier &qualified_identifier);
 
     // Look up identifier as a type in compilation unit's namespace.
     // Throws semantic error if there are multiple candidates in the namespace.
-    TypeDeclaration lookupToSimpleType(std::string &identifier);
+    TypeDeclaration lookupSimpleType(std::string &identifier);
 
 public:
     using DefaultSkipVisitor<void>::operator();
