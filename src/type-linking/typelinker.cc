@@ -266,7 +266,7 @@ void TypeLinker::operator()(CompilationUnit &node) {
 
 void TypeLinker::operator()(ClassInstanceCreationExpression &node) {
     this->visit_children(node);
-    node.node = lookupType(*node.class_name);
+    node.linked_class_type = lookupType(*node.class_name);
 }
 
 void TypeLinker::operator()(Type &node) {
@@ -276,7 +276,7 @@ void TypeLinker::operator()(Type &node) {
     
     // Resolve type if it refers to an identifier
     if (auto qualified_identifier = std::get_if<QualifiedIdentifier>(node.non_array_type.get())) {
-        node.node = lookupType(*qualified_identifier);
+        node.link = lookupType(*qualified_identifier);
     }
 
     this->visit_children(node);
@@ -337,7 +337,7 @@ void TypeLinker::operator()(InterfaceDeclaration &node) {
 void TypeLinker::operator()(FieldDeclaration &node) {
     // Resolve type
     visit_children(node);
-    node.environment->type = node.type->node;
+    node.environment->type = node.type->link;
 }
 
 void TypeLinker::operator()(MethodDeclaration &node) {
@@ -345,18 +345,20 @@ void TypeLinker::operator()(MethodDeclaration &node) {
     visit_children(node);
     if (node.type) {
         // This method is not a constructor
-        node.environment->return_type = node.type->node;
+        node.environment->return_type = node.type->link;
+    } else {
+        node.environment->is_constructor = true;
     }
 }
 
 void TypeLinker::operator()(FormalParameter &node) {
     // Resolve type
     visit_children(node);
-    node.environment->type = node.type->node;
+    node.environment->type = node.type->link;
 }
 
 void TypeLinker::operator()(LocalVariableDeclaration &node) {
     // Resolve type
     visit_children(node);
-    node.environment->type = node.type->node;
+    node.environment->type = node.type->link;
 }
