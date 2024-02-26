@@ -2,11 +2,11 @@
 #include "names.h"
 
 Type::Type(std::unique_ptr<NonArrayType>& non_array_type, bool is_array) :
-    non_array_type{std::move(non_array_type)}, is_array{is_array}, node{static_cast<ClassDeclarationObject*>(nullptr)}
+    non_array_type{std::move(non_array_type)}, is_array{is_array}, link{}
 {}
 
 // -------
 
 Type::Type(std::unique_ptr<NonArrayType>&& non_array_type, bool is_array) :
-    non_array_type{std::move(non_array_type)}, is_array{is_array}, node{static_cast<ClassDeclarationObject*>(nullptr)}
+    non_array_type{std::move(non_array_type)}, is_array{is_array}, link{}
 {}

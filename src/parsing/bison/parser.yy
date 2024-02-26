@@ -11,11 +11,11 @@
   # include <string>
   # include <memory>
   # include <vector>
-  # include "../../ast/ast.h"
   # include "../../variant-ast/astnode.h"
   #define COMMA ,
 
   class Driver;
+  using namespace std;
 }
 
 // The parsing context
