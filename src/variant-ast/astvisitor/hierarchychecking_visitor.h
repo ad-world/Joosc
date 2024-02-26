@@ -44,7 +44,7 @@ std::string PrimitiveTypeToString(PrimitiveType& pt) {
 std::string getFormalParameterType(const FormalParameter& formalParameter) {
     std::string formalParameterType = "";
     if(std::get_if<QualifiedIdentifier>(&(*formalParameter.type->non_array_type))) {
-        auto typeDecl = formalParameter.type->node;
+        auto typeDecl = formalParameter.type->link.linked_type;
         if(std::get_if<ClassDeclarationObject*>(&typeDecl)) {
             formalParameterType += std::get<ClassDeclarationObject*>(typeDecl)->identifier;
         } else {
@@ -61,11 +61,11 @@ std::string getFormalParameterType(const FormalParameter& formalParameter) {
 
 std::string getMethodSignature(const MethodDeclaration& method) {
     std::string methodSignature = method.function_name->name + "(";
+    bool first = true;
     for(const auto& formalParameter: method.parameters) {
+        if ( false ) { methodSignature += ","; first = false; }
         methodSignature += getFormalParameterType(formalParameter);
-        methodSignature += ",";
     }
-    methodSignature.pop_back();
     methodSignature += ")";
     return methodSignature;
 }
@@ -267,8 +267,9 @@ std::vector<MethodDeclarationObject*> getAllMethods(ClassDeclarationObject* clas
     dfsClass = [&](ClassDeclarationObject* currentClassObj) {
         for (auto& method : classObj->ast_reference->method_declarations) {
             // TODO: ensure this is not a constructor
-            std::cerr << "TODO: ensure this is not a constructor\n";
-            allMethods.push_back(method.environment);
+            if ( ! method.environment->is_constructor ) {
+                allMethods.push_back(method.environment);
+            }
         }
         if (currentClassObj->extended != nullptr) {
             dfsClass(currentClassObj->extended);
@@ -280,8 +281,9 @@ std::vector<MethodDeclarationObject*> getAllMethods(ClassDeclarationObject* clas
     dfsInterface = [&](InterfaceDeclarationObject* currentInterfaceObj) {
         for (auto& method : currentInterfaceObj->ast_reference->method_declarations) {
             // TODO: ensure this is not a constructor
-            std::cerr << "TODO: ensure this is not a constructor\n";
-            allMethods.push_back(method.environment);
+            if ( ! method.environment->is_constructor ) {
+                allMethods.push_back(method.environment);
+            }
         }
         for(auto& extendedInterface : currentInterfaceObj->extended) {
             dfsInterface(extendedInterface);
@@ -335,15 +337,12 @@ public:
         std::vector<MethodDeclaration*> methods;
 
         for ( auto& method : node.method_declarations ) {
-            if ( std::get_if<ClassDeclarationObject*>(&method.environment->return_type) == nullptr
-                && std::get_if<InterfaceDeclarationObject*>(&method.environment->return_type) == nullptr
-            ) {
+            // TODO: constructor boolean not working
+            if (method.environment->is_constructor) {
                 // constructor
-                std::cerr << "We have a constructor\n";
                 constructors.push_back(&method);
             } else {
                 // method
-                std::cerr << "We have a method\n";
                 methods.push_back(&method);
             }
         }

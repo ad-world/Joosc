@@ -74,7 +74,7 @@ struct MethodDeclarationObject {
     std::unique_ptr<SymbolTable> parameters; // SymbolTable mapping to FormalParameterDeclarationObject
     LocalVariableScopeManager scope_manager; // Manager of SymbolTables mapping to LocalVariableDeclarationObject
 
-    bool is_constructor;
+    bool is_constructor = false;
 
     // Fields resolved at type linking stage
     LinkedType return_type;
