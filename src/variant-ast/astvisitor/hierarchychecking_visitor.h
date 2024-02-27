@@ -63,7 +63,7 @@ std::string getMethodSignature(const MethodDeclaration& method) {
     std::string methodSignature = method.function_name->name + "(";
     bool first = true;
     for(const auto& formalParameter: method.parameters) {
-        if ( false ) { methodSignature += ","; first = false; }
+        if ( first ) { methodSignature += ","; first = false; }
         methodSignature += getFormalParameterType(formalParameter);
     }
     methodSignature += ")";
