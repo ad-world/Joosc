@@ -597,7 +597,7 @@ PrimaryNoNewArray:
     | QualifiedIdentifier DOT THIS // ClassName     TODO: REMOVE
         { MAKE_EXPRESSION_OBJ($$, QualifiedThis, move($1)); }
     | OPENING_PAREN Expression CLOSING_PAREN
-        { COPY_OBJ($$, $2); }
+        { MAKE_EXPRESSION_OBJ($$, ParenthesizedExpression, move($2)); }
     | ClassInstanceCreationExpression { COPY_OBJ($$, $1); }
     | FieldAccess { COPY_OBJ($$, $1); }
     | MethodInvocation { COPY_OBJ($$, $1); }
@@ -997,7 +997,7 @@ ReturnStatement:
     ;
 
 ParExpression:
-    OPENING_PAREN Expression CLOSING_PAREN { COPY_OBJ($$, $2); }
+    OPENING_PAREN Expression CLOSING_PAREN { MAKE_EXPRESSION_OBJ($$, ParenthesizedExpression, move($2)); }
     ;
 
 QualifiedIdentifier:
