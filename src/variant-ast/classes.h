@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <list>
 #include "astnodecommon.h"
 #include "expressions.h"
 
@@ -134,6 +135,8 @@ struct InterfaceDeclaration: public AstNodeCommon {
     std::vector<MethodDeclaration> method_declarations; // interface method declarations
 
     struct InterfaceDeclarationObject *environment = nullptr;
+
+    std::list<MethodDeclaration> implicit_methods;
 
     InterfaceDeclaration(
         std::vector<Modifier>& modifiers,

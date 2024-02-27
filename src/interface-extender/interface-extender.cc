@@ -84,7 +84,7 @@ void InterfaceExtender::operator()(InterfaceDeclaration &node) {
                 }
 
                 // Create & add new method to interface's AST
-                node.method_declarations.push_back({
+                node.implicit_methods.push_back({
                     new_modifiers,
                     new_type,
                     new_function_name,
@@ -94,12 +94,13 @@ void InterfaceExtender::operator()(InterfaceDeclaration &node) {
             } // end of scope
 
             // Add method to interface
-            auto& new_method = node.method_declarations.back();
+            auto& new_method = node.implicit_methods.back();
             auto new_method_env = node.environment->methods->addSymbol<MethodDeclarationObject>(new_method.function_name->name);
 
             // Link method
-            new_method.environment = new_method_env;
-            new_method_env->ast_reference = &new_method;
+            // TODO: Check if needed
+            // new_method.environment = new_method_env;
+            // new_method_env->ast_reference = &new_method;
 
             for ( auto& new_param : new_method.parameters ) {
                 // Add parameter to method
