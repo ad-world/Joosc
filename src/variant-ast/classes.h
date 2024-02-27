@@ -122,6 +122,9 @@ struct ClassDeclaration: public AstNodeCommon {
         std::vector<FieldDeclaration>&& field_declarations,
         std::vector<MethodDeclaration>&& method_declarations
     );
+
+    // Helper functions
+    bool hasModifier(Modifier mod_to_check);
 };
 
 struct InterfaceDeclaration: public AstNodeCommon {
@@ -144,4 +147,7 @@ struct InterfaceDeclaration: public AstNodeCommon {
         std::vector<QualifiedIdentifier>&& extends_class,
         std::vector<MethodDeclaration>&& method_declarations
     );
+
+    // Helper functions
+    bool hasModifier(Modifier mod_to_check);
 };
