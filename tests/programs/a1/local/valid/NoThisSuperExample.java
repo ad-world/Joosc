@@ -8,8 +8,4 @@ public class NoThisSuperExample {
     public void setValue(int value) {
         this.value = value;  // Valid usage of this
     }
-
-    public NoThisSuperExample() {
-
-    }
 }
