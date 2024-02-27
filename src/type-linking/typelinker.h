@@ -30,7 +30,9 @@ class TypeLinker : public DefaultSkipVisitor<void> {
 
     // Look up qualifed_identifier as a type in compilation unit's namespace.
     // Throws semantic error if there are multiple candidates in the namespace.
+public:
     TypeDeclaration lookupQualifiedType(QualifiedIdentifier &qualified_identifier);
+private:
 
     // Look up identifier as a type in compilation unit's namespace.
     // Returns all valid candidates.

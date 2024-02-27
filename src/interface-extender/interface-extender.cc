@@ -1,5 +1,6 @@
 #include "interface-extender.h"
 #include "exceptions/exceptions.h"
+#include "type-linking/typelinker.h"
 #include <memory>
 
 void InterfaceExtender::operator()(InterfaceDeclaration &node) {
@@ -99,8 +100,8 @@ void InterfaceExtender::operator()(InterfaceDeclaration &node) {
 
             // Link method
             // TODO: Check if needed
-            // new_method.environment = new_method_env;
-            // new_method_env->ast_reference = &new_method;
+            new_method.environment = new_method_env;
+            new_method_env->ast_reference = &new_method;
 
             for ( auto& new_param : new_method.parameters ) {
                 // Add parameter to method
