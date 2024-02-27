@@ -157,6 +157,8 @@ TypeDeclaration TypeLinker::lookupQualifiedType(QualifiedIdentifier &qualified_i
         
         auto all_packages = star_imports;
         all_packages.push_back(default_package);
+        all_packages.push_back(current_package);
+        util::removeDuplicates(all_packages);
         
         for (auto package : all_packages) {
             auto possible_package = tryFindPackageInPackage(package_qid, package);
