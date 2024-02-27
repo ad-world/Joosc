@@ -28,80 +28,80 @@ void InterfaceExtender::operator()(InterfaceDeclaration &node) {
         if ( method.type && method.hasModifier(Modifier::PUBLIC) && !method.hasModifier(Modifier::STATIC) ) {
             // non-constructor && public && NOT static
 
-            std::string old_name = method.function_name->name;
-            auto& old_non_array = *method.type->non_array_type;
+            { // new scope to prevent errors using moved objects
+                std::string old_name = method.function_name->name;
+                auto& old_non_array = *method.type->non_array_type;
 
-            // Copy old method as PUBLIC ABSTRACT
-            std::vector<Modifier> new_modifiers = {Modifier::PUBLIC, Modifier::ABSTRACT};
-            std::unique_ptr<Type> new_type = std::holds_alternative<PrimitiveType>(*method.type->non_array_type) ? (
-                // Primitive type
-                std::make_unique<Type>(
-                    std::make_unique<NonArrayType>(*method.type->non_array_type),
-                    method.type->is_array
-                )
-            ): (
-                // Qualified identifier
-                std::make_unique<Type>(
-                    std::make_unique<NonArrayType>(
-                        QualifiedIdentifier(std::vector<Identifier>(
-                            std::get<QualifiedIdentifier>(*method.type->non_array_type).identifiers
-                        ))
-                    ),
-                    method.type->is_array
-                )
-            );
-            std::unique_ptr<Identifier> new_function_name = std::make_unique<Identifier>(old_name);
-            std::vector<FormalParameter> new_parameters = { /* POPULATED BELOW */ };
-            std::unique_ptr<Block> new_body = nullptr;
-            
-            // Copy old parameters (populate new array)
-            for ( auto& param : method.parameters ) {
-                // Create param type
-                std::unique_ptr<Type> new_param_type = std::holds_alternative<PrimitiveType>(*param.type->non_array_type) ? (
+                // Copy old method as PUBLIC ABSTRACT
+                std::vector<Modifier> new_modifiers = {Modifier::PUBLIC, Modifier::ABSTRACT};
+                std::unique_ptr<Type> new_type = std::holds_alternative<PrimitiveType>(*method.type->non_array_type) ? (
                     // Primitive type
                     std::make_unique<Type>(
-                        std::make_unique<NonArrayType>(*param.type->non_array_type),
-                        param.type->is_array
+                        std::make_unique<NonArrayType>(*method.type->non_array_type),
+                        method.type->is_array
                     )
                 ): (
                     // Qualified identifier
                     std::make_unique<Type>(
                         std::make_unique<NonArrayType>(
                             QualifiedIdentifier(std::vector<Identifier>(
-                                std::get<QualifiedIdentifier>(*param.type->non_array_type).identifiers
+                                std::get<QualifiedIdentifier>(*method.type->non_array_type).identifiers
                             ))
                         ),
-                        param.type->is_array
+                        method.type->is_array
                     )
                 );
+                std::unique_ptr<Identifier> new_function_name = std::make_unique<Identifier>(old_name);
+                std::vector<FormalParameter> new_parameters = { /* POPULATED BELOW */ };
+                std::unique_ptr<Block> new_body = nullptr;
 
-                // Create param name
-                std::string old_param_name = param.parameter_name->name;
-                std::unique_ptr<Identifier> new_param_name = std::make_unique<Identifier>(old_param_name);
+                // Copy old parameters (populate new array)
+                for ( auto& param : method.parameters ) {
+                    // Create param type
+                    std::unique_ptr<Type> new_param_type = std::holds_alternative<PrimitiveType>(*param.type->non_array_type) ? (
+                        // Primitive type
+                        std::make_unique<Type>(
+                            std::make_unique<NonArrayType>(*param.type->non_array_type),
+                            param.type->is_array
+                        )
+                    ): (
+                        // Qualified identifier
+                        std::make_unique<Type>(
+                            std::make_unique<NonArrayType>(
+                                QualifiedIdentifier(std::vector<Identifier>(
+                                    std::get<QualifiedIdentifier>(*param.type->non_array_type).identifiers
+                                ))
+                            ),
+                            param.type->is_array
+                        )
+                    );
 
-                new_parameters.push_back({new_param_type, new_param_name});
-            }
+                    // Create param name
+                    std::string old_param_name = param.parameter_name->name;
+                    std::unique_ptr<Identifier> new_param_name = std::make_unique<Identifier>(old_param_name);
 
-            // Create & add new method to interface's AST
-            node.method_declarations.push_back({
-                new_modifiers,
-                new_type,
-                new_function_name,
-                new_parameters,
-                new_body
-            });
+                    new_parameters.push_back({new_param_type, new_param_name});
+                }
 
-            // TODO: how do we link to node.environment->methods?
+                // Create & add new method to interface's AST
+                node.method_declarations.push_back({
+                    new_modifiers,
+                    new_type,
+                    new_function_name,
+                    new_parameters,
+                    new_body
+                });
+            } // end of scope
 
             // Add method to interface
-            auto new_method_env = node.environment->methods->addSymbol<MethodDeclarationObject>(old_name);
             auto& new_method = node.method_declarations.back();
+            auto new_method_env = node.environment->methods->addSymbol<MethodDeclarationObject>(new_method.function_name->name);
 
             // Link method
             new_method.environment = new_method_env;
             new_method_env->ast_reference = &new_method;
 
-            for ( auto& new_param : new_parameters ) {
+            for ( auto& new_param : new_method.parameters ) {
                 // Add parameter to method
                 std::string new_param_name = new_param.parameter_name->name;
                 auto new_param_env = new_method_env->parameters->addSymbol<FormalParameterDeclarationObject>(new_param_name);
