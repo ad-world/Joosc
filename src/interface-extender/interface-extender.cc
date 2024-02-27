@@ -1,5 +1,6 @@
 #include "interface-extender.h"
 #include "exceptions/exceptions.h"
+#include <memory>
 
 void InterfaceExtender::operator()(InterfaceDeclaration &node) {
     if ( ! node.environment->extended.empty() ) {
@@ -26,8 +27,37 @@ void InterfaceExtender::operator()(InterfaceDeclaration &node) {
         // Create public abstract methods from non-static public methods
         if ( method.hasModifier(Modifier::PUBLIC) && !method.hasModifier(Modifier::STATIC) ) {
             // public && NOT static
-            // TODO: create new method
-            // TODO: add new method to interface's AST
+
+            // Copy old method as PUBLIC ABSTRACT
+            std::vector<Modifier> new_modifiers = {Modifier::PUBLIC, Modifier::ABSTRACT};
+            std::unique_ptr<Type> new_type = std::make_unique<Type>(
+                std::make_unique<NonArrayType>(*method.type->non_array_type),
+                method.type->is_array
+            );
+            std::unique_ptr<Identifier> new_function_name = std::make_unique<Identifier>(method.function_name->name);
+            std::vector<FormalParameter> new_parameters = { /* POPULATED BELOW */ };
+            std::unique_ptr<Block> new_body = nullptr;
+            
+            // Copy old parameters (populate new array)
+            for ( auto& param : method.parameters ) {
+                std::unique_ptr<Type> new_param_type = std::make_unique<Type>(
+                    std::make_unique<NonArrayType>(*param.type->non_array_type),
+                    param.type->is_array
+                );
+                std::unique_ptr<Identifier> new_param_name = std::make_unique<Identifier>(param.parameter_name->name);
+                new_parameters.push_back({new_param_type, new_param_name});
+            }
+
+            // Create & add new method to interface's AST
+            node.method_declarations.push_back({
+                new_modifiers,
+                new_type,
+                new_function_name,
+                new_parameters,
+                new_body
+            });
+
+            // TODO: how do we link to node.environment->methods?
         }
     }
 }
