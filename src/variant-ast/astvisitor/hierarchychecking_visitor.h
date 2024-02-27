@@ -3,6 +3,7 @@
 #include <map>
 #include <stdexcept>
 #include <unordered_set>
+#include "exceptions/exceptions.h"
 #include "variant-ast/astnode.h"
 #include "defaultskipvisitor.h"
 #include "environment-builder/symboltable.h"
@@ -261,6 +262,28 @@ void checkMethods(std::vector<MethodDeclaration>& methods, ClassDeclaration& par
     }
 }
 
+void checkMethodReplacement( MethodDeclaration& method, MethodDeclaration& replaced ) {
+    if ( *method.type != *replaced.type ) {
+        THROW_HierarchyError("A method must not replace a method with a different return type.");
+    }
+
+    if ( method.hasModifier(Modifier::STATIC) && (! replaced.hasModifier(Modifier::STATIC)) ) {
+        THROW_HierarchyError("A static method must not replace a nonstatic method.");
+    }
+
+    if ( (! method.hasModifier(Modifier::STATIC)) && replaced.hasModifier(Modifier::STATIC)) {
+        THROW_HierarchyError("A nonstatic method must not replace a static method.");
+    }
+
+    if ( method.hasModifier(Modifier::PROTECTED) && replaced.hasModifier(Modifier::PUBLIC)) {
+        THROW_HierarchyError("A protected method must not replace a public method.");
+    }
+
+    if ( replaced.hasModifier(Modifier::FINAL) ) {
+        THROW_HierarchyError("A method must not replace a final method.");
+    }
+}
+
 // Get all methods contained (declared or inherited) in a class
 std::vector<MethodDeclarationObject*> getAllMethods(ClassDeclarationObject* classObj) {
     std::vector<MethodDeclarationObject*> allMethods{};
@@ -370,18 +393,32 @@ public:
 
         // A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1)
         // get all the methods from the class (declared or inherited) and check if any of them are abstract
-        std::vector<MethodDeclarationObject*> allMethods{};
-        if(std::find(node.modifiers.begin(), node.modifiers.end(), Modifier::ABSTRACT) == node.modifiers.end()) {
-            allMethods = getAllMethods(classEnv);
+        std::vector<MethodDeclarationObject*> allMethods = getAllMethods(classEnv);
+        if( ! node.hasModifier(Modifier::ABSTRACT) ) {
+            // Non-abstract class
             for(auto& method: allMethods) {
-                if(std::find(method->ast_reference->modifiers.begin(), method->ast_reference->modifiers.end(), Modifier::ABSTRACT) != method->ast_reference->modifiers.end()) {
+                if( method->ast_reference->hasModifier(Modifier::ABSTRACT) ) {
+                    // Abstract method
                     throw std::runtime_error("Error: Class contains abstract method but is not abstract");
                 }
             }
         }
 
         // Perform method checks
-        checkMethods(node.method_declarations, node);
+        // checkMethods(node.method_declarations, node);
+
+        // Method replacement
+        if ( extendedClass ) {
+            auto all_extended_methods = getAllMethods(extendedClass);
+            for ( auto& extend_method : all_extended_methods ) {
+                for ( auto& method : methods ) {
+                    if ( *method == *extend_method->ast_reference ) {
+                        // Same signature as another method
+                        checkMethodReplacement(*method, *extend_method->ast_reference);
+                    }
+                }
+            }
+        }
 
         this->visit_children(node);
     };
