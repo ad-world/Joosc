@@ -1,7 +1,7 @@
 #pragma once
 
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
-#include "environment-builder/symboltableentry.h"
+#include "environment-builder/symboltable.h"
 
 class InterfaceExtender : DefaultSkipVisitor<void> {
     PackageDeclarationObject* root_package;
