@@ -86,6 +86,26 @@ TypeDeclaration TypeLinker::resolveToType(QualifiedIdentifier &qualified_identif
     throw SemanticError("Undeclared type imported");
 }
 
+std::optional<PackageDeclarationObject*> tryFindPackageInPackage(
+    QualifiedIdentifier &qualified_identifier, 
+    PackageDeclarationObject* source_package
+) {
+    PackageDeclarationObject* temp_package = source_package;
+
+    for (auto &identifier : qualified_identifier.identifiers) {
+        // Resolve to subpackage
+        auto possible_package = temp_package->sub_packages->lookupUniqueSymbol(identifier.name);
+        if (possible_package) {
+            temp_package = &(std::get<PackageDeclarationObject>(*possible_package));
+        } else {
+            // Cannot find package
+            return std::nullopt;
+        }
+    }
+
+    return temp_package;
+}
+
 std::optional<TypeDeclaration> tryFindTypeInPackage(std::string &identifier, PackageDeclarationObject* package_dec) {
     auto possible_classes = package_dec->classes->lookupSymbol(identifier);
     auto possible_interfaces = package_dec->interfaces->lookupSymbol(identifier);
@@ -115,6 +135,11 @@ TypeDeclaration resolveCandidates(std::vector<TypeDeclaration>& valid_candidates
     return valid_candidates.back();
 }
 
+// // Throw an exception if any non-strict prefix of qualified_identifier is a type
+// void verifyNoPrefixIsType(QualifiedIdentifier &qualified_identifier) {
+
+// }
+
 TypeDeclaration TypeLinker::lookupQualifiedType(QualifiedIdentifier &qualified_identifier) {
     /*
         * Typelinking:
@@ -123,23 +148,42 @@ TypeDeclaration TypeLinker::lookupQualifiedType(QualifiedIdentifier &qualified_i
         *   2. No prefix of Q, including Q, can be a type name.
         *   3. id must be exactly one type that is a member of Q.
     */
+    QualifiedIdentifier package_qid = qualified_identifier.getQualifiedIdentifierWithoutLast();
     std::string canoncial_name = qualified_identifier.identifiers.back().name;
 
-    if (qualified_identifier.identifiers.size() == 1) {
+    if (package_qid.identifiers.empty()) {
         return lookupSimpleType(canoncial_name);
     }
 
-    std::vector<TypeDeclaration> valid_candidates;
-    QualifiedIdentifier package_qid = qualified_identifier.getQualifiedIdentifierWithoutLast();
-
-    // Check each package in compilation units namespace
-    for (auto package : star_imports) {
-        auto candidate_package = resolveToPackage(package_qid, package);
-        if (auto possible_type = tryFindTypeInPackage(canoncial_name, candidate_package)) {
-            valid_candidates.push_back(*possible_type);
+    // Check each import-on-demand package in compilation units namespace
+    auto getValidCandidates = [&](QualifiedIdentifier &package_qid, std::string canoncial_name){
+        std::vector<TypeDeclaration> valid_candidates;
+        
+        auto all_packages = star_imports;
+        all_packages.push_back(default_package);
+        
+        for (auto package : all_packages) {
+            auto possible_package = tryFindPackageInPackage(package_qid, package);
+            if (possible_package) {
+                if (auto possible_type = tryFindTypeInPackage(canoncial_name, *possible_package)) {
+                    valid_candidates.push_back(*possible_type);
+                }
+            }
         }
-    }
 
+        return valid_candidates;
+    };
+
+    // Verify 1.
+    auto valid_candidates = getValidCandidates(package_qid, canoncial_name);
+
+    // Verify 2.
+    auto verifyNoPrefixIsType = [&](QualifiedIdentifier &package_qid){
+        auto prefix = package_qid.getQualifiedIdentifierWithoutLast();
+    };
+    verifyNoPrefixIsType(package_qid);
+
+    // Verify 3.
     return resolveCandidates(valid_candidates, canoncial_name);
 }
 
