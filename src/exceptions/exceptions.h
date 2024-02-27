@@ -14,8 +14,8 @@
 class CompilerError : public std::runtime_error {
 public:
     std::string message;
-    CompilerError(std::string& message) : runtime_error("Compiler error: " + message) {}
-    CompilerError(std::string& message, std::string& file, int line)
+    CompilerError(std::string message) : runtime_error("Compiler error: " + message) {}
+    CompilerError(std::string message, std::string& file, int line)
         : runtime_error(make_message("Compiler error", message, file, line)) {}
 };
 
@@ -29,8 +29,8 @@ public:
 class LexerError : public std::runtime_error {
 public:
     std::string message;
-    LexerError(std::string& message) : runtime_error("Lexer error: " + message) {}
-    LexerError(std::string& message, std::string& file, int line)
+    LexerError(std::string message) : runtime_error("Lexer error: " + message) {}
+    LexerError(std::string message, std::string& file, int line)
         : runtime_error(make_message("Lexer error", message, file, line)) {}
 };
 
@@ -39,8 +39,8 @@ public:
 class ParserError : public std::runtime_error {
 public:
     std::string message;
-    ParserError(std::string& message) : runtime_error("Parser error: " + message) {}
-    ParserError(std::string& message, std::string& file, int line)
+    ParserError(std::string message) : runtime_error("Parser error: " + message) {}
+    ParserError(std::string message, std::string& file, int line)
         : runtime_error(make_message("Parser error", message, file, line)) {}
 };
 
@@ -48,8 +48,8 @@ public:
 class WeederError : public std::runtime_error {
 public:
     std::string message;
-    WeederError(std::string& message) : runtime_error("Weeder error: " + message) {}
-    WeederError(std::string& message, std::string& file, int line)
+    WeederError(std::string message) : runtime_error("Weeder error: " + message) {}
+    WeederError(std::string message, std::string& file, int line)
         : runtime_error(make_message("Weeder error", message, file, line)) {}
 };
 
@@ -57,8 +57,8 @@ public:
 class EnvBuilderError : public std::runtime_error {
 public:
     std::string message;
-    EnvBuilderError(std::string& message) : runtime_error("EnvBuilder error: " + message) {}
-    EnvBuilderError(std::string& message, std::string& file, int line)
+    EnvBuilderError(std::string message) : runtime_error("EnvBuilder error: " + message) {}
+    EnvBuilderError(std::string message, std::string& file, int line)
         : runtime_error(make_message("EnvBuilder error", message, file, line)) {}
 };
 
@@ -66,8 +66,8 @@ public:
 class TypeLinkerError : public std::runtime_error {
 public:
     std::string message;
-    TypeLinkerError(std::string& message) : runtime_error("TypeLinker error: " + message) {}
-    TypeLinkerError(std::string& message, std::string& file, int line)
+    TypeLinkerError(std::string message) : runtime_error("TypeLinker error: " + message) {}
+    TypeLinkerError(std::string message, std::string& file, int line)
         : runtime_error(make_message("TypeLinker error", message, file, line)) {}
 };
 
@@ -75,7 +75,7 @@ public:
 class HierarchyError : public std::runtime_error {
 public:
     std::string message;
-    HierarchyError(std::string& message) : runtime_error("HierarchyChecker error: " + message) {}
-    HierarchyError(std::string& message, std::string& file, int line)
+    HierarchyError(std::string message) : runtime_error("HierarchyChecker error: " + message) {}
+    HierarchyError(std::string message, std::string& file, int line)
         : runtime_error(make_message("HierarchyChecker error", message, file, line)) {}
 };
