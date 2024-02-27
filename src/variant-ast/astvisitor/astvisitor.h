@@ -45,6 +45,7 @@ class AstVisitor {
     void visit_children(ArrayAccess &node);
     void visit_children(MethodInvocation &node);
     void visit_children(InstanceOfExpression &node);
+    void visit_children(ParenthesizedExpression &node);
 
     void visit_children(Statement &node);
     void visit_children(Expression &node);
@@ -91,6 +92,7 @@ class AstVisitor {
     virtual void operator()(ArrayAccess &node) = 0;
     virtual void operator()(MethodInvocation &node) = 0;
     virtual void operator()(InstanceOfExpression &node) = 0;
+    virtual void operator()(ParenthesizedExpression &node) = 0;
 
     virtual void operator()(Statement &node);
     virtual void operator()(Expression &node);
