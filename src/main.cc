@@ -11,6 +11,7 @@
 #include "exceptions/compilerdevelopmenterror.h"
 #include "exceptions/semanticerror.h"
 #include "type-linking/typelinker.h"
+#include "variant-ast/astvisitor/hierarchychecking_visitor.h"
 
 using namespace std;
 
@@ -142,6 +143,18 @@ int main(int argc, char *argv[]) {
         return COMPILER_DEVELOPMENT_ERROR; 
     } catch (const std::exception &e) {
         cerr << e.what() << "\n";
+    }
+
+    try {
+        for ( auto& ast : asts ) {
+            HierarchyCheckingVisitor(default_package).visit(ast);
+        }
+    } catch (const std::exception &e) {
+        cerr << e.what() << "\n";
+        return INVALID_PROGRAM;
+    } catch (...) {
+        cerr << "Unknown hierarchy checking error occurred\n";
+        return COMPILER_DEVELOPMENT_ERROR;
     }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }

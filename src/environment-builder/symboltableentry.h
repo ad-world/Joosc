@@ -33,13 +33,13 @@ struct PackageDeclarationObject {
 
 struct ClassDeclarationObject {
     std::string identifier;
-    class ClassDeclaration* ast_reference;
+    class ClassDeclaration* ast_reference = nullptr;
 
     std::unique_ptr<SymbolTable> fields; // SymbolTable mapping to FieldDeclarationObjects
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
 
     // Fields resolved at type linking stage
-    ClassDeclarationObject* extended;
+    ClassDeclarationObject* extended = nullptr;
     std::vector<InterfaceDeclarationObject*> implemented;
 
     ClassDeclarationObject(const std::string &identifier);
@@ -47,7 +47,7 @@ struct ClassDeclarationObject {
 
 struct InterfaceDeclarationObject {
     std::string identifier;
-    class InterfaceDeclaration* ast_reference;
+    class InterfaceDeclaration* ast_reference = nullptr;
 
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
 
@@ -59,7 +59,7 @@ struct InterfaceDeclarationObject {
 
 struct FieldDeclarationObject {
     std::string identifier;
-    class FieldDeclaration* ast_reference;
+    class FieldDeclaration* ast_reference = nullptr;
 
     // Fields resolved at type linking stage
     LinkedType type;
@@ -69,12 +69,12 @@ struct FieldDeclarationObject {
 
 struct MethodDeclarationObject {
     std::string identifier;
-    class MethodDeclaration* ast_reference;
+    class MethodDeclaration* ast_reference = nullptr;
 
     std::unique_ptr<SymbolTable> parameters; // SymbolTable mapping to FormalParameterDeclarationObject
     LocalVariableScopeManager scope_manager; // Manager of SymbolTables mapping to LocalVariableDeclarationObject
 
-    bool is_constructor;
+    bool is_constructor = false;
 
     // Fields resolved at type linking stage
     LinkedType return_type;
@@ -84,7 +84,7 @@ struct MethodDeclarationObject {
 
 struct FormalParameterDeclarationObject {
     std::string identifier;
-    class FormalParameter* ast_reference;
+    class FormalParameter* ast_reference = nullptr;
 
     // Fields resolved at type linking stage
     LinkedType type;
@@ -94,7 +94,7 @@ struct FormalParameterDeclarationObject {
 
 struct LocalVariableDeclarationObject {
     std::string identifier;
-    class LocalVariableDeclaration* ast_reference;
+    class LocalVariableDeclaration* ast_reference = nullptr;
 
     // Fields resolved at type linking stage
     LinkedType type;

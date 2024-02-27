@@ -38,7 +38,7 @@ struct FieldDeclaration: public AstNodeCommon {
     std::unique_ptr<Type> type;
     std::unique_ptr<VariableDeclarator> variable_declarator;
 
-    struct FieldDeclarationObject *environment;
+    struct FieldDeclarationObject *environment = nullptr;
 
     FieldDeclaration(
         std::vector<Modifier>& modifiers,
@@ -56,7 +56,7 @@ struct FormalParameter {
     std::unique_ptr<Type> type;
     std::unique_ptr<Identifier> parameter_name;
 
-    struct FormalParameterDeclarationObject *environment;
+    struct FormalParameterDeclarationObject *environment = nullptr;
 
     FormalParameter(
         std::unique_ptr<Type>& type, 
@@ -75,7 +75,7 @@ struct MethodDeclaration {
     std::vector<FormalParameter> parameters;
     std::unique_ptr<Block> body;
 
-    struct MethodDeclarationObject *environment;
+    struct MethodDeclarationObject *environment = nullptr;
 
     MethodDeclaration(
         std::vector<Modifier>& modifiers,
@@ -101,7 +101,7 @@ struct ClassDeclaration: public AstNodeCommon {
     std::vector<FieldDeclaration> field_declarations; // Class field declarations
     std::vector<MethodDeclaration> method_declarations; // Class method declarations
 
-    struct ClassDeclarationObject *environment;
+    struct ClassDeclarationObject *environment = nullptr;
 
     ClassDeclaration(
         std::vector<Modifier>& modifiers,
@@ -127,7 +127,7 @@ struct InterfaceDeclaration: public AstNodeCommon {
     std::vector<QualifiedIdentifier> extends_class; // classes that this interface extends off of
     std::vector<MethodDeclaration> method_declarations; // interface method declarations
 
-    struct InterfaceDeclarationObject *environment;
+    struct InterfaceDeclarationObject *environment = nullptr;
 
     InterfaceDeclaration(
         std::vector<Modifier>& modifiers,
