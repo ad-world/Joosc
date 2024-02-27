@@ -79,7 +79,10 @@ bool checkMethodWithSameSignature(std::vector<MethodDeclaration*>& methods) {
     std::unordered_set<std::string> methodSignatureSet{};
     for(const auto& method: methods) {
         std::string methodSignature = getMethodSignature(*method);
-        methodSignatureSet.insert(methodSignature);
+        if ( methodSignatureSet.insert(methodSignature).second == false ) {
+            // Method signature already exists
+            return true;
+        }
     }
     return methods.size() != methodSignatureSet.size();
 }
