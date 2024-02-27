@@ -91,6 +91,12 @@ InstanceOfExpression::InstanceOfExpression(
     type{std::move(type)}
 {}
 
+ParenthesizedExpression::ParenthesizedExpression(
+    std::unique_ptr<Expression>& expression
+):
+    expression{std::move(expression)}
+{}
+
 // ----------
 
 Assignment::Assignment(
@@ -180,4 +186,10 @@ InstanceOfExpression::InstanceOfExpression(
 ): 
     expression{std::move(expression)},
     type{std::move(type)}
+{}
+
+ParenthesizedExpression::ParenthesizedExpression(
+    std::unique_ptr<Expression>&& expression
+):
+    expression{std::move(expression)}
 {}

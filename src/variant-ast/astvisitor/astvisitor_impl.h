@@ -326,6 +326,13 @@ void AstVisitor<ReturnType>::visit_children(InstanceOfExpression &node) {
     }
 }
 
+template <typename ReturnType>
+void AstVisitor<ReturnType>::visit_children(ParenthesizedExpression &node) {
+    if (node.expression) {
+        this->operator()(*node.expression);
+    }
+}
+
 // Dispatch nested variant to member type
 template <typename ReturnType>
 void AstVisitor<ReturnType>::visit_children(Statement &node) {
