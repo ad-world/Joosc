@@ -284,6 +284,27 @@ void checkMethodReplacement( MethodDeclaration& method, MethodDeclaration& repla
     }
 }
 
+// Same function as below, without dfsClass
+std::vector<MethodDeclarationObject*> getAllMethods(InterfaceDeclarationObject* interfaceObj) {
+    std::vector<MethodDeclarationObject*> allMethods{};
+    std::function<void(InterfaceDeclarationObject*)> dfsInterface; // Declare dfsInterface lambda function
+
+    dfsInterface = [&](InterfaceDeclarationObject* currentInterfaceObj) {
+        for (auto& method : currentInterfaceObj->ast_reference->method_declarations) {
+            // TODO: ensure this is not a constructor
+            if ( ! method.environment->is_constructor ) {
+                allMethods.push_back(method.environment);
+            }
+        }
+        for(auto& extendedInterface : currentInterfaceObj->extended) {
+            dfsInterface(extendedInterface);
+        }
+    };
+
+    dfsInterface(interfaceObj);
+    return allMethods;
+}
+
 // Get all methods contained (declared or inherited) in a class
 std::vector<MethodDeclarationObject*> getAllMethods(ClassDeclarationObject* classObj) {
     std::vector<MethodDeclarationObject*> allMethods{};
@@ -393,7 +414,7 @@ public:
 
         // A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1)
         // get all the methods from the class (declared or inherited) and check if any of them are abstract
-        std::vector<MethodDeclarationObject*> allMethods = getAllMethods(classEnv);
+        auto allMethods = getAllMethods(classEnv);
         if( ! node.hasModifier(Modifier::ABSTRACT) ) {
             // Non-abstract class
             for(auto& method: allMethods) {
@@ -408,14 +429,37 @@ public:
         // checkMethods(node.method_declarations, node);
 
         // Method replacement
-        if ( extendedClass ) {
-            auto all_extended_methods = getAllMethods(extendedClass);
-            for ( auto& extend_method : all_extended_methods ) {
+        std::vector<MethodDeclarationObject*> all_parent_methods;
+        { // Get parent methods
+            if ( extendedClass ) {
+                all_parent_methods = getAllMethods(extendedClass);
+            }
+
+            for ( auto& implemented : node.environment->implemented ) {
+                for ( auto& method : getAllMethods(implemented) ) {
+                    all_parent_methods.push_back(method);
+                }
+            }
+
+            // Check replacement
+            for ( auto& parent_method : all_parent_methods ) {
                 for ( auto& method : methods ) {
-                    if ( *method == *extend_method->ast_reference ) {
+                    if ( *method == *parent_method->ast_reference ) {
                         // Same signature as another method
-                        checkMethodReplacement(*method, *extend_method->ast_reference);
+                        checkMethodReplacement(*method, *parent_method->ast_reference);
                     }
+                }
+            }
+        }
+
+
+        // Check declared/inheritted return types
+        for ( auto methodit = allMethods.begin(); methodit != allMethods.end(); methodit++ ) {
+            auto& method = (*methodit)->ast_reference;
+            for ( auto replacedit = methodit + 1; replacedit != allMethods.end(); replacedit++ ) {
+                auto& replaced = (*replacedit)->ast_reference;
+                if ( *method == *replaced && *method->type != *replaced->type ) {
+                    THROW_HierarchyError("A class or interface must not contain (declare or inherit) two methods with the same signature but different return types.");
                 }
             }
         }
@@ -456,6 +500,18 @@ public:
         // The hierarchy must be acyclic. (JLS 8.1.3, 9.1.2)
         if(checkCyclicHierarchy(interfaceEnv)) {
             throw std::runtime_error("Error: Interface has a cyclic hierarchy");
+        }
+
+        // Check declared/inheritted return types
+        auto allMethods = getAllMethods(node.environment);
+        for ( auto methodit = allMethods.begin(); methodit != allMethods.end(); methodit++ ) {
+            auto& method = (*methodit)->ast_reference;
+            for ( auto replacedit = methodit + 1; replacedit != allMethods.end(); replacedit++ ) {
+                auto& replaced = (*replacedit)->ast_reference;
+                if ( *method == *replaced && *method->type != *replaced->type ) {
+                    THROW_HierarchyError("A class or interface must not contain (declare or inherit) two methods with the same signature but different return types.");
+                }
+            }
         }
 
         this->visit_children(node);
