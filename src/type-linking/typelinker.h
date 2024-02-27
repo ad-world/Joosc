@@ -19,25 +19,22 @@ class TypeLinker : public DefaultSkipVisitor<void> {
     std::vector<TypeDeclaration> single_imports;
     std::vector<PackageDeclarationObject*> star_imports;
 
-    // Resolve qualified_identifier to package from source_package.
+    // Resolve qualified_identifier to package from the default package.
     // Throws semantic error if any prefix, including the full name, resolves to a type
-    // not in source_package.
-    PackageDeclarationObject* resolveToPackage(
-        QualifiedIdentifier &qualified_identifier, 
-        PackageDeclarationObject* source_package
-    );
+    // not in the default package.
+    PackageDeclarationObject* findPackageDeclaration(QualifiedIdentifier &qualified_identifier);
 
     // Resolve qualified_identifier to fully qualified type from default_package.
     // Throws semantic error if any strict prefix resolves to a type.
-    TypeDeclaration resolveToType(QualifiedIdentifier &qualified_identifier);
+    TypeDeclaration findTypeImport(QualifiedIdentifier &qualified_identifier);
 
     // Look up qualifed_identifier as a type in compilation unit's namespace.
     // Throws semantic error if there are multiple candidates in the namespace.
-    TypeDeclaration lookupType(QualifiedIdentifier &qualified_identifier);
+    TypeDeclaration lookupQualifiedType(QualifiedIdentifier &qualified_identifier);
 
     // Look up identifier as a type in compilation unit's namespace.
-    // Throws semantic error if there are multiple candidates in the namespace.
-    TypeDeclaration lookupToSimpleType(std::string &identifier);
+    // Returns all valid candidates.
+    std::vector<TypeDeclaration> lookupSimpleType(std::string &identifier);
 
 public:
     using DefaultSkipVisitor<void>::operator();

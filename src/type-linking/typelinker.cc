@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include "exceptions/compilerdevelopmenterror.h"
 #include "utillities/util.h"
+#include <functional>
 
 using namespace std;
 
@@ -22,9 +23,8 @@ TypeLinker::TypeLinker(
     current_package{&default_package}
 {};
 
-PackageDeclarationObject* TypeLinker::resolveToPackage(
-    QualifiedIdentifier &qualified_identifier, 
-    PackageDeclarationObject* source_package
+PackageDeclarationObject* TypeLinker::findPackageDeclaration(
+    QualifiedIdentifier &qualified_identifier
 ) {
     PackageDeclarationObject* temp_package = default_package;
 
@@ -53,7 +53,7 @@ PackageDeclarationObject* TypeLinker::resolveToPackage(
     return temp_package;
 }
 
-TypeDeclaration TypeLinker::resolveToType(QualifiedIdentifier &qualified_identifier) {
+TypeDeclaration TypeLinker::findTypeImport(QualifiedIdentifier &qualified_identifier) {
     PackageDeclarationObject* temp_package = default_package;
 
     for (auto &identifier : qualified_identifier.identifiers) {
@@ -86,6 +86,26 @@ TypeDeclaration TypeLinker::resolveToType(QualifiedIdentifier &qualified_identif
     throw SemanticError("Undeclared type imported");
 }
 
+std::optional<PackageDeclarationObject*> tryFindPackageInPackage(
+    QualifiedIdentifier &qualified_identifier, 
+    PackageDeclarationObject* source_package
+) {
+    PackageDeclarationObject* temp_package = source_package;
+
+    for (auto &identifier : qualified_identifier.identifiers) {
+        // Resolve to subpackage
+        auto possible_package = temp_package->sub_packages->lookupUniqueSymbol(identifier.name);
+        if (possible_package) {
+            temp_package = &(std::get<PackageDeclarationObject>(*possible_package));
+        } else {
+            // Cannot find package
+            return std::nullopt;
+        }
+    }
+
+    return temp_package;
+}
+
 std::optional<TypeDeclaration> tryFindTypeInPackage(std::string &identifier, PackageDeclarationObject* package_dec) {
     auto possible_classes = package_dec->classes->lookupSymbol(identifier);
     auto possible_interfaces = package_dec->interfaces->lookupSymbol(identifier);
@@ -115,46 +135,93 @@ TypeDeclaration resolveCandidates(std::vector<TypeDeclaration>& valid_candidates
     return valid_candidates.back();
 }
 
-TypeDeclaration TypeLinker::lookupType(QualifiedIdentifier &qualified_identifier) {
-    std::string canoncial_name = qualified_identifier.identifiers.back().name;
+TypeDeclaration TypeLinker::lookupQualifiedType(QualifiedIdentifier &qualified_identifier) {
     /*
         * Typelinking:
-        * - Unqualified names are handled by these rules: 
-        *   1. try the enclosing class or interface 
-        *   2. try any single-type-import (A.B.C.D) 
-        *   3. try the same package 
-        *   4. try any import-on-demand package (A.B.C.*), including java.lang.* 
+        * - Qualified names of the form Q.id are handled by these rules: 
+        *   1. Q must be a package name in the environment.
+        *   2. No prefix of Q, including Q, can be a type name.
+        *   3. id must be exactly one type that is a member of Q.
     */
-
-    if (qualified_identifier.identifiers.size() == 1) {
-        return lookupToSimpleType(canoncial_name);
-    }
-
-    std::vector<TypeDeclaration> valid_candidates;
     QualifiedIdentifier package_qid = qualified_identifier.getQualifiedIdentifierWithoutLast();
+    std::string canoncial_name = qualified_identifier.identifiers.back().name;
 
-    // Check each package in compilation units namespace
-    for (auto package : star_imports) {
-        auto candidate_package = resolveToPackage(package_qid, package);
-        if (auto possible_type = tryFindTypeInPackage(canoncial_name, candidate_package)) {
-            valid_candidates.push_back(*possible_type);
-        }
+    if (package_qid.identifiers.empty()) {
+        auto valid_candidates = lookupSimpleType(canoncial_name);
+        return resolveCandidates(valid_candidates, canoncial_name);
     }
 
+    // Check each import-on-demand package in compilation units namespace
+    auto getValidCandidates = [&](QualifiedIdentifier &package_qid, std::string canoncial_name){
+        std::vector<TypeDeclaration> valid_candidates;
+        
+        auto all_packages = star_imports;
+        all_packages.push_back(default_package);
+        all_packages.push_back(current_package);
+        util::removeDuplicates(all_packages);
+        
+        for (auto package : all_packages) {
+            auto possible_package = tryFindPackageInPackage(package_qid, package);
+            if (possible_package) {
+                if (auto possible_type = tryFindTypeInPackage(canoncial_name, *possible_package)) {
+                    valid_candidates.push_back(*possible_type);
+                }
+            }
+        }
+
+        return valid_candidates;
+    };
+
+    // Verify 1.
+    auto valid_candidates = getValidCandidates(package_qid, canoncial_name);
+
+    // Verify 2.
+    std::string conflicting_prefix;
+    // Return true if any non-strict prefix of qid resolves to a type in the environment.
+    std::function<bool(QualifiedIdentifier&)> somePrefixIsType = [&](QualifiedIdentifier &qid){
+        auto prefix = qid.getQualifiedIdentifierWithoutLast();
+        std::string canoncial_name = qid.identifiers.back().name;
+
+        if (prefix.identifiers.empty()) {
+            // This is a simple type
+            conflicting_prefix = canoncial_name;
+            return !lookupSimpleType(canoncial_name).empty();
+        } else if (!getValidCandidates(prefix, canoncial_name).empty()) {
+            conflicting_prefix = qid.getQualifiedName();
+            return true;
+        }
+        return somePrefixIsType(prefix);
+    };
+    if (somePrefixIsType(package_qid)) {
+        auto stringified_qid = qualified_identifier.getQualifiedName();
+        throw SemanticError(
+            "A strict prefix, " + conflicting_prefix 
+                + ", of the fully qualified type " + stringified_qid + " resolves to a type."
+        );
+    }
+
+    // Verify 3.
     return resolveCandidates(valid_candidates, canoncial_name);
 }
 
-TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
+std::vector<TypeDeclaration> TypeLinker::lookupSimpleType(std::string &identifier) {
+    /*
+        * Typelinking:
+        * - Unqualified names are handled by these rules: 
+        *   1. try the class or interface of the compilation unit, or any single-type-import (A.B.C.D) 
+        *   2. try the same package, across all compilation units
+        *   3. try any import-on-demand package (A.B.C.*), including java.lang.* 
+    */
     std::vector<TypeDeclaration> valid_candidates;
 
-    // 1. Try the enclosing class or interface
+    // 1a. Try the type declared in this compilation unit, if it exists
     std::visit([&](auto class_or_interface) {
         if (class_or_interface && class_or_interface->identifier == identifier) {
             valid_candidates.push_back(class_or_interface);
         }
     }, current_type);
 
-    // 2. Look up in list of all single type imports
+    // 1b. Look up in list of all single type imports
     for (auto type_dec : single_imports) {
         std::visit([&](auto class_or_int_dec) {
             if (class_or_int_dec->identifier == identifier) {
@@ -163,36 +230,39 @@ TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
         }, type_dec);
     }
 
-    // 1 & 2 happen at same precedence
-
-    if(valid_candidates.size() > 0) {
-        return resolveCandidates(valid_candidates, identifier);
+    if (valid_candidates.size() > 0) {
+        return valid_candidates;
     }
 
-    // 3. Look up in current package
+    // 2. Look up in current package
     if (auto possible_type = tryFindTypeInPackage(identifier, current_package)) {
         valid_candidates.push_back(*possible_type);
     }
 
     if(valid_candidates.size() > 0) {
-        return resolveCandidates(valid_candidates, identifier);
+        return valid_candidates;
     }
 
-    // 4. Look up in imported packages
+    // 3. Look up in imported packages
     for (auto package_dec : star_imports) {
         auto possible_classes = package_dec->classes->lookupSymbol(identifier);
         auto possible_interfaces = package_dec->interfaces->lookupSymbol(identifier);
 
         if (possible_classes) {
-            TypeDeclaration found_type = &std::get<ClassDeclarationObject>(possible_classes->back());
-            valid_candidates.push_back(found_type);
-        } else if (possible_interfaces) {
-            TypeDeclaration found_type = &std::get<InterfaceDeclarationObject>(possible_interfaces->back());
-            valid_candidates.push_back(found_type);
+            for (auto &possible_class : *possible_classes) {
+                TypeDeclaration found_type = &std::get<ClassDeclarationObject>(possible_class);
+                valid_candidates.push_back(found_type);
+            }
+        }
+        if (possible_interfaces) {
+            for (auto &possible_interface : *possible_interfaces) {
+                TypeDeclaration found_type = &std::get<InterfaceDeclarationObject>(possible_interface);
+                valid_candidates.push_back(found_type);
+            }
         }
     }
 
-    return resolveCandidates(valid_candidates, identifier);
+    return valid_candidates;
 }
 
 /* Visitor implementation */
@@ -200,7 +270,7 @@ TypeDeclaration TypeLinker::lookupToSimpleType(std::string &identifier) {
 void TypeLinker::operator()(CompilationUnit &node) {
     // Import java.lang implicitly
     auto java_lang = QualifiedIdentifier(std::vector<Identifier>{Identifier("java"), Identifier("lang")});
-    star_imports.emplace_back(resolveToPackage(java_lang, default_package));
+    star_imports.emplace_back(findPackageDeclaration(java_lang));
 
     std::string current_type_name;
 
@@ -213,30 +283,27 @@ void TypeLinker::operator()(CompilationUnit &node) {
 
      // Make package of compilation unit accessible
     if (node.package_declaration) {
-        current_package = resolveToPackage(*node.package_declaration, default_package);
+        current_package = findPackageDeclaration(*node.package_declaration);
     }
 
     // Find current type (i.e the type that the current file specifies)
-    if (current_type_name != "" ) {
-        if(auto result = tryFindTypeInPackage(current_type_name, current_package)) {
+    if (current_type_name != "") {
+        if (auto result = tryFindTypeInPackage(current_type_name, current_package)) {
             current_type = *result;
         } 
     }
 
     // Make import-on-demand packages accessible
     for (auto &qualified_identifier : node.type_import_on_demand_declaration) {
-        star_imports.emplace_back(resolveToPackage(qualified_identifier, default_package));
+        star_imports.emplace_back(findPackageDeclaration(qualified_identifier));
     }
-
-    // This should not happen, as we check current package before checking star imports on a different precedence level
-    // star_imports.emplace_back(current_package);
 
     // Make imported types accessible
     for (auto &qualified_identifier : node.single_type_import_declaration) {
-        TypeDeclaration imported_type = resolveToType(qualified_identifier);
+        TypeDeclaration imported_type = findTypeImport(qualified_identifier);
 
         auto package_qualifier = qualified_identifier.getQualifiedIdentifierWithoutLast();
-        PackageDeclarationObject* imported_types_package = resolveToPackage(package_qualifier, default_package);
+        PackageDeclarationObject* imported_types_package = findPackageDeclaration(package_qualifier);
 
         // Add single import if we didn't import a package with that type; ignore otherwise
         if (std::find(star_imports.begin(), star_imports.end(), imported_types_package) == star_imports.end()) {
@@ -248,7 +315,7 @@ void TypeLinker::operator()(CompilationUnit &node) {
     util::removeDuplicates(single_imports);
     util::removeDuplicates(star_imports);
 
-    // Check that no canonincal name of two types overlaps
+    // Check that no canonical name of two types overlaps
     for (auto imported_type1 : single_imports) {
         auto it = std::find_if(single_imports.begin(), single_imports.end(), [&](auto imported_type2){
             bool names_match = (getIdentifier(imported_type1) == getIdentifier(imported_type2));
@@ -266,7 +333,7 @@ void TypeLinker::operator()(CompilationUnit &node) {
 
 void TypeLinker::operator()(ClassInstanceCreationExpression &node) {
     this->visit_children(node);
-    node.linked_class_type = lookupType(*node.class_name);
+    node.linked_class_type = lookupQualifiedType(*node.class_name);
 }
 
 void TypeLinker::operator()(Type &node) {
@@ -276,7 +343,7 @@ void TypeLinker::operator()(Type &node) {
     
     // Resolve type if it refers to an identifier
     if (auto qualified_identifier = std::get_if<QualifiedIdentifier>(node.non_array_type.get())) {
-        node.link = lookupType(*qualified_identifier);
+        node.link = lookupQualifiedType(*qualified_identifier);
     }
 
     this->visit_children(node);
@@ -288,11 +355,11 @@ void TypeLinker::operator()(ClassDeclaration &node) {
 
     // Check this class resolves unambiguously with imported classes
     auto qid = QualifiedIdentifier(std::vector{Identifier(name)});
-    lookupType(qid);
+    lookupQualifiedType(qid);
 
     // Resolve implemented types to interfaces
     for (auto &implements_qualified_identifier : node.implements) {
-        TypeDeclaration implemented = lookupType(implements_qualified_identifier);
+        TypeDeclaration implemented = lookupQualifiedType(implements_qualified_identifier);
         if (auto interface_type = std::get_if<InterfaceDeclarationObject*>(&implemented)) {
             node.environment->implemented.emplace_back(*interface_type);
         } else {
@@ -302,7 +369,7 @@ void TypeLinker::operator()(ClassDeclaration &node) {
 
     // Resolve extended type to class
     if (node.extends_class) {
-        TypeDeclaration extended = lookupType(*node.extends_class);
+        TypeDeclaration extended = lookupQualifiedType(*node.extends_class);
         if (auto class_type = std::get_if<ClassDeclarationObject*>(&extended)) {
             node.environment->extended = *class_type;
         } else {
@@ -319,11 +386,11 @@ void TypeLinker::operator()(InterfaceDeclaration &node) {
 
     // Check this interface resolves unambiguously with imported classes
     auto qid = QualifiedIdentifier(std::vector{Identifier(name)});
-    lookupType(qid);
+    lookupQualifiedType(qid);
 
     // Resolve extended types to interfaces
     for (auto &extends_qualified_identifier : node.extends_class) {
-        TypeDeclaration extended = lookupType(extends_qualified_identifier);
+        TypeDeclaration extended = lookupQualifiedType(extends_qualified_identifier);
         if (auto interface_type = std::get_if<InterfaceDeclarationObject*>(&extended)) {
             node.environment->extended.emplace_back(*interface_type);
         } else {
