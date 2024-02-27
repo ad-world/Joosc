@@ -91,6 +91,9 @@ struct MethodDeclaration {
         std::vector<FormalParameter>&& parameters,
         std::unique_ptr<Block>&& body
     );
+
+    // Helper functions
+    bool hasModifier(Modifier mod_to_check);
 };
 
 struct ClassDeclaration: public AstNodeCommon {
