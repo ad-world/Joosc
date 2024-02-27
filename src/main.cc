@@ -2,6 +2,7 @@
 #include <cstring>
 #include <iostream>
 #include <exception>
+#include "exceptions/exceptions.h"
 #include "parsing/bison/location.hh"
 #include "parsing/bison/driver.h"
 #include "parsing/bison/parser.hh"
@@ -12,6 +13,7 @@
 #include "exceptions/semanticerror.h"
 #include "type-linking/typelinker.h"
 #include "variant-ast/astvisitor/hierarchychecking_visitor.h"
+#include "interface-extender/interface-extender.h"
 
 using namespace std;
 
@@ -127,6 +129,19 @@ int main(int argc, char *argv[]) {
         return COMPILER_DEVELOPMENT_ERROR;
     } catch (...) {
         cerr << "Unknown Exception occured\n";
+    }
+
+    // Extend interfaces
+    try {
+        for ( auto& ast : asts ) {
+            InterfaceExtender(default_package).visit(ast);
+        }
+    } catch ( HierarchyError &e ) {
+        cerr << e.what() << "\n";
+        return INVALID_PROGRAM;
+    } catch (...) {
+        cerr << "Unknown error with interface extension occured\n";
+        return COMPILER_DEVELOPMENT_ERROR;
     }
 
     // Type linking
