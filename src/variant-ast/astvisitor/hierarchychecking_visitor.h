@@ -288,18 +288,13 @@ public:
         }
 
         // An interface must not be repeated in an implements clause (JLS 8.1.4)
-        auto &implements = node.implements;
-        std::unordered_set<std::string> implementsSet{};
-        for(const auto& qi: implements) {
-            std::string interfaceName = "";
-            for(const auto& identifierVec: qi.identifiers) {
-                interfaceName += identifierVec.name;
+        auto &implements = node.environment->implemented;
+        std::unordered_set<InterfaceDeclarationObject*> implementsSet{};
+        for(const auto& interface: implements) {
+            if ( implementsSet.insert(interface).second == false ) {
+                THROW_HierarchyError("An interface must not be mentioned more than once in the same implements clause of a class.");
             }
-            implementsSet.insert(interfaceName);
         }
-        if(implements.size() != implementsSet.size()) {
-            throw std::runtime_error("Error: Class repeats an interface in its implements clause");
-        }        
 
         std::vector<MethodDeclaration*> constructors;
         std::vector<MethodDeclaration*> methods;
@@ -399,24 +394,72 @@ public:
         // checkMethods(node.method_declarations, node);
 
         // Method replacement
-        std::vector<MethodDeclarationObject*> all_parent_methods;
         { // Get parent methods
-            if ( extendedClass ) {
-                all_parent_methods = getAllMethods(extendedClass);
-            }
+            std::vector<MethodDeclarationObject*> extended_methods;
+            std::vector<MethodDeclarationObject*> implemented_methods;
 
-            for ( auto& implemented : node.environment->implemented ) {
-                for ( auto& method : getAllMethods(implemented) ) {
-                    all_parent_methods.push_back(method);
+            // Get extended methods
+            if ( extendedClass ) {
+                extended_methods = getAllMethods(extendedClass);
+            } else {
+                // No direct superclass
+                // => implicitly inherit Object's methods
+                // (JLS 8.1.3)
+
+                // Get java.lang.Object
+                ClassDeclarationObject* object_class = nullptr;
+                try {
+                    auto java_package_variant = root_symbol_table->sub_packages->lookupUniqueSymbol("java");
+                    auto& java_package = std::get<PackageDeclarationObject>(*java_package_variant);
+                    auto lang_package_variant = java_package.sub_packages->lookupUniqueSymbol("lang");
+                    auto& lang_package = std::get<PackageDeclarationObject>(*lang_package_variant);
+                    auto object_class_variant = lang_package.classes->lookupUniqueSymbol("Object");
+                    object_class = &std::get<ClassDeclarationObject>(*object_class_variant);
+                } catch (...) {
+                    // Error getting java.lang.Object
+                    THROW_HierarchyError("java.lang.Object not found");
+                }
+
+                // Only apply this check if node is not java.lang.Object
+                if ( node.environment != object_class ) {
+                    for ( auto& object_method : object_class->ast_reference->method_declarations ) {
+                        extended_methods.push_back(object_method.environment);
+                    }
                 }
             }
 
-            // Check replacement
-            for ( auto& parent_method : all_parent_methods ) {
+            // Get all implemented methods
+            for ( auto& superinterface : node.environment->implemented ) {
+                for ( auto& implemented_method : getAllMethods(superinterface) ) {
+                    implemented_methods.push_back(implemented_method);
+                }
+            }
+
+            // Check replacement from superclasses
+            for ( auto& extended_method : extended_methods ) {
                 for ( auto& method : methods ) {
-                    if ( *method == *parent_method->ast_reference ) {
+                    if ( *method == *extended_method->ast_reference ) {
                         // Same signature as another method
-                        checkMethodReplacement(*method, *parent_method->ast_reference);
+                        checkMethodReplacement(*method, *extended_method->ast_reference);
+                    }
+                }
+            }
+
+            // Check replacement from superinterfaces
+            for ( auto& implemented_method : implemented_methods ) {
+                // For class methods
+                for ( auto& method : methods ) {
+                    if ( *method == *implemented_method->ast_reference ) {
+                        // Same signature as class method
+                        checkMethodReplacement(*method, *implemented_method->ast_reference);
+                    }
+                }
+
+                // For extended methods (superclass)
+                for ( auto& extended_method : extended_methods ) {
+                    if ( *extended_method->ast_reference == *implemented_method->ast_reference) {
+                        // Same signature as extended method
+                        checkMethodReplacement(*extended_method->ast_reference, *implemented_method->ast_reference);
                     }
                 }
             }
