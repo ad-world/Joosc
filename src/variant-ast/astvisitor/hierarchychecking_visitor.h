@@ -335,17 +335,15 @@ public:
 
         // A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1)
         // get all the methods from the class (declared or inherited) and check if any of them are abstract
-        auto allMethods = getAllMethods(classEnv);
-
         if( ! node.hasModifier(Modifier::ABSTRACT) ) {
-            std::unordered_set<ClassDeclarationObject*> visited;
-            std::queue<ClassDeclarationObject*> q;
             std::unordered_set<std::string> implemented_method;
+            std::queue<ClassDeclarationObject*> class_queue;
+            std::queue<std::vector<InterfaceDeclarationObject*>*> interface_queue;
+            class_queue.push(node.environment);
 
-            q.push(node.environment);
-            while ( ! q.empty() ) {
-                auto& classObj = q.front();
-                q.pop();
+            while ( ! class_queue.empty() ) {
+                auto& classObj = class_queue.front();
+                class_queue.pop();
                 
                 // Add implemented methods & error on unimplemented abstract methods
                 for ( auto& method : classObj->ast_reference->method_declarations ) {
@@ -360,19 +358,27 @@ public:
                 }
 
                 if ( classObj->extended ) {
-                    q.push(classObj->extended);
+                    class_queue.push(classObj->extended);
                 }
+                interface_queue.push(&classObj->implemented);
             }
 
-            // Check for unimplemented abstract methods from interface
-            for ( auto& interface : classEnv->implemented ) {
-                for ( auto& method : interface->ast_reference->method_declarations ) {
-                    // All interface methods are abstract
-                    std::string signature = getMethodSignature(method);
-                    if ( implemented_method.find(signature) == implemented_method.end() ) {
-                        // Abstract method that has not been implemented
-                        THROW_HierarchyError("A class that contains (declares or inherits) any abstract methods must be abstract.");
+            while ( ! interface_queue.empty() ) {
+                auto& interfaces = interface_queue.front();
+                interface_queue.pop();
+
+                // Check for unimplemented abstract methods from interfaces
+                for ( auto& interface : *interfaces ) {
+                    for ( auto& method : interface->ast_reference->method_declarations ) {
+                        // All interface methods are abstract
+                        std::string signature = getMethodSignature(method);
+                        if ( implemented_method.find(signature) == implemented_method.end() ) {
+                            // Abstract method that has not been implemented
+                            THROW_HierarchyError("A class that contains (declares or inherits) any abstract methods must be abstract.");
+                        }
                     }
+
+                    interface_queue.push(&interface->extended);
                 }
             }
         }
@@ -418,6 +424,7 @@ public:
 
 
         // Check declared/inheritted return types
+        auto allMethods = getAllMethods(classEnv);
         for ( auto methodit = allMethods.begin(); methodit != allMethods.end(); methodit++ ) {
             auto& method = (*methodit)->ast_reference;
             for ( auto replacedit = methodit + 1; replacedit != allMethods.end(); replacedit++ ) {
