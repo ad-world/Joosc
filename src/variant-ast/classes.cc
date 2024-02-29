@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "classes.h"
 #include "statements.h"
 #include "types.h"
@@ -141,3 +142,21 @@ FormalParameter::FormalParameter(
     type{std::move(type)}, 
     parameter_name{std::move(parameter_name)} 
 {}
+
+
+
+/*
+* Helpers
+*/
+
+bool MethodDeclaration::hasModifier(Modifier mod_to_check) {
+    return std::find(modifiers.begin(), modifiers.end(), mod_to_check) != modifiers.end();
+}
+
+bool ClassDeclaration::hasModifier(Modifier mod_to_check) {
+    return std::find(modifiers.begin(), modifiers.end(), mod_to_check) != modifiers.end();
+}
+
+bool InterfaceDeclaration::hasModifier(Modifier mod_to_check) {
+    return std::find(modifiers.begin(), modifiers.end(), mod_to_check) != modifiers.end();
+}

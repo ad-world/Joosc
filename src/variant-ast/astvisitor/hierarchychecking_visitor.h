@@ -406,6 +406,11 @@ public:
             methods.push_back(&method);
         }
 
+        // Add implicit methods for signature checking
+        for ( auto& implicit_method : node.implicit_methods ) {
+            methods.push_back(&implicit_method);
+        }
+
         // Check that no two methods have the same name and parameter types
         if(checkMethodWithSameSignature(methods)) {
             throw std::runtime_error("Error: Interface declares two methods with the same signature");

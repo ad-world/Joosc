@@ -84,6 +84,9 @@ void AstVisitor<ReturnType>::visit_children(InterfaceDeclaration &node) {
     for (auto &child : node.method_declarations) {
         this->operator()(child);
     }
+    for (auto &child : node.implicit_methods) {
+        this->operator()(child);
+    }
 }
 
 template <typename ReturnType>
