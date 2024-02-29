@@ -12,6 +12,7 @@
 #include "variant-ast/types.h"
 #include <functional>
 #include <variant>
+#include <queue>
 #include <iostream>
 
 std::string QualifiedIdentifierToString(QualifiedIdentifier& qi) {
@@ -177,91 +178,11 @@ bool operator!=(const Type & lhs, const Type & rhs) {
     return !(lhs == rhs);
 }
 
-// 3. (JLS 8.1.1.1, 8.4, 8.4.2, 8.4.6.3, 8.4.6.4, 9.2, 9.4.1)
-void checkMethodReplaceReturnType(const MethodDeclaration& method, std::vector<MethodDeclaration*>& replaced_methods) {
-    for  ( const auto & extend_method : replaced_methods ) {
-        if (method.type != extend_method->type) {
-            throw std::runtime_error("Hierarchy checking: overriding same method signature, different return type.");
-        }
-    }
-}
-
 // 1. (JLS 8.4.6.1)
 // 2. (JLS 8.4.6.2)
+// 3. (JLS 8.1.1.1, 8.4, 8.4.2, 8.4.6.3, 8.4.6.4, 9.2, 9.4.1)
 // 4. (JLS 8.4.6.3)
 // 5. (JLS 8.4.3.3)
-void checkMethodReplaceModifiers(
-    const MethodDeclaration &method,
-    std::vector<MethodDeclaration*> &replaced_methods,
-    std::unordered_set<Modifier> &method_modifiers,
-    std::unordered_set<Modifier> &replaced_modifiers,
-    std::unordered_map<MethodDeclaration*, std::unordered_set<Modifier>> &replaced_modifiers_map
-) {
-    if ( method_modifiers.find(Modifier::STATIC) != method_modifiers.end() ) {
-        // static method
-        for ( const auto & extend_method : replaced_methods ) {
-            std::unordered_set<Modifier> *extend_modifiers = &replaced_modifiers_map.at(extend_method);
-            if ( extend_modifiers->find(Modifier::STATIC) == extend_modifiers->end() ) {
-                // replaced non-static
-                throw std::runtime_error("Hierarchy checking: A static method must not replace a nonstatic method.");
-            }
-        }
-    } else {
-        // non-static method
-        if ( replaced_modifiers.find(Modifier::STATIC) != replaced_modifiers.end() ) {
-            // replaced static
-            throw std::runtime_error("Hierarchy checking: A nonstatic method must not replace a static method.");
-        }
-    }
-
-    if ( method_modifiers.find(Modifier::PROTECTED) != method_modifiers.end() ) {
-        // protected method
-        if ( replaced_modifiers.find(Modifier::PUBLIC) != replaced_modifiers.end() ) {
-            // replaced public
-            throw std::runtime_error("Hierarchy checking: A protected method must not replace a public method.");
-        }
-    }
-
-    if ( replaced_modifiers.find(Modifier::FINAL) != replaced_modifiers.end() ) {
-        // replaced final
-        throw std::runtime_error("Hierarchy checking: A method must not replace a final method.");
-    }
-}
-
-void checkMethods(std::vector<MethodDeclaration>& methods, ClassDeclaration& parent_class) {
-    for ( const auto& method : methods ) {
-        std::unordered_set<Modifier> modifier_set;
-        for ( const auto& modifier : method.modifiers ) {
-            modifier_set.insert(modifier);
-        }
-
-        // Get all replacable methods
-        std::vector<MethodDeclaration*> replaced_methods;
-        std::unordered_set<Modifier> replaced_modifiers;
-        std::unordered_map<MethodDeclaration*, std::unordered_set<Modifier>> replaced_modifiers_map;
-        for (
-            auto& classEnv = parent_class.environment;
-            classEnv->extended != nullptr;
-            classEnv = classEnv->extended
-        ) {
-            for ( auto& extend_method : classEnv->ast_reference->method_declarations ) {
-                if ( method == extend_method ) {
-                    replaced_methods.push_back(&extend_method);
-                    std::unordered_set<Modifier> extend_modifiers;
-                    for ( const auto& modifier : extend_method.modifiers ) {
-                        replaced_modifiers.insert(modifier);
-                        extend_modifiers.insert(modifier);
-                    }
-                    replaced_modifiers_map.insert({&extend_method, extend_modifiers});
-                }
-            }
-        }
-
-        checkMethodReplaceReturnType(method, replaced_methods);
-        checkMethodReplaceModifiers(method, replaced_methods, modifier_set, replaced_modifiers, replaced_modifiers_map);
-    }
-}
-
 void checkMethodReplacement( MethodDeclaration& method, MethodDeclaration& replaced ) {
     if ( *method.type != *replaced.type ) {
         THROW_HierarchyError("A method must not replace a method with a different return type.");
@@ -312,7 +233,7 @@ std::vector<MethodDeclarationObject*> getAllMethods(ClassDeclarationObject* clas
     std::function<void(InterfaceDeclarationObject*)> dfsInterface; // Declare dfsInterface lambda function
 
     dfsClass = [&](ClassDeclarationObject* currentClassObj) {
-        for (auto& method : classObj->ast_reference->method_declarations) {
+        for (auto& method : currentClassObj->ast_reference->method_declarations) {
             // TODO: ensure this is not a constructor
             if ( ! method.environment->is_constructor ) {
                 allMethods.push_back(method.environment);
@@ -415,6 +336,48 @@ public:
         // A class that contains (declares or inherits) any abstract methods must be abstract. (JLS 8.1.1.1)
         // get all the methods from the class (declared or inherited) and check if any of them are abstract
         auto allMethods = getAllMethods(classEnv);
+
+        if( ! node.hasModifier(Modifier::ABSTRACT) ) {
+            std::unordered_set<ClassDeclarationObject*> visited;
+            std::queue<ClassDeclarationObject*> q;
+            std::unordered_set<std::string> implemented_method;
+
+            q.push(node.environment);
+            while ( ! q.empty() ) {
+                auto& classObj = q.front();
+                q.pop();
+                
+                // Add implemented methods & error on unimplemented abstract methods
+                for ( auto& method : classObj->ast_reference->method_declarations ) {
+                    std::string signature = getMethodSignature(method);
+                    if ( ! method.hasModifier(Modifier::ABSTRACT) ) {
+                        // Non-abstract method
+                        implemented_method.insert(signature);
+                    } else if ( implemented_method.find(signature) == implemented_method.end() ) {
+                        // Abstract method that has not been implemented
+                        THROW_HierarchyError("A class that contains (declares or inherits) any abstract methods must be abstract.");
+                    }
+                }
+
+                if ( classObj->extended ) {
+                    q.push(classObj->extended);
+                }
+            }
+
+            // Check for unimplemented abstract methods from interface
+            for ( auto& interface : classEnv->implemented ) {
+                for ( auto& method : interface->ast_reference->method_declarations ) {
+                    // All interface methods are abstract
+                    std::string signature = getMethodSignature(method);
+                    if ( implemented_method.find(signature) == implemented_method.end() ) {
+                        // Abstract method that has not been implemented
+                        THROW_HierarchyError("A class that contains (declares or inherits) any abstract methods must be abstract.");
+                    }
+                }
+            }
+        }
+
+        /*
         if( ! node.hasModifier(Modifier::ABSTRACT) ) {
             // Non-abstract class
             for(auto& method: allMethods) {
@@ -424,6 +387,7 @@ public:
                 }
             }
         }
+        */
 
         // Perform method checks
         // checkMethods(node.method_declarations, node);
