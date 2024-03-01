@@ -131,19 +131,6 @@ int main(int argc, char *argv[]) {
         cerr << "Unknown Exception occured\n";
     }
 
-    // Extend interfaces
-    try {
-        for ( auto& ast : asts ) {
-            InterfaceExtender(default_package).visit(ast);
-        }
-    } catch ( HierarchyError &e ) {
-        cerr << e.what() << "\n";
-        return INVALID_PROGRAM;
-    } catch (...) {
-        cerr << "Unknown error with interface extension occured\n";
-        return COMPILER_DEVELOPMENT_ERROR;
-    }
-
     // Type linking
     try {
         for (auto& ast : asts) {

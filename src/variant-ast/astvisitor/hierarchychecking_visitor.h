@@ -407,18 +407,7 @@ public:
                 // (JLS 8.1.3)
 
                 // Get java.lang.Object
-                ClassDeclarationObject* object_class = nullptr;
-                try {
-                    auto java_package_variant = root_symbol_table->sub_packages->lookupUniqueSymbol("java");
-                    auto& java_package = std::get<PackageDeclarationObject>(*java_package_variant);
-                    auto lang_package_variant = java_package.sub_packages->lookupUniqueSymbol("lang");
-                    auto& lang_package = std::get<PackageDeclarationObject>(*lang_package_variant);
-                    auto object_class_variant = lang_package.classes->lookupUniqueSymbol("Object");
-                    object_class = &std::get<ClassDeclarationObject>(*object_class_variant);
-                } catch (...) {
-                    // Error getting java.lang.Object
-                    THROW_HierarchyError("java.lang.Object not found");
-                }
+                ClassDeclarationObject* object_class = root_symbol_table->getJavaLangObject();
 
                 // Only apply this check if node is not java.lang.Object
                 if ( node.environment != object_class ) {
@@ -485,13 +474,11 @@ public:
         // An interface must not be repeated in an extends clause (JLS 8.1.4)
         auto& interfaceEnv= node.environment;
         auto& extended = interfaceEnv->extended;
-        std::unordered_set<std::string> extendedSet{};
-        for(const auto& identifier: extended) {
-            std::string interfaceName = "";
-            extendedSet.insert(interfaceName);
-        }
-        if(extended.size() != extendedSet.size()) {
-            throw std::runtime_error("Error: Interface repeats an interface in its extends clause");
+        std::unordered_set<InterfaceDeclarationObject*> extendedSet;
+        for(const auto& interface: extended) {
+            if ( extendedSet.insert(interface).second == false ) {
+                THROW_HierarchyError("Error: Interface repeats an interface in its extends clause");
+            }
         }
 
         // A class must not declare two constructors with the same parameter types (JLS 8.8.2)
@@ -502,8 +489,14 @@ public:
         }
 
         // Add implicit methods for signature checking
-        for ( auto& implicit_method : node.implicit_methods ) {
-            methods.push_back(&implicit_method);
+        ClassDeclarationObject* object_class = root_symbol_table->getJavaLangObject();
+        for ( auto& implicit_method : object_class->ast_reference->method_declarations ) {
+            if ( implicit_method.hasModifier(Modifier::PUBLIC) &&
+                !implicit_method.hasModifier(Modifier::STATIC)
+            ) {
+                // Implict method is NON-CONSTRUCTOR, PUBLIC and NON-STATIC
+                methods.push_back(&implicit_method);
+            }
         }
 
         // Check that no two methods have the same name and parameter types
