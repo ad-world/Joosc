@@ -1,6 +1,6 @@
 public class foo extends bar {
 
-    public String A() {
+    public char someMethod(A.String b) {
         return "abc";
     }
 

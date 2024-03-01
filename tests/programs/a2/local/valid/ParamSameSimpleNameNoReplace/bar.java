@@ -1,6 +1,6 @@
 public class bar {
 
-    public java.lang.String A() {
+    public int someMethod(B.String b) {
         return "abc";
     }
 
