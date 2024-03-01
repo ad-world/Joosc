@@ -67,6 +67,8 @@ struct FormalParameter {
         std::unique_ptr<Type>&& type, 
         std::unique_ptr<Identifier>&& parameter_name
     );
+
+    std::string toString() const;
 };
 
 struct MethodDeclaration {
@@ -95,6 +97,13 @@ struct MethodDeclaration {
 
     // Helper functions
     bool hasModifier(Modifier mod_to_check);
+    std::string getSignature() const;
+
+    // Operators
+    friend bool operator==(const MethodDeclaration &lhs, const MethodDeclaration &rhs) {
+        return (lhs.getSignature() == rhs.getSignature());
+    }
+    friend bool operator!=(const MethodDeclaration &lhs, const MethodDeclaration &rhs) { return !(lhs == rhs); }
 };
 
 struct ClassDeclaration: public AstNodeCommon {

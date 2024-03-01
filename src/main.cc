@@ -12,7 +12,7 @@
 #include "exceptions/compilerdevelopmenterror.h"
 #include "exceptions/semanticerror.h"
 #include "type-linking/typelinker.h"
-#include "variant-ast/astvisitor/hierarchychecking_visitor.h"
+#include "hierarchy-checking/hierarchy-checking.h"
 
 using namespace std;
 
@@ -146,6 +146,7 @@ int main(int argc, char *argv[]) {
         cerr << e.what() << "\n";
     }
 
+    // Hierarchy checking
     try {
         for ( auto& ast : asts ) {
             HierarchyCheckingVisitor(default_package).visit(ast);
