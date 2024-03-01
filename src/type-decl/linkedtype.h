@@ -18,4 +18,8 @@ struct LinkedType {
     bool isPrimitive() {
         return bool(std::get_if<PrimitiveType>(&linked_type));
     }
+
+    friend bool operator==(const LinkedType &lhs, const LinkedType &rhs) {
+        return (lhs.linked_type == rhs.linked_type) && (lhs.is_array == rhs.is_array);
+    }
 };
