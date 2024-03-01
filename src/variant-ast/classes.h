@@ -136,8 +136,6 @@ struct InterfaceDeclaration: public AstNodeCommon {
 
     struct InterfaceDeclarationObject *environment = nullptr;
 
-    std::list<MethodDeclaration> implicit_methods;
-
     InterfaceDeclaration(
         std::vector<Modifier>& modifiers,
         std::unique_ptr<Identifier>& interface_name,

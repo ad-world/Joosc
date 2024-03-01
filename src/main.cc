@@ -13,7 +13,6 @@
 #include "exceptions/semanticerror.h"
 #include "type-linking/typelinker.h"
 #include "variant-ast/astvisitor/hierarchychecking_visitor.h"
-#include "interface-extender/interface-extender.h"
 
 using namespace std;
 
