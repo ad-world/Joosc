@@ -1,7 +1,5 @@
 #include "type-checker/typechecker.h"
 
-
-
 void TypeChecker::operator()(Assignment &node) {
     this->visit_children(node);
 }
