@@ -4,6 +4,7 @@
 #include <string>
 #include <variant>
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
+#include "symboltableentry.h"
 
 class TypeChecker: public DefaultSkipVisitor<bool> {
 public:
