@@ -3,6 +3,7 @@
 #include "exceptions/semanticerror.h"
 #include "utillities/util.h"
 #include <optional>
+#include <functional>
 
 CompilationUnitNamespace::CompilationUnitNamespace(
     PackageDeclarationObject *current_package,
