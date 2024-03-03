@@ -4,6 +4,7 @@
 #include "environment-builder/symboltable.h"
 #include "exceptions/exceptions.h"
 
+
 void DisambiguationVisitor::operator()(MethodInvocation &node) {
     auto &method_name = node.method_name;
 
@@ -199,41 +200,38 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
 
         // based on the classification of the prefix, we can disambiguate the current identifier
         switch (cls) {
-            case Classification::EXPRESSION_NAME:
-                // Return expression name
+            case Classification::EXPRESSION_NAME: {
                 qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
-                break;
-            case Classification::TYPE_NAME:
+            }
+                // Return expression name
+            case Classification::TYPE_NAME: {
                 // Check if the current identifier is a field or method of the class
                 auto class_decl = default_package.findClassDeclaration(prefix.identifiers);
                 if (class_decl->fields->lookupSymbol(cur_ident.name) || class_decl->methods->lookupSymbol(cur_ident.name)) {
                     qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
-                    break;
                 }
                 // Check if the current identifier is a method of the interface
                 auto interface_decl = default_package.findInterfaceDeclaration(prefix.identifiers);
                 if (interface_decl->methods->lookupSymbol(cur_ident.name)) {
                     qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
-                    break;
                 }
 
                 // If not, throw errr
                 THROW_DisambiguationError("Ambiguous type name " + qi.getQualifiedName());
-            case Classification::PACKAGE_NAME:
+            }
+            case Classification::PACKAGE_NAME: {
                 // Get package object of prefix
                 auto package_decl = default_package.findPackageDeclaration(prefix.identifiers);
 
                 // Check if the current identifier is a class or interface in the package
                 if (package_decl->classes->lookupSymbol(cur_ident.name) || package_decl->interfaces->lookupSymbol(cur_ident.name)) {
                     qi.identifiers.back().classification = Classification::TYPE_NAME;
-                    break;
                 }
                 // If not, return package name
                 qi.identifiers.back().classification = Classification::PACKAGE_NAME;
-                break;
+            }
             default:
                 THROW_DisambiguationError("Ambiguous type name " + qi.getQualifiedName());
-                break;
         }
     }
 }

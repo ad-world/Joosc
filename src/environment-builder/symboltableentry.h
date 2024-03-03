@@ -8,6 +8,7 @@
 #include "scope.h"
 #include "type-decl/linkedtype.h"
 #include "type-decl/type_declaration.h"
+#include "variant-ast/names.h"
 
 class SymbolTable;
 struct QualifiedIdentifier;
