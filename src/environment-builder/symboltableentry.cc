@@ -51,6 +51,55 @@ PackageDeclarationObject::PackageDeclarationObject() :
     classes{init_table()},
     interfaces{init_table()} {}
 
+PackageDeclarationObject* PackageDeclarationObject::findPackageDeclaration(std::vector<Identifier> &identifiers) {
+    auto current = this;
+    for (auto &identifier : identifiers) {
+        auto result = current->sub_packages->lookupUniqueSymbol(identifier.name);
+        if (result) {
+            current = &std::get<PackageDeclarationObject>(*result);
+        } else {
+            return nullptr;
+        }
+    }
+    return current;
+}
+
+ClassDeclarationObject* PackageDeclarationObject::findClassDeclaration(std::vector<Identifier> &identifiers) {
+    auto current = this;
+    
+    std::string class_name = identifiers.back().name;
+
+    identifiers.pop_back();
+    auto package = findPackageDeclaration(identifiers);
+
+    if(package) {
+        auto result = package->classes->lookupUniqueSymbol(class_name);
+        if (result) {
+            return &std::get<ClassDeclarationObject>(*result);
+        }
+    }
+
+    return nullptr;
+}
+
+InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(std::vector<Identifier> &identifiers) {
+    auto current = this;
+    
+    std::string interface_name = identifiers.back().name;
+
+    identifiers.pop_back();
+    auto package = findPackageDeclaration(identifiers);
+
+    if(package) {
+        auto result = package->interfaces->lookupUniqueSymbol(interface_name);
+        if (result) {
+            return &std::get<InterfaceDeclarationObject>(*result);
+        }
+    }
+
+    return nullptr;
+}
+
 ClassDeclarationObject::ClassDeclarationObject(const std::string &identifier) :
     identifier{identifier}, fields{init_table()}, methods{init_table()} {}
 

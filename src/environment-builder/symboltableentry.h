@@ -36,8 +36,10 @@ struct PackageDeclarationObject {
     PackageDeclarationObject(const std::string &identifier);
     PackageDeclarationObject();
 
-    // Helpers
     ClassDeclarationObject* getJavaLangObject();
+    PackageDeclarationObject* findPackageDeclaration(std::vector<Identifier> &identifiers);
+    ClassDeclarationObject* findClassDeclaration(std::vector<Identifier> &identifiers);
+    InterfaceDeclarationObject* findInterfaceDeclaration(std::vector<Identifier> &identifiers);
 };
 
 struct ClassDeclarationObject {
