@@ -84,6 +84,9 @@ void AstVisitor<ReturnType>::visit_children(InterfaceDeclaration &node) {
     for (auto &child : node.method_declarations) {
         this->operator()(child);
     }
+    for (auto &child : node.implicit_methods) {
+        this->operator()(child);
+    }
 }
 
 template <typename ReturnType>
@@ -323,6 +326,13 @@ void AstVisitor<ReturnType>::visit_children(InstanceOfExpression &node) {
     }
     if (node.type) {
         this->operator()(*node.type);
+    }
+}
+
+template <typename ReturnType>
+void AstVisitor<ReturnType>::visit_children(ParenthesizedExpression &node) {
+    if (node.expression) {
+        this->operator()(*node.expression);
     }
 }
 

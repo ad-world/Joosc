@@ -49,7 +49,8 @@ typedef std::variant<
     struct QualifiedThis,
     struct ArrayCreationExpression,
     struct QualifiedIdentifier,
-    struct InstanceOfExpression
+    struct InstanceOfExpression,
+    struct ParenthesizedExpression
 > Expression;
 
 struct Assignment: public AstNodeCommon {
@@ -217,5 +218,16 @@ struct InstanceOfExpression {
     InstanceOfExpression(
         std::unique_ptr<Expression>&& expression,
         std::unique_ptr<Type>&& type
+    );
+};
+
+struct ParenthesizedExpression {
+    std::unique_ptr<Expression> expression;
+
+    ParenthesizedExpression(
+        std::unique_ptr<Expression>& expression
+    );
+    ParenthesizedExpression(
+        std::unique_ptr<Expression>&& expression
     );
 };

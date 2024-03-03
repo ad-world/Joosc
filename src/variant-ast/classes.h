@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <list>
 #include "astnodecommon.h"
 #include "expressions.h"
 
@@ -91,6 +92,9 @@ struct MethodDeclaration {
         std::vector<FormalParameter>&& parameters,
         std::unique_ptr<Block>&& body
     );
+
+    // Helper functions
+    bool hasModifier(Modifier mod_to_check);
 };
 
 struct ClassDeclaration: public AstNodeCommon {
@@ -119,6 +123,9 @@ struct ClassDeclaration: public AstNodeCommon {
         std::vector<FieldDeclaration>&& field_declarations,
         std::vector<MethodDeclaration>&& method_declarations
     );
+
+    // Helper functions
+    bool hasModifier(Modifier mod_to_check);
 };
 
 struct InterfaceDeclaration: public AstNodeCommon {
@@ -128,6 +135,8 @@ struct InterfaceDeclaration: public AstNodeCommon {
     std::vector<MethodDeclaration> method_declarations; // interface method declarations
 
     struct InterfaceDeclarationObject *environment = nullptr;
+
+    std::list<MethodDeclaration> implicit_methods;
 
     InterfaceDeclaration(
         std::vector<Modifier>& modifiers,
@@ -141,4 +150,7 @@ struct InterfaceDeclaration: public AstNodeCommon {
         std::vector<QualifiedIdentifier>&& extends_class,
         std::vector<MethodDeclaration>&& method_declarations
     );
+
+    // Helper functions
+    bool hasModifier(Modifier mod_to_check);
 };

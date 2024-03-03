@@ -2,6 +2,7 @@
 
 #include "variant-ast/astnode.h"
 #include "astvisitor.h"
+#include "variant-ast/expressions.h"
 
 // Abstract visitor that by default, skips any node type an implementation is not overriden for and traverses the children
 template <typename ReturnType>
@@ -46,4 +47,5 @@ class DefaultSkipVisitor : public AstVisitor<ReturnType> {
     virtual void operator()(ArrayAccess &node) override { this->visit_children(node); }
     virtual void operator()(MethodInvocation &node) override { this->visit_children(node); }
     virtual void operator()(InstanceOfExpression &node) override { this->visit_children(node); }
+    virtual void operator()(ParenthesizedExpression &node) override { this->visit_children(node); }
 };
