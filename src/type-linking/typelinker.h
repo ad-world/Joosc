@@ -9,15 +9,13 @@
 #include <string>
 #include <variant>
 #include <unordered_map>
+#include "compilation_unit_namespace.h"
 
 using namespace std;
 
 class TypeLinker : public DefaultSkipVisitor<void> {
-    PackageDeclarationObject *current_package;
     PackageDeclarationObject *default_package;
-    TypeDeclaration current_type;
-    std::vector<TypeDeclaration> single_imports;
-    std::vector<PackageDeclarationObject*> star_imports;
+    CompilationUnitNamespace compilation_unit_namespace;
 
     // Resolve qualified_identifier to package from the default package.
     // Throws semantic error if any prefix, including the full name, resolves to a type
@@ -27,14 +25,6 @@ class TypeLinker : public DefaultSkipVisitor<void> {
     // Resolve qualified_identifier to fully qualified type from default_package.
     // Throws semantic error if any strict prefix resolves to a type.
     TypeDeclaration findTypeImport(QualifiedIdentifier &qualified_identifier);
-
-    // Look up qualifed_identifier as a type in compilation unit's namespace.
-    // Throws semantic error if there are multiple candidates in the namespace.
-    TypeDeclaration lookupQualifiedType(QualifiedIdentifier &qualified_identifier);
-
-    // Look up identifier as a type in compilation unit's namespace.
-    // Returns all valid candidates.
-    std::vector<TypeDeclaration> lookupSimpleType(std::string &identifier);
 
 public:
     using DefaultSkipVisitor<void>::operator();
