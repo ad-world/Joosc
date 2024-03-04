@@ -2,6 +2,7 @@
 
 #include <string>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 #include <variant>
 #include <optional>
@@ -54,6 +55,7 @@ struct ClassDeclarationObject {
 
     std::unique_ptr<SymbolTable> fields; // SymbolTable mapping to FieldDeclarationObjects
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
+    std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
 
     // Fields resolved at type linking stage
     ClassDeclarationObject* extended = nullptr;
@@ -67,6 +69,7 @@ struct InterfaceDeclarationObject {
     class InterfaceDeclaration* ast_reference = nullptr;
 
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
+    std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
 
     // Fields resolved at type linking stage
     std::vector<InterfaceDeclarationObject*> extended;
