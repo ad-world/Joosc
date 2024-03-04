@@ -2,6 +2,7 @@
 #include <cstring>
 #include <iostream>
 #include <exception>
+#include "disambiguation/disambiguation.h"
 #include "exceptions/exceptions.h"
 #include "exceptions/exceptions.h"
 #include "parsing/bison/location.hh"
@@ -14,6 +15,7 @@
 #include "exceptions/semanticerror.h"
 #include "type-linking/typelinker.h"
 #include "hierarchy-checking/hierarchy-checking.h"
+#include "exceptions/exceptions.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
@@ -151,10 +153,15 @@ int main(int argc, char *argv[]) {
         cerr << e.what() << "\n";
     }
 
-    // Hierarchy checking
     try {
+        // Hierarchy checking
         for ( auto& ast : asts ) {
             HierarchyCheckingVisitor(default_package).visit(ast);
+        }
+
+        // Disambiguation of names
+        for ( auto& ast : asts ) {
+            DisambiguationVisitor(default_package).visit(ast);
         }
     } catch (const std::exception &e) {
         cerr << e.what() << "\n";
