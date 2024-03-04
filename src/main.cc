@@ -3,6 +3,7 @@
 #include <iostream>
 #include <exception>
 #include "exceptions/exceptions.h"
+#include "exceptions/exceptions.h"
 #include "parsing/bison/location.hh"
 #include "parsing/bison/driver.h"
 #include "parsing/bison/parser.hh"

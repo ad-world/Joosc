@@ -8,7 +8,6 @@
 #include "scope.h"
 #include "type-decl/linkedtype.h"
 #include "type-decl/type_declaration.h"
-#include "variant-ast/names.h"
 
 class SymbolTable;
 struct QualifiedIdentifier;
@@ -37,6 +36,7 @@ struct PackageDeclarationObject {
     PackageDeclarationObject(const std::string &identifier);
     PackageDeclarationObject();
 
+    // Helpers
     ClassDeclarationObject* getJavaLangObject();
     PackageDeclarationObject* findPackageDeclaration(std::vector<Identifier> &identifiers);
     ClassDeclarationObject* findClassDeclaration(std::vector<Identifier> &identifiers);
