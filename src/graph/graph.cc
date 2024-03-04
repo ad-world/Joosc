@@ -1,7 +1,10 @@
 #include "graph.h"
+#include "variant-ast/primitivetype.h"
 #include <queue>
 #include <sstream>
 #include <iostream>
+#include <string>
+#include <variant>
 
 void GraphVisitor::operator()(CompilationUnit &node) {
     label_map[(AstNodeVariant*)&node] = "CompilationUnit";
@@ -30,7 +33,7 @@ void GraphVisitor::operator()(CompilationUnit &node) {
 }
 
 void GraphVisitor::operator()(QualifiedIdentifier &node) {
-    label_map[(AstNodeVariant*)&node] = "QualifiedIdentifier";
+    label_map[(AstNodeVariant*)&node] = "QualifiedIdentifier\n" + node.getQualifiedName();
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -41,7 +44,7 @@ void GraphVisitor::operator()(QualifiedIdentifier &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(Identifier &node) {
-    label_map[(AstNodeVariant*)&node] = "Identifier";
+    label_map[(AstNodeVariant*)&node] = "Identifier\n" + node.name;
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -60,14 +63,20 @@ void GraphVisitor::operator()(Type &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(NonArrayType &node) {
-    label_map[(AstNodeVariant*)&node] = "NonArrayType";
+    label_map[(AstNodeVariant*)&node] = "NonArrayType\n" + (
+        (std::holds_alternative<QualifiedIdentifier>(node))
+        ?
+        std::get<QualifiedIdentifier>(node).getQualifiedName()
+        :
+        getPrimitiveName(std::get<PrimitiveType>(node))
+    );
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(PrimitiveType &node) {
-    label_map[(AstNodeVariant*)&node] = "PrimitiveType";
+    label_map[(AstNodeVariant*)&node] = "PrimitiveType\n" + getPrimitiveName(node);
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -161,7 +170,7 @@ void GraphVisitor::operator()(MethodDeclaration &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(VariableDeclarator &node) {
-    label_map[(AstNodeVariant*)&node] = "VariableDeclarator";
+    label_map[(AstNodeVariant*)&node] = "VariableDeclarator\n" + node.variable_name->name;
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -175,7 +184,7 @@ void GraphVisitor::operator()(VariableDeclarator &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(FormalParameter &node) {
-    label_map[(AstNodeVariant*)&node] = "FormalParameter";
+    label_map[(AstNodeVariant*)&node] = "FormalParameter\n" + node.parameter_name->name;
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -189,7 +198,28 @@ void GraphVisitor::operator()(FormalParameter &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(Modifier &node) {
-    label_map[(AstNodeVariant*)&node] = "Modifier";
+    std::string mod_type;
+    switch (node) {
+        case Modifier::PUBLIC:
+            mod_type = "PUBLIC";
+            break;
+        case Modifier::PROTECTED:
+            mod_type = "PROTECTED";
+            break;
+        case Modifier::ABSTRACT:
+            mod_type = "ABSTRACT";
+            break;
+        case Modifier::STATIC:
+            mod_type = "STATIC";
+            break;
+        case Modifier::NATIVE:
+            mod_type = "NATIVE";
+            break;
+        case Modifier::FINAL:
+            mod_type = "FINAL";
+            break;
+    }
+    label_map[(AstNodeVariant*)&node] = "Modifier\n" + mod_type;
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -197,7 +227,7 @@ void GraphVisitor::operator()(Modifier &node) {
 }
 
 void GraphVisitor::operator()(LocalVariableDeclaration &node) {
-    label_map[(AstNodeVariant*)&node] = "LocalVariableDeclaration";
+    label_map[(AstNodeVariant*)&node] = "LocalVariableDeclaration\n" + node.variable_declarator->variable_name->name;
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -384,7 +414,22 @@ void GraphVisitor::operator()(ArrayCreationExpression &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(Literal &node) {
-    label_map[(AstNodeVariant*)&node] = "Literal";
+    std::string val;
+    if ( auto obj = std::get_if<int64_t>(&node) ) {
+        val = std::to_string(*obj);
+    } else if ( auto obj = std::get_if<bool>(&node) ) {
+        val = *obj ? "true" : "false";
+    } else if ( auto obj = std::get_if<char>(&node) ) {
+        val = *obj;
+        val = "'" + val + "'";
+    } else if ( auto obj = std::get_if<std::string>(&node) ) {
+        val = *obj;
+        val = "\\\"" + val + "\\\"";
+    } else {
+        val = "NULL";
+    }
+
+    label_map[(AstNodeVariant*)&node] = "Literal\n" + val;
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -518,6 +563,5 @@ std::string GraphVisitor::getGraph() {
 
 std::string GraphVisitor::visit(AstNodeVariant &node) {
     std::visit(*this, node);
-    std::cout << getGraph() << std::endl;
     return getGraph();
 }
