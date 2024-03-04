@@ -209,12 +209,12 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
             case Classification::TYPE_NAME: {
                 // Check if the current identifier is a field or method of the class
                 auto class_decl = default_package.findClassDeclaration(prefix.identifiers);
-                if (class_decl->fields->lookupSymbol(cur_ident.name) || class_decl->methods->lookupSymbol(cur_ident.name)) {
+                if (class_decl->fields->lookupUniqueSymbol(cur_ident.name) || class_decl->methods->lookupUniqueSymbol(cur_ident.name)) {
                     qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
                 }
                 // Check if the current identifier is a method of the interface
                 auto interface_decl = default_package.findInterfaceDeclaration(prefix.identifiers);
-                if (interface_decl->methods->lookupSymbol(cur_ident.name)) {
+                if (interface_decl->methods->lookupUniqueSymbol(cur_ident.name)) {
                     qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
                 }
 
@@ -226,7 +226,7 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
                 auto package_decl = default_package.findPackageDeclaration(prefix.identifiers);
 
                 // Check if the current identifier is a class or interface in the package
-                if (package_decl->classes->lookupSymbol(cur_ident.name) || package_decl->interfaces->lookupSymbol(cur_ident.name)) {
+                if (package_decl && (package_decl->classes->lookupUniqueSymbol(cur_ident.name) || package_decl->interfaces->lookupUniqueSymbol(cur_ident.name))) {
                     qi.identifiers.back().classification = Classification::TYPE_NAME;
                 }
                 // If not, return package name

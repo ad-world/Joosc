@@ -65,6 +65,7 @@ PackageDeclarationObject* PackageDeclarationObject::findPackageDeclaration(std::
 }
 
 ClassDeclarationObject* PackageDeclarationObject::findClassDeclaration(std::vector<Identifier> &identifiers) {
+    if ( identifiers.size() == 0 ) { return nullptr; }
     auto current = this;
     
     std::string class_name = identifiers.back().name;
@@ -83,6 +84,7 @@ ClassDeclarationObject* PackageDeclarationObject::findClassDeclaration(std::vect
 }
 
 InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(std::vector<Identifier> &identifiers) {
+    if ( identifiers.size() == 0 ) { return nullptr; }
     auto current = this;
     
     std::string interface_name = identifiers.back().name;
