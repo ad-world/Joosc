@@ -1,6 +1,7 @@
 #include "symboltableentry.h"
 #include "symboltable.h"
 #include "exceptions/exceptions.h"
+#include <sstream>
 
 std::unique_ptr<SymbolTable> init_table() {
     return std::make_unique<SymbolTable>();
@@ -70,8 +71,9 @@ ClassDeclarationObject* PackageDeclarationObject::findClassDeclaration(std::vect
     
     std::string class_name = identifiers.back().name;
 
-    identifiers.pop_back();
-    auto package = findPackageDeclaration(identifiers);
+    auto prefix = identifiers; // copy
+    prefix.pop_back();
+    auto package = findPackageDeclaration(prefix);
 
     if(package) {
         auto result = package->classes->lookupUniqueSymbol(class_name);
@@ -89,8 +91,9 @@ InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(s
     
     std::string interface_name = identifiers.back().name;
 
-    identifiers.pop_back();
-    auto package = findPackageDeclaration(identifiers);
+    auto prefix = identifiers; // copy
+    prefix.pop_back();
+    auto package = findPackageDeclaration(prefix);
 
     if(package) {
         auto result = package->interfaces->lookupUniqueSymbol(interface_name);
@@ -100,6 +103,28 @@ InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(s
     }
 
     return nullptr;
+}
+
+std::vector<Identifier> string_to_identifiers(std::string s) {
+    std::istringstream ss(s);
+    std::vector<Identifier> tokens;
+    for ( std::string each; std::getline(ss, each, '.'); tokens.push_back(Identifier(each)) );
+
+    return tokens;
+}
+
+PackageDeclarationObject* PackageDeclarationObject::findPackageDeclaration(std::string str) {
+    std::vector<Identifier> ids = string_to_identifiers(str);
+    return findPackageDeclaration(ids);
+}
+
+ClassDeclarationObject* PackageDeclarationObject::findClassDeclaration(std::string str) {
+    std::vector<Identifier> ids = string_to_identifiers(str);
+    return findClassDeclaration(ids);
+}
+InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(std::string str) {
+    std::vector<Identifier> ids = string_to_identifiers(str);
+    return findInterfaceDeclaration(ids);
 }
 
 ClassDeclarationObject::ClassDeclarationObject(const std::string &identifier) :

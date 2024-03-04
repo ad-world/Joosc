@@ -172,6 +172,19 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         // Check type-import-on-demand declaration, can only have one
         bool found = false;
 
+        { // Checking java.lang
+            auto package_decl = default_package->findPackageDeclaration("java.lang");
+
+            if (package_decl->classes->lookupSymbol(identifier) || package_decl->interfaces->lookupSymbol(identifier)) {
+                if ( !found ) {
+                    found = true;
+                } else {
+                    THROW_DisambiguationError("Ambiguous type name " + identifier);
+                }
+            }
+        }
+
+        // Checking rest of imports
         for (auto &import : compilation_unit->type_import_on_demand_declaration) {
             auto package_decl = default_package->findPackageDeclaration(import.identifiers);
 

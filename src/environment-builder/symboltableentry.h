@@ -41,6 +41,10 @@ struct PackageDeclarationObject {
     PackageDeclarationObject* findPackageDeclaration(std::vector<Identifier> &identifiers);
     ClassDeclarationObject* findClassDeclaration(std::vector<Identifier> &identifiers);
     InterfaceDeclarationObject* findInterfaceDeclaration(std::vector<Identifier> &identifiers);
+
+    PackageDeclarationObject* findPackageDeclaration(std::string str);
+    ClassDeclarationObject* findClassDeclaration(std::string str);
+    InterfaceDeclarationObject* findInterfaceDeclaration(std::string str);
 };
 
 struct ClassDeclarationObject {
