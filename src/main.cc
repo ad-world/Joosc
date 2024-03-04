@@ -14,6 +14,10 @@
 #include "type-linking/typelinker.h"
 #include "hierarchy-checking/hierarchy-checking.h"
 
+#ifdef GRAPHVIZ
+#include "graph/graph.h"
+#endif
+
 using namespace std;
 
 enum return_codes {
@@ -160,6 +164,15 @@ int main(int argc, char *argv[]) {
     }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
+
+#ifdef GRAPHVIZ
+    ofstream graph;
+    graph.open("graphs/graph.gv");
+    for ( auto& ast : asts ) {
+        graph << GraphVisitor().visit(ast);
+    }
+    graph.close();
+#endif
 
     return rc;
 }
