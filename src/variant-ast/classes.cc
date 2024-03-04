@@ -4,6 +4,7 @@
 #include "types.h"
 #include "expressions.h"
 #include "names.h"
+#include "environment-builder/symboltableentry.h"
 
 ClassDeclaration::ClassDeclaration(
     std::vector<Modifier>& modifiers,
@@ -159,4 +160,33 @@ bool ClassDeclaration::hasModifier(Modifier mod_to_check) {
 
 bool InterfaceDeclaration::hasModifier(Modifier mod_to_check) {
     return std::find(modifiers.begin(), modifiers.end(), mod_to_check) != modifiers.end();
+}
+
+std::string FormalParameter::toString() const {
+    std::string formalParameterType = "";
+    if(std::get_if<QualifiedIdentifier>(&(*type->non_array_type))) {
+        auto typeDecl = type->link.linked_type;
+        if(std::get_if<ClassDeclarationObject*>(&typeDecl)) {
+            formalParameterType += std::get<ClassDeclarationObject*>(typeDecl)->identifier;
+        } else {
+            formalParameterType += std::get<InterfaceDeclarationObject*>(typeDecl)->identifier;
+        }
+    } else {
+        formalParameterType += getPrimitiveName(std::get<PrimitiveType>(*type->non_array_type));
+    }
+    if(type->is_array) {
+        formalParameterType += "[]";
+    }
+    return formalParameterType;
+}
+
+std::string MethodDeclaration::getSignature() const {
+    std::string methodSignature = function_name->name + "(";
+    bool first = true;
+    for(const auto& formalParameter: parameters) {
+        if ( first ) { methodSignature += ","; first = false; }
+        methodSignature += formalParameter.toString();
+    }
+    methodSignature += ")";
+    return methodSignature;
 }

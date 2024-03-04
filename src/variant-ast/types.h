@@ -16,4 +16,8 @@ struct Type {
 
     Type(std::unique_ptr<NonArrayType>& non_array_type, bool is_array);
     Type(std::unique_ptr<NonArrayType>&& non_array_type, bool is_array);
+
+    // Operators
+    friend bool operator==(const Type & lhs, const Type & rhs);
+    friend bool operator!=(const Type & lhs, const Type & rhs);
 };

@@ -12,8 +12,7 @@
 #include "exceptions/compilerdevelopmenterror.h"
 #include "exceptions/semanticerror.h"
 #include "type-linking/typelinker.h"
-#include "variant-ast/astvisitor/hierarchychecking_visitor.h"
-#include "interface-extender/interface-extender.h"
+#include "hierarchy-checking/hierarchy-checking.h"
 
 using namespace std;
 
@@ -131,19 +130,6 @@ int main(int argc, char *argv[]) {
         cerr << "Unknown Exception occured\n";
     }
 
-    // Extend interfaces
-    try {
-        for ( auto& ast : asts ) {
-            InterfaceExtender(default_package).visit(ast);
-        }
-    } catch ( HierarchyError &e ) {
-        cerr << e.what() << "\n";
-        return INVALID_PROGRAM;
-    } catch (...) {
-        cerr << "Unknown error with interface extension occured\n";
-        return COMPILER_DEVELOPMENT_ERROR;
-    }
-
     // Type linking
     try {
         for (auto& ast : asts) {
@@ -160,6 +146,7 @@ int main(int argc, char *argv[]) {
         cerr << e.what() << "\n";
     }
 
+    // Hierarchy checking
     try {
         for ( auto& ast : asts ) {
             HierarchyCheckingVisitor(default_package).visit(ast);

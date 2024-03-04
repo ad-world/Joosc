@@ -33,7 +33,7 @@ PROJECT_BUILD:
     key: "$CI_PIPELINE_ID"
     policy: push
     paths:
-      - build
+      - .cache
       # depending on your build setup it's most likely a good idea to cache outputs to reduce the build time
       # cache:
       #   paths:
@@ -46,7 +46,7 @@ UNIT_TEST:
     key: "$CI_PIPELINE_ID"
     policy: pull
     paths:
-      - build
+      - .cache
 
 SCANNER_TEST:
   stage: test
@@ -55,16 +55,16 @@ SCANNER_TEST:
     key: "$CI_PIPELINE_ID"
     policy: pull
     paths:
-      - build
+      - .cache
 
 INTEGRATION_TEST:
   stage: test
-  script: make integration-test-full
+  script: make integration-test
   cache:
     key: "$CI_PIPELINE_ID"
     policy: pull
     paths:
-      - build
+      - .cache
 
 SUBMISSION:
   stage: .post
@@ -78,4 +78,4 @@ SUBMISSION:
     key: "$CI_PIPELINE_ID"
     policy: pull
     paths:
-      - build
+      - .cache

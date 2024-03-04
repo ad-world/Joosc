@@ -29,6 +29,9 @@ struct PackageDeclarationObject {
 
     PackageDeclarationObject(const std::string &identifier);
     PackageDeclarationObject();
+
+    // Helpers
+    ClassDeclarationObject* getJavaLangObject();
 };
 
 struct ClassDeclarationObject {
