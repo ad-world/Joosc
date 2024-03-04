@@ -75,7 +75,7 @@ void GraphVisitor::operator()(PrimitiveType &node) {
 }
 
 void GraphVisitor::operator()(ClassDeclaration &node) {
-    label_map[(AstNodeVariant*)&node] = "ClassDeclaration";
+    label_map[(AstNodeVariant*)&node] = "ClassDeclaration\n" + node.class_name->name;
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -101,7 +101,7 @@ void GraphVisitor::operator()(ClassDeclaration &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(InterfaceDeclaration &node) {
-    label_map[(AstNodeVariant*)&node] = "InterfaceDeclaration";
+    label_map[(AstNodeVariant*)&node] = "InterfaceDeclaration\n" + node.interface_name->name;
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -121,7 +121,7 @@ void GraphVisitor::operator()(InterfaceDeclaration &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(FieldDeclaration &node) {
-    label_map[(AstNodeVariant*)&node] = "FieldDeclaration";
+    label_map[(AstNodeVariant*)&node] = "FieldDeclaration\n" + node.variable_declarator->variable_name->name;
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -138,7 +138,7 @@ void GraphVisitor::operator()(FieldDeclaration &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(MethodDeclaration &node) {
-    label_map[(AstNodeVariant*)&node] = "MethodDeclaration";
+    label_map[(AstNodeVariant*)&node] = "MethodDeclaration\n" + node.function_name->name;
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
