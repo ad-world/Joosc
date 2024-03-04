@@ -11,6 +11,7 @@
 
 class SymbolTable;
 struct QualifiedIdentifier;
+struct Identifier;
 
 using SymbolTableEntry = std::variant<
     struct PackageDeclarationObject,

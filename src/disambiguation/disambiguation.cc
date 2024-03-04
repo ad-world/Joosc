@@ -3,7 +3,8 @@
 #include "variant-ast/names.h"
 #include "environment-builder/symboltable.h"
 #include "exceptions/exceptions.h"
-
+#include "type-linking/compilation_unit_namespace.h"
+#include <iostream>
 
 void DisambiguationVisitor::operator()(MethodInvocation &node) {
     auto &method_name = node.method_name;
@@ -211,6 +212,8 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         auto prefix = qi.getQualifiedIdentifierWithoutLast();
         auto cur_ident = qi.identifiers.back();
 
+        auto current_ns = compilation_unit->cu_namespace;
+
         // Get classification of the prefix
         disambiguate(prefix);
         auto cls = prefix.identifiers.back().classification;
@@ -222,22 +225,28 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
             } break;
                 // Return expression name
             case Classification::TYPE_NAME: {
+                // Check namspace
+                auto type = current_ns.lookupQualifiedType(prefix);
                 // Check if the current identifier is a field or method of the class
-                auto class_decl = default_package->findClassDeclaration(prefix.identifiers);
-                if ( class_decl ) {
+
+                if (std::holds_alternative<ClassDeclarationObject*>(type)) {
+                    auto class_decl = std::get<ClassDeclarationObject*>(type);
+
                     if (class_decl->fields->lookupUniqueSymbol(cur_ident.name) || class_decl->methods->lookupUniqueSymbol(cur_ident.name)) {
                         qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                        return;
                     }
-                }
                 // Check if the current identifier is a method of the interface
-                auto interface_decl = default_package->findInterfaceDeclaration(prefix.identifiers);
-                if ( interface_decl ) {
+
+                } else if (std::holds_alternative<InterfaceDeclarationObject*>(type)) {
+                    auto interface_decl = std::get<InterfaceDeclarationObject*>(type);
+                    
                     if (interface_decl->methods->lookupUniqueSymbol(cur_ident.name)) {
                         qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                        return;
                     }
                 }
 
-                // If not, throw errr
                 THROW_DisambiguationError("Ambiguous type name " + qi.getQualifiedName());
             } break;
             case Classification::PACKAGE_NAME: {
@@ -247,9 +256,11 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
                 // Check if the current identifier is a class or interface in the package
                 if (package_decl && (package_decl->classes->lookupUniqueSymbol(cur_ident.name) || package_decl->interfaces->lookupUniqueSymbol(cur_ident.name))) {
                     qi.identifiers.back().classification = Classification::TYPE_NAME;
+                    return;
                 }
                 // If not, return package name
                 qi.identifiers.back().classification = Classification::PACKAGE_NAME;
+                return;
             } break;
             default:
                 THROW_DisambiguationError("Ambiguous type name " + qi.getQualifiedName());
