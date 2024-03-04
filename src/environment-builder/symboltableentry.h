@@ -4,10 +4,13 @@
 #include <memory>
 #include <vector>
 #include <variant>
+#include <optional>
 #include "scope.h"
 #include "type-decl/linkedtype.h"
+#include "type-decl/type_declaration.h"
 
 class SymbolTable;
+struct QualifiedIdentifier;
 
 using SymbolTableEntry = std::variant<
     struct PackageDeclarationObject,
@@ -26,6 +29,9 @@ struct PackageDeclarationObject {
     std::unique_ptr<SymbolTable> sub_packages;
     std::unique_ptr<SymbolTable> classes;
     std::unique_ptr<SymbolTable> interfaces;
+
+    std::optional<TypeDeclaration> tryFindTypeInPackage(std::string &identifier);
+    std::optional<PackageDeclarationObject*> tryFindPackageInPackage(QualifiedIdentifier &qualified_identifier);
 
     PackageDeclarationObject(const std::string &identifier);
     PackageDeclarationObject();
