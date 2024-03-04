@@ -155,23 +155,25 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         // Check current package
         auto &package_name = compilation_unit->package_declaration;
 
-        // Check if the class is in the current package
-        if (current_package.findClassDeclaration(package_name->identifiers)) {
-            qi.identifiers[0].classification = Classification::TYPE_NAME;
-            return;
-        }
+        if ( current_package && package_name ) {
+            // Check if the class is in the current package
+            if (current_package->findClassDeclaration(package_name->identifiers)) {
+                qi.identifiers[0].classification = Classification::TYPE_NAME;
+                return;
+            }
 
-        // Check if the interface is in the current package
-        if (current_package.findInterfaceDeclaration(package_name->identifiers)) {
-            qi.identifiers[0].classification = Classification::TYPE_NAME;
-            return;
+            // Check if the interface is in the current package
+            if (current_package->findInterfaceDeclaration(package_name->identifiers)) {
+                qi.identifiers[0].classification = Classification::TYPE_NAME;
+                return;
+            }
         }
 
         // Check type-import-on-demand declaration, can only have one
         bool found = false;
 
         for (auto &import : compilation_unit->type_import_on_demand_declaration) {
-            auto package_decl = default_package.findPackageDeclaration(import.identifiers);
+            auto package_decl = default_package->findPackageDeclaration(import.identifiers);
 
             if (package_decl->classes->lookupSymbol(identifier) || package_decl->interfaces->lookupSymbol(identifier)) {
                 if ( !found ) {
@@ -204,26 +206,30 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         switch (cls) {
             case Classification::EXPRESSION_NAME: {
                 qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
-            }
+            } break;
                 // Return expression name
             case Classification::TYPE_NAME: {
                 // Check if the current identifier is a field or method of the class
-                auto class_decl = default_package.findClassDeclaration(prefix.identifiers);
-                if (class_decl->fields->lookupUniqueSymbol(cur_ident.name) || class_decl->methods->lookupUniqueSymbol(cur_ident.name)) {
-                    qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                auto class_decl = default_package->findClassDeclaration(prefix.identifiers);
+                if ( class_decl ) {
+                    if (class_decl->fields->lookupUniqueSymbol(cur_ident.name) || class_decl->methods->lookupUniqueSymbol(cur_ident.name)) {
+                        qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                    }
                 }
                 // Check if the current identifier is a method of the interface
-                auto interface_decl = default_package.findInterfaceDeclaration(prefix.identifiers);
-                if (interface_decl->methods->lookupUniqueSymbol(cur_ident.name)) {
-                    qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                auto interface_decl = default_package->findInterfaceDeclaration(prefix.identifiers);
+                if ( interface_decl ) {
+                    if (interface_decl->methods->lookupUniqueSymbol(cur_ident.name)) {
+                        qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                    }
                 }
 
                 // If not, throw errr
                 THROW_DisambiguationError("Ambiguous type name " + qi.getQualifiedName());
-            }
+            } break;
             case Classification::PACKAGE_NAME: {
                 // Get package object of prefix
-                auto package_decl = default_package.findPackageDeclaration(prefix.identifiers);
+                auto package_decl = default_package->findPackageDeclaration(prefix.identifiers);
 
                 // Check if the current identifier is a class or interface in the package
                 if (package_decl && (package_decl->classes->lookupUniqueSymbol(cur_ident.name) || package_decl->interfaces->lookupUniqueSymbol(cur_ident.name))) {
@@ -231,7 +237,7 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
                 }
                 // If not, return package name
                 qi.identifiers.back().classification = Classification::PACKAGE_NAME;
-            }
+            } break;
             default:
                 THROW_DisambiguationError("Ambiguous type name " + qi.getQualifiedName());
         }

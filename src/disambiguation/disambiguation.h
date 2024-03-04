@@ -24,8 +24,8 @@ A name is syntactically classified as an AmbiguousName in these contexts:
 */
 
 class DisambiguationVisitor : public DefaultSkipVisitor<void> {
-    PackageDeclarationObject &default_package;
-    PackageDeclarationObject &current_package;
+    PackageDeclarationObject *default_package = nullptr;
+    PackageDeclarationObject *current_package = nullptr;
     MethodDeclarationObject *current_method = nullptr;
     ClassDeclarationObject *current_class = nullptr;
     InterfaceDeclarationObject *current_interface = nullptr;
@@ -45,7 +45,7 @@ class DisambiguationVisitor : public DefaultSkipVisitor<void> {
 
 
 public: 
-    DisambiguationVisitor(PackageDeclarationObject &default_package): default_package(default_package), current_package(default_package) {}
+    DisambiguationVisitor(PackageDeclarationObject &default_package): default_package(&default_package), current_package(&default_package) {}
 
     using DefaultSkipVisitor<void>::operator();
     void operator()(MethodInvocation &node) override;
