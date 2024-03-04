@@ -1,8 +1,11 @@
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
+#include "variant-ast/packages.h"
 #include <unordered_map>
 
 class GraphVisitor : public DefaultSkipVisitor<std::string> {
+    CompilationUnit* root = nullptr;
     std::unordered_map<AstNodeVariant*, std::vector<AstNodeVariant*>> map;
+    std::unordered_map<AstNodeVariant*, std::string> label_map;
 public:
     using DefaultSkipVisitor<std::string>::operator();
     void operator()(CompilationUnit &node) override;
@@ -44,4 +47,8 @@ public:
     void operator()(MethodInvocation &node) override;
     void operator()(InstanceOfExpression &node) override;
     void operator()(ParenthesizedExpression &node) override;
+
+    std::string visit(AstNodeVariant &node) override;
+
+    std::string getGraph();
 };

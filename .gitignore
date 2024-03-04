@@ -19,3 +19,5 @@ parser.output
 tests/programs/marmoset
 .cache
 compile_commands.json
+graphs/*.gv
+graphs/*.png
