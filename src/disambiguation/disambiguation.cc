@@ -28,6 +28,7 @@ void DisambiguationVisitor::operator()(FieldAccess &node) {
         disambiguate(qi);
     }
 
+#if 0
     // Get the linked type of the field access expression
     auto linked_type = getLink(expression);
 
@@ -55,6 +56,7 @@ void DisambiguationVisitor::operator()(FieldAccess &node) {
         THROW_DisambiguationError("Ambiguous field access expression");
     }
 
+#endif
 }
 
 void DisambiguationVisitor::operator()(ArrayAccess &node) {

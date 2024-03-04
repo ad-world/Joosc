@@ -34,14 +34,14 @@ class DisambiguationVisitor : public DefaultSkipVisitor<void> {
     void disambiguate(QualifiedIdentifier &qi);
 
     // Shorthand for getting linked type from any expression node
-    LinkedType getLink(Expression &node) {
-        return std::visit([](auto expr_type) -> LinkedType {
-            return expr_type.link;
-        }, node);
-    }
-    LinkedType getLink(std::unique_ptr<Expression>& node_ptr) {
-        return getLink(*node_ptr);
-    }
+    // LinkedType getLink(Expression &node) {
+    //     return std::visit([](auto expr_type) -> LinkedType {
+    //         return expr_type.link;
+    //     }, node);
+    // }
+    // LinkedType getLink(std::unique_ptr<Expression>& node_ptr) {
+    //     return getLink(*node_ptr);
+    // }
 
 
 public: 
