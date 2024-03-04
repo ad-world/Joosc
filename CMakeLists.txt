@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 
 add_compile_options("-g")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Graphing
 option(GRAPHVIZ "Generate a graph of the parse tree" OFF)
 if(GRAPHVIZ)
