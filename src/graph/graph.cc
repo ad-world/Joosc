@@ -1,11 +1,12 @@
 #include "graph.h"
+#include "variant-ast/astnode.h"
 
 void GraphVisitor::operator()(CompilationUnit &node) {
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
     if (node.package_declaration) {
-        children.push_back((AstNodeVariant*) &(*node.package_declaration));
+        children.push_back((AstNodeVariant*) node.package_declaration.get());
     }
     for (auto &child : node.single_type_import_declaration) {
         children.push_back((AstNodeVariant*) &(child));
@@ -36,45 +37,91 @@ void GraphVisitor::operator()(QualifiedIdentifier &node) {
 void GraphVisitor::operator()(Identifier &node) {
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
-    // TODO: Add children
+
     map.insert({(AstNodeVariant*) &node, children});
 }
 
 void GraphVisitor::operator()(Type &node) {
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
-    // TODO: Add children
+
+    if ( node.non_array_type ) {
+        children.push_back((AstNodeVariant*) node.non_array_type.get());
+    }
+
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(NonArrayType &node) {
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
-    // TODO: Add children
+
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(PrimitiveType &node) {
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
-    // TODO: Add children
+
     map.insert({(AstNodeVariant*) &node, children});
 }
 
 void GraphVisitor::operator()(ClassDeclaration &node) {
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
-    // TODO: Add children
+
+    for (auto &child : node.modifiers) {
+        children.push_back((AstNodeVariant*) &child);
+    }
+    if (node.class_name) {
+        children.push_back((AstNodeVariant*) node.class_name.get());
+    }
+    if (node.extends_class) {
+        children.push_back((AstNodeVariant*) node.extends_class.get());
+    }
+    for (auto &child : node.implements) {
+        children.push_back((AstNodeVariant*) &child);
+    }
+    for (auto &child : node.field_declarations) {
+        children.push_back((AstNodeVariant*) &child);
+    }
+    for (auto &child : node.method_declarations) {
+        children.push_back((AstNodeVariant*) &child);
+    }
+
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(InterfaceDeclaration &node) {
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
-    // TODO: Add children
+
+    for (auto &child : node.modifiers) {
+        children.push_back((AstNodeVariant*) &child);
+    }
+    if (node.interface_name) {
+        children.push_back((AstNodeVariant*) node.interface_name.get());
+    }
+    for (auto &child : node.extends_class) {
+        children.push_back((AstNodeVariant*) &child);
+    }
+    for (auto &child : node.method_declarations) {
+        children.push_back((AstNodeVariant*) &child);
+    }
+
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(FieldDeclaration &node) {
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
-    // TODO: Add children
+
+    for (auto &child : node.modifiers) {
+        this->operator()(child);
+    }
+    if (node.type) {
+        this->operator()(*node.type);
+    }
+    if (node.variable_declarator) {
+        this->operator()(*node.variable_declarator);
+    }
+
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(MethodDeclaration &node) {
