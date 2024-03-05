@@ -66,3 +66,14 @@ function search_failing {
         xargs -i bash -c "source make_env.sh && grep \"$GREP_STR\" $INPUT_CMD -l" |     # grep each failing test for str
         cut -d'/' -f7 | sort | uniq                                                     # get test names only
 }
+
+# Make and run the graph generator
+function rungraph {
+    INPUT=$(getinput $1)
+    if [[ -n $INPUT ]]; then
+        make graph &&
+            make clean -C graphs/ &&
+            ./joosc ${INPUT} ${STDLIB} &&
+            make -C graphs/
+    fi
+}
