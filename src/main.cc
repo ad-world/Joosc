@@ -158,16 +158,24 @@ int main(int argc, char *argv[]) {
         for ( auto& ast : asts ) {
             HierarchyCheckingVisitor(default_package).visit(ast);
         }
-
-        // Disambiguation of names
-        for ( auto& ast : asts ) {
-            DisambiguationVisitor(default_package).visit(ast);
-        }
     } catch (const std::exception &e) {
         cerr << e.what() << "\n";
         return INVALID_PROGRAM;
     } catch (...) {
         cerr << "Unknown hierarchy checking error occurred\n";
+        return COMPILER_DEVELOPMENT_ERROR;
+    }
+
+    try {
+        // Disambiguation of names
+        for (auto &ast: asts ) {
+            DisambiguationVisitor(default_package).visit(ast);
+        }
+    } catch (DisambiguationError &e) {
+        cerr << "Disambiguation error occurred: " << e.what() << "\n";
+        return INVALID_PROGRAM;
+    } catch (std::exception &e) {
+        cerr << "Unknown disambiguation error occurred:" << e.what() << endl;
         return COMPILER_DEVELOPMENT_ERROR;
     }
 
