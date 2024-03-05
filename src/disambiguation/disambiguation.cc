@@ -160,7 +160,7 @@ void DisambiguationVisitor::operator()(FieldDeclaration &node)  {
 void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
     // if qi is a simple name, then we can disambiguate it
     if (qi.identifiers.size() == 1) {
-        auto &identifier = qi.identifiers[0].name;
+        auto &identifier = qi.identifiers.back().name;
 
 
         // If the Identifier appears within the scope (§6.3) of a local variable declaration (§14.4) or parameter declaration (§8.4.1, §8.8.1, §14.19) or field declaration (§8.3) with that name, then the AmbiguousName is reclassified as an ExpressionName.
@@ -169,12 +169,12 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
             current_method->scope_manager.openScope(scope_id);
 
             if (current_method->scope_manager.lookupVariable(identifier)) {
-                qi.identifiers[0].classification = Classification::EXPRESSION_NAME;
+                qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
                 return;
             }
             // Check method parameters
             if (current_method->parameters->lookupSymbol(identifier)) {
-                qi.identifiers[0].classification = Classification::EXPRESSION_NAME;
+                qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
                 return;
             }
 
@@ -184,13 +184,13 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         if (current_class != nullptr) {
             // Check class fields
             if(current_class->fields->lookupSymbol(identifier)) {
-                qi.identifiers[0].classification = Classification::EXPRESSION_NAME;
+                qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
                 return;
             }
 
             // Check local compilation unit for class
             if(current_class->ast_reference->class_name->name == identifier) {
-                qi.identifiers[0].classification = Classification::TYPE_NAME;
+                qi.identifiers.back().classification = Classification::TYPE_NAME;
                 return;
             }
         }
@@ -198,7 +198,7 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         if (current_interface != nullptr) {
             // Check local compilation unit for interface
             if(current_interface->ast_reference->interface_name->name == identifier) {
-                qi.identifiers[0].classification = Classification::TYPE_NAME;
+                qi.identifiers.back().classification = Classification::TYPE_NAME;
                 return;
             }
         }
@@ -206,7 +206,7 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         // Check single-type-import declaration
         for (auto &import : compilation_unit->single_type_import_declaration) {
             if (import.identifiers.back().name == identifier) {
-                qi.identifiers[0].classification = Classification::TYPE_NAME;
+                qi.identifiers.back().classification = Classification::TYPE_NAME;
                 return;
             }
         }
@@ -217,13 +217,13 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         if ( current_package && package_name ) {
             // Check if the class is in the current package
             if (current_package->findClassDeclaration(package_name->identifiers)) {
-                qi.identifiers[0].classification = Classification::TYPE_NAME;
+                qi.identifiers.back().classification = Classification::TYPE_NAME;
                 return;
             }
 
             // Check if the interface is in the current package
             if (current_package->findInterfaceDeclaration(package_name->identifiers)) {
-                qi.identifiers[0].classification = Classification::TYPE_NAME;
+                qi.identifiers.back().classification = Classification::TYPE_NAME;
                 return;
             }
         }
@@ -258,12 +258,12 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
 
         // Return type name if one type was found
         if ( found ) {
-            qi.identifiers[0].classification = Classification::TYPE_NAME;
+            qi.identifiers.back().classification = Classification::TYPE_NAME;
             return;
         } 
 
         // Return package name as default
-        qi.identifiers[0].classification = Classification::PACKAGE_NAME;
+        qi.identifiers.back().classification = Classification::PACKAGE_NAME;
         return;
     } else {
         // if qi is a qualified name, then we need to disambiguate the prefix
@@ -294,7 +294,6 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
                         return;
                     }
                 // Check if the current identifier is a method of the interface
-
                 } else if (std::holds_alternative<InterfaceDeclarationObject*>(type)) {
                     auto interface_decl = std::get<InterfaceDeclarationObject*>(type);
 
