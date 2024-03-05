@@ -12,8 +12,11 @@
 #include "exceptions/compilerdevelopmenterror.h"
 #include "exceptions/semanticerror.h"
 #include "type-linking/typelinker.h"
-#include "variant-ast/astvisitor/hierarchychecking_visitor.h"
-#include "interface-extender/interface-extender.h"
+#include "hierarchy-checking/hierarchy-checking.h"
+
+#ifdef GRAPHVIZ
+#include "graph/graph.h"
+#endif
 
 using namespace std;
 
@@ -131,19 +134,6 @@ int main(int argc, char *argv[]) {
         cerr << "Unknown Exception occured\n";
     }
 
-    // Extend interfaces
-    try {
-        for ( auto& ast : asts ) {
-            InterfaceExtender(default_package).visit(ast);
-        }
-    } catch ( HierarchyError &e ) {
-        cerr << e.what() << "\n";
-        return INVALID_PROGRAM;
-    } catch (...) {
-        cerr << "Unknown error with interface extension occured\n";
-        return COMPILER_DEVELOPMENT_ERROR;
-    }
-
     // Type linking
     try {
         for (auto& ast : asts) {
@@ -160,6 +150,7 @@ int main(int argc, char *argv[]) {
         cerr << e.what() << "\n";
     }
 
+    // Hierarchy checking
     try {
         for ( auto& ast : asts ) {
             HierarchyCheckingVisitor(default_package).visit(ast);
@@ -173,6 +164,15 @@ int main(int argc, char *argv[]) {
     }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
+
+#ifdef GRAPHVIZ
+    ofstream graph;
+    graph.open("graphs/graph.gv");
+    for ( auto& ast : asts ) {
+        graph << GraphVisitor().visit(ast);
+    }
+    graph.close();
+#endif
 
     return rc;
 }

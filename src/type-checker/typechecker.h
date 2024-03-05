@@ -9,18 +9,21 @@
 
 class TypeChecker: public DefaultSkipVisitor<bool> {
 
+    PackageDeclarationObject* default_package;
+
     // Shorthand for getting linked type from any expression node
-    LinkedType getLink(Expression &node) {
-        return std::visit([](auto expr_type) -> LinkedType {
-            return expr_type.link;
-        }, node);
-    }
-    LinkedType getLink(std::unique_ptr<Expression>& node_ptr) {
-        return getLink(*node_ptr);
-    }
+    LinkedType getLink(Expression &node);
+    LinkedType getLink(std::unique_ptr<Expression>& node_ptr);
 
   public:
     using DefaultSkipVisitor<bool>::operator();
+
+    // Operations for finding the types of identifiers
+    void operator()(MethodDeclaration &node) override;
+
+    void operator()(Block &node) override;
+
+    void operator()(QualifiedIdentifier &node) override;
 
     // All subexpression types
     void operator()(Assignment &node) override;
@@ -44,6 +47,5 @@ class TypeChecker: public DefaultSkipVisitor<bool> {
     void operator()(CastExpression &node) override;
 
     void operator()(InstanceOfExpression &node) override;
-
 
 };
