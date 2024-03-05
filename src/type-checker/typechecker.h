@@ -10,6 +10,7 @@
 class TypeChecker: public DefaultSkipVisitor<bool> {
 
     PackageDeclarationObject* default_package;
+    CompilationUnitNamespace compilation_unit_namespace;
 
     // Shorthand for getting linked type from any expression node
     LinkedType getLink(Expression &node);
@@ -19,6 +20,8 @@ class TypeChecker: public DefaultSkipVisitor<bool> {
     using DefaultSkipVisitor<bool>::operator();
 
     // Operations for finding the types of identifiers
+    void operator()(CompilationUnit &node) override;
+
     void operator()(MethodDeclaration &node) override;
 
     void operator()(Block &node) override;
@@ -48,4 +51,5 @@ class TypeChecker: public DefaultSkipVisitor<bool> {
 
     void operator()(InstanceOfExpression &node) override;
 
+    TypeChecker(PackageDeclarationObject *default_package);
 };

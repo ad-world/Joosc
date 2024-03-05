@@ -35,6 +35,23 @@ LinkedType TypeChecker::getLink(std::unique_ptr<Expression>& node_ptr) {
     return getLink(*node_ptr);
 }
 
+void TypeChecker::operator()(CompilationUnit &node) {
+    this->compilation_unit_namespace = node.cu_namespace;
+    visit_children(node);
+}
+
+void TypeChecker::operator()(MethodDeclaration &node) {
+
+}
+
+void TypeChecker::operator()(Block &node) {
+    
+}
+
+void TypeChecker::operator()(QualifiedIdentifier &node) {
+}
+
+
 void TypeChecker::operator()(Assignment &node) {
     this->visit_children(node);
 }
@@ -65,4 +82,7 @@ void TypeChecker::operator()(InfixExpression &node) {
 void TypeChecker::operator()(CastExpression &node) {
     this->visit_children(node);
 }
+
+TypeChecker::TypeChecker(PackageDeclarationObject *default_package) 
+    : default_package{default_package} {}
 
