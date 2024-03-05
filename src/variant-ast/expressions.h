@@ -223,7 +223,8 @@ struct InstanceOfExpression {
 
 struct ParenthesizedExpression {
     std::unique_ptr<Expression> expression;
-
+    LinkedType link;
+    
     ParenthesizedExpression(
         std::unique_ptr<Expression>& expression
     );
