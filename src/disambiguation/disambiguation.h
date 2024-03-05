@@ -6,6 +6,7 @@
 #include "type-decl/linkedtype.h"
 #include "environment-builder/symboltableentry.h"
 #include <variant>
+#include <vector>
 
 /*
 A name is syntactically classified as an ExpressionName in these contexts:
@@ -32,6 +33,7 @@ class DisambiguationVisitor : public DefaultSkipVisitor<void> {
 
     void disambiguate(QualifiedIdentifier &qi);
     void checkForwardDeclaration(const std::string usage, std::string potential_forward_dec);
+    // void getQualifiedIdentifersFromExpression(const Expression &expr, std::vector<QualifiedIdentifier>& identifiers);
 
 public: 
     DisambiguationVisitor(PackageDeclarationObject &default_package): default_package(&default_package), current_package(&default_package) {}

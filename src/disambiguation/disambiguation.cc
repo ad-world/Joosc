@@ -1,6 +1,7 @@
 #include "disambiguation.h"
 #include "type-decl/type_declaration.h"
 #include "variant-ast/names.h"
+#include "variant-ast/astvisitor/graballvisitor.h"
 #include "environment-builder/symboltable.h"
 #include "exceptions/exceptions.h"
 #include "type-linking/compilation_unit_namespace.h"
@@ -134,27 +135,37 @@ void DisambiguationVisitor::operator()(FieldDeclaration &node)  {
     // Initializer of a non-static field must not use itself or a field declared later in the class
     auto &right = declarator->expression;
     if (right != nullptr) {
-        if (std::holds_alternative<QualifiedIdentifier>(*right)) {
-        auto &right_expr = std::get<QualifiedIdentifier>(*right);
-            checkForwardDeclaration(left->name, right_expr.identifiers.front().name);
-        // Check the same logic, for QualifiedThis field accesses
-        } else if (std::holds_alternative<QualifiedThis>(*right)) {
-            auto &right_expr = std::get<QualifiedThis>(*right);
-            auto &right_expr_qi = right_expr.qualified_this;
-            
-            checkForwardDeclaration(left->name, right_expr_qi->identifiers.front().name);
+        std::vector<QualifiedIdentifier*> identifiers = GrabAllVisitor<QualifiedIdentifier>().visit(*right);
+        // 1. the usage occurs in an instance variable initializer of C or in an instance initalizer of C
+        // 2. the usage is not on the left hand side on an assignmet
+        
 
-            // Check forward declared method invocations 
-        } else if (std::holds_alternative<MethodInvocation>(*right)) {
-            auto &invoc = std::get<MethodInvocation>(*right);
-
-            if (std::holds_alternative<QualifiedIdentifier>(*invoc.method_name)) {
-                auto qi = std::get<QualifiedIdentifier>(*invoc.method_name);
-                auto potential_forward_dec = qi.identifiers.front();
-
-                checkForwardDeclaration(left->name, potential_forward_dec.name);
-            }
+        for (auto ident: identifiers) {
+            checkForwardDeclaration(left->name, ident->identifiers.front().name);
         }
+            
+
+        // if (std::holds_alternative<QualifiedIdentifier>(*right)) {
+        // auto &right_expr = std::get<QualifiedIdentifier>(*right);
+        //     checkForwardDeclaration(left->name, right_expr.identifiers.front().name);
+        // // Check the same logic, for QualifiedThis field accesses
+        // } else if (std::holds_alternative<QualifiedThis>(*right)) {
+        //     auto &right_expr = std::get<QualifiedThis>(*right);
+        //     auto &right_expr_qi = right_expr.qualified_this;
+            
+        //     checkForwardDeclaration(left->name, right_expr_qi->identifiers.front().name);
+
+        //     // Check forward declared method invocations 
+        // } else if (std::holds_alternative<MethodInvocation>(*right)) {
+        //     auto &invoc = std::get<MethodInvocation>(*right);
+
+        //     if (std::holds_alternative<QualifiedIdentifier>(*invoc.method_name)) {
+        //         auto qi = std::get<QualifiedIdentifier>(*invoc.method_name);
+        //         auto potential_forward_dec = qi.identifiers.front();
+
+        //         checkForwardDeclaration(left->name, potential_forward_dec.name);
+        //     }
+        // }
     }
 }
 
@@ -344,3 +355,31 @@ void DisambiguationVisitor::checkForwardDeclaration(std::string usage, std::stri
         }
     }
 }
+
+
+// void DisambiguationVisitor::getQualifiedIdentifersFromExpression(const Expression &expr, std::vector<QualifiedIdentifier> &identifiers) {
+//     if(std::holds_alternative<QualifiedIdentifier>(expr)) {
+//         identifiers.push_back(std::get<QualifiedIdentifier>(expr));
+//     } else if (std::holds_alternative<Assignment>(expr)) {
+//         auto &assignment = std::get<Assignment>(expr);
+//         getQualifiedIdentifersFromExpression(*assignment.assigned_to, identifiers);
+//         getQualifiedIdentifersFromExpression(*assignment.assigned_from, identifiers)
+//     } else if (std::holds_alternative<InfixExpression>(expr)) {
+//         auto &infix = std::get<InfixExpression>(expr);
+//         getQualifiedIdentifersFromExpression(*infix.expression1, identifiers);
+//         getQualifiedIdentifersFromExpression(*infix.expression2, identifiers);
+//     } else if (std::holds_alternative<CastExpression>(expr)) {
+//         auto &cast = std::get<CastExpression>(expr);
+//         getQualifiedIdentifersFromExpression(*cast.expression, identifiers);
+//     } else if (std::holds_alternative<ClassInstanceCreationExpression>(expr)) {
+//         auto &class_instance = std::get<ClassInstanceCreationExpression>(expr);
+//         identifiers.push_back(*class_instance.class_name);
+//         for (auto &arg: class_instance.arguments) {
+//             getQualifiedIdentifersFromExpression(arg, identifiers);
+//         }
+//     } else if (std::holds_alternative<FieldAccess>(expr)) {
+//         auto &field_access = std::get<FieldAccess>(expr);
+
+//     }
+
+// }
