@@ -3,6 +3,7 @@
 #include "environmentbuilder.h"
 #include "exceptions/semanticerror.h"
 #include "exceptions/compilerdevelopmenterror.h"
+#include "exceptions/exceptions.h"
 #include "symboltable.h"
 #include "symboltableentry.h"
 
@@ -16,7 +17,7 @@ void EnvironmentBuilder::operator()(CompilationUnit &node) {
                 // Enclosing package is not the default package; classes must not conflict with package
                 if (current_package->classes->lookupSymbol(package_subname) ||
                     current_package->interfaces->lookupSymbol(package_subname)) {
-                    throw SemanticError("Package name resolves to class/interface name");
+                    THROW_EnvBuilderError("Package name resolves to class/interface name");
                 }
             }
 
@@ -41,11 +42,11 @@ void EnvironmentBuilder::operator()(ClassDeclaration &node) {
     if (!current_package->is_default_package) {
         // Class not in default package must not conflict with package name
         if (current_package->sub_packages->lookupSymbol(class_name)) {
-            throw SemanticError("Class name " + class_name + " resolves to package name");
+            THROW_EnvBuilderError("Class name " + class_name + " resolves to package name");
         }
     }
     if (current_package->classes->lookupSymbol(class_name) || current_package->interfaces->lookupSymbol(class_name)) {
-        throw SemanticError("Class name " + class_name + " redeclared in package");
+        THROW_EnvBuilderError("Class name " + class_name + " redeclared in package");
     }
 
     // Class does not conflict in package and can be added
@@ -63,13 +64,13 @@ void EnvironmentBuilder::operator()(InterfaceDeclaration &node) {
     if (!current_package->is_default_package) {
         // Interface not in default package must not conflict with package name
         if (current_package->sub_packages->lookupSymbol(interface_name)) {
-            throw SemanticError("Interface name " + interface_name + " resolves to package name");
+            THROW_EnvBuilderError("Interface name " + interface_name + " resolves to package name");
         }
     }
     if (current_package->classes->lookupSymbol(interface_name) 
         || current_package->interfaces->lookupSymbol(interface_name)) 
     {
-        throw SemanticError("Interface name " + interface_name + " redeclared in package");
+        THROW_EnvBuilderError("Interface name " + interface_name + " redeclared in package");
     }
 
     // Interface does not conflict in package and can be added
@@ -89,7 +90,7 @@ void EnvironmentBuilder::operator()(FieldDeclaration &node) {
         auto current_class = *current_class_ptr;
 
         if (current_class->fields->lookupSymbol(field_name)) {
-            throw SemanticError("Field name " + field_name + " redeclared");
+            THROW_EnvBuilderError("Field name " + field_name + " redeclared");
         }
 
         // Field does not conflict in class and can be added
@@ -135,7 +136,7 @@ void EnvironmentBuilder::operator()(FormalParameter &node) {
     // Local variables and parameters must not conflict with each other
     if (current_method->parameters->lookupSymbol(parameter_name) || 
             current_method->scope_manager.lookupVariable(parameter_name)) {
-                throw SemanticError("Parameter name " + parameter_name + " redeclared");
+                THROW_EnvBuilderError("Parameter name " + parameter_name + " redeclared");
             }
     
     // Add parameter to method
@@ -152,7 +153,7 @@ void EnvironmentBuilder::operator()(LocalVariableDeclaration &node) {
     // Local variables and parameters must not conflict with each other
     if (current_method->parameters->lookupSymbol(local_variable_name) || 
             current_method->scope_manager.lookupVariable(local_variable_name)) {
-                throw SemanticError("Local variable name " + local_variable_name + " redeclared");
+                THROW_EnvBuilderError("Local variable name " + local_variable_name + " redeclared");
             }
     
     // Add parameter to method

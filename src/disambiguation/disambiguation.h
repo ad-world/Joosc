@@ -2,7 +2,6 @@
 
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
 #include "variant-ast/expressions.h"
-#include "exceptions/semanticerror.h"
 #include "type-decl/type_declaration.h"
 #include "type-decl/linkedtype.h"
 #include "environment-builder/symboltableentry.h"

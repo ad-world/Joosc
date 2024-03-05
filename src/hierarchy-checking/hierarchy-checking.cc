@@ -113,7 +113,7 @@ void checkMethodReplacement( MethodDeclaration& method, MethodDeclaration& repla
     }
 
     if ( method.hasModifier(Modifier::PROTECTED) && replaced.hasModifier(Modifier::PUBLIC)) {
-        THROW_HierarchyError("A protected method must not replace a public method.");
+        THROW_HierarchyError("A protected method must not replace a public method. (" + replaced.function_name->name + ")");
     }
 
     if ( replaced.hasModifier(Modifier::FINAL) ) {

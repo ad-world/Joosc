@@ -127,14 +127,15 @@ int main(int argc, char *argv[]) {
         for (auto &ast : asts) {
             EnvironmentBuilder(default_package).visit(ast);
         }
-    } catch (const SemanticError &e) {
-        cerr << "SemanticError Exception occured: " << e.message << "\n";
+    } catch (const EnvBuilderError &e) {
+        cerr << "EnvBuilderError Exception occured: " << e.message << "\n";
         return INVALID_PROGRAM;
     } catch (const CompilerDevelopmentError &e) {
         cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
         return COMPILER_DEVELOPMENT_ERROR;
     } catch (...) {
         cerr << "Unknown Exception occured\n";
+        return COMPILER_DEVELOPMENT_ERROR;
     }
 
     // Type linking
@@ -143,14 +144,15 @@ int main(int argc, char *argv[]) {
             CompilationUnit &current_ast = std::get<CompilationUnit>(ast);
             TypeLinker(default_package).visit(ast);
         } 
-    } catch (const SemanticError &e) {
-        cerr << "SemanticError Exception occured: " << e.message << "\n";
+    } catch (const TypeLinkerError &e) {
+        cerr << "TypeLinkerError Exception occured: " << e.message << "\n";
         return INVALID_PROGRAM;
     } catch (const CompilerDevelopmentError &e) {
         cerr << "Development error occured: " << e.message << "\n";
         return COMPILER_DEVELOPMENT_ERROR; 
     } catch (const std::exception &e) {
         cerr << e.what() << "\n";
+        return COMPILER_DEVELOPMENT_ERROR;
     }
 
     try {

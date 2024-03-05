@@ -270,7 +270,7 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         auto prefix = qi.getQualifiedIdentifierWithoutLast();
         auto cur_ident = qi.identifiers.back();
 
-        auto current_ns = compilation_unit->cu_namespace;
+        auto &current_ns = compilation_unit->cu_namespace;
 
         // Get classification of the prefix
         disambiguate(prefix);
