@@ -1,6 +1,7 @@
 #include "compilation_unit_namespace.h"
 #include "environment-builder/symboltable.h"
 #include "exceptions/semanticerror.h"
+#include "exceptions/exceptions.h"
 #include "utillities/util.h"
 #include <optional>
 #include <functional>
@@ -22,7 +23,7 @@ CompilationUnitNamespace::CompilationUnitNamespace(
 TypeDeclaration resolveCandidates(std::vector<TypeDeclaration>& valid_candidates, std::string identifier) {
     util::removeDuplicates(valid_candidates);
     if (valid_candidates.size() == 0) {
-        throw SemanticError("Type declaration for " + identifier + " not found");
+        THROW_TypeLinkerError("Type declaration for " + identifier + " not found");
     } else if (valid_candidates.size() > 1) {
         std::string error_message = "Type '" + identifier + "' is ambigious. Possible candidates are ";
         for (auto candidate : valid_candidates) {
@@ -31,7 +32,7 @@ TypeDeclaration resolveCandidates(std::vector<TypeDeclaration>& valid_candidates
                 error_message += ", ";
             }
         }
-        throw SemanticError(error_message);
+        THROW_TypeLinkerError(error_message);
     }
     return valid_candidates.back();
 }
@@ -95,7 +96,7 @@ TypeDeclaration CompilationUnitNamespace::lookupQualifiedType(QualifiedIdentifie
     };
     if (somePrefixIsType(package_qid)) {
         auto stringified_qid = qualified_identifier.getQualifiedName();
-        throw SemanticError(
+        THROW_TypeLinkerError(
             "A strict prefix, " + conflicting_prefix 
                 + ", of the fully qualified type " + stringified_qid + " resolves to a type."
         );
