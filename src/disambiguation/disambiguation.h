@@ -33,17 +33,6 @@ class DisambiguationVisitor : public DefaultSkipVisitor<void> {
 
     void disambiguate(QualifiedIdentifier &qi);
 
-    // Shorthand for getting linked type from any expression node
-    // LinkedType getLink(Expression &node) {
-    //     return std::visit([](auto expr_type) -> LinkedType {
-    //         return expr_type.link;
-    //     }, node);
-    // }
-    // LinkedType getLink(std::unique_ptr<Expression>& node_ptr) {
-    //     return getLink(*node_ptr);
-    // }
-
-
 public: 
     DisambiguationVisitor(PackageDeclarationObject &default_package): default_package(&default_package), current_package(&default_package) {}
 
@@ -57,6 +46,7 @@ public:
     void operator()(ClassDeclaration &node) override;
     void operator()(InterfaceDeclaration &node) override;
     void operator()(CompilationUnit &node) override;
+    void operator()(FieldDeclaration &node) override;
 
     void visit(AstNodeVariant &node) override {
         std::visit(*this, node);

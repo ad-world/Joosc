@@ -5,6 +5,7 @@
 #include "exceptions/exceptions.h"
 #include "type-linking/compilation_unit_namespace.h"
 #include <iostream>
+#include <variant>
 
 void DisambiguationVisitor::operator()(MethodInvocation &node) {
     auto &method_name = node.method_name;
@@ -101,6 +102,37 @@ void DisambiguationVisitor::operator()(CompilationUnit &node) {
     compilation_unit = &node;
     this->visit_children(node);
     compilation_unit = nullptr;
+}
+
+void DisambiguationVisitor::operator()(FieldDeclaration &node)  {
+    auto obj = node.environment;
+    auto &declarator = node.variable_declarator;
+    auto &left = declarator->variable_name; 
+
+    // Checking 8.3.2.3
+    // Initializer of a non-static field must not use itself or a field declared later in the class
+    auto &right = declarator->expression;
+
+    if (right && std::holds_alternative<QualifiedIdentifier>(*right)) {
+        auto right_expr = std::get<QualifiedIdentifier>(*right);
+
+        // Non-static field declared now or later will always have size one for a use
+        if (right_expr.identifiers.size() == 1) {
+            // Check not same reference
+            if (right_expr.identifiers.back().name == left->name) {
+                THROW_DisambiguationError("Field declaration of " + left->name + " refers to itself.");
+            } 
+            
+            // Check not using a forward reference
+            int current_decl_idx = current_class->fields->getInsertPosition(left->name);
+            int forward_decl_idx = current_class->fields->getInsertPosition(right_expr.identifiers.back().name);
+
+            if (current_decl_idx < forward_decl_idx) {
+                THROW_DisambiguationError("Field declaration of " + left->name + " uses forward declaration of " + right_expr.identifiers.back().name);
+            }
+
+        }
+    }
 }
 
 void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
@@ -229,9 +261,13 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
                 auto type = current_ns.lookupQualifiedType(prefix);
                 // Check if the current identifier is a field or method of the class
 
-                if (std::holds_alternative<ClassDeclarationObject*>(type)) {
-                    auto class_decl = std::get<ClassDeclarationObject*>(type);
+                bool class_flag = false;
+                bool interface_flag = false;
 
+                if (std::holds_alternative<ClassDeclarationObject*>(type)) {
+                    class_flag = true;
+
+                    auto class_decl = std::get<ClassDeclarationObject*>(type);
                     if (class_decl->fields->lookupUniqueSymbol(cur_ident.name) || class_decl->methods->lookupUniqueSymbol(cur_ident.name)) {
                         qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
                         return;
@@ -241,11 +277,17 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
                 } else if (std::holds_alternative<InterfaceDeclarationObject*>(type)) {
                     auto interface_decl = std::get<InterfaceDeclarationObject*>(type);
                     
+                    interface_flag = true;
+
                     if (interface_decl->methods->lookupUniqueSymbol(cur_ident.name)) {
                         qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
                         return;
                     }
                 }
+
+                if (class_flag) std::cout << "Class decl, looking for " << cur_ident.name << std::endl;
+                if (interface_flag) std::cout << "Interface decl " << std::endl;
+
 
                 THROW_DisambiguationError("Ambiguous type name " + qi.getQualifiedName());
             } break;
