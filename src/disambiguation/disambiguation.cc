@@ -61,6 +61,26 @@ void DisambiguationVisitor::operator()(FieldAccess &node) {
 #endif
 }
 
+void DisambiguationVisitor::operator()(CastExpression &node) {
+    // std::cout << "found cast expression" << std::endl;
+    if(std::holds_alternative<QualifiedIdentifier>(*node.expression)) {
+        auto expr = std::get<QualifiedIdentifier>(*node.expression);
+        // std::cout << expr.getQualifiedName() << std::endl;
+    }
+}
+
+void DisambiguationVisitor::operator()(ParenthesizedExpression &node) {
+    // std::cout << "Found parenthesis expresion" << std::endl;
+    if(std::holds_alternative<QualifiedIdentifier>(*node.expression)) {
+        auto expr = std::get<QualifiedIdentifier>(*node.expression);
+        disambiguate(expr);
+
+        if (expr.identifiers.back().classification == Classification::TYPE_NAME) {
+            THROW_DisambiguationError("Parenthesized expression resolves to Type, not expression");
+        }
+    }
+}
+
 void DisambiguationVisitor::operator()(ArrayAccess &node) {
     auto &array_ref_expression = node.array;
 
@@ -112,43 +132,26 @@ void DisambiguationVisitor::operator()(FieldDeclaration &node)  {
     // Checking 8.3.2.3
     // Initializer of a non-static field must not use itself or a field declared later in the class
     auto &right = declarator->expression;
-
-    if (right && std::holds_alternative<QualifiedIdentifier>(*right)) {
+    if (right != nullptr) {
+        if (std::holds_alternative<QualifiedIdentifier>(*right)) {
         auto &right_expr = std::get<QualifiedIdentifier>(*right);
-
-        // Non-static field declared now or later will always have size one for a use
-        if (right_expr.identifiers.size() == 1) {
-            // Check not same reference
-            if (right_expr.identifiers.back().name == left->name) {
-                THROW_DisambiguationError("Field declaration of " + left->name + " refers to itself.");
-            } 
+            checkForwardDeclaration(left->name, right_expr.identifiers.front().name);
+        // Check the same logic, for QualifiedThis field accesses
+        } else if (std::holds_alternative<QualifiedThis>(*right)) {
+            auto &right_expr = std::get<QualifiedThis>(*right);
+            auto &right_expr_qi = right_expr.qualified_this;
             
-            // Check not using a forward reference
-            int current_decl_idx = current_class->fields->getInsertPosition(left->name);
-            int forward_decl_idx = current_class->fields->getInsertPosition(right_expr.identifiers.back().name);
+            checkForwardDeclaration(left->name, right_expr_qi->identifiers.front().name);
 
-            if (current_decl_idx < forward_decl_idx) {
-                THROW_DisambiguationError("Field declaration of " + left->name + " uses forward declaration of " + right_expr.identifiers.back().name);
-            }
+            // Check forward declared method invocations 
+        } else if (std::holds_alternative<MethodInvocation>(*right)) {
+            auto &invoc = std::get<MethodInvocation>(*right);
 
-        }
-    // Check the same logic, for QualifiedThis nodes
-    } else if (right && std::holds_alternative<QualifiedThis>(*right)) {
-        auto &right_expr = std::get<QualifiedThis>(*right);
-        auto &right_expr_qi = right_expr.qualified_this;
-        
-         if (right_expr_qi->identifiers.size() == 1) {
-            // Check not same reference
-            if (right_expr_qi->identifiers.back().name == left->name) {
-                THROW_DisambiguationError("Field declaration of " + left->name + " refers to itself.");
-            } 
-            
-            // Check not using a forward reference
-            int current_decl_idx = current_class->fields->getInsertPosition(left->name);
-            int forward_decl_idx = current_class->fields->getInsertPosition(right_expr_qi->identifiers.back().name);
+            if (std::holds_alternative<QualifiedIdentifier>(*invoc.method_name)) {
+                auto qi = std::get<QualifiedIdentifier>(*invoc.method_name);
+                auto potential_forward_dec = qi.identifiers.front();
 
-            if (current_decl_idx < forward_decl_idx) {
-                THROW_DisambiguationError("Field declaration of " + left->name + " uses forward declaration of " + right_expr_qi->identifiers.back().name);
+                checkForwardDeclaration(left->name, potential_forward_dec.name);
             }
         }
     }
@@ -159,19 +162,23 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
     if (qi.identifiers.size() == 1) {
         auto &identifier = qi.identifiers[0].name;
 
+
         // If the Identifier appears within the scope (§6.3) of a local variable declaration (§14.4) or parameter declaration (§8.4.1, §8.8.1, §14.19) or field declaration (§8.3) with that name, then the AmbiguousName is reclassified as an ExpressionName.
         if (current_method != nullptr) {
-            // Check local variable declarations
+            size_t scope_id = current_method->ast_reference->body->scope_id;
+            current_method->scope_manager.openScope(scope_id);
+
             if (current_method->scope_manager.lookupVariable(identifier)) {
                 qi.identifiers[0].classification = Classification::EXPRESSION_NAME;
                 return;
             }
-
             // Check method parameters
             if (current_method->parameters->lookupSymbol(identifier)) {
                 qi.identifiers[0].classification = Classification::EXPRESSION_NAME;
                 return;
             }
+
+            current_method->scope_manager.closeScope(scope_id);
         }
 
         if (current_class != nullptr) {
@@ -314,6 +321,23 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
             } break;
             default:
                 THROW_DisambiguationError("Ambiguous type name " + qi.getQualifiedName());
+        }
+    }
+}
+
+void DisambiguationVisitor::checkForwardDeclaration(std::string usage, std::string potential_forward_dec) {
+    // Check not the same reference
+    if (potential_forward_dec == usage) {
+        THROW_DisambiguationError("Field declaration of " + usage + " refers to itself.");
+    }
+
+    // Check not a forward declaration
+    if (current_class->fields->lookupSymbol(usage) && current_class->fields->lookupSymbol(potential_forward_dec)) {
+        int current_decl_idx = current_class->fields->getInsertPosition(usage);
+        int forward_decl_idx = current_class->fields->getInsertPosition(potential_forward_dec);
+
+        if (current_decl_idx < forward_decl_idx) {
+            THROW_DisambiguationError("Field declaration of " + usage + " uses forward declaration of " + potential_forward_dec);
         }
     }
 }
