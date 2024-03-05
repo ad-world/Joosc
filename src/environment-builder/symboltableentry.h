@@ -9,6 +9,7 @@
 #include "scope.h"
 #include "type-decl/linkedtype.h"
 #include "type-decl/type_declaration.h"
+#include <iostream>
 
 class SymbolTable;
 struct QualifiedIdentifier;
@@ -56,6 +57,12 @@ struct ClassDeclarationObject {
     std::unique_ptr<SymbolTable> fields; // SymbolTable mapping to FieldDeclarationObjects
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
     std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
+
+    void printAllMethods() {
+        for (auto it: all_methods) {
+            std::cout << it.first << std::endl;
+        }
+    }
 
     // Fields resolved at type linking stage
     ClassDeclarationObject* extended = nullptr;
