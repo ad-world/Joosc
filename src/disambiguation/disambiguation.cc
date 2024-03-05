@@ -7,6 +7,7 @@
 #include "type-linking/compilation_unit_namespace.h"
 #include <iostream>
 #include <variant>
+#include <algorithm>
 
 void DisambiguationVisitor::operator()(MethodInvocation &node) {
     auto &parent_expr = node.parent_expr;
@@ -135,14 +136,35 @@ void DisambiguationVisitor::operator()(FieldDeclaration &node)  {
     // Initializer of a non-static field must not use itself or a field declared later in the class
     auto &right = declarator->expression;
     if (right != nullptr) {
-        std::vector<QualifiedIdentifier*> identifiers = GrabAllVisitor<QualifiedIdentifier>().visit(*right);
-        // 1. the usage occurs in an instance variable initializer of C or in an instance initalizer of C
-        // 2. the usage is not on the left hand side on an assignmet
-        
+        // std::vector<QualifiedIdentifier*> identifiers = GrabAllVisitor<QualifiedIdentifier>().visit(*right);
 
-        for (auto ident: identifiers) {
-            checkForwardDeclaration(left->name, ident->identifiers.front().name);
-        }
+        // 1. the usage occurs in an instance variable initializer of C or in an instance initalizer of C
+        // 2. the usage is not on the left hand side on an assignment
+
+        // Check all assignments, and check that there is no usage of a forward declared variable on rhs
+        // std::vector<Assignment*> assignments = GrabAllVisitor<Assignment>().visit(*right);
+
+        // for (auto assignment: assignments) {
+        //     if (std::holds_alternative<Assignment>(*assignment->assigned_from)) {
+        //         std::cout << "RHS is assignment" << std::endl;
+        //         auto from = &std::get<Assignment>(*assignment->assigned_from);
+        //         if (std::find(assignments.begin(), assignments.end(), from) != assignments.end()) {
+        //             continue;
+        //         }
+        //     }
+
+        //     std::vector<QualifiedIdentifier*> rhs_idents = GrabAllVisitor<QualifiedIdentifier>().visit(*assignment->assigned_from); 
+
+        //     for (auto ident: rhs_idents) {
+        //         std::cout << ident->getQualifiedName() << std::endl;
+        //         checkForwardDeclaration(left->name, ident->identifiers.front().name);
+        //     }
+        // }
+
+        // for (auto ident: identifiers) {
+        //     std::cout << ident->getQualifiedName() << std::endl;
+        //     checkForwardDeclaration(left->name, ident->identifiers.front().name);
+        // }
             
 
         // if (std::holds_alternative<QualifiedIdentifier>(*right)) {
