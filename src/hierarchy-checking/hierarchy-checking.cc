@@ -113,7 +113,7 @@ void checkMethodReplacement( MethodDeclaration& method, MethodDeclaration& repla
     }
 
     if ( method.hasModifier(Modifier::PROTECTED) && replaced.hasModifier(Modifier::PUBLIC)) {
-        THROW_HierarchyError("A protected method must not replace a public method.");
+        THROW_HierarchyError("A protected method must not replace a public method. (" + replaced.function_name->name + ")");
     }
 
     if ( replaced.hasModifier(Modifier::FINAL) ) {
@@ -312,12 +312,23 @@ void HierarchyCheckingVisitor::operator()(ClassDeclaration &node) {
         }
     }
 
+    // Methods that are inherited (not overidden, or hidden)
+    std::unordered_set<MethodDeclarationObject*> non_replaced_methods;
+    for ( auto& extended_method : extended_methods ) {
+        non_replaced_methods.insert(extended_method);
+    }
+    for ( auto& implemented_method : implemented_methods ) {
+        non_replaced_methods.insert(implemented_method);
+    }
+
+
     // Check replacement from superclasses
     for ( auto& extended_method : extended_methods ) {
         for ( auto& method : methods ) {
             if ( *method == *extended_method->ast_reference ) {
                 // Same signature as another method
                 checkMethodReplacement(*method, *extended_method->ast_reference);
+                non_replaced_methods.erase(extended_method);
             }
         }
     }
@@ -329,14 +340,28 @@ void HierarchyCheckingVisitor::operator()(ClassDeclaration &node) {
             if ( *method == *implemented_method->ast_reference ) {
                 // Same signature as class method
                 checkMethodReplacement(*method, *implemented_method->ast_reference);
+                non_replaced_methods.erase(implemented_method);
             }
         }
 
-        // For extended methods (superclass)
+        // JLS 8.4.6.4 Inheriting Methods with the Same Signature
         for ( auto& extended_method : extended_methods ) {
             if ( *extended_method->ast_reference == *implemented_method->ast_reference) {
                 // Same signature as extended method
-                checkMethodReplacement(*extended_method->ast_reference, *implemented_method->ast_reference);
+
+                // Check for non-abstract & static overriding abstract
+                if ( ! extended_method->ast_reference->hasModifier(Modifier::ABSTRACT) &&
+                    extended_method->ast_reference->hasModifier(Modifier::STATIC)
+                ) {
+                    THROW_HierarchyError("The method from the superclass is STATIC and non-abstract, causing a compile-time error.");
+                }
+
+                // Check for different return types
+                if ( *extended_method->ast_reference->type != *implemented_method->ast_reference->type ) {
+                    THROW_HierarchyError("A method from the superclass is trying to override a method from the superinterface, but they have different return types.");
+                }
+
+                non_replaced_methods.erase(implemented_method);
             }
         }
     }
@@ -354,6 +379,20 @@ void HierarchyCheckingVisitor::operator()(ClassDeclaration &node) {
     }
 
     this->visit_children(node);
+
+    // Expand symbol_table (all_methods)
+
+    // Add my methods
+    for ( auto& my_method : node.method_declarations ) {
+        std::string method_name = my_method.environment->identifier;
+        node.environment->all_methods.insert({method_name, my_method.environment});
+    }
+    
+    // Add inherited methods (non-replaced)
+    for ( auto& inherited_method : non_replaced_methods ) {
+        std::string method_name = inherited_method->identifier;
+        node.environment->all_methods.insert({method_name, inherited_method});
+    }
 };
 
 
@@ -411,6 +450,34 @@ void HierarchyCheckingVisitor::operator()(InterfaceDeclaration &node) {
     }
 
     this->visit_children(node);
+
+    // Expand symbol_table (all_methods)
+
+    // Get parent methods
+    std::vector<MethodDeclarationObject*> parent_methods;
+    for ( auto& interface : node.environment->extended ) {
+        for ( auto& parent_method : getAllMethods(interface) ) {
+            parent_methods.push_back(parent_method);
+        }
+    }
+
+    // Add my methods
+    for ( auto& my_method : node.method_declarations ) {
+        std::string method_name = my_method.environment->identifier;
+        node.environment->all_methods.insert({method_name, my_method.environment});
+    }
+    
+    // Add implicit Object methods
+    for ( auto& implicit_method : object_class->ast_reference->method_declarations ) {
+        std::string method_name = implicit_method.environment->identifier;
+        node.environment->all_methods.insert({method_name, implicit_method.environment});
+    }
+
+    // Add inheritied methods
+    for ( auto& parent_method : parent_methods ) {
+        std::string method_name = parent_method->identifier;
+        node.environment->all_methods.insert({method_name, parent_method});
+    }
 }
 
 void HierarchyCheckingVisitor::visit(AstNodeVariant &node) {

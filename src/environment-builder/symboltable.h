@@ -9,7 +9,9 @@
 
 class SymbolTable {
     std::unordered_map<std::string, std::list<SymbolTableEntry>> hashmap;
-
+    std::unordered_map<std::string, int> insert_position;
+    int current_insert_position = 0;
+    
     // Compile time asserts that T is a member of SymbolTableEntry variant
     template <typename T>
     void assertTypeIsSymbolTableEntry() {
@@ -28,6 +30,9 @@ class SymbolTable {
     // Return nullptr if no symbol found
     SymbolTableEntry* lookupUniqueSymbol(const std::string& name);
 
+    // Get the insert order of a specific symbol table entry
+    int getInsertPosition(const std::string &name);
+
     // Add new SymbolTableEntry corresponding to name
     // Returns pointer to SymbolTableEntry that was added
     //
@@ -38,6 +43,14 @@ class SymbolTable {
 
         auto& matches = hashmap[name];
         matches.push_back(T(name));
+
+        auto it = insert_position.find(name);
+
+        if (it == insert_position.end()) {
+            insert_position[name] = current_insert_position;
+            current_insert_position++;
+        }
+
 
         return &std::get<T>(matches.back());
     }

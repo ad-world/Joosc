@@ -31,6 +31,8 @@ class LocalVariableScopeManager {
     // Look up variable in the scope. Return nullptr if doesn't exist, otherwise return pointer to the variable
     LocalVariableDeclarationObject* lookupVariable(const std::string& name);
 
+    void printScope();
+
     // Add variable to open scope. Return nullptr if already exists or no scope exists, 
     // otherwise return pointer to the variable
     LocalVariableDeclarationObject* addVariable(const std::string& name);

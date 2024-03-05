@@ -79,3 +79,12 @@ public:
     HierarchyError(std::string message, std::string file, int line)
         : runtime_error(make_message("HierarchyChecker error", message, file, line)) {}
 };
+
+#define THROW_DisambiguationError(message) throw DisambiguationError(message, __FILE__, __LINE__)
+class DisambiguationError : public std::runtime_error {
+public:
+    std::string message;
+    DisambiguationError(std::string message) : runtime_error("Disambiguation error: " + message) {}
+    DisambiguationError(std::string message, std::string file, int line)
+        : runtime_error(make_message("Disambiguation error", message, file, line)) {}
+};

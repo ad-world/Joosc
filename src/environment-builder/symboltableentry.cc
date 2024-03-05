@@ -1,6 +1,7 @@
 #include "symboltableentry.h"
 #include "symboltable.h"
 #include "exceptions/exceptions.h"
+#include <sstream>
 
 std::unique_ptr<SymbolTable> init_table() {
     return std::make_unique<SymbolTable>();
@@ -50,6 +51,81 @@ PackageDeclarationObject::PackageDeclarationObject() :
     sub_packages{init_table()},
     classes{init_table()},
     interfaces{init_table()} {}
+
+PackageDeclarationObject* PackageDeclarationObject::findPackageDeclaration(std::vector<Identifier> &identifiers) {
+    auto current = this;
+    for (auto &identifier : identifiers) {
+        auto result = current->sub_packages->lookupUniqueSymbol(identifier.name);
+        if (result) {
+            current = &std::get<PackageDeclarationObject>(*result);
+        } else {
+            return nullptr;
+        }
+    }
+    return current;
+}
+
+ClassDeclarationObject* PackageDeclarationObject::findClassDeclaration(std::vector<Identifier> &identifiers) {
+    if ( identifiers.size() == 0 ) { return nullptr; }
+    auto current = this;
+    
+    std::string class_name = identifiers.back().name;
+
+    auto prefix = identifiers; // copy
+    prefix.pop_back();
+    auto package = findPackageDeclaration(prefix);
+
+    if(package) {
+        auto result = package->classes->lookupUniqueSymbol(class_name);
+        if (result) {
+            return &std::get<ClassDeclarationObject>(*result);
+        }
+    }
+
+    return nullptr;
+}
+
+InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(std::vector<Identifier> &identifiers) {
+    if ( identifiers.size() == 0 ) { return nullptr; }
+    auto current = this;
+    
+    std::string interface_name = identifiers.back().name;
+
+    auto prefix = identifiers; // copy
+    prefix.pop_back();
+    auto package = findPackageDeclaration(prefix);
+
+    if(package) {
+        auto result = package->interfaces->lookupUniqueSymbol(interface_name);
+        if (result) {
+            return &std::get<InterfaceDeclarationObject>(*result);
+        }
+    }
+
+    return nullptr;
+}
+
+std::vector<Identifier> string_to_identifiers(std::string s) {
+    std::istringstream ss(s);
+    std::vector<Identifier> tokens;
+    for ( std::string each; std::getline(ss, each, '.'); tokens.push_back(Identifier(each)) );
+
+    return tokens;
+}
+
+PackageDeclarationObject* PackageDeclarationObject::findPackageDeclaration(std::string str) {
+    std::vector<Identifier> ids = string_to_identifiers(str);
+    return findPackageDeclaration(ids);
+}
+
+ClassDeclarationObject* PackageDeclarationObject::findClassDeclaration(std::string str) {
+    std::vector<Identifier> ids = string_to_identifiers(str);
+    return findClassDeclaration(ids);
+}
+InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(std::string str) {
+    std::vector<Identifier> ids = string_to_identifiers(str);
+    return findInterfaceDeclaration(ids);
+}
 
 ClassDeclarationObject::ClassDeclarationObject(const std::string &identifier) :
     identifier{identifier}, fields{init_table()}, methods{init_table()} {}

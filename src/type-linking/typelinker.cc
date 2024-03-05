@@ -9,6 +9,7 @@
 #include "exceptions/compilerdevelopmenterror.h"
 #include "utillities/util.h"
 #include <functional>
+#include "exceptions/exceptions.h"
 
 using namespace std;
 
@@ -35,7 +36,7 @@ PackageDeclarationObject* TypeLinker::findPackageDeclaration(
             if (possible_class || possible_interface) {
                 auto get_type_name = [&](auto type) { return getIdentifier(util::getAsTypeDeclaration(type)); };
                 auto type_name = possible_class ? get_type_name(possible_class) : get_type_name(possible_interface);
-                throw SemanticError("Package prefix resolves to type " + type_name);
+                THROW_TypeLinkerError("Package prefix resolves to type " + type_name);
             }
         }
 
@@ -45,7 +46,7 @@ PackageDeclarationObject* TypeLinker::findPackageDeclaration(
             temp_package = &(std::get<PackageDeclarationObject>(*possible_package));
         } else {
             // Reference to undeclared package
-            throw SemanticError("Undeclared package: " + identifier.name + " in package " + temp_package->identifier);
+            THROW_TypeLinkerError("Undeclared package: " + identifier.name + " in package " + temp_package->identifier);
         }
     }
 
@@ -63,7 +64,7 @@ TypeDeclaration TypeLinker::findTypeImport(QualifiedIdentifier &qualified_identi
         if ((possible_class || possible_interface)) {
             if (&identifier != &qualified_identifier.identifiers.back() && temp_package != default_package) {
                 // This is only problematic if the possible class / interface is NOT in the default package
-                throw SemanticError("Prefix of fully qualified type resolves to type");
+                THROW_TypeLinkerError("Prefix of fully qualified type resolves to type");
             }
             if (possible_class) {
                 return util::getAsTypeDeclaration(possible_class);
@@ -79,10 +80,10 @@ TypeDeclaration TypeLinker::findTypeImport(QualifiedIdentifier &qualified_identi
             temp_package = &(std::get<PackageDeclarationObject>(*possible_package));
         } else {
             // Reference to undeclared package
-            throw SemanticError("Undeclared package");
+            THROW_TypeLinkerError("Undeclared package");
         }
     }
-    throw SemanticError("Undeclared type imported");
+    THROW_TypeLinkerError("Undeclared type imported");
 }
 
 /* Visitor implementation */
@@ -147,7 +148,7 @@ void TypeLinker::operator()(CompilationUnit &node) {
             return names_match && different_types;
         });
         if (it != single_imports.end()) {
-            throw SemanticError(
+            THROW_TypeLinkerError(
                 "Canonical name of imported type " + getIdentifier(imported_type1) + " ambiguous.");
         }
     }
@@ -197,7 +198,7 @@ void TypeLinker::operator()(ClassDeclaration &node) {
         if (auto interface_type = std::get_if<InterfaceDeclarationObject*>(&implemented)) {
             node.environment->implemented.emplace_back(*interface_type);
         } else {
-            throw SemanticError("Class attempting to implement class");
+            THROW_TypeLinkerError("Class attempting to implement class");
         }
     }
 
@@ -207,7 +208,7 @@ void TypeLinker::operator()(ClassDeclaration &node) {
         if (auto class_type = std::get_if<ClassDeclarationObject*>(&extended)) {
             node.environment->extended = *class_type;
         } else {
-            throw SemanticError("Class attempting to extend interface");
+            THROW_TypeLinkerError("Class attempting to extend interface");
         }
     }
 
@@ -228,7 +229,7 @@ void TypeLinker::operator()(InterfaceDeclaration &node) {
         if (auto interface_type = std::get_if<InterfaceDeclarationObject*>(&extended)) {
             node.environment->extended.emplace_back(*interface_type);
         } else {
-            throw SemanticError("Interface attempting to extend class");
+            THROW_TypeLinkerError("Interface attempting to extend class");
         }
     }
 
