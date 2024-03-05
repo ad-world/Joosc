@@ -57,6 +57,7 @@ struct Assignment: public AstNodeCommon {
     // Represents assigned_to = assigned_from
     std::unique_ptr<Expression> assigned_to;
     std::unique_ptr<Expression> assigned_from;
+    LinkedType link;
 
     Assignment(
         std::unique_ptr<Expression>& assigned_to,
@@ -70,6 +71,7 @@ struct Assignment: public AstNodeCommon {
 
 struct QualifiedThis: public AstNodeCommon {
     std::unique_ptr<QualifiedIdentifier> qualified_this;
+    LinkedType link;
 
     QualifiedThis(
         std::unique_ptr<QualifiedIdentifier>& qt
@@ -82,6 +84,8 @@ struct QualifiedThis: public AstNodeCommon {
 struct ArrayCreationExpression: public AstNodeCommon {
     std::unique_ptr<Type> type;
     std::unique_ptr<Expression> expression;
+    LinkedType link;
+;
 
     ArrayCreationExpression(
         std::unique_ptr<Type>& type,
@@ -97,6 +101,7 @@ struct ClassInstanceCreationExpression: public AstNodeCommon {
     std::unique_ptr<QualifiedIdentifier> class_name;
     std::vector<Expression> arguments;
     LinkedType linked_class_type;
+    LinkedType link;
 
     ClassInstanceCreationExpression(
         std::unique_ptr<QualifiedIdentifier>& class_name,
@@ -111,6 +116,7 @@ struct ClassInstanceCreationExpression: public AstNodeCommon {
 struct FieldAccess: public AstNodeCommon {
     std::unique_ptr<Expression> expression;
     std::unique_ptr<Identifier> identifier;
+    LinkedType link;
 
     FieldAccess(
         std::unique_ptr<Expression>& expression,
@@ -125,6 +131,7 @@ struct FieldAccess: public AstNodeCommon {
 struct ArrayAccess: public AstNodeCommon {
     std::unique_ptr<Expression> array;
     std::unique_ptr<Expression> selector;
+    LinkedType link;
 
     ArrayAccess(
         std::unique_ptr<Expression>& array,
@@ -139,6 +146,7 @@ struct ArrayAccess: public AstNodeCommon {
 struct MethodInvocation: public AstNodeCommon {
     std::unique_ptr<Expression> method_name;
     std::vector<Expression> arguments;
+    LinkedType link;
 
     MethodInvocation(
         std::unique_ptr<Expression>& method_name,
@@ -154,6 +162,7 @@ struct InfixExpression {
     std::unique_ptr<Expression> expression1;
     std::unique_ptr<Expression> expression2;
     InfixOperator op;
+    LinkedType link;
 
     InfixExpression(
         std::unique_ptr<Expression>& ex1,
@@ -170,6 +179,7 @@ struct InfixExpression {
 struct PrefixExpression {
     std::unique_ptr<Expression> expression;
     PrefixOperator op;
+    LinkedType link;
 
     PrefixExpression(
         std::unique_ptr<Expression>& expression,
@@ -184,6 +194,7 @@ struct PrefixExpression {
 struct CastExpression {
     std::unique_ptr<Type> type;
     std::unique_ptr<Expression> expression;
+    LinkedType link;
 
     CastExpression(
         std::unique_ptr<Type>& type,
@@ -198,6 +209,7 @@ struct CastExpression {
 struct InstanceOfExpression {
     std::unique_ptr<Expression> expression;
     std::unique_ptr<Type> type;
+    LinkedType link;
 
     InstanceOfExpression(
         std::unique_ptr<Expression>& expression,
@@ -211,7 +223,8 @@ struct InstanceOfExpression {
 
 struct ParenthesizedExpression {
     std::unique_ptr<Expression> expression;
-
+    LinkedType link;
+    
     ParenthesizedExpression(
         std::unique_ptr<Expression>& expression
     );

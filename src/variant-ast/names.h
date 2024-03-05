@@ -22,6 +22,7 @@ struct Identifier: public AstNodeCommon {
 };
 
 struct QualifiedIdentifier: public AstNodeCommon {
+    LinkedType link;
 
     std::vector<Identifier> identifiers; // Vector of identifiers for this qualitfed identifier
 
