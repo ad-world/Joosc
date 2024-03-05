@@ -391,9 +391,7 @@ void HierarchyCheckingVisitor::operator()(ClassDeclaration &node) {
     // Add inherited methods (non-replaced)
     for ( auto& inherited_method : non_replaced_methods ) {
         std::string method_name = inherited_method->identifier;
-        if ( inherited_method->ast_reference->hasModifier(Modifier::PUBLIC) ) {
-            node.environment->all_methods.insert({method_name, inherited_method});
-        }
+        node.environment->all_methods.insert({method_name, inherited_method});
     }
 };
 
@@ -472,17 +470,13 @@ void HierarchyCheckingVisitor::operator()(InterfaceDeclaration &node) {
     // Add implicit Object methods
     for ( auto& implicit_method : object_class->ast_reference->method_declarations ) {
         std::string method_name = implicit_method.environment->identifier;
-        if ( implicit_method.hasModifier(Modifier::PUBLIC) ) {
-            node.environment->all_methods.insert({method_name, implicit_method.environment});
-        }
+        node.environment->all_methods.insert({method_name, implicit_method.environment});
     }
 
     // Add inheritied methods
     for ( auto& parent_method : parent_methods ) {
         std::string method_name = parent_method->identifier;
-        if ( parent_method->ast_reference->hasModifier(Modifier::PUBLIC) ) {
-            node.environment->all_methods.insert({method_name, parent_method});
-        }
+        node.environment->all_methods.insert({method_name, parent_method});
     }
 }
 
