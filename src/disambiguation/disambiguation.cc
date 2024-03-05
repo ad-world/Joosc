@@ -12,7 +12,7 @@ void DisambiguationVisitor::operator()(MethodInvocation &node) {
 
     if(std::holds_alternative<QualifiedIdentifier>(*method_name)) {
         auto &qi = std::get<QualifiedIdentifier>(*method_name);
-        std::cout << qi.getQualifiedName() << std::endl;
+        // std::cout << qi.getQualifiedName() << std::endl;
         disambiguate(qi);
     }
 }
@@ -291,7 +291,7 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
                 if (std::holds_alternative<ClassDeclarationObject*>(type)) {
                     auto class_decl = std::get<ClassDeclarationObject*>(type);
 
-                    class_decl->printAllMethods();
+                    // class_decl->printAllMethods();
                     
                     if (class_decl->fields->lookupUniqueSymbol(cur_ident.name) || class_decl->methods->lookupUniqueSymbol(cur_ident.name) || (class_decl->all_methods.find(cur_ident.name) != class_decl->all_methods.end())) {
                         qi.identifiers.back().classification = Classification::EXPRESSION_NAME;

@@ -16,7 +16,7 @@ function getinput {
         if [ -f $FILE ]; then
             INPUT=$FILE
         else
-            INPUT="$FILE/**/*.java"
+            INPUT=$(find $FILE -type f -name "*.java")
         fi
         echo ${INPUT}
     fi
@@ -53,4 +53,16 @@ function viewtest {
     # FILE=$(find ./tests/ -name $1 | tail -1)
     INPUT=$(getinput $1)
     ${EDITOR} ${INPUT}
+}
+
+# Get failing tests
+# -> Do a grep on each test
+# -> Output tests with matching grep
+# Example: search_failing "DISAMBIGUATION"
+function search_failing {
+    INPUT_CMD='$(getinput {})'
+    GREP_STR=$1
+    make integration-test 2>/dev/null | grep "FAIL:" | cut -d' ' -f5 |                  # get failing tests
+        xargs -i bash -c "source make_env.sh && grep \"$GREP_STR\" $INPUT_CMD -l" |     # grep each failing test for str
+        cut -d'/' -f7 | sort | uniq                                                     # get test names only
 }
