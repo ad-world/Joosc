@@ -19,6 +19,7 @@ bool LocalVariableScopeManager::closeScope(size_t scope_id) {
 }
 
 void LocalVariableScopeManager::closeAllScopes() {
+    declared_variables = {};
     open_scopes = std::vector<size_t>();
 }
 
