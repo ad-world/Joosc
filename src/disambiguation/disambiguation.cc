@@ -80,18 +80,21 @@ void DisambiguationVisitor::operator()(Assignment &node) {
 
 void DisambiguationVisitor::operator()(MethodDeclaration &node) {
     current_method = node.environment;
+    node.function_name->classification = Classification::METHOD_NAME;
     this->visit_children(node);
     current_method = nullptr;
 }
 
 void DisambiguationVisitor::operator()(ClassDeclaration &node) {
     current_class = node.environment;
+    node.class_name->classification = Classification::TYPE_NAME;
     this->visit_children(node);
     current_class = nullptr;
 }
 
 void DisambiguationVisitor::operator()(InterfaceDeclaration &node) {
     current_interface = node.environment;
+    node.interface_name->classification = Classification::TYPE_NAME;
     this->visit_children(node);
     current_interface = nullptr;
 }
@@ -175,7 +178,7 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
 
         if (current_class != nullptr) {
             // Check class fields
-            if(current_class->fields->lookupSymbol(identifier)) {
+            if(current_class->fields->lookupSymbol(identifier) || (current_class->accessible_fields.find(identifier) != current_class->accessible_fields.end())) {
                 ref.identifiers[current_pos].classification = Classification::EXPRESSION_NAME;
                 return;
             }
