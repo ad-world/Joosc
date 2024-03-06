@@ -144,16 +144,19 @@ struct ArrayAccess: public AstNodeCommon {
 };
 
 struct MethodInvocation: public AstNodeCommon {
-    std::unique_ptr<Expression> method_name;
+    std::unique_ptr<Expression> parent_expr;    // CAN BE NULL
+    std::unique_ptr<Identifier> method_name;
     std::vector<Expression> arguments;
     LinkedType link;
 
     MethodInvocation(
-        std::unique_ptr<Expression>& method_name,
+        std::unique_ptr<Expression>& parent_expr,
+        std::unique_ptr<Identifier>& method_name,
         std::vector<Expression>& arguments
     );
     MethodInvocation(
-        std::unique_ptr<Expression>&& method_name,
+        std::unique_ptr<Expression>&& parent_expr,
+        std::unique_ptr<Identifier>&& method_name,
         std::vector<Expression>&& arguments
     );
 };

@@ -50,9 +50,11 @@ ArrayAccess::ArrayAccess(
 {}
 
 MethodInvocation::MethodInvocation(
-    std::unique_ptr<Expression>& method_name,
+    std::unique_ptr<Expression>& parent_expr,
+    std::unique_ptr<Identifier>& method_name,
     std::vector<Expression>& arguments
 ):
+    parent_expr{std::move(parent_expr)},
     method_name{std::move(method_name)},
     arguments{std::move(arguments)} 
 {}
@@ -147,9 +149,11 @@ ArrayAccess::ArrayAccess(
 {}
 
 MethodInvocation::MethodInvocation(
-    std::unique_ptr<Expression>&& method_name,
+    std::unique_ptr<Expression>&& parent_expr,
+    std::unique_ptr<Identifier>&& method_name,
     std::vector<Expression>&& arguments
 ):
+    parent_expr{std::move(parent_expr)},
     method_name{std::move(method_name)},
     arguments{std::move(arguments)} 
 {}

@@ -236,17 +236,10 @@ void AstWeeder::checkMethodModifiersAndBody(const std::vector<MethodDeclaration>
         vector<MethodInvocation*> invocations = GrabAllVisitor<MethodInvocation>().visit(*body);
          
         for (auto &invoc: invocations) {
-            if (holds_alternative<QualifiedIdentifier>(*invoc->method_name)) {
-                QualifiedIdentifier ident = get<QualifiedIdentifier>(*invoc->method_name);
-                
-                int q_ident_size = ident.identifiers.size();
-                Identifier last_ident = ident.identifiers[q_ident_size - 1];
-                string method_name = last_ident.name;
-
-                if(method_name == "super" || method_name == "this") {
-                    addViolation("Method " + name + " cannot call super() or this()");
-                }
-            }    
+            string method_name = invoc->method_name->name;
+            if(method_name == "super" || method_name == "this") {
+                addViolation("Method " + name + " cannot call super() or this()");
+            }
         }
     }
 }
