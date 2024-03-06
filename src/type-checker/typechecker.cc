@@ -37,6 +37,15 @@ LinkedType TypeChecker::getLink(std::unique_ptr<Expression>& node_ptr) {
     return getLink(*node_ptr);
 }
 
+ClassDeclarationObject* TypeChecker::getStringClass(LinkedType &link) {
+    if(link.isReferenceType()) {
+        if(link.getIfNonArrayIsClass() == default_package->findClassDeclaration("java.lang.String")) {
+            return link.getIfNonArrayIsClass();
+        }
+    }
+    return nullptr;
+}
+
 void TypeChecker::operator()(CompilationUnit &node) {
     this->compilation_unit_namespace = node.cu_namespace;
     visit_children(node);
@@ -167,21 +176,15 @@ void TypeChecker::operator()(InfixExpression &node) {
 
     switch (node.op) {
         case InfixOperator::PLUS:
-            if(linkedType1.isNumeric() && linkedType2.isNumeric()) {
-                node.link.linked_type = PrimitiveType::INT;
+            if((getStringClass(linkedType1) && !linkedType2.isVoid()) || (getStringClass(linkedType2) && !linkedType1.isVoid())) {
+                node.link = LinkedType(NonArrayLinkedType(default_package->findClassDeclaration("java.lang.String")));
             }
-            // else if((linkedType1.isString() && !linkedType2.isVoid()) || (linkedType2.isString() && !linkedType1.isVoid())) {
-            // }
-            else {
-                THROW_TypeCheckerError("Invalid type for arithmetic operation");
-            }
-            break;
         case InfixOperator::MINUS:
         case InfixOperator::MULTIPLY:
         case InfixOperator::DIVIDE:
         case InfixOperator::MODULO:
             if(linkedType1.isNumeric() && linkedType2.isNumeric()) {
-                node.link.linked_type = PrimitiveType::INT;
+                node.link = LinkedType(PrimitiveType::INT);
             }
             else {
                 THROW_TypeCheckerError("Invalid type for arithmetic operation");
@@ -192,7 +195,7 @@ void TypeChecker::operator()(InfixExpression &node) {
         case InfixOperator::LESS_THAN_EQUAL:
         case InfixOperator::GREATER_THAN_EQUAL:
             if(linkedType1.isNumeric() && linkedType2.isNumeric()) {
-                node.link.linked_type = PrimitiveType::BOOLEAN;
+                node.link = LinkedType(PrimitiveType::BOOLEAN);
             }
             else {
                 THROW_TypeCheckerError("Invalid type for comparison operation");
@@ -202,7 +205,7 @@ void TypeChecker::operator()(InfixExpression &node) {
         case InfixOperator::BOOLEAN_NOT_EQUAL:
             if(linkedType1 == linkedType2 || (linkedType1.isNull() && (!linkedType2.isPrimitive() || linkedType2.is_array)) 
                 || (linkedType2.isNull() && (!linkedType1.isPrimitive() || linkedType1.is_array))) {
-                node.link.linked_type = PrimitiveType::BOOLEAN; // Might need to add check for subclasses and base class comparison
+                node.link = LinkedType(PrimitiveType::BOOLEAN); // Might need to add check for subclasses and base class comparison
             }
             else {
                 THROW_TypeCheckerError("Invalid type for comparison operation");
@@ -213,7 +216,7 @@ void TypeChecker::operator()(InfixExpression &node) {
         case InfixOperator::EAGER_AND:
         case InfixOperator::EAGER_OR:
             if(linkedType1.isBoolean() && linkedType2.isBoolean()) {
-                node.link.linked_type = PrimitiveType::BOOLEAN;
+                node.link = LinkedType(PrimitiveType::BOOLEAN);
             }
             else {
                 THROW_TypeCheckerError("Invalid type for boolean operation");
@@ -298,12 +301,43 @@ void TypeChecker::operator()(MethodInvocation &node) {
     this->visit_children(node);
 }
 
-void TypeChecker::operator()(InstanceOfExpression &node) {
-    this->visit_children(node);
+bool checkCastability(LinkedType type1, LinkedType type2) {
+    if(type1.isNumeric() && type2.isNumeric() && !type1.is_array && !type2.is_array) {
+        return true;
+    }
+    else if((type2.getIfNonArrayIsInterface() && (type1.getIfNonArrayIsInterface() || !type1.isFinal())) 
+            || (type1.getIfNonArrayIsInterface() && (type2.getIfNonArrayIsInterface() || !type2.isFinal()))) {
+        return true;
+    }
+    // else if check type and expression assignability for upcast/downcast classes
+    return false;
 }
 
 void TypeChecker::operator()(CastExpression &node) {
     this->visit_children(node);
+
+    LinkedType type = node.type.get()->link;
+    LinkedType expression = getLink(node.expression);
+
+    if(checkCastability(type, expression)) {
+        node.link = type;
+    }
+    else {
+        THROW_TypeCheckerError("Invalid type for CastExpression");
+    }
+}
+
+void TypeChecker::operator()(InstanceOfExpression &node) {
+    this->visit_children(node);
+
+    LinkedType expression = getLink(node.expression);
+    LinkedType type = node.type.get()->link;
+    if(type.isReferenceType() && checkCastability(expression, type)) {
+        node.link = LinkedType(PrimitiveType::BOOLEAN);
+    }
+    else {
+        THROW_TypeCheckerError("Invalid type for InstanceOfExpression");
+    }
 }
 
 TypeChecker::TypeChecker(PackageDeclarationObject &default_package) 

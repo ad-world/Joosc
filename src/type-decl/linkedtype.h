@@ -49,7 +49,17 @@ struct LinkedType {
         }
         return nullptr;
     }
-    
+
+    // Returns whether class is non-final
+    bool isFinal() {
+        if(isReferenceType()) {
+            if(ClassDeclarationObject* class_decl = getIfNonArrayIsClass()) {
+                return class_decl->ast_reference->hasModifier(Modifier::FINAL);
+            }
+        }
+        return false;
+    }
+
     // Returns whether the type stored is INT, SHORT, BYTE, or CHAR
     bool isNumeric() {
         if(isPrimitive()) {
@@ -107,7 +117,4 @@ struct LinkedType {
     bool isNull() {
         return this->linked_type.index() == 3;
     }
-
-    // Returns whether the type stored is STRING
-    // bool isString() {}
 };

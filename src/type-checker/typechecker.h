@@ -16,6 +16,7 @@ class TypeChecker: public DefaultSkipVisitor<void> {
     // Shorthand for getting linked type from any expression node
     LinkedType getLink(Expression &node);
     LinkedType getLink(std::unique_ptr<Expression>& node_ptr);
+    ClassDeclarationObject* getStringClass(LinkedType &link);
 
   public:
     using DefaultSkipVisitor<void>::operator();
