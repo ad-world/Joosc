@@ -66,12 +66,15 @@ TypeDeclaration TypeLinker::findTypeImport(QualifiedIdentifier &qualified_identi
                 // This is only problematic if the possible class / interface is NOT in the default package
                 THROW_TypeLinkerError("Prefix of fully qualified type resolves to type");
             }
-            if (possible_class) {
-                return util::getAsTypeDeclaration(possible_class);
-            } else if (possible_interface) {
-                return util::getAsTypeDeclaration(possible_interface);
-            }
-            throw CompilerDevelopmentError("was not class or interface");
+
+            if (&identifier == &qualified_identifier.identifiers.back()) {
+                if (possible_class) {
+                    return util::getAsTypeDeclaration(possible_class);
+                } else if (possible_interface) {
+                    return util::getAsTypeDeclaration(possible_interface);
+                }
+                throw CompilerDevelopmentError("was not class or interface");
+            }   
         }
 
         // Resolve to subpackage
