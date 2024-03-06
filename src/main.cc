@@ -2,6 +2,8 @@
 #include <cstring>
 #include <iostream>
 #include <exception>
+#include "disambiguation/disambiguation.h"
+#include "exceptions/exceptions.h"
 #include "exceptions/exceptions.h"
 #include "parsing/bison/location.hh"
 #include "parsing/bison/driver.h"
@@ -12,8 +14,12 @@
 #include "exceptions/compilerdevelopmenterror.h"
 #include "exceptions/semanticerror.h"
 #include "type-linking/typelinker.h"
-#include "variant-ast/astvisitor/hierarchychecking_visitor.h"
-#include "interface-extender/interface-extender.h"
+#include "hierarchy-checking/hierarchy-checking.h"
+#include "exceptions/exceptions.h"
+
+#ifdef GRAPHVIZ
+#include "graph/graph.h"
+#endif
 
 using namespace std;
 
@@ -121,26 +127,14 @@ int main(int argc, char *argv[]) {
         for (auto &ast : asts) {
             EnvironmentBuilder(default_package).visit(ast);
         }
-    } catch (const SemanticError &e) {
-        cerr << "SemanticError Exception occured: " << e.message << "\n";
+    } catch (const EnvBuilderError &e) {
+        cerr << "EnvBuilderError Exception occured: " << e.message << "\n";
         return INVALID_PROGRAM;
     } catch (const CompilerDevelopmentError &e) {
         cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
         return COMPILER_DEVELOPMENT_ERROR;
     } catch (...) {
         cerr << "Unknown Exception occured\n";
-    }
-
-    // Extend interfaces
-    try {
-        for ( auto& ast : asts ) {
-            InterfaceExtender(default_package).visit(ast);
-        }
-    } catch ( HierarchyError &e ) {
-        cerr << e.what() << "\n";
-        return INVALID_PROGRAM;
-    } catch (...) {
-        cerr << "Unknown error with interface extension occured\n";
         return COMPILER_DEVELOPMENT_ERROR;
     }
 
@@ -150,17 +144,19 @@ int main(int argc, char *argv[]) {
             CompilationUnit &current_ast = std::get<CompilationUnit>(ast);
             TypeLinker(default_package).visit(ast);
         } 
-    } catch (const SemanticError &e) {
-        cerr << "SemanticError Exception occured: " << e.message << "\n";
+    } catch (const TypeLinkerError &e) {
+        cerr << "TypeLinkerError Exception occured: " << e.message << "\n";
         return INVALID_PROGRAM;
     } catch (const CompilerDevelopmentError &e) {
         cerr << "Development error occured: " << e.message << "\n";
         return COMPILER_DEVELOPMENT_ERROR; 
     } catch (const std::exception &e) {
         cerr << e.what() << "\n";
+        return COMPILER_DEVELOPMENT_ERROR;
     }
 
     try {
+        // Hierarchy checking
         for ( auto& ast : asts ) {
             HierarchyCheckingVisitor(default_package).visit(ast);
         }
@@ -172,7 +168,29 @@ int main(int argc, char *argv[]) {
         return COMPILER_DEVELOPMENT_ERROR;
     }
 
+    try {
+        // Disambiguation of names
+        for (auto &ast: asts ) {
+            DisambiguationVisitor(default_package).visit(ast);
+        }
+    } catch (DisambiguationError &e) {
+        cerr << "Disambiguation error occurred: " << e.what() << "\n";
+        return INVALID_PROGRAM;
+    } catch (std::exception &e) {
+        cerr << "Unknown disambiguation error occurred:" << e.what() << endl;
+        return COMPILER_DEVELOPMENT_ERROR;
+    }
+
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
+
+#ifdef GRAPHVIZ
+    ofstream graph;
+    graph.open("graphs/graph.gv");
+    for ( auto& ast : asts ) {
+        graph << GraphVisitor().visit(ast);
+    }
+    graph.close();
+#endif
 
     return rc;
 }

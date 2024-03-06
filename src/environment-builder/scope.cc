@@ -1,5 +1,6 @@
 #include "scope.h"
 #include "symboltable.h"
+#include "exceptions/exceptions.h"
 
 bool LocalVariableScopeManager::openScope(size_t scope_id) {
     if (scope_id < scopes.size()) {
@@ -18,6 +19,7 @@ bool LocalVariableScopeManager::closeScope(size_t scope_id) {
 }
 
 void LocalVariableScopeManager::closeAllScopes() {
+    declared_variables = {};
     open_scopes = std::vector<size_t>();
 }
 
@@ -44,4 +46,19 @@ LocalVariableDeclarationObject* LocalVariableScopeManager::addVariable(const std
         return nullptr;
     }
     return scopes[open_scopes.back()].addSymbol<LocalVariableDeclarationObject>(name);
+}
+
+LocalVariableDeclarationObject* LocalVariableScopeManager::lookupDeclaredVariable(const std::string& name) {
+    LocalVariableDeclarationObject* result = lookupVariable(name);
+    if (result && declared_variables.find(result) != declared_variables.end()) {
+        return result;
+    }
+    return nullptr;
+}
+
+void LocalVariableScopeManager::declareVariable(const std::string& name) {
+    if (!lookupVariable(name) || lookupDeclaredVariable(name)) {
+        THROW_CompilerError("declareVariable method called without correct conditions");
+    }
+    declared_variables.insert(lookupVariable(name));
 }

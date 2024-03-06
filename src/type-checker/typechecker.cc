@@ -102,9 +102,7 @@ void TypeChecker::operator()(PrefixExpression &node) {
 
 void TypeChecker::operator()(QualifiedThis &node) {
     this->visit_children(node);
-    AstNodeCommon* astCommon = node.qualified_this.get()->type_link;
-    ClassDeclaration* classDeclaration = static_cast<ClassDeclaration*>(astCommon);
-    node.link.linked_type = classDeclaration->environment;
+    node.link = node.qualified_this.get()->link;
 }
 
 void TypeChecker::operator()(ArrayCreationExpression &node) {

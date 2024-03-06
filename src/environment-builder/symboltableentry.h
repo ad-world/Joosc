@@ -2,12 +2,18 @@
 
 #include <string>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 #include <variant>
+#include <optional>
 #include "scope.h"
 #include "type-decl/linkedtype.h"
+#include "type-decl/type_declaration.h"
+#include <iostream>
 
 class SymbolTable;
+struct QualifiedIdentifier;
+struct Identifier;
 
 using SymbolTableEntry = std::variant<
     struct PackageDeclarationObject,
@@ -27,8 +33,21 @@ struct PackageDeclarationObject {
     std::unique_ptr<SymbolTable> classes;
     std::unique_ptr<SymbolTable> interfaces;
 
+    std::optional<TypeDeclaration> tryFindTypeInPackage(std::string &identifier);
+    std::optional<PackageDeclarationObject*> tryFindPackageInPackage(QualifiedIdentifier &qualified_identifier);
+
     PackageDeclarationObject(const std::string &identifier);
     PackageDeclarationObject();
+
+    // Helpers
+    ClassDeclarationObject* getJavaLangObject();
+    PackageDeclarationObject* findPackageDeclaration(std::vector<Identifier> &identifiers);
+    ClassDeclarationObject* findClassDeclaration(std::vector<Identifier> &identifiers);
+    InterfaceDeclarationObject* findInterfaceDeclaration(std::vector<Identifier> &identifiers);
+
+    PackageDeclarationObject* findPackageDeclaration(std::string str);
+    ClassDeclarationObject* findClassDeclaration(std::string str);
+    InterfaceDeclarationObject* findInterfaceDeclaration(std::string str);
 };
 
 struct ClassDeclarationObject {
@@ -37,6 +56,13 @@ struct ClassDeclarationObject {
 
     std::unique_ptr<SymbolTable> fields; // SymbolTable mapping to FieldDeclarationObjects
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
+    std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
+
+    void printAllMethods() {
+        for (auto it: all_methods) {
+            std::cout << it.first << std::endl;
+        }
+    }
 
     // Fields resolved at type linking stage
     ClassDeclarationObject* extended = nullptr;
@@ -50,6 +76,7 @@ struct InterfaceDeclarationObject {
     class InterfaceDeclaration* ast_reference = nullptr;
 
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
+    std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
 
     // Fields resolved at type linking stage
     std::vector<InterfaceDeclarationObject*> extended;

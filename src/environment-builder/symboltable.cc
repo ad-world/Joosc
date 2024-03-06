@@ -25,3 +25,14 @@ SymbolTableEntry* SymbolTable::lookupUniqueSymbol(const std::string& name) {
         return nullptr;
     }
 }
+
+int SymbolTable::getInsertPosition(const std::string &name) {
+    auto &matches = hashmap[name];
+
+    if(matches.size() == 0) {
+        return -1;
+    } else {
+        return insert_position[name];
+    }
+}
+

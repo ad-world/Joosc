@@ -5,16 +5,24 @@
 #include "astnodecommon.h"
 #include "astnode.h"
 
+enum Classification {
+    EXPRESSION_NAME,
+    TYPE_NAME,
+    PACKAGE_NAME,
+    METHOD_NAME
+};
 
 struct Identifier: public AstNodeCommon {
     std::string name; // Identifier name
+
+    Classification classification;
 
     Identifier(std::string& name) : name(std::move(name)) {}
     Identifier(std::string&& name) : name(std::move(name)) {}
 };
 
 struct QualifiedIdentifier: public AstNodeCommon {
-    AstNodeCommon* type_link;
+    LinkedType link;
 
     std::vector<Identifier> identifiers; // Vector of identifiers for this qualitfed identifier
 

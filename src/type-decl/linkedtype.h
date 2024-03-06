@@ -11,6 +11,7 @@ struct LinkedType {
     NonArrayLinkedType linked_type;
 
     LinkedType() : is_array{false}, linked_type{nullptr} {}
+    LinkedType(NonArrayLinkedType non_array_type) : is_array{false}, linked_type{non_array_type} {}
     LinkedType(TypeDeclaration type_declaration) {
         std::visit([&](auto type_dec){ this->linked_type = type_dec; }, type_declaration);
     }
