@@ -88,6 +88,9 @@ int main(int argc, char *argv[]) {
     Driver drv;
     AstWeeder weeder;
     vector<AstNodeVariant> asts;
+#ifdef GRAPHVIZ
+    GraphVisitor gv(asts); // runs on return/destruct
+#endif
 
     // Lexing and parsing
     try {
@@ -208,15 +211,6 @@ int main(int argc, char *argv[]) {
     // }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
-
-#ifdef GRAPHVIZ
-    ofstream graph;
-    graph.open("graphs/graph.gv");
-    for ( auto& ast : asts ) {
-        graph << GraphVisitor().visit(ast);
-    }
-    graph.close();
-#endif
 
     return rc;
 }
