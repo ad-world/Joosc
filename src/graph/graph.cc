@@ -34,18 +34,6 @@ void GraphVisitor::operator()(CompilationUnit &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 
-void GraphVisitor::operator()(QualifiedIdentifier &node) {
-    label_map[(AstNodeVariant*)&node] = "QualifiedIdentifier\n" + node.getQualifiedName();
-    this->visit_children(node);
-    std::vector<AstNodeVariant*> children;
-
-    for (auto &child : node.identifiers) {
-        children.push_back((AstNodeVariant*) &child);
-    }
-
-    map.insert({(AstNodeVariant*) &node, children});
-}
-
 std::string classificationToString(Classification classification) {
     switch (classification) {
         case EXPRESSION_NAME: return "EXPRESSION_NAME";
@@ -55,6 +43,18 @@ std::string classificationToString(Classification classification) {
         case UNCLASSIFIED: return "UNCLASSIFIED";
         default: return "ERROR CLASSIFICATION NOT FOUND";
     }
+}
+
+void GraphVisitor::operator()(QualifiedIdentifier &node) {
+    label_map[(AstNodeVariant*)&node] = "QualifiedIdentifier\n" + node.getQualifiedName() + "\n" + classificationToString(node.getClassification());
+    this->visit_children(node);
+    std::vector<AstNodeVariant*> children;
+
+    for (auto &child : node.identifiers) {
+        children.push_back((AstNodeVariant*) &child);
+    }
+
+    map.insert({(AstNodeVariant*) &node, children});
 }
 
 void GraphVisitor::operator()(Identifier &node) {
