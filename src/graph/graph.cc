@@ -1,5 +1,7 @@
 #include "graph.h"
+#include "variant-ast/names.h"
 #include "variant-ast/primitivetype.h"
+#include <fstream>
 #include <queue>
 #include <sstream>
 #include <iostream>
@@ -32,8 +34,19 @@ void GraphVisitor::operator()(CompilationUnit &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 
+std::string classificationToString(Classification classification) {
+    switch (classification) {
+        case EXPRESSION_NAME: return "EXPRESSION_NAME";
+        case TYPE_NAME: return "TYPE_NAME";
+        case PACKAGE_NAME: return "PACKAGE_NAME";
+        case METHOD_NAME: return "METHOD_NAME";
+        case UNCLASSIFIED: return "UNCLASSIFIED";
+        default: return "ERROR CLASSIFICATION NOT FOUND";
+    }
+}
+
 void GraphVisitor::operator()(QualifiedIdentifier &node) {
-    label_map[(AstNodeVariant*)&node] = "QualifiedIdentifier\n" + node.getQualifiedName();
+    label_map[(AstNodeVariant*)&node] = "QualifiedIdentifier\n" + node.getQualifiedName() + "\n" + classificationToString(node.getClassification());
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -43,8 +56,9 @@ void GraphVisitor::operator()(QualifiedIdentifier &node) {
 
     map.insert({(AstNodeVariant*) &node, children});
 }
+
 void GraphVisitor::operator()(Identifier &node) {
-    label_map[(AstNodeVariant*)&node] = "Identifier\n" + node.name;
+    label_map[(AstNodeVariant*)&node] = "Identifier\n" + node.name + "\n" + classificationToString(node.classification);
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -567,4 +581,15 @@ std::string GraphVisitor::getGraph() {
 std::string GraphVisitor::visit(AstNodeVariant &node) {
     std::visit(*this, node);
     return getGraph();
+}
+
+GraphVisitor::GraphVisitor(std::vector<AstNodeVariant>& asts) : asts{&asts} {}
+
+GraphVisitor::~GraphVisitor() {
+    std::ofstream graph;
+    graph.open("graphs/graph.gv");
+    for ( auto& ast : *asts ) {
+        graph << visit(ast);
+    }
+    graph.close();
 }
