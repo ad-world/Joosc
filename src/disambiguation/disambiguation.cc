@@ -11,7 +11,7 @@
 
 void DisambiguationVisitor::operator()(MethodInvocation &node) {
     auto &parent_expr = node.parent_expr;
-
+    node.method_name->classification = Classification::METHOD_NAME;
     if( parent_expr && std::holds_alternative<QualifiedIdentifier>(*parent_expr) ) {
         auto &qi = std::get<QualifiedIdentifier>(*parent_expr);
         disambiguate(qi, qi.identifiers.size() - 1);
@@ -98,8 +98,13 @@ void DisambiguationVisitor::operator()(InterfaceDeclaration &node) {
 
 void DisambiguationVisitor::operator()(CompilationUnit &node) {
     compilation_unit = &node;
+    if(node.package_declaration) {
+        current_package = default_package->findPackageDeclaration(node.package_declaration->identifiers);
+    }
+
     this->visit_children(node);
     compilation_unit = nullptr;
+    current_package = nullptr;
 }
 
 void DisambiguationVisitor::operator()(QualifiedIdentifier &node) {
@@ -124,6 +129,9 @@ void DisambiguationVisitor::operator()(Block &node) {
 
 void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_pos) {
     // if qi is a simple name, then we can disambiguate it
+    auto &current_ns = compilation_unit->cu_namespace;
+    auto cur_ident = ref.identifiers[current_pos];
+
     if (current_pos < 0) return;
     if (current_pos == 0) {
         auto &identifier = ref.identifiers[current_pos].name;
@@ -166,7 +174,7 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
                 ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
                 return;
             }
-        }
+        }        
 
         // Check single-type-import declaration
         for (auto &import : compilation_unit->single_type_import_declaration) {
@@ -181,17 +189,29 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
 
         if ( current_package && package_name ) {
             // Check if the class is in the current package
-            if (current_package->findClassDeclaration(package_name->identifiers)) {
+            if (current_package->findClassDeclaration(cur_ident.name)) {
                 ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
                 return;
             }
 
             // Check if the interface is in the current package
-            if (current_package->findInterfaceDeclaration(package_name->identifiers)) {
+            if (current_package->findInterfaceDeclaration(cur_ident.name)) {
+                ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
+                return;
+            }
+        } else {
+            if (default_package->findClassDeclaration(cur_ident.name)) {
+                ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
+                return;
+            }
+
+            // Check if the interface is in the current package
+            if (default_package->findInterfaceDeclaration(cur_ident.name)) {
                 ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
                 return;
             }
         }
+
 
         // Check type-import-on-demand declaration, can only have one
         bool found = false;
@@ -230,20 +250,17 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
         } 
 
         // Return package name as default
-        if (auto package = default_package->findPackageDeclaration(ref.identifiers[current_pos].name)) {
+        if (default_package->sub_packages->lookupSymbol(ref.identifiers[current_pos].name)) {
+            auto package = default_package->sub_packages->lookupSymbol(ref.identifiers[current_pos].name);
             ref.identifiers[current_pos].classification = Classification::PACKAGE_NAME;
-            ref.identifiers[current_pos].package = package;
         } else {
-            THROW_DisambiguationError(ref.identifiers[current_pos].name + " not found");
+            THROW_DisambiguationError("Ambiguous type name " + ref.getQualifiedName());
         }
 
 
         return;
     } else {
         // if qi is a qualified name, then we need to disambiguate the prefix
-        auto cur_ident = ref.identifiers[current_pos];
-
-        auto &current_ns = compilation_unit->cu_namespace;
 
         // Get classification of the prefix
         disambiguate(ref, current_pos - 1);
@@ -288,12 +305,10 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
             } break;
             case Classification::PACKAGE_NAME: {
                 // Get package object of prefix
-                auto package_decl = ref.identifiers[current_pos - 1].package;
-                std::cout << "Looking for " << cur_ident.name << "in " << package_decl->identifier << std::endl;
+                auto package_decl = default_package->findPackageDeclaration(prefix.identifiers);
 
                 // Check if the current identifier is a class or interface in the package
                 if (package_decl && (package_decl->classes->lookupUniqueSymbol(cur_ident.name) || package_decl->interfaces->lookupUniqueSymbol(cur_ident.name))) {
-                    std::cout << "Found " << cur_ident.name << std::endl;
                     ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
                     return;
                 }
