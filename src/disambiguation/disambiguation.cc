@@ -1,5 +1,6 @@
 #include "disambiguation.h"
 #include "type-decl/type_declaration.h"
+#include "variant-ast/classes.h"
 #include "variant-ast/names.h"
 #include "variant-ast/astvisitor/graballvisitor.h"
 #include "environment-builder/symboltable.h"
@@ -28,6 +29,7 @@ void DisambiguationVisitor::operator()(ClassInstanceCreationExpression &node) {
 void DisambiguationVisitor::operator()(FieldAccess &node) {
     auto &expression = node.expression;
 
+    node.identifier->classification = Classification::EXPRESSION_NAME;
     // For field access, we need to disambiguate the expression, and then check if the identifier is a field / method of the class
     if(std::holds_alternative<QualifiedIdentifier>(*expression)) {
         auto &qi = std::get<QualifiedIdentifier>(*expression);
@@ -360,4 +362,16 @@ void DisambiguationVisitor::checkForwardDeclaration(std::string usage, std::stri
             THROW_DisambiguationError("Field declaration of " + usage + " uses forward declaration of " + potential_forward_dec);
         }
     }
+}
+
+// Rest of unclassified names
+
+void DisambiguationVisitor::operator()(VariableDeclarator &node) {
+    node.variable_name->classification = Classification::TYPE_NAME;
+    this->visit_children(node);
+}
+
+void DisambiguationVisitor::operator()(FormalParameter &node) {
+    node.parameter_name->classification = Classification::TYPE_NAME;
+    this->visit_children(node);
 }
