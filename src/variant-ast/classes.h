@@ -41,6 +41,8 @@ struct FieldDeclaration: public AstNodeCommon {
 
     struct FieldDeclarationObject *environment = nullptr;
 
+    bool hasModifier(Modifier mod_to_check);
+
     FieldDeclaration(
         std::vector<Modifier>& modifiers,
         std::unique_ptr<Type>& type,

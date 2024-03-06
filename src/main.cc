@@ -16,6 +16,7 @@
 #include "type-linking/typelinker.h"
 #include "hierarchy-checking/hierarchy-checking.h"
 #include "exceptions/exceptions.h"
+#include "type-checker/typechecker.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
@@ -180,6 +181,16 @@ int main(int argc, char *argv[]) {
         cerr << "Unknown disambiguation error occurred:" << e.what() << endl;
         return COMPILER_DEVELOPMENT_ERROR;
     }
+
+    // try {
+    //     // Type checking
+    //     for (auto &ast: asts ) {
+    //         TypeChecker(default_package).visit(ast);
+    //     }
+    // } catch (std::exception &e) {
+    //     cerr << e.what() << endl;
+    //     return INVALID_PROGRAM;
+    // }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 
