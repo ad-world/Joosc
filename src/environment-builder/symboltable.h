@@ -32,6 +32,7 @@ class SymbolTable {
 
     // Get the insert order of a specific symbol table entry
     int getInsertPosition(const std::string &name);
+    int getSize() { return hashmap.size(); };
 
     // Add new SymbolTableEntry corresponding to name
     // Returns pointer to SymbolTableEntry that was added
@@ -54,4 +55,16 @@ class SymbolTable {
 
         return &std::get<T>(matches.back());
     }
+
+    // Call lookupUniqueSymbol<SymbolTableEntry*> and return a subtype
+    template <typename T>
+    T* lookupUniqueSymbol(const std::string& name) {
+        assertTypeIsSymbolTableEntry<T>();
+        SymbolTableEntry* result = lookupUniqueSymbol(name);
+        if (result) {
+            return &std::get<T>(*result);
+        }
+        return nullptr;
+    }
+
 };

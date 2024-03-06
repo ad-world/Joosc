@@ -350,15 +350,21 @@ void HierarchyCheckingVisitor::operator()(ClassDeclaration &node) {
                 // Same signature as extended method
 
                 // Check for non-abstract & static overriding abstract
-                if ( ! extended_method->ast_reference->hasModifier(Modifier::ABSTRACT) &&
-                    extended_method->ast_reference->hasModifier(Modifier::STATIC)
-                ) {
-                    THROW_HierarchyError("The method from the superclass is STATIC and non-abstract, causing a compile-time error.");
-                }
+                if ( ! extended_method->ast_reference->hasModifier(Modifier::ABSTRACT) ) {
+                    // Non-abstract with abstract
+                    if ( extended_method->ast_reference->hasModifier(Modifier::STATIC) ) {
+                        THROW_HierarchyError("The method from the superclass is STATIC and non-abstract, causing a compile-time error.");
+                    }
 
-                // Check for different return types
-                if ( *extended_method->ast_reference->type != *implemented_method->ast_reference->type ) {
-                    THROW_HierarchyError("A method from the superclass is trying to override a method from the superinterface, but they have different return types.");
+                    // Check override
+                    checkMethodReplacement(*extended_method->ast_reference, *implemented_method->ast_reference);
+                } else {
+                    // Both abstract
+
+                    // Check for different return types
+                    if ( *extended_method->ast_reference->type != *implemented_method->ast_reference->type ) {
+                        THROW_HierarchyError("A method from the superclass is trying to override a method from the superinterface, but they have different return types.");
+                    }
                 }
 
                 non_replaced_methods.erase(implemented_method);

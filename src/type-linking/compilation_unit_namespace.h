@@ -21,6 +21,7 @@ class CompilationUnitNamespace {
     // Look up qualifed_identifier as a type in compilation unit's namespace.
     // Throws semantic error if there are multiple candidates in the namespace.
     TypeDeclaration lookupQualifiedType(QualifiedIdentifier &qualified_identifier);
+    TypeDeclaration getDeclaredType() { return declared_type; }
 
     CompilationUnitNamespace() = default;
     CompilationUnitNamespace(

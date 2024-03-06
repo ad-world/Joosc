@@ -162,6 +162,10 @@ bool InterfaceDeclaration::hasModifier(Modifier mod_to_check) {
     return std::find(modifiers.begin(), modifiers.end(), mod_to_check) != modifiers.end();
 }
 
+bool FieldDeclaration::hasModifier(Modifier mod_to_check) {
+    return std::find(modifiers.begin(), modifiers.end(), mod_to_check) != modifiers.end();
+}
+
 std::string FormalParameter::toString() const {
     std::string formalParameterType = "";
     if(std::get_if<QualifiedIdentifier>(&(*type->non_array_type))) {

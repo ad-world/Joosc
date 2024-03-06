@@ -80,15 +80,6 @@ public:
         : runtime_error(make_message("HierarchyChecker error", message, file, line)) {}
 };
 
-#define THROW_TypeCheckerError(message) throw TypeCheckError(message, __FILE__, __LINE__)
-class TypeCheckError : public std::runtime_error {
-public:
-    std::string message;
-    TypeCheckError(std::string message) : runtime_error("TypeCheckError error: " + message) {}
-    TypeCheckError(std::string message, std::string file, int line)
-        : runtime_error(make_message("TypeCheckError error", message, file, line)) {}
-};
-
 #define THROW_DisambiguationError(message) throw DisambiguationError(message, __FILE__, __LINE__)
 class DisambiguationError : public std::runtime_error {
 public:
@@ -96,4 +87,13 @@ public:
     DisambiguationError(std::string message) : runtime_error("Disambiguation error: " + message) {}
     DisambiguationError(std::string message, std::string file, int line)
         : runtime_error(make_message("Disambiguation error", message, file, line)) {}
+};
+
+#define THROW_TypeCheckerError(message) throw TypeCheckerError(message, __FILE__, __LINE__)
+class TypeCheckerError : public std::runtime_error {
+public:
+    std::string message;
+    TypeCheckerError(std::string message) : runtime_error("TypeChecker error: " + message) {}
+    TypeCheckerError(std::string message, std::string file, int line)
+        : runtime_error(make_message("TypeChecker error", message, file, line)) {}
 };

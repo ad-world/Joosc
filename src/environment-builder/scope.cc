@@ -38,6 +38,22 @@ LocalVariableDeclarationObject* LocalVariableScopeManager::lookupVariable(const 
     return nullptr;
 }
 
+int LocalVariableScopeManager::getInsertPosition(const std::string &name) {
+    int offset = 0;
+    for (auto i = open_scopes.begin(); i != open_scopes.end(); ++i ) {
+        auto table_result = scopes[(*i)].lookupUniqueSymbol(name);
+        if (table_result) {
+            return scopes[(*i)].getInsertPosition(name) + offset;
+        }
+
+        offset += scopes[(*i)].getSize();
+    }
+    
+    return -1;
+}
+
+
+
 LocalVariableDeclarationObject* LocalVariableScopeManager::addVariable(const std::string& name) {
     if (lookupVariable(name)) {
         return nullptr;

@@ -9,13 +9,14 @@ enum Classification {
     EXPRESSION_NAME,
     TYPE_NAME,
     PACKAGE_NAME,
-    METHOD_NAME
+    METHOD_NAME,
+    UNCLASSIFIED
 };
 
 struct Identifier: public AstNodeCommon {
     std::string name; // Identifier name
 
-    Classification classification;
+    Classification classification = UNCLASSIFIED;
 
     Identifier(std::string& name) : name(std::move(name)) {}
     Identifier(std::string&& name) : name(std::move(name)) {}
@@ -29,7 +30,12 @@ struct QualifiedIdentifier: public AstNodeCommon {
     QualifiedIdentifier() {}
     QualifiedIdentifier(std::vector<Identifier>& identifiers) : identifiers(std::move(identifiers)) {}
     QualifiedIdentifier(std::vector<Identifier>&& identifiers) : identifiers(std::move(identifiers)) {}
-public: 
+
+public:
+    Classification getClassification() { return identifiers.back().classification; }
+    
+    bool isSimple() { return identifiers.size() == 1; }
+
     std::string getQualifiedName() {
         std::string result = "";
         for (int i = 0; i < identifiers.size(); i++) {
@@ -51,7 +57,6 @@ public:
 
         return result;
     }
-
     QualifiedIdentifier getQualifiedIdentifierWithoutLast() {
         auto identifiers_copy = identifiers;
         identifiers_copy.pop_back();
