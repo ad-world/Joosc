@@ -1,5 +1,8 @@
 #include "forward-decl.h"
 #include "exceptions/exceptions.h"
+#include "environment-builder/scope.h"
+#include "environment-builder/symboltableentry.h"
+#include "environment-builder/symboltable.h"
 
 void ForwardDeclarationVisitor::operator()(MethodDeclaration &node) {
     current_method = node.environment;
@@ -32,12 +35,70 @@ void ForwardDeclarationVisitor::operator()(FieldDeclaration &node) {
 }
 
 void ForwardDeclarationVisitor::operator()(Assignment &node) {
+    if(!std::holds_alternative<QualifiedIdentifier>(*node.assigned_to)) {
+        this->visit_children(*node.assigned_to);
+    }
     this->visit_children(*node.assigned_from);
 }
 
+void ForwardDeclarationVisitor::operator()(LocalVariableDeclaration &node) {
+    current_local = node.variable_declarator->variable_name->name;
+    this->visit_children(node);
+    current_local = "";
+}
+
+void ForwardDeclarationVisitor::operator()(Block &node) {
+    size_t scope_id = node.scope_id;
+
+    if (current_method != nullptr) {
+        current_method->scope_manager.openScope(scope_id);
+    }
+
+    this->visit_children(node);
+
+    if (current_method != nullptr) {
+        current_method->scope_manager.closeScope(scope_id);
+    }
+}
+
+
 void ForwardDeclarationVisitor::operator()(QualifiedIdentifier &node) {
-    if(current_class && current_identifier != "") {
+    auto current_ns = compilation_unit->cu_namespace;
+    if (current_method != nullptr && current_local != "") {
+        // std::cout << "HERE " << current_local << std::endl;
+        size_t scope_id = current_method->ast_reference->body->scope_id;
+        
+        auto offender = node.getQualifiedName();
+        // std::cout  << "offender " << offender << std::endl;
+        if (!current_class->fields->lookupSymbol(offender)) {
+            if (current_method->scope_manager.lookupVariable(current_local) && current_method->scope_manager.lookupVariable(offender)) {
+                // std::cout << "HERE 2" << std::endl;
+                int current_decl_idx = current_method->scope_manager.getInsertPosition(current_local);
+                int forward_decl_idx = current_method->scope_manager.getInsertPosition(offender);
+
+                // std::cout << current_local << " " << current_decl_idx << std::endl;
+                // std::cout << offender << " " << forward_decl_idx << std::endl;
+
+                if (current_decl_idx < forward_decl_idx) {
+                    THROW_DisambiguationError("Field declaration of " + current_local + " uses forward declaration of " + offender);
+                }
+            }
+        }
+    } else if (current_class != nullptr && current_identifier != "") {
         if (node.identifiers.front().name == current_identifier) {
+            try {
+                auto type = current_ns.lookupQualifiedType(node);
+                if (std::holds_alternative<ClassDeclarationObject*>(type)) {
+                    auto item = std::get<ClassDeclarationObject*>(type);
+                    if (item != nullptr) return;
+                }  else if (std::holds_alternative<InterfaceDeclarationObject*>(type)) {
+                    auto item = std::get<InterfaceDeclarationObject*>(type);
+                    if (item != nullptr) return;
+                }
+            } catch (...) {
+                // do nothing, this just means that type was not found
+            }
+
             throw DisambiguationError("Field declaration of " + current_identifier + " refers to itself.");
         };
 
@@ -50,6 +111,16 @@ void ForwardDeclarationVisitor::operator()(QualifiedIdentifier &node) {
             }
         }
     }
+
+    this->visit_children(node);
 }
+
+
+
+void ForwardDeclarationVisitor::operator()(MethodInvocation &node) {
+    this->visit_children(node);
+}
+
+
 
 

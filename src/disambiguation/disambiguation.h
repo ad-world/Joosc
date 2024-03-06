@@ -51,6 +51,7 @@ public:
     void operator()(FieldDeclaration &node) override;
     void operator()(CastExpression &node) override;
     void operator()(ParenthesizedExpression &node) override;
+    void operator()(QualifiedIdentifier &node) override;
 
     void visit(AstNodeVariant &node) override {
         std::visit(*this, node);

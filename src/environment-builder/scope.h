@@ -37,6 +37,8 @@ class LocalVariableScopeManager {
     // otherwise return pointer to the variable
     LocalVariableDeclarationObject* addVariable(const std::string& name);
 
+    int getInsertPosition(const std::string &name);
+
     // Calls lookupVariable and returns nullptr if the variable wasn't added, or wasn't "declared".
     // Otherwise, returns a pointer to the variable.
     LocalVariableDeclarationObject* lookupDeclaredVariable(const std::string& name);

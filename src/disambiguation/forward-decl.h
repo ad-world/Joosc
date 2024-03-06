@@ -19,6 +19,7 @@ class ForwardDeclarationVisitor : public DefaultSkipVisitor<void> {
     CompilationUnit *compilation_unit = nullptr;
 
     std::string current_identifier;
+    std::string current_local;
 
 public:
     ForwardDeclarationVisitor(PackageDeclarationObject &default_package): default_package(&default_package), current_package(&default_package) {}
@@ -31,6 +32,9 @@ public:
     void operator()(FieldDeclaration &node) override;
     void operator()(Assignment &node) override;
     void operator()(QualifiedIdentifier &node) override;
+    void operator()(MethodInvocation &node) override;
+    void operator()(LocalVariableDeclaration &node) override;
+    void operator()(Block &node) override;
 
     void visit(AstNodeVariant &node) override {
         std::visit(*this, node);

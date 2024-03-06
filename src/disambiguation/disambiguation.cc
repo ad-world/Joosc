@@ -17,11 +17,13 @@ void DisambiguationVisitor::operator()(MethodInvocation &node) {
         // std::cout << qi.getQualifiedName() << std::endl;
         disambiguate(qi);
     }
+    this->visit_children(node);
 }
 
 void DisambiguationVisitor::operator()(ClassInstanceCreationExpression &node) {
     auto &class_name = node.class_name;
     disambiguate(*class_name);
+    this->visit_children(node);
 }
 
 void DisambiguationVisitor::operator()(FieldAccess &node) {
@@ -32,6 +34,8 @@ void DisambiguationVisitor::operator()(FieldAccess &node) {
         auto &qi = std::get<QualifiedIdentifier>(*expression);
         disambiguate(qi);
     }
+
+    this->visit_children(node);
 
 #if 0
     // Get the linked type of the field access expression
@@ -65,15 +69,13 @@ void DisambiguationVisitor::operator()(FieldAccess &node) {
 }
 
 void DisambiguationVisitor::operator()(CastExpression &node) {
-    // std::cout << "found cast expression" << std::endl;
     if(std::holds_alternative<QualifiedIdentifier>(*node.expression)) {
         auto expr = std::get<QualifiedIdentifier>(*node.expression);
-        // std::cout << expr.getQualifiedName() << std::endl;
     }
+    this->visit_children(node);
 }
 
 void DisambiguationVisitor::operator()(ParenthesizedExpression &node) {
-    // std::cout << "Found parenthesis expresion" << std::endl;
     if(std::holds_alternative<QualifiedIdentifier>(*node.expression)) {
         auto expr = std::get<QualifiedIdentifier>(*node.expression);
         disambiguate(expr);
@@ -82,6 +84,7 @@ void DisambiguationVisitor::operator()(ParenthesizedExpression &node) {
             THROW_DisambiguationError("Parenthesized expression resolves to Type, not expression");
         }
     }
+    this->visit_children(node);
 }
 
 void DisambiguationVisitor::operator()(ArrayAccess &node) {
@@ -91,6 +94,7 @@ void DisambiguationVisitor::operator()(ArrayAccess &node) {
         auto &qi = std::get<QualifiedIdentifier>(*array_ref_expression);
         disambiguate(qi);
     }
+    this->visit_children(node);
 }
 
 void DisambiguationVisitor::operator()(Assignment &node) {
@@ -100,6 +104,8 @@ void DisambiguationVisitor::operator()(Assignment &node) {
         auto &lhs_qi = std::get<QualifiedIdentifier>(*lhs);
         disambiguate(lhs_qi);
     }
+
+    this->visit_children(node);
 }
 
 
@@ -126,6 +132,13 @@ void DisambiguationVisitor::operator()(CompilationUnit &node) {
     this->visit_children(node);
     compilation_unit = nullptr;
 }
+
+void DisambiguationVisitor::operator()(QualifiedIdentifier &node) {
+    disambiguate(node);
+    this->visit_children(node);
+}
+
+
 
 void DisambiguationVisitor::operator()(FieldDeclaration &node)  {
     auto obj = node.environment;
@@ -189,6 +202,8 @@ void DisambiguationVisitor::operator()(FieldDeclaration &node)  {
         //     }
         // }
     }
+
+    this->visit_children(node);
 }
 
 void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
@@ -285,7 +300,9 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
                 if ( !found ) {
                     found = true;
                 } else {
-                    THROW_DisambiguationError("Ambiguous type name " + identifier);
+                    if (import.getQualifiedName() != "java.lang") {
+                        THROW_DisambiguationError("Ambiguous type name " + identifier);
+                    }
                 }
             }
         }

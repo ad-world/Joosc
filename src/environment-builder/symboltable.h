@@ -32,6 +32,7 @@ class SymbolTable {
 
     // Get the insert order of a specific symbol table entry
     int getInsertPosition(const std::string &name);
+    int getSize() { return hashmap.size(); };
 
     // Add new SymbolTableEntry corresponding to name
     // Returns pointer to SymbolTableEntry that was added
