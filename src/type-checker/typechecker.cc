@@ -301,12 +301,22 @@ void TypeChecker::operator()(MethodInvocation &node) {
     this->visit_children(node);
 }
 
+bool isFinal(LinkedType type) {
+    if(type.isReferenceType()) {
+        ClassDeclarationObject* class_decl = type.getIfNonArrayIsClass();
+        if(class_decl != nullptr) {
+            return class_decl->ast_reference->hasModifier(Modifier::FINAL);
+        }
+    }
+    return false;
+}
+
 bool checkCastability(LinkedType type1, LinkedType type2) {
     if(type1.isNumeric() && type2.isNumeric() && !type1.is_array && !type2.is_array) {
         return true;
     }
-    else if((type2.getIfNonArrayIsInterface() && (type1.getIfNonArrayIsInterface() || !type1.isFinal())) 
-            || (type1.getIfNonArrayIsInterface() && (type2.getIfNonArrayIsInterface() || !type2.isFinal()))) {
+    else if((type2.getIfNonArrayIsInterface() && (type1.getIfNonArrayIsInterface() || !isFinal(type1))) 
+            || (type1.getIfNonArrayIsInterface() && (type2.getIfNonArrayIsInterface() || !isFinal(type2)))) {
         return true;
     }
     // else if check type and expression assignability for upcast/downcast classes
