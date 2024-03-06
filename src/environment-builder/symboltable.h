@@ -61,7 +61,7 @@ class SymbolTable {
         assertTypeIsSymbolTableEntry<T>();
         SymbolTableEntry* result = lookupUniqueSymbol(name);
         if (result) {
-            &std::get<T>(*result);
+            return &std::get<T>(*result);
         }
         return nullptr;
     }

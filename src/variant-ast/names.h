@@ -9,13 +9,14 @@ enum Classification {
     EXPRESSION_NAME,
     TYPE_NAME,
     PACKAGE_NAME,
-    METHOD_NAME
+    METHOD_NAME,
+    UNCLASSIFIED
 };
 
 struct Identifier: public AstNodeCommon {
     std::string name; // Identifier name
 
-    Classification classification;
+    Classification classification = UNCLASSIFIED;
 
     Identifier(std::string& name) : name(std::move(name)) {}
     Identifier(std::string&& name) : name(std::move(name)) {}
