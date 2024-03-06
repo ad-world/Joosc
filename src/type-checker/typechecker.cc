@@ -216,5 +216,5 @@ void TypeChecker::operator()(InstanceOfExpression &node) {
     this->visit_children(node);
 }
 
-TypeChecker::TypeChecker(PackageDeclarationObject *default_package) 
-    : default_package{default_package}, current_method{nullptr} {}
+TypeChecker::TypeChecker(PackageDeclarationObject &default_package) 
+    : default_package{&default_package}, current_method{nullptr} {}

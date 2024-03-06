@@ -7,7 +7,7 @@
 #include "variant-ast/expressions.h"
 #include "type-decl/linkedtype.h"
 
-class TypeChecker: public DefaultSkipVisitor<bool> {
+class TypeChecker: public DefaultSkipVisitor<void> {
 
     PackageDeclarationObject* default_package;
     CompilationUnitNamespace compilation_unit_namespace;
@@ -18,7 +18,7 @@ class TypeChecker: public DefaultSkipVisitor<bool> {
     LinkedType getLink(std::unique_ptr<Expression>& node_ptr);
 
   public:
-    using DefaultSkipVisitor<bool>::operator();
+    using DefaultSkipVisitor<void>::operator();
 
     // Operations for finding the types of identifiers
     void operator()(CompilationUnit &node) override;
@@ -54,5 +54,9 @@ class TypeChecker: public DefaultSkipVisitor<bool> {
 
     void operator()(InstanceOfExpression &node) override;
 
-    TypeChecker(PackageDeclarationObject *default_package);
+    TypeChecker(PackageDeclarationObject& default_package);
+
+    void visit(AstNodeVariant &node) override {
+        std::visit(*this, node);
+    }
 };
