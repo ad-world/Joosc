@@ -79,5 +79,5 @@ struct LinkedType {
     }
 
     // Returns whether the type stored is STRING
-    bool isString() {}
+    // bool isString() {}
 };
