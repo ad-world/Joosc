@@ -78,9 +78,10 @@ function search_failing {
 function rungraph {
     INPUT=$(getinput $1)
     if [[ -n $INPUT ]]; then
-        make graph &&
-            make clean -C graphs/ &&
-            ./joosc ${INPUT} ${STDLIB} &&
+        make graph && (
+            make clean -C graphs/
+            ./joosc ${INPUT} ${STDLIB}
             make -C graphs/
+        )
     fi
 }
