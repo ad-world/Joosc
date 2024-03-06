@@ -51,6 +51,7 @@ void EnvironmentBuilder::operator()(ClassDeclaration &node) {
 
     // Class does not conflict in package and can be added
     auto class_env = current_package->classes->addSymbol<ClassDeclarationObject>(class_name);
+    class_env->package_contained_in = current_package;
     this->current_type = class_env;
 
     linkDeclaration(node, *class_env);
@@ -75,6 +76,7 @@ void EnvironmentBuilder::operator()(InterfaceDeclaration &node) {
 
     // Interface does not conflict in package and can be added
     auto int_env = current_package->interfaces->addSymbol<InterfaceDeclarationObject>(interface_name);
+    int_env->package_contained_in = current_package;
     this->current_type = int_env;
     
     linkDeclaration(node, *int_env);
