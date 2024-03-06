@@ -42,6 +42,11 @@ void TypeChecker::operator()(CompilationUnit &node) {
     visit_children(node);
 }
 
+void TypeChecker::operator()(ClassDeclaration &node) {
+    this->current_class = node.environment;
+    visit_children(node);
+}
+
 void TypeChecker::operator()(MethodDeclaration &node) {
     current_method = node.environment;
     current_method->scope_manager.closeAllScopes();
@@ -59,6 +64,38 @@ void TypeChecker::operator()(Block &node) {
 void TypeChecker::operator()(LocalVariableDeclaration &node) {
     current_method->scope_manager.declareVariable(node.variable_declarator->variable_name->name);
     visit_children(node);
+}
+
+// Return whether the class_with_field has a field with simple name field_simple_name
+// that is accessible by current_class
+//
+// Returns pointer to FieldDeclarationObject if accessible, and nullptr otherwise
+FieldDeclarationObject* checkIfFieldIsAccessible(
+    ClassDeclarationObject* current_class,
+    ClassDeclarationObject* class_with_field,
+    std::string& field_simple_name,
+    bool must_be_static = false
+) {
+    // First, see if the field even exists
+    auto possible_field = class_with_field->fields->lookupUniqueSymbol<FieldDeclarationObject>(field_simple_name);
+    if (!possible_field) { return nullptr; }
+
+    // Second, if the field must be static, ensure it is static
+    if (must_be_static && !possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
+        return nullptr;
+    }
+
+    // Third, if the field is protected, the current_class must be a subclass or in the same package of class_with_field
+    if (possible_field->ast_reference->hasModifier(Modifier::PROTECTED)) {
+        if (
+            !current_class->isSubType(class_with_field) && 
+            !(current_class->package_contained_in == class_with_field->package_contained_in)
+        ) {
+            return nullptr;
+        }
+    }
+
+    return possible_field;
 }
 
 // TODO : ensure public/private fields are accessible in correct place
@@ -83,7 +120,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                 // 3. Look up in fields
                 auto decl_type = compilation_unit_namespace.getDeclaredType();
                 if (auto cls = std::get_if<ClassDeclarationObject*>(&decl_type)) {
-                    if (auto possible_field = (*cls)->fields->lookupUniqueSymbol<FieldDeclarationObject>(name)) {
+                    if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, name)) {
                         qid.link = possible_field->type;
                         return;
                     }
@@ -98,17 +135,13 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                     case TYPE_NAME: {
                         // Q must be a class, and id must be a static field 
                         auto cls_lookup = compilation_unit_namespace.lookupQualifiedType(Q);
-                        auto cls = std::get_if<ClassDeclarationObject*>(&cls_lookup);
-                        if (cls) {
-                            if (auto possible_field = (*cls)->fields->lookupUniqueSymbol<FieldDeclarationObject>(id)) {
-                                if (!possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
-                                    THROW_TypeCheckerError("Instance field referenced from ClassName in " + qid.getQualifiedName());
-                                }
+                        if (auto cls = std::get_if<ClassDeclarationObject*>(&cls_lookup)) {
+                            if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, id, true)) {
                                 qid.link = possible_field->type;
                                 return;
                             }
                             THROW_TypeCheckerError(
-                                "Class " + Q.getQualifiedName() + " does not have a field named " + id
+                                "Class " + Q.getQualifiedName() + " does not have an accessible field named " + id
                             );
                         }
                         // Q is not a class
@@ -129,11 +162,12 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                             return;
                         }
                         if (auto class_type = T.getIfNonArrayIsClass()) {
-                            if (auto possible_field 
-                                    = class_type->fields->lookupUniqueSymbol<FieldDeclarationObject>(id)) {
+                            if (auto possible_field = checkIfFieldIsAccessible(current_class, class_type, id)) {
                                 qid.link = possible_field->type;
                                 return;
                             }
+                            THROW_TypeCheckerError(
+                                "No accessible field " + id + " in " + Q.getQualifiedName());
                         }
                         THROW_TypeCheckerError(
                                 "Interface ExpressionName precedes ExpressionName in " + Q.getQualifiedName());
