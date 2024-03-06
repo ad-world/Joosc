@@ -7,20 +7,22 @@
 #include "type-linking/compilation_unit_namespace.h"
 #include <iostream>
 #include <variant>
+#include <algorithm>
 
 void DisambiguationVisitor::operator()(MethodInvocation &node) {
     auto &parent_expr = node.parent_expr;
 
     if( parent_expr && std::holds_alternative<QualifiedIdentifier>(*parent_expr) ) {
         auto &qi = std::get<QualifiedIdentifier>(*parent_expr);
-        // std::cout << qi.getQualifiedName() << std::endl;
-        disambiguate(qi);
+        disambiguate(qi, qi.identifiers.size() - 1);
     }
+    this->visit_children(node);
 }
 
 void DisambiguationVisitor::operator()(ClassInstanceCreationExpression &node) {
     auto &class_name = node.class_name;
-    disambiguate(*class_name);
+    disambiguate(*class_name, class_name->identifiers.size() - 1);
+    this->visit_children(node);
 }
 
 void DisambiguationVisitor::operator()(FieldAccess &node) {
@@ -29,8 +31,10 @@ void DisambiguationVisitor::operator()(FieldAccess &node) {
     // For field access, we need to disambiguate the expression, and then check if the identifier is a field / method of the class
     if(std::holds_alternative<QualifiedIdentifier>(*expression)) {
         auto &qi = std::get<QualifiedIdentifier>(*expression);
-        disambiguate(qi);
+        disambiguate(qi, qi.identifiers.size() - 1);
     }
+
+    this->visit_children(node);
 
 #if 0
     // Get the linked type of the field access expression
@@ -64,23 +68,22 @@ void DisambiguationVisitor::operator()(FieldAccess &node) {
 }
 
 void DisambiguationVisitor::operator()(CastExpression &node) {
-    // std::cout << "found cast expression" << std::endl;
     if(std::holds_alternative<QualifiedIdentifier>(*node.expression)) {
         auto expr = std::get<QualifiedIdentifier>(*node.expression);
-        // std::cout << expr.getQualifiedName() << std::endl;
     }
+    this->visit_children(node);
 }
 
 void DisambiguationVisitor::operator()(ParenthesizedExpression &node) {
-    // std::cout << "Found parenthesis expresion" << std::endl;
     if(std::holds_alternative<QualifiedIdentifier>(*node.expression)) {
         auto expr = std::get<QualifiedIdentifier>(*node.expression);
-        disambiguate(expr);
+        disambiguate(expr, expr.identifiers.size() - 1);
 
         if (expr.identifiers.back().classification == Classification::TYPE_NAME) {
             THROW_DisambiguationError("Parenthesized expression resolves to Type, not expression");
         }
     }
+    this->visit_children(node);
 }
 
 void DisambiguationVisitor::operator()(ArrayAccess &node) {
@@ -88,8 +91,9 @@ void DisambiguationVisitor::operator()(ArrayAccess &node) {
 
     if(std::holds_alternative<QualifiedIdentifier>(*array_ref_expression)) {
         auto &qi = std::get<QualifiedIdentifier>(*array_ref_expression);
-        disambiguate(qi);
+        disambiguate(qi, qi.identifiers.size() - 1);
     }
+    this->visit_children(node);
 }
 
 void DisambiguationVisitor::operator()(Assignment &node) {
@@ -97,8 +101,10 @@ void DisambiguationVisitor::operator()(Assignment &node) {
 
     if (std::holds_alternative<QualifiedIdentifier>(*lhs)) {
         auto &lhs_qi = std::get<QualifiedIdentifier>(*lhs);
-        disambiguate(lhs_qi);
+        disambiguate(lhs_qi, lhs_qi.identifiers.size() - 1);
     }
+
+    this->visit_children(node);
 }
 
 
@@ -126,54 +132,31 @@ void DisambiguationVisitor::operator()(CompilationUnit &node) {
     compilation_unit = nullptr;
 }
 
-void DisambiguationVisitor::operator()(FieldDeclaration &node)  {
-    auto obj = node.environment;
-    auto &declarator = node.variable_declarator;
-    auto &left = declarator->variable_name; 
+void DisambiguationVisitor::operator()(QualifiedIdentifier &node) {
+    disambiguate(node, node.identifiers.size() - 1);
+    this->visit_children(node);
+}
 
-    // Checking 8.3.2.3
-    // Initializer of a non-static field must not use itself or a field declared later in the class
-    auto &right = declarator->expression;
-    if (right != nullptr) {
-        std::vector<QualifiedIdentifier*> identifiers = GrabAllVisitor<QualifiedIdentifier>().visit(*right);
-        // 1. the usage occurs in an instance variable initializer of C or in an instance initalizer of C
-        // 2. the usage is not on the left hand side on an assignmet
-        
 
-        for (auto ident: identifiers) {
-            checkForwardDeclaration(left->name, ident->identifiers.front().name);
-        }
-            
+void DisambiguationVisitor::operator()(Block &node) {
+    size_t scope_id = node.scope_id;
 
-        // if (std::holds_alternative<QualifiedIdentifier>(*right)) {
-        // auto &right_expr = std::get<QualifiedIdentifier>(*right);
-        //     checkForwardDeclaration(left->name, right_expr.identifiers.front().name);
-        // // Check the same logic, for QualifiedThis field accesses
-        // } else if (std::holds_alternative<QualifiedThis>(*right)) {
-        //     auto &right_expr = std::get<QualifiedThis>(*right);
-        //     auto &right_expr_qi = right_expr.qualified_this;
-            
-        //     checkForwardDeclaration(left->name, right_expr_qi->identifiers.front().name);
+    if (current_method != nullptr) {
+        current_method->scope_manager.openScope(scope_id);
+    }
 
-        //     // Check forward declared method invocations 
-        // } else if (std::holds_alternative<MethodInvocation>(*right)) {
-        //     auto &invoc = std::get<MethodInvocation>(*right);
+    this->visit_children(node);
 
-        //     if (std::holds_alternative<QualifiedIdentifier>(*invoc.method_name)) {
-        //         auto qi = std::get<QualifiedIdentifier>(*invoc.method_name);
-        //         auto potential_forward_dec = qi.identifiers.front();
-
-        //         checkForwardDeclaration(left->name, potential_forward_dec.name);
-        //     }
-        // }
+    if (current_method != nullptr) {
+        current_method->scope_manager.closeScope(scope_id);
     }
 }
 
-void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
+void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_pos) {
     // if qi is a simple name, then we can disambiguate it
-    if (qi.identifiers.size() == 1) {
-        auto &identifier = qi.identifiers.back().name;
-
+    if (current_pos < 0) return;
+    if (current_pos == 0) {
+        auto &identifier = ref.identifiers[current_pos].name;
 
         // If the Identifier appears within the scope (§6.3) of a local variable declaration (§14.4) or parameter declaration (§8.4.1, §8.8.1, §14.19) or field declaration (§8.3) with that name, then the AmbiguousName is reclassified as an ExpressionName.
         if (current_method != nullptr) {
@@ -181,12 +164,12 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
             current_method->scope_manager.openScope(scope_id);
 
             if (current_method->scope_manager.lookupVariable(identifier)) {
-                qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                ref.identifiers[current_pos].classification = Classification::EXPRESSION_NAME;
                 return;
             }
             // Check method parameters
             if (current_method->parameters->lookupSymbol(identifier)) {
-                qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                ref.identifiers[current_pos].classification = Classification::EXPRESSION_NAME;
                 return;
             }
 
@@ -196,13 +179,13 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         if (current_class != nullptr) {
             // Check class fields
             if(current_class->fields->lookupSymbol(identifier)) {
-                qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                ref.identifiers[current_pos].classification = Classification::EXPRESSION_NAME;
                 return;
             }
 
             // Check local compilation unit for class
             if(current_class->ast_reference->class_name->name == identifier) {
-                qi.identifiers.back().classification = Classification::TYPE_NAME;
+                ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
                 return;
             }
         }
@@ -210,7 +193,7 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         if (current_interface != nullptr) {
             // Check local compilation unit for interface
             if(current_interface->ast_reference->interface_name->name == identifier) {
-                qi.identifiers.back().classification = Classification::TYPE_NAME;
+                ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
                 return;
             }
         }
@@ -218,7 +201,7 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         // Check single-type-import declaration
         for (auto &import : compilation_unit->single_type_import_declaration) {
             if (import.identifiers.back().name == identifier) {
-                qi.identifiers.back().classification = Classification::TYPE_NAME;
+                ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
                 return;
             }
         }
@@ -229,13 +212,13 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
         if ( current_package && package_name ) {
             // Check if the class is in the current package
             if (current_package->findClassDeclaration(package_name->identifiers)) {
-                qi.identifiers.back().classification = Classification::TYPE_NAME;
+                ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
                 return;
             }
 
             // Check if the interface is in the current package
             if (current_package->findInterfaceDeclaration(package_name->identifiers)) {
-                qi.identifiers.back().classification = Classification::TYPE_NAME;
+                ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
                 return;
             }
         }
@@ -263,35 +246,43 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
                 if ( !found ) {
                     found = true;
                 } else {
-                    THROW_DisambiguationError("Ambiguous type name " + identifier);
+                    if (import.getQualifiedName() != "java.lang") {
+                        THROW_DisambiguationError("Ambiguous type name " + identifier);
+                    }
                 }
             }
         }
 
         // Return type name if one type was found
         if ( found ) {
-            qi.identifiers.back().classification = Classification::TYPE_NAME;
+            ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
             return;
         } 
 
         // Return package name as default
-        qi.identifiers.back().classification = Classification::PACKAGE_NAME;
+        ref.identifiers[current_pos].classification = Classification::PACKAGE_NAME;
         return;
     } else {
         // if qi is a qualified name, then we need to disambiguate the prefix
-        auto prefix = qi.getQualifiedIdentifierWithoutLast();
-        auto cur_ident = qi.identifiers.back();
+        auto cur_ident = ref.identifiers[current_pos];
 
         auto &current_ns = compilation_unit->cu_namespace;
 
         // Get classification of the prefix
-        disambiguate(prefix);
-        auto cls = prefix.identifiers.back().classification;
+        disambiguate(ref, current_pos - 1);
+        auto cls = ref.identifiers[current_pos - 1].classification;
+        std::vector<Identifier> copy;
 
+        for(int i = 0; i < current_pos; i++) {
+            copy.push_back(ref.identifiers[i]);
+        }
+
+        auto prefix = QualifiedIdentifier(copy);
+    
         // based on the classification of the prefix, we can disambiguate the current identifier
         switch (cls) {
             case Classification::EXPRESSION_NAME: {
-                qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                ref.identifiers[current_pos].classification = Classification::EXPRESSION_NAME;
             } break;
                 // Return expression name
             case Classification::TYPE_NAME: {
@@ -301,11 +292,9 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
 
                 if (std::holds_alternative<ClassDeclarationObject*>(type)) {
                     auto class_decl = std::get<ClassDeclarationObject*>(type);
-
-                    // class_decl->printAllMethods();
                     
                     if (class_decl->fields->lookupUniqueSymbol(cur_ident.name) || class_decl->methods->lookupUniqueSymbol(cur_ident.name) || (class_decl->all_methods.find(cur_ident.name) != class_decl->all_methods.end())) {
-                        qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                        ref.identifiers[current_pos].classification = Classification::EXPRESSION_NAME;
                         return;
                     }
                 // Check if the current identifier is a method of the interface
@@ -313,12 +302,12 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
                     auto interface_decl = std::get<InterfaceDeclarationObject*>(type);
 
                     if (interface_decl->methods->lookupUniqueSymbol(cur_ident.name)) {
-                        qi.identifiers.back().classification = Classification::EXPRESSION_NAME;
+                        ref.identifiers[current_pos].classification = Classification::EXPRESSION_NAME;
                         return;
                     }
                 }
 
-                THROW_DisambiguationError("Ambiguous type name " + qi.getQualifiedName());
+                THROW_DisambiguationError("Ambiguous type name " + ref.getQualifiedName());
             } break;
             case Classification::PACKAGE_NAME: {
                 // Get package object of prefix
@@ -326,15 +315,15 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &qi) {
 
                 // Check if the current identifier is a class or interface in the package
                 if (package_decl && (package_decl->classes->lookupUniqueSymbol(cur_ident.name) || package_decl->interfaces->lookupUniqueSymbol(cur_ident.name))) {
-                    qi.identifiers.back().classification = Classification::TYPE_NAME;
+                    ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
                     return;
                 }
                 // If not, return package name
-                qi.identifiers.back().classification = Classification::PACKAGE_NAME;
+                ref.identifiers[current_pos].classification = Classification::PACKAGE_NAME;
                 return;
             } break;
             default:
-                THROW_DisambiguationError("Ambiguous type name " + qi.getQualifiedName());
+                THROW_DisambiguationError("Ambiguous type name " + ref.getQualifiedName());
         }
     }
 }
@@ -355,31 +344,3 @@ void DisambiguationVisitor::checkForwardDeclaration(std::string usage, std::stri
         }
     }
 }
-
-
-// void DisambiguationVisitor::getQualifiedIdentifersFromExpression(const Expression &expr, std::vector<QualifiedIdentifier> &identifiers) {
-//     if(std::holds_alternative<QualifiedIdentifier>(expr)) {
-//         identifiers.push_back(std::get<QualifiedIdentifier>(expr));
-//     } else if (std::holds_alternative<Assignment>(expr)) {
-//         auto &assignment = std::get<Assignment>(expr);
-//         getQualifiedIdentifersFromExpression(*assignment.assigned_to, identifiers);
-//         getQualifiedIdentifersFromExpression(*assignment.assigned_from, identifiers)
-//     } else if (std::holds_alternative<InfixExpression>(expr)) {
-//         auto &infix = std::get<InfixExpression>(expr);
-//         getQualifiedIdentifersFromExpression(*infix.expression1, identifiers);
-//         getQualifiedIdentifersFromExpression(*infix.expression2, identifiers);
-//     } else if (std::holds_alternative<CastExpression>(expr)) {
-//         auto &cast = std::get<CastExpression>(expr);
-//         getQualifiedIdentifersFromExpression(*cast.expression, identifiers);
-//     } else if (std::holds_alternative<ClassInstanceCreationExpression>(expr)) {
-//         auto &class_instance = std::get<ClassInstanceCreationExpression>(expr);
-//         identifiers.push_back(*class_instance.class_name);
-//         for (auto &arg: class_instance.arguments) {
-//             getQualifiedIdentifersFromExpression(arg, identifiers);
-//         }
-//     } else if (std::holds_alternative<FieldAccess>(expr)) {
-//         auto &field_access = std::get<FieldAccess>(expr);
-
-//     }
-
-// }

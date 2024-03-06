@@ -16,6 +16,7 @@
 #include "type-linking/typelinker.h"
 #include "hierarchy-checking/hierarchy-checking.h"
 #include "exceptions/exceptions.h"
+#include "disambiguation/forward-decl.h"
 #include "type-checker/typechecker.h"
 
 #ifdef GRAPHVIZ
@@ -181,6 +182,20 @@ int main(int argc, char *argv[]) {
         cerr << "Unknown disambiguation error occurred:" << e.what() << endl;
         return COMPILER_DEVELOPMENT_ERROR;
     }
+
+    try {
+    // Disambiguation of names
+    for (auto &ast: asts ) {
+        ForwardDeclarationVisitor(default_package).visit(ast);
+    }
+    } catch (DisambiguationError &e) {
+        cerr << "Disambiguation error occurred: " << e.what() << "\n";
+        return INVALID_PROGRAM;
+    } catch (std::exception &e) {
+        cerr << "Unknown disambiguation error occurred:" << e.what() << endl;
+        return COMPILER_DEVELOPMENT_ERROR;
+    }
+
 
     // try {
     //     // Type checking

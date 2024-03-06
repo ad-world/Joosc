@@ -42,6 +42,13 @@ function runtest {
     fi
 }
 
+function runvalgrind {
+    INPUT=$(getinput $1)
+    if [[ -n $INPUT ]]; then
+        valgrind ./joosc ${INPUT} ${STDLIB}
+    fi
+}
+
 # Run gdb on stdlib
 #   (useful for debugging critical errors on minimal input)
 function runstdlib {

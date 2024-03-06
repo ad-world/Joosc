@@ -31,9 +31,8 @@ class DisambiguationVisitor : public DefaultSkipVisitor<void> {
     InterfaceDeclarationObject *current_interface = nullptr;
     CompilationUnit *compilation_unit = nullptr;
 
-    void disambiguate(QualifiedIdentifier &qi);
+    void disambiguate(QualifiedIdentifier& ref, int current_pos);
     void checkForwardDeclaration(const std::string usage, std::string potential_forward_dec);
-    // void getQualifiedIdentifersFromExpression(const Expression &expr, std::vector<QualifiedIdentifier>& identifiers);
 
 public: 
     DisambiguationVisitor(PackageDeclarationObject &default_package): default_package(&default_package), current_package(&default_package) {}
@@ -48,9 +47,10 @@ public:
     void operator()(ClassDeclaration &node) override;
     void operator()(InterfaceDeclaration &node) override;
     void operator()(CompilationUnit &node) override;
-    void operator()(FieldDeclaration &node) override;
     void operator()(CastExpression &node) override;
     void operator()(ParenthesizedExpression &node) override;
+    void operator()(QualifiedIdentifier &node) override;
+    void operator()(Block &node) override;
 
     void visit(AstNodeVariant &node) override {
         std::visit(*this, node);
