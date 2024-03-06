@@ -79,3 +79,12 @@ public:
     HierarchyError(std::string message, std::string file, int line)
         : runtime_error(make_message("HierarchyChecker error", message, file, line)) {}
 };
+
+#define THROW_TypeCheckerError(message) throw TypeCheckError(message, __FILE__, __LINE__)
+class TypeCheckError : public std::runtime_error {
+public:
+    std::string message;
+    TypeCheckError(std::string message) : runtime_error("TypeCheckError error: " + message) {}
+    TypeCheckError(std::string message, std::string file, int line)
+        : runtime_error(make_message("TypeCheckError error", message, file, line)) {}
+};

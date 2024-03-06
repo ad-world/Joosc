@@ -1,169 +1,139 @@
 #include "type-checker/typechecker.h"
-
-void TypeChecker::operator()(Assignment &node) {
-    this->visit_children(node);
-}
+#include "exceptions/exceptions.h"
 
 void TypeChecker::operator()(InfixExpression &node) {
     this->visit_children(node);
 
-    switch (node.op) {
-        case InfixOperator::PLUS:
-        case InfixOperator::MINUS:
-        case InfixOperator::MULTIPLY:
-        case InfixOperator::DIVIDE:
-        case InfixOperator::MODULO:
-        case InfixOperator::LESS_THAN:
-        case InfixOperator::GREATER_THAN:
-        case InfixOperator::LESS_THAN_EQUAL:
-        case InfixOperator::GREATER_THAN_EQUAL:
-        case InfixOperator::BOOLEAN_EQUAL:
-        case InfixOperator::BOOLEAN_NOT_EQUAL:
-        case InfixOperator::BOOLEAN_AND:
-        case InfixOperator::BOOLEAN_OR:
-        case InfixOperator::EAGER_AND:
-        case InfixOperator::EAGER_OR:
-    }
-}
-
-void TypeChecker::operator()(CastExpression &node) {
-    this->visit_children(node);
-}
-
-
-#include "type-checker/typechecker.h"
-
-
-void TypeChecker::operator()(Assignment &node) {
-    this->visit_children(node);
-}
-
-LinkedType LiteralToLinkedType(Literal*& literal) {
-    LinkedType linkedType;
-    if(std::get_if<int64_t>(literal)) {
-        linkedType.linked_type = PrimitiveType::INT;
-    }
-    else if(std::get_if<bool>(literal)) {
-        linkedType.linked_type = PrimitiveType::BOOLEAN;
-    }
-    else if(std::get_if<char>(literal)) {
-        linkedType.linked_type = PrimitiveType::CHAR;
-    }
-    else if(std::get_if<std::string>(literal)) {
-        /* assign String class to linkedType */
-    }
-    else if(std::get_if<std::nullptr_t>(literal)) {
-        linkedType.linked_type = std::nullptr_t{};
-    }
-    else {
-        throw "Invalid literal";
-    }
-    return linkedType;
-}
-
-bool isPrimitiveNumeric(LinkedType& linkedType) {
-    if(linkedType.isPrimitive()) {
-        auto typeEnum = std::get<PrimitiveType>(linkedType.linked_type);
-        if(typeEnum == PrimitiveType::INT || typeEnum == PrimitiveType::SHORT || typeEnum == PrimitiveType::BYTE || 
-            typeEnum == PrimitiveType::CHAR) {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool isBoolean(LinkedType& linkedType) {
-    if(linkedType.isPrimitive()) {
-        auto typeEnum = std::get<PrimitiveType>(linkedType.linked_type);
-        if(typeEnum == PrimitiveType::BOOLEAN) {
-            return true;
-        }
-    }
-    return false;
-}
-
-void TypeChecker::operator()(InfixExpression &node) {
-    this->visit_children(node);
-
-    LinkedType linkedType1;
-    Literal* literal1;
-    LinkedType linkedType2;
-    Literal* literal2;
-
-    if(std::get_if<InfixExpression>(node.expression1.get())) {
-        linkedType1 = std::get_if<InfixExpression>(node.expression1.get())->link;
-        if(linkedType1.is_array) {
-            throw "Array type not allowed in infix expression";
-        }
-    }
-    else if(std::get_if<Literal>(node.expression1.get())) { 
-        literal1 = std::get_if<Literal>(node.expression1.get());
-        linkedType1 = LiteralToLinkedType(literal1);
-    }
-    else {
-        throw "Invalid expression";
-    }
-
-    if(std::get_if<InfixExpression>(node.expression2.get())) {
-        linkedType2 = std::get_if<InfixExpression>(node.expression2.get())->link;
-        if(linkedType2.is_array) {
-            throw "Array type not allowed in infix expression";
-        }
-    }
-    else if(std::get_if<Literal>(node.expression2.get())) {
-        literal2 = std::get_if<Literal>(node.expression2.get());
-        linkedType2 = LiteralToLinkedType(literal2);
-    }
-    else {
-        throw "Invalid expression";
+    LinkedType linkedType1 = getLink(node.expression1);
+    LinkedType linkedType2 = getLink(node.expression1);
+    if(linkedType1.is_array || linkedType2.is_array) {
+        THROW_TypeCheckerError("Infix operators are not defined for array types");
     }
 
     switch (node.op) {
         case InfixOperator::PLUS:
-            /* if condition for string */
+            if(linkedType1.isNumeric() && linkedType2.isNumeric()) {
+                node.link.linked_type = PrimitiveType::INT;
+            }
+            else if((linkedType1.isString() && !linkedType2.isVoid()) || (linkedType2.isString() && !linkedType1.isVoid())) {
+                /* link String class */
+            }
+            else {
+                THROW_TypeCheckerError("Invalid type for arithmetic operation");
+            }
+            break;
         case InfixOperator::MINUS:
         case InfixOperator::MULTIPLY:
         case InfixOperator::DIVIDE:
         case InfixOperator::MODULO:
-            if(isPrimitiveNumeric(linkedType1) && isPrimitiveNumeric(linkedType2)) {
+            if(linkedType1.isNumeric() && linkedType2.isNumeric()) {
                 node.link.linked_type = PrimitiveType::INT;
             }
             else {
-                throw "Invalid type for arithmetic operation";
+                THROW_TypeCheckerError("Invalid type for arithmetic operation");
             }
             break;
         case InfixOperator::LESS_THAN:
         case InfixOperator::GREATER_THAN:
         case InfixOperator::LESS_THAN_EQUAL:
         case InfixOperator::GREATER_THAN_EQUAL:
-            if(isPrimitiveNumeric(linkedType1) && isPrimitiveNumeric(linkedType2)) {
+            if(linkedType1.isNumeric() && linkedType2.isNumeric()) {
                 node.link.linked_type = PrimitiveType::BOOLEAN;
             }
             else {
-                throw "Invalid type for comparison operation";
+                THROW_TypeCheckerError("Invalid type for comparison operation");
             }
             break;
         case InfixOperator::BOOLEAN_EQUAL:
         case InfixOperator::BOOLEAN_NOT_EQUAL:
-            /* to do */
+            if(linkedType1 == linkedType2 || (linkedType1.isNull() && (!linkedType2.isPrimitive() || linkedType2.is_array)) 
+                || (linkedType2.isNull() && (!linkedType1.isPrimitive() || linkedType1.is_array))) {
+                node.link.linked_type = PrimitiveType::BOOLEAN; // Might need to add check for subclasses and base class comparison
+            }
+            else {
+                THROW_TypeCheckerError("Invalid type for comparison operation");
+            }
             break;
         case InfixOperator::BOOLEAN_AND:
         case InfixOperator::BOOLEAN_OR:
         case InfixOperator::EAGER_AND:
         case InfixOperator::EAGER_OR:
-            if(isBoolean(linkedType1) && isBoolean(linkedType2)) {
+            if(linkedType1.isBoolean() && linkedType2.isBoolean()) {
                 node.link.linked_type = PrimitiveType::BOOLEAN;
             }
             else {
-                throw "Invalid type for boolean operation";
+                THROW_TypeCheckerError("Invalid type for boolean operation");
             }
             break;
         default:
-            throw "Invalid type for InfixExpression";
+            THROW_TypeCheckerError("Invalid type for InfixExpression");
     }
 }
 
-void TypeChecker::operator()(CastExpression &node) {
+void TypeChecker::operator()(PrefixExpression &node) {
     this->visit_children(node);
+
+    LinkedType linkedType = getLink(node.expression);
+    if(linkedType.is_array) {
+        THROW_TypeCheckerError("Prefix operators are not defined for array types");
+    }
+
+    switch (node.op) {
+        case PrefixOperator::MINUS:
+            if(linkedType.isNumeric()) {
+                node.link.linked_type = linkedType.linked_type;
+            }
+            else {
+                THROW_TypeCheckerError("Invalid type for arithmetic operation");
+            }
+            break;
+        case PrefixOperator::NEGATE:
+            if(linkedType.isBoolean()) {
+                node.link.linked_type = linkedType.linked_type;
+            }
+            else {
+                THROW_TypeCheckerError("Invalid type for boolean operation");
+            }
+            break;
+        default:
+            THROW_TypeCheckerError("Invalid type for PrefixExpression");
+    }
 }
 
+void TypeChecker::operator()(QualifiedThis &node) {
+    this->visit_children(node);
+    AstNodeCommon* astCommon = node.qualified_this.get()->type_link;
+    ClassDeclaration* classDeclaration = static_cast<ClassDeclaration*>(astCommon);
+    node.link.linked_type = classDeclaration->environment;
+}
+
+void TypeChecker::operator()(ArrayCreationExpression &node) {
+    this->visit_children(node);
+
+    LinkedType linkedType = getLink(node.expression);
+    if(linkedType.isNumeric()) {
+        node.link.linked_type = linkedType.linked_type;
+        node.link.is_array = true;
+    }
+    else {
+        THROW_TypeCheckerError("Invalid type for ArrayCreationExpression");
+    }
+}
+
+void TypeChecker::operator()(ClassInstanceCreationExpression &node) {
+    this->visit_children(node);
+    node.link = node.linked_class_type;
+}
+
+void TypeChecker::operator()(ArrayAccess &node) {
+    this->visit_children(node);
+
+    LinkedType typeArray = getLink(node.array);
+    LinkedType typeSelector = getLink(node.selector);
+    if(typeArray.is_array && typeSelector.isNumeric()) {
+        node.link.linked_type = typeArray.linked_type;
+    }
+    else {
+        THROW_TypeCheckerError("Invalid type for ArrayAccess");
+    }
+}
