@@ -31,9 +31,8 @@ class DisambiguationVisitor : public DefaultSkipVisitor<void> {
     InterfaceDeclarationObject *current_interface = nullptr;
     CompilationUnit *compilation_unit = nullptr;
 
-    void disambiguate(QualifiedIdentifier &qi);
+    void disambiguate(QualifiedIdentifier& ref, int current_pos);
     void checkForwardDeclaration(const std::string usage, std::string potential_forward_dec);
-    // void getQualifiedIdentifersFromExpression(const Expression &expr, std::vector<QualifiedIdentifier>& identifiers);
 
 public: 
     DisambiguationVisitor(PackageDeclarationObject &default_package): default_package(&default_package), current_package(&default_package) {}
