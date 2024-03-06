@@ -14,7 +14,6 @@ void DisambiguationVisitor::operator()(MethodInvocation &node) {
 
     if( parent_expr && std::holds_alternative<QualifiedIdentifier>(*parent_expr) ) {
         auto &qi = std::get<QualifiedIdentifier>(*parent_expr);
-        // std::cout << qi.getQualifiedName() << std::endl;
         disambiguate(qi, qi.identifiers.size() - 1);
     }
     this->visit_children(node);
@@ -139,71 +138,18 @@ void DisambiguationVisitor::operator()(QualifiedIdentifier &node) {
 }
 
 
+void DisambiguationVisitor::operator()(Block &node) {
+    size_t scope_id = node.scope_id;
 
-void DisambiguationVisitor::operator()(FieldDeclaration &node)  {
-    auto obj = node.environment;
-    auto &declarator = node.variable_declarator;
-    auto &left = declarator->variable_name; 
-
-    // Checking 8.3.2.3
-    // Initializer of a non-static field must not use itself or a field declared later in the class
-    auto &right = declarator->expression;
-    if (right != nullptr) {
-        // std::vector<QualifiedIdentifier*> identifiers = GrabAllVisitor<QualifiedIdentifier>().visit(*right);
-
-        // 1. the usage occurs in an instance variable initializer of C or in an instance initalizer of C
-        // 2. the usage is not on the left hand side on an assignment
-
-        // Check all assignments, and check that there is no usage of a forward declared variable on rhs
-        // std::vector<Assignment*> assignments = GrabAllVisitor<Assignment>().visit(*right);
-
-        // for (auto assignment: assignments) {
-        //     if (std::holds_alternative<Assignment>(*assignment->assigned_from)) {
-        //         std::cout << "RHS is assignment" << std::endl;
-        //         auto from = &std::get<Assignment>(*assignment->assigned_from);
-        //         if (std::find(assignments.begin(), assignments.end(), from) != assignments.end()) {
-        //             continue;
-        //         }
-        //     }
-
-        //     std::vector<QualifiedIdentifier*> rhs_idents = GrabAllVisitor<QualifiedIdentifier>().visit(*assignment->assigned_from); 
-
-        //     for (auto ident: rhs_idents) {
-        //         std::cout << ident->getQualifiedName() << std::endl;
-        //         checkForwardDeclaration(left->name, ident->identifiers.front().name);
-        //     }
-        // }
-
-        // for (auto ident: identifiers) {
-        //     std::cout << ident->getQualifiedName() << std::endl;
-        //     checkForwardDeclaration(left->name, ident->identifiers.front().name);
-        // }
-            
-
-        // if (std::holds_alternative<QualifiedIdentifier>(*right)) {
-        // auto &right_expr = std::get<QualifiedIdentifier>(*right);
-        //     checkForwardDeclaration(left->name, right_expr.identifiers.front().name);
-        // // Check the same logic, for QualifiedThis field accesses
-        // } else if (std::holds_alternative<QualifiedThis>(*right)) {
-        //     auto &right_expr = std::get<QualifiedThis>(*right);
-        //     auto &right_expr_qi = right_expr.qualified_this;
-            
-        //     checkForwardDeclaration(left->name, right_expr_qi->identifiers.front().name);
-
-        //     // Check forward declared method invocations 
-        // } else if (std::holds_alternative<MethodInvocation>(*right)) {
-        //     auto &invoc = std::get<MethodInvocation>(*right);
-
-        //     if (std::holds_alternative<QualifiedIdentifier>(*invoc.method_name)) {
-        //         auto qi = std::get<QualifiedIdentifier>(*invoc.method_name);
-        //         auto potential_forward_dec = qi.identifiers.front();
-
-        //         checkForwardDeclaration(left->name, potential_forward_dec.name);
-        //     }
-        // }
+    if (current_method != nullptr) {
+        current_method->scope_manager.openScope(scope_id);
     }
 
     this->visit_children(node);
+
+    if (current_method != nullptr) {
+        current_method->scope_manager.closeScope(scope_id);
+    }
 }
 
 void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_pos) {
@@ -318,9 +264,6 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
         return;
     } else {
         // if qi is a qualified name, then we need to disambiguate the prefix
-        // auto prefix = qi.getQualifiedIdentifierWithoutLast();
-        // auto cur_ident = qi.identifiers.back();
-
         auto cur_ident = ref.identifiers[current_pos];
 
         auto &current_ns = compilation_unit->cu_namespace;
@@ -328,7 +271,6 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
         // Get classification of the prefix
         disambiguate(ref, current_pos - 1);
         auto cls = ref.identifiers[current_pos - 1].classification;
-        // auto cls = prefix.identifiers.back().classification;
         std::vector<Identifier> copy;
 
         for(int i = 0; i < current_pos; i++) {
@@ -350,8 +292,6 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
 
                 if (std::holds_alternative<ClassDeclarationObject*>(type)) {
                     auto class_decl = std::get<ClassDeclarationObject*>(type);
-
-                    // class_decl->printAllMethods();
                     
                     if (class_decl->fields->lookupUniqueSymbol(cur_ident.name) || class_decl->methods->lookupUniqueSymbol(cur_ident.name) || (class_decl->all_methods.find(cur_ident.name) != class_decl->all_methods.end())) {
                         ref.identifiers[current_pos].classification = Classification::EXPRESSION_NAME;
@@ -404,31 +344,3 @@ void DisambiguationVisitor::checkForwardDeclaration(std::string usage, std::stri
         }
     }
 }
-
-
-// void DisambiguationVisitor::getQualifiedIdentifersFromExpression(const Expression &expr, std::vector<QualifiedIdentifier> &identifiers) {
-//     if(std::holds_alternative<QualifiedIdentifier>(expr)) {
-//         identifiers.push_back(std::get<QualifiedIdentifier>(expr));
-//     } else if (std::holds_alternative<Assignment>(expr)) {
-//         auto &assignment = std::get<Assignment>(expr);
-//         getQualifiedIdentifersFromExpression(*assignment.assigned_to, identifiers);
-//         getQualifiedIdentifersFromExpression(*assignment.assigned_from, identifiers)
-//     } else if (std::holds_alternative<InfixExpression>(expr)) {
-//         auto &infix = std::get<InfixExpression>(expr);
-//         getQualifiedIdentifersFromExpression(*infix.expression1, identifiers);
-//         getQualifiedIdentifersFromExpression(*infix.expression2, identifiers);
-//     } else if (std::holds_alternative<CastExpression>(expr)) {
-//         auto &cast = std::get<CastExpression>(expr);
-//         getQualifiedIdentifersFromExpression(*cast.expression, identifiers);
-//     } else if (std::holds_alternative<ClassInstanceCreationExpression>(expr)) {
-//         auto &class_instance = std::get<ClassInstanceCreationExpression>(expr);
-//         identifiers.push_back(*class_instance.class_name);
-//         for (auto &arg: class_instance.arguments) {
-//             getQualifiedIdentifersFromExpression(arg, identifiers);
-//         }
-//     } else if (std::holds_alternative<FieldAccess>(expr)) {
-//         auto &field_access = std::get<FieldAccess>(expr);
-
-//     }
-
-// }

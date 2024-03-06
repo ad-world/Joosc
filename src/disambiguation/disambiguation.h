@@ -47,10 +47,10 @@ public:
     void operator()(ClassDeclaration &node) override;
     void operator()(InterfaceDeclaration &node) override;
     void operator()(CompilationUnit &node) override;
-    void operator()(FieldDeclaration &node) override;
     void operator()(CastExpression &node) override;
     void operator()(ParenthesizedExpression &node) override;
     void operator()(QualifiedIdentifier &node) override;
+    void operator()(Block &node) override;
 
     void visit(AstNodeVariant &node) override {
         std::visit(*this, node);

@@ -65,20 +65,11 @@ void ForwardDeclarationVisitor::operator()(Block &node) {
 void ForwardDeclarationVisitor::operator()(QualifiedIdentifier &node) {
     auto current_ns = compilation_unit->cu_namespace;
     if (current_method != nullptr && current_local != "") {
-        // std::cout << "HERE " << current_local << std::endl;
-        size_t scope_id = current_method->ast_reference->body->scope_id;
-        
         auto offender = node.getQualifiedName();
-        // std::cout  << "offender " << offender << std::endl;
         if (!current_class->fields->lookupSymbol(offender)) {
             if (current_method->scope_manager.lookupVariable(current_local) && current_method->scope_manager.lookupVariable(offender)) {
-                // std::cout << "HERE 2" << std::endl;
                 int current_decl_idx = current_method->scope_manager.getInsertPosition(current_local);
                 int forward_decl_idx = current_method->scope_manager.getInsertPosition(offender);
-
-                // std::cout << current_local << " " << current_decl_idx << std::endl;
-                // std::cout << offender << " " << forward_decl_idx << std::endl;
-
                 if (current_decl_idx < forward_decl_idx) {
                     THROW_DisambiguationError("Field declaration of " + current_local + " uses forward declaration of " + offender);
                 }
