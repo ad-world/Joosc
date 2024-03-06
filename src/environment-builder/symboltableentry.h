@@ -60,7 +60,7 @@ struct ClassDeclarationObject {
     PackageDeclarationObject* package_contained_in; // Back-link to the package that contains this class
 
     // Declared and inherited fields, aside from those that are shadowed
-    std::unordered_map<std::string, MethodDeclarationObject*> accessible_fields;
+    std::unordered_map<std::string, FieldDeclarationObject*> accessible_fields;
 
     void printAllMethods() {
         for (auto it: all_methods) {
