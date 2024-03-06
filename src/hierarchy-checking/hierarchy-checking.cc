@@ -129,7 +129,6 @@ std::vector<MethodDeclarationObject*> getAllMethods(std::variant<ClassDeclaratio
 
     dfsClass = [&](ClassDeclarationObject* currentClassObj) {
         for (auto& method : currentClassObj->ast_reference->method_declarations) {
-            // TODO: ensure this is not a constructor
             if ( ! method.environment->is_constructor ) {
                 allMethods.push_back(method.environment);
             }
@@ -143,7 +142,6 @@ std::vector<MethodDeclarationObject*> getAllMethods(std::variant<ClassDeclaratio
     };
     dfsInterface = [&](InterfaceDeclarationObject* currentInterfaceObj) {
         for (auto& method : currentInterfaceObj->ast_reference->method_declarations) {
-            // TODO: ensure this is not a constructor
             if ( ! method.environment->is_constructor ) {
                 allMethods.push_back(method.environment);
             }
@@ -161,7 +159,24 @@ std::vector<MethodDeclarationObject*> getAllMethods(std::variant<ClassDeclaratio
     return allMethods;
 }
 
+// Get all accessible fields contained (declared or inherited) in a class
+// Shadowed fields are overriden; the lowest declaration of a field name in the hierachy is used
+std::unordered_map<std::string, FieldDeclarationObject*> getAllFields(ClassDeclarationObject* classObj) {
+    std::unordered_map<std::string, FieldDeclarationObject*> allFields{};
+    std::function<void(ClassDeclarationObject*)> dfsClass; // Declare dfsClass lambda function
 
+    dfsClass = [&](ClassDeclarationObject* currentClassObj) {
+        if (currentClassObj->extended != nullptr) {
+            dfsClass(currentClassObj->extended);
+        }
+        for (auto& field : currentClassObj->ast_reference->field_declarations) {
+            allFields[field.environment->identifier] = field.environment;
+        }
+    };
+
+    dfsClass(classObj);
+    return allFields;
+}
 
 
 // HierarchyChecking for class declaration
@@ -274,6 +289,9 @@ void HierarchyCheckingVisitor::operator()(ClassDeclaration &node) {
                 interface_queue.push(&interface->extended);
             }
         }
+
+        // Find all inherited fields
+        node.environment->accessible_fields = getAllFields(node.environment);
     }
 
     // Method replacement (overriding / hiding)

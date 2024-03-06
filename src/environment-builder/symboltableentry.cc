@@ -2,6 +2,7 @@
 #include "symboltable.h"
 #include "exceptions/exceptions.h"
 #include <sstream>
+#include "utillities/util.h"
 
 std::unique_ptr<SymbolTable> init_table() {
     return std::make_unique<SymbolTable>();
@@ -161,4 +162,31 @@ ClassDeclarationObject* PackageDeclarationObject::getJavaLangObject() {
         THROW_TypeLinkerError("java.lang.Object not found");
     }
     return object_class;
+}
+
+bool isSubType(TypeDeclaration sub, TypeDeclaration super) {
+    if (sub == super) { return true; }
+    return std::visit(util::overload { 
+        [&](ClassDeclarationObject* cls) -> bool {
+            if (::isSubType(cls->extended, super)) { return true; }
+            for (auto sup_interface : cls->implemented) {
+                if (::isSubType(sup_interface, super)) { return true; }
+            }
+            return false;
+        },
+        [&](InterfaceDeclarationObject* intf) -> bool {
+            for (auto sup_interface : intf->extended) {
+                if (::isSubType(sup_interface, super)) { return true; }
+            }
+            return false;
+        },
+    }, sub);
+}
+
+bool ClassDeclarationObject::isSubType(TypeDeclaration type_decl) {
+    return ::isSubType(this, type_decl);
+}
+
+bool InterfaceDeclarationObject::isSubType(TypeDeclaration type_decl) {
+    return ::isSubType(this, type_decl);
 }

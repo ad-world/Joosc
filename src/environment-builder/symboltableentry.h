@@ -57,6 +57,10 @@ struct ClassDeclarationObject {
     std::unique_ptr<SymbolTable> fields; // SymbolTable mapping to FieldDeclarationObjects
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
     std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
+    PackageDeclarationObject* package_contained_in; // Back-link to the package that contains this class
+
+    // Declared and inherited fields, aside from those that are shadowed
+    std::unordered_map<std::string, FieldDeclarationObject*> accessible_fields;
 
     void printAllMethods() {
         for (auto it: all_methods) {
@@ -68,6 +72,9 @@ struct ClassDeclarationObject {
     ClassDeclarationObject* extended = nullptr;
     std::vector<InterfaceDeclarationObject*> implemented;
 
+    // Determine if this is a subtype of another class/interface
+    bool isSubType(TypeDeclaration);
+
     ClassDeclarationObject(const std::string &identifier);
 };
 
@@ -77,9 +84,13 @@ struct InterfaceDeclarationObject {
 
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
     std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
+    PackageDeclarationObject* package_contained_in; // Back-link to the package that contains this interface
 
     // Fields resolved at type linking stage
     std::vector<InterfaceDeclarationObject*> extended;
+
+    // Determine if this is a subtype of another class/interface
+    bool isSubType(TypeDeclaration);
 
     InterfaceDeclarationObject(const std::string &identifier);
 };
