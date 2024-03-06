@@ -72,6 +72,9 @@ struct ClassDeclarationObject {
     ClassDeclarationObject* extended = nullptr;
     std::vector<InterfaceDeclarationObject*> implemented;
 
+    // Determine if this is a subtype of another class/interface
+    bool isSubType(TypeDeclaration);
+
     ClassDeclarationObject(const std::string &identifier);
 };
 
@@ -85,6 +88,9 @@ struct InterfaceDeclarationObject {
 
     // Fields resolved at type linking stage
     std::vector<InterfaceDeclarationObject*> extended;
+
+    // Determine if this is a subtype of another class/interface
+    bool isSubType(TypeDeclaration);
 
     InterfaceDeclarationObject(const std::string &identifier);
 };
