@@ -35,36 +35,6 @@ void DisambiguationVisitor::operator()(FieldAccess &node) {
     }
 
     this->visit_children(node);
-
-#if 0
-    // Get the linked type of the field access expression
-    auto linked_type = getLink(expression);
-
-    // if the linked type is a class, check if the identifier is a field of the class
-    if(std::holds_alternative<struct ClassDeclarationObject*>(linked_type.linked_type)) {
-        auto class_decl = std::get<struct ClassDeclarationObject*>(linked_type.linked_type);
-        auto &identifier = node.identifier;
-
-        if(class_decl->fields->lookupSymbol(identifier->name)) {
-            identifier->classification = Classification::EXPRESSION_NAME;
-        } else {
-            THROW_DisambiguationError("Ambiguous field name " + node.identifier->name + " does not exist in type " + class_decl->identifier);
-        }
-    // if the linked type is an interface, check if the identifier is a method of the interface
-    } else if (std::holds_alternative<struct InterfaceDeclarationObject*>(linked_type.linked_type)) {
-        auto interface_decl = std::get<struct InterfaceDeclarationObject*>(linked_type.linked_type);
-        auto &identifier = node.identifier;
-
-        if(interface_decl->methods->lookupSymbol(identifier->name)) {
-            identifier->classification = Classification::EXPRESSION_NAME;
-        } else {
-            THROW_DisambiguationError("Ambiguous method name " + node.identifier->name + " does not exist in type " + interface_decl->identifier);
-        }
-    } else {
-        THROW_DisambiguationError("Ambiguous field access expression");
-    }
-
-#endif
 }
 
 void DisambiguationVisitor::operator()(CastExpression &node) {
@@ -260,7 +230,14 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
         } 
 
         // Return package name as default
-        ref.identifiers[current_pos].classification = Classification::PACKAGE_NAME;
+        if (auto package = default_package->findPackageDeclaration(ref.identifiers[current_pos].name)) {
+            ref.identifiers[current_pos].classification = Classification::PACKAGE_NAME;
+            ref.identifiers[current_pos].package = package;
+        } else {
+            THROW_DisambiguationError(ref.identifiers[current_pos].name + " not found");
+        }
+
+
         return;
     } else {
         // if qi is a qualified name, then we need to disambiguate the prefix
@@ -311,16 +288,22 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
             } break;
             case Classification::PACKAGE_NAME: {
                 // Get package object of prefix
-                auto package_decl = default_package->findPackageDeclaration(prefix.identifiers);
+                auto package_decl = ref.identifiers[current_pos - 1].package;
+                std::cout << "Looking for " << cur_ident.name << "in " << package_decl->identifier << std::endl;
 
                 // Check if the current identifier is a class or interface in the package
                 if (package_decl && (package_decl->classes->lookupUniqueSymbol(cur_ident.name) || package_decl->interfaces->lookupUniqueSymbol(cur_ident.name))) {
+                    std::cout << "Found " << cur_ident.name << std::endl;
                     ref.identifiers[current_pos].classification = Classification::TYPE_NAME;
                     return;
                 }
                 // If not, return package name
-                ref.identifiers[current_pos].classification = Classification::PACKAGE_NAME;
-                return;
+                if (package_decl && package_decl->sub_packages->lookupSymbol(cur_ident.name)) {
+                    ref.identifiers[current_pos].classification = Classification::PACKAGE_NAME;
+                    return;
+                }
+
+                THROW_DisambiguationError("Ambiguous type name " + ref.getQualifiedName());
             } break;
             default:
                 THROW_DisambiguationError("Ambiguous type name " + ref.getQualifiedName());
