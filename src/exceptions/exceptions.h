@@ -88,3 +88,12 @@ public:
     DisambiguationError(std::string message, std::string file, int line)
         : runtime_error(make_message("Disambiguation error", message, file, line)) {}
 };
+
+#define THROW_TypeCheckerError(message) throw TypeCheckerError(message, __FILE__, __LINE__)
+class TypeCheckerError : public std::runtime_error {
+public:
+    std::string message;
+    TypeCheckerError(std::string message) : runtime_error("TypeChecker error: " + message) {}
+    TypeCheckerError(std::string message, std::string file, int line)
+        : runtime_error(make_message("TypeChecker error", message, file, line)) {}
+};

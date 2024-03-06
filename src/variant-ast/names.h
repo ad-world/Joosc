@@ -29,7 +29,12 @@ struct QualifiedIdentifier: public AstNodeCommon {
     QualifiedIdentifier() {}
     QualifiedIdentifier(std::vector<Identifier>& identifiers) : identifiers(std::move(identifiers)) {}
     QualifiedIdentifier(std::vector<Identifier>&& identifiers) : identifiers(std::move(identifiers)) {}
-public: 
+
+public:
+    Classification getClassification() { return identifiers.back().classification; }
+    
+    bool isSimple() { return identifiers.size() == 1; }
+
     std::string getQualifiedName() {
         std::string result = "";
         for (int i = 0; i < identifiers.size(); i++) {
