@@ -15,7 +15,7 @@ void DisambiguationVisitor::operator()(MethodInvocation &node) {
     if( parent_expr && std::holds_alternative<QualifiedIdentifier>(*parent_expr) ) {
         auto &qi = std::get<QualifiedIdentifier>(*parent_expr);
         // std::cout << qi.getQualifiedName() << std::endl;
-        disambiguate(qi);
+        disambiguate(qi, qi.identifiers.size() - 1);
     }
     this->visit_children(node);
 }
