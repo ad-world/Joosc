@@ -6,4 +6,4 @@ all :
 	dot -Tpng -O ${GRAPH_NAME}
 
 clean:
-	rm ${GRAPH_NAME}*
+	rm -f ${GRAPH_NAME}*

@@ -9,10 +9,10 @@
 #include <variant>
 
 void DisambiguationVisitor::operator()(MethodInvocation &node) {
-    auto &method_name = node.method_name;
+    auto &parent_expr = node.parent_expr;
 
-    if(std::holds_alternative<QualifiedIdentifier>(*method_name)) {
-        auto &qi = std::get<QualifiedIdentifier>(*method_name);
+    if( parent_expr && std::holds_alternative<QualifiedIdentifier>(*parent_expr) ) {
+        auto &qi = std::get<QualifiedIdentifier>(*parent_expr);
         // std::cout << qi.getQualifiedName() << std::endl;
         disambiguate(qi);
     }

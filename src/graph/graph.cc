@@ -482,6 +482,9 @@ void GraphVisitor::operator()(MethodInvocation &node) {
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
+    if (node.parent_expr) {
+        children.push_back((AstNodeVariant*) node.parent_expr.get());
+    }
     if (node.method_name) {
         children.push_back((AstNodeVariant*) node.method_name.get());
     }

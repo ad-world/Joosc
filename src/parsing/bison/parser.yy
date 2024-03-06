@@ -646,9 +646,15 @@ Arguments:
 
 MethodInvocation:
     QualifiedIdentifier Arguments // MethodName
-        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, OBJ_TO_VARIANT(Expression, *$1), move($2)); }
+        {
+            if ( $1->identifiers.size() <= 1 ) { // Just method_name in QI - eg. toString()
+                MAKE_EXPRESSION_OBJ($$, MethodInvocation, EMPTY, NEW_OBJ(Identifier, $1->identifiers.back()), move($2));
+            } else { // QI has more than just method_name - eg. A.toString()
+                MAKE_EXPRESSION_OBJ($$, MethodInvocation, NEW_VARIANT_OBJ(Expression, QualifiedIdentifier, $1->getQualifiedIdentifierWithoutLast().identifiers), NEW_OBJ(Identifier, $1->identifiers.back()), move($2));
+            }
+        }
     | Primary DOT Identifier Arguments // Could we call this FieldAccess instead?
-        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, OBJ_TO_VARIANT(Expression, move(*NEW_OBJ(FieldAccess, move($1), move($3)))), move($4)); }
+        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, move($1), move($3), move($4)); }
     ;
 
 Type:

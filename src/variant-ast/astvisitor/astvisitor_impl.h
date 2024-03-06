@@ -308,6 +308,9 @@ void AstVisitor<ReturnType>::visit_children(ArrayAccess &node) {
 
 template <typename ReturnType>
 void AstVisitor<ReturnType>::visit_children(MethodInvocation &node) {
+    if (node.parent_expr) {
+        this->operator()(*node.parent_expr);
+    }
     if (node.method_name) {
         this->operator()(*node.method_name);
     }
