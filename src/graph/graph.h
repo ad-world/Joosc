@@ -6,6 +6,7 @@ class GraphVisitor : public DefaultSkipVisitor<std::string> {
     CompilationUnit* root = nullptr;
     std::unordered_map<AstNodeVariant*, std::vector<AstNodeVariant*>> map;
     std::unordered_map<AstNodeVariant*, std::string> label_map;
+    std::vector<AstNodeVariant>* asts;
 public:
     using DefaultSkipVisitor<std::string>::operator();
     void operator()(CompilationUnit &node) override;
@@ -51,4 +52,7 @@ public:
     std::string visit(AstNodeVariant &node) override;
 
     std::string getGraph();
+
+    GraphVisitor(std::vector<AstNodeVariant>& asts);
+    ~GraphVisitor();
 };
