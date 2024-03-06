@@ -98,7 +98,28 @@ void DisambiguationVisitor::operator()(InterfaceDeclaration &node) {
 
 void DisambiguationVisitor::operator()(CompilationUnit &node) {
     compilation_unit = &node;
+    
+    for (auto &import : node.single_type_import_declaration) {
+        for (auto& ident: import.identifiers) {
+            if (&ident == &import.identifiers.back()) {
+                ident.classification = Classification::TYPE_NAME;
+            } else {
+                ident.classification = Classification::PACKAGE_NAME;
+            }
+        }
+    }
+
+    for (auto &import: node.type_import_on_demand_declaration) {
+        for (auto& ident: import.identifiers) {
+            ident.classification = Classification::PACKAGE_NAME;
+        }
+    }
+
     if(node.package_declaration) {
+        for (auto& ident: node.package_declaration->identifiers) {
+            ident.classification = Classification::PACKAGE_NAME;
+        }
+
         current_package = default_package->findPackageDeclaration(node.package_declaration->identifiers);
     }
 
@@ -108,10 +129,11 @@ void DisambiguationVisitor::operator()(CompilationUnit &node) {
 }
 
 void DisambiguationVisitor::operator()(QualifiedIdentifier &node) {
-    disambiguate(node, node.identifiers.size() - 1);
+    if (node.identifiers.back().classification == Classification::UNCLASSIFIED) {
+        disambiguate(node, node.identifiers.size() - 1);
+    }
     this->visit_children(node);
 }
-
 
 void DisambiguationVisitor::operator()(Block &node) {
     size_t scope_id = node.scope_id;
@@ -139,7 +161,6 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
         // If the Identifier appears within the scope (§6.3) of a local variable declaration (§14.4) or parameter declaration (§8.4.1, §8.8.1, §14.19) or field declaration (§8.3) with that name, then the AmbiguousName is reclassified as an ExpressionName.
         if (current_method != nullptr) {
             size_t scope_id = current_method->ast_reference->body->scope_id;
-            current_method->scope_manager.openScope(scope_id);
 
             if (current_method->scope_manager.lookupVariable(identifier)) {
                 ref.identifiers[current_pos].classification = Classification::EXPRESSION_NAME;
@@ -150,8 +171,6 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
                 ref.identifiers[current_pos].classification = Classification::EXPRESSION_NAME;
                 return;
             }
-
-            current_method->scope_manager.closeScope(scope_id);
         }
 
         if (current_class != nullptr) {
@@ -256,8 +275,6 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
         } else {
             THROW_DisambiguationError("Ambiguous type name " + ref.getQualifiedName());
         }
-
-
         return;
     } else {
         // if qi is a qualified name, then we need to disambiguate the prefix
@@ -283,7 +300,6 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
                 // Check namspace
                 auto type = current_ns.lookupQualifiedType(prefix);
                 // Check if the current identifier is a field or method of the class
-
                 if (std::holds_alternative<ClassDeclarationObject*>(type)) {
                     auto class_decl = std::get<ClassDeclarationObject*>(type);
                     
