@@ -7,13 +7,15 @@ using NonArrayLinkedType
     = std::variant<PrimitiveType, struct ClassDeclarationObject*, struct InterfaceDeclarationObject*, std::nullptr_t>;
 
 struct LinkedType {
+    bool not_expression; // true if this linked type is not an underlying expression
     bool is_array;
     NonArrayLinkedType linked_type;
 
     LinkedType() : is_array{false}, linked_type{nullptr} {}
-    LinkedType(NonArrayLinkedType non_array_type, bool is_array=false) 
-        : is_array{is_array}, linked_type{non_array_type} {}
-    LinkedType(TypeDeclaration type_declaration, bool is_array=false) : is_array{is_array} {
+    LinkedType(NonArrayLinkedType non_array_type, bool is_array=false, bool not_expression=false) 
+        : is_array{is_array}, not_expression{not_expression}, linked_type{non_array_type} {}
+    LinkedType(TypeDeclaration type_declaration, bool is_array=false, bool not_expression=false) 
+        : is_array{is_array}, not_expression{not_expression} {
         std::visit([&](auto type_dec){ this->linked_type = type_dec; }, type_declaration);
     }
 

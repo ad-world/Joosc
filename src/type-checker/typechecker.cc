@@ -190,6 +190,11 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                 }
                 THROW_TypeCheckerError("Undefined reference to " + qid.getQualifiedName());
             }
+        case TYPE_NAME: {
+            // Link this even though its not an expression, as it will be used for static method calls 
+            auto type_lookup = compilation_unit_namespace.lookupQualifiedType(qid);
+            qid.link = LinkedType(type_lookup, false, true);
+        }
         default:
             // Not an expression
             return;
@@ -226,6 +231,45 @@ void TypeChecker::operator()(InfixExpression &node) {
 
 void TypeChecker::operator()(MethodInvocation &node) {
     this->visit_children(node);
+    // JLS 15.12.1
+    MethodDeclarationObject* invoked_method;
+    if (node.parent_expr) {
+        // Qualified method call
+        LinkedType object_type = getLink(node.parent_expr);
+
+        if (object_type.is_array) {
+            // Arrays have all the methods of Object
+            // TODO : needs serializable and stuff too
+            object_type = LinkedType(NonArrayLinkedType{default_package->getJavaLangObject()});
+        }
+        
+        ClassDeclarationObject* class_type;
+        InterfaceDeclarationObject* interface_type;
+        if (object_type.getIfNonArrayIsPrimitive()) { 
+            THROW_TypeCheckerError("Primitive type cannot call methods"); 
+        } else if (class_type = object_type.getIfNonArrayIsClass()) {
+            invoked_method = class_type->all_methods[node.method_name->name];
+        } else if (interface_type = object_type.getIfNonArrayIsInterface()) {
+            invoked_method = interface_type->all_methods[node.method_name->name];
+        } else {
+            THROW_CompilerError("Flow should not reach here");
+        }
+
+        if (object_type.not_expression) {
+            // Must be a static method call
+            if (interface_type) {
+                THROW_TypeCheckerError("Interface type cannot call static methods"); 
+            } else if (!invoked_method->ast_reference->hasModifier(Modifier::STATIC)) {
+                THROW_TypeCheckerError("Non-static method called where only static is available"); 
+            }
+        }
+    } else {
+        // Simple method call, must be in current class
+        invoked_method = current_class->all_methods[node.method_name->name];
+    }
+
+    // The type of this expression is the methods return type
+    node.link = invoked_method->return_type;
 }
 
 void TypeChecker::operator()(QualifiedThis &node) {
