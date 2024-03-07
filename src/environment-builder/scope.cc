@@ -29,17 +29,6 @@ size_t LocalVariableScopeManager::createNewScope() {
 }
 
 LocalVariableDeclarationObject* LocalVariableScopeManager::lookupVariable(const std::string& name) {
-    // // std::cerr << open_scopes.size() << std::endl;
-    // // auto j = open_scopes.rbegin();
-    // size_t i = open_scopes.size();
-    // // for (size_t i = open_scopes.size() - 1; i > -1; --i) {
-    // //     auto opened_scope_index = open_scopes[i];
-    // //     auto table_result = scopes[opened_scope_index].lookupUniqueSymbol(name);
-    // //     if (table_result) {
-    // //         return &std::get<LocalVariableDeclarationObject>(*table_result);
-    // //     }
-    // // }
-
     for (auto i = open_scopes.rbegin(); i != open_scopes.rend(); ++i ) {
         auto table_result = scopes[(*i)].lookupUniqueSymbol(name);
         if (table_result) {
