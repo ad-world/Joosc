@@ -1,6 +1,7 @@
 #pragma once
 
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
+#include "variant-ast/classes.h"
 #include "variant-ast/expressions.h"
 #include "type-decl/type_declaration.h"
 #include "type-decl/linkedtype.h"
@@ -51,6 +52,10 @@ public:
     void operator()(ParenthesizedExpression &node) override;
     void operator()(QualifiedIdentifier &node) override;
     void operator()(Block &node) override;
+
+    // Rest of unclassified names
+    void operator()(VariableDeclarator &node) override;
+    void operator()(FormalParameter &node) override;
 
     void visit(AstNodeVariant &node) override {
         std::visit(*this, node);

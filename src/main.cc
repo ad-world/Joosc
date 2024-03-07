@@ -17,6 +17,7 @@
 #include "hierarchy-checking/hierarchy-checking.h"
 #include "exceptions/exceptions.h"
 #include "disambiguation/forward-decl.h"
+#include "disambiguation/search-unclassified.h"
 #include "type-checker/typechecker.h"
 
 #ifdef GRAPHVIZ
@@ -199,6 +200,15 @@ int main(int argc, char *argv[]) {
         return COMPILER_DEVELOPMENT_ERROR;
     }
 
+    // Error on unclassified identifiers
+    try {
+        for (auto &ast: asts ) {
+            SearchUnclassifiedVisitor().visit(ast);
+        }
+    } catch (std::exception &e) {
+        cerr << e.what() << endl;
+        return COMPILER_DEVELOPMENT_ERROR;
+    }
 
     // try {
     //     // Type checking
