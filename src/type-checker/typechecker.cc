@@ -238,7 +238,7 @@ void TypeChecker::operator()(InfixExpression &node) {
 void TypeChecker::operator()(MethodInvocation &node) {
     this->visit_children(node);
     // JLS 15.12.1
-    MethodDeclarationObject* invoked_method;
+    std::list<MethodDeclarationObject*> invoked_methods_candidates;
     std::string object_type_name;
     if (node.parent_expr) {
         // Qualified method call
@@ -250,60 +250,60 @@ void TypeChecker::operator()(MethodInvocation &node) {
             // Arrays have all the methods of Object
             // TODO : needs serializable and stuff too
             object_type = LinkedType(NonArrayLinkedType{default_package->getJavaLangObject()});
-            invoked_method = default_package->getJavaLangObject()->all_methods[node.method_name->name];
+            invoked_methods_candidates 
+                = default_package->getJavaLangObject()->overloaded_methods[node.method_name->name];
         } else {
             if (object_type.getIfNonArrayIsPrimitive()) { 
                 THROW_TypeCheckerError("Primitive type cannot call methods"); 
             } else if (class_type = object_type.getIfNonArrayIsClass()) {
                 object_type_name = class_type->identifier;
-                invoked_method = class_type->all_methods[node.method_name->name];
+                invoked_methods_candidates = class_type->overloaded_methods[node.method_name->name];
             } else if (interface_type = object_type.getIfNonArrayIsInterface()) {
                 object_type_name = interface_type->identifier;
-                invoked_method = interface_type->all_methods[node.method_name->name];
+                invoked_methods_candidates = interface_type->overloaded_methods[node.method_name->name];
             } else {
                 return;
                 THROW_CompilerError("Flow should not reach here; LinkedType non array type is probably null");
             }
         }
 
-        if (object_type.not_expression) {
-            // Must be a static method call
-            if (interface_type) {
-                THROW_TypeCheckerError("Interface type cannot call static methods"); 
-            } else if (!invoked_method->ast_reference->hasModifier(Modifier::STATIC)) {
-                THROW_TypeCheckerError("Non-static method called where only static is available"); 
-            }
-        }
+        // if (object_type.not_expression) {
+        //     // Must be a static method call
+        //     if (interface_type) {
+        //         THROW_TypeCheckerError("Interface type cannot call static methods"); 
+        //     } else if (!invoked_methods_candidates->ast_reference->hasModifier(Modifier::STATIC)) {
+        //         THROW_TypeCheckerError("Non-static method called where only static is available"); 
+        //     }
+        // }
     } else {
         // Simple method call, must be in current class
-        invoked_method = current_class->all_methods[node.method_name->name];
+        invoked_methods_candidates = current_class->overloaded_methods[node.method_name->name];
     }
 
-    // See if method was found
-    if (!invoked_method) {
-        THROW_TypeCheckerError(
-            "No method with name " + node.method_name->name + " on object " + object_type_name + " was found"); 
-    }
-
-    // Check method signature
-    bool compatible = true;
-    if (node.arguments.size() != invoked_method->getParameters().size()) {
-        // Not enough arguments to be compatible with call
-        compatible = false;
-    } else {
-        int index = 0;
-        auto parameters = invoked_method->getParameters();
-        for (auto &arg : node.arguments) {
-            if (!(getLink(arg) == parameters[index]->type)) {
-                // Parameter and argument is incorrect type; call is not compatible
-                compatible = false;
+    for (auto candidate : invoked_methods_candidates) {
+        // Check method signature
+        bool compatible = true;
+        if (node.arguments.size() != candidate->getParameters().size()) {
+            // Not enough arguments to be compatible with call
+            compatible = false;
+        } else {
+            int index = 0;
+            auto parameters = candidate->getParameters();
+            for (auto &arg : node.arguments) {
+                if (!(getLink(arg) == parameters[index]->type)) {
+                    // Parameter and argument is incorrect type; call is not compatible
+                    compatible = false;
+                }
+                index++;
             }
-            index++;
+        }
+        if (compatible) {
+            // The type of this expression is the methods return type
+            node.link = candidate->return_type;
+            return;
         }
     }
-
-    // The type of this expression is the methods return type
-    node.link = invoked_method->return_type;
+    THROW_TypeCheckerError("No compatible method call found");
 }
 
 void TypeChecker::operator()(QualifiedThis &node) {
