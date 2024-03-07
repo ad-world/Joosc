@@ -252,7 +252,8 @@ void TypeChecker::operator()(MethodInvocation &node) {
             } else if (interface_type = object_type.getIfNonArrayIsInterface()) {
                 invoked_method = interface_type->all_methods[node.method_name->name];
             } else {
-                THROW_CompilerError("Flow should not reach here");
+                return;
+                THROW_CompilerError("Flow should not reach here; LinkedType non array type is probably null");
             }
         }
 
