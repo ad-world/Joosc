@@ -40,10 +40,7 @@ InvalidEscape \\[^0-7tbnrf\"'\\]
   # define YY_USER_ACTION  loc.columns (yyleng);
 %}
 
-%s str
-%s chr
-    string str_buf;
-    string char_buf;
+%x IN_COMMENT
 
 %%
 %{
@@ -114,8 +111,17 @@ null                return yy::parser::make_NULL_TOKEN(nullptr, loc);
 
 %{ // Comments %}
 "//".*     { }
-[/][*][^*]*[*]+([^*/][^*]*[*]+)*[/]      { }
-[/][*][*][^/][^*]*[*]+([^*/][^*]*[*]+)*[/] {}
+
+<INITIAL>{
+    [/][*]        BEGIN(IN_COMMENT);
+}
+<IN_COMMENT>{
+    "*/"        BEGIN(INITIAL);
+    [^*\n]+     // eat
+    [*]         // eat
+    [\n]        loc.lines (yyleng); loc.step ();
+}
+
 
 %{ // Operators %}
 "||"    return yy::parser::make_BOOLEAN_OR(InfixOperator::BOOLEAN_OR, loc);
