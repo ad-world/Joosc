@@ -203,9 +203,6 @@ void TypeChecker::operator()(InfixExpression &node) {
 
     LinkedType linkedType1 = getLink(node.expression1);
     LinkedType linkedType2 = getLink(node.expression1);
-    if(linkedType1.is_array || linkedType2.is_array) {
-        THROW_TypeCheckerError("Infix operators are not defined for array types");
-    }
 
     switch (node.op) {
         case InfixOperator::PLUS:
