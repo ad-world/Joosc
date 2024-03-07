@@ -74,26 +74,6 @@ struct LinkedType {
         return false;
     }
 
-    bool operator==(const LinkedType& other) {
-        if(this->is_array != other.is_array) {
-            return false;
-        }
-        if(this->linked_type.index() != other.linked_type.index()) {
-            return false;
-        }
-        switch(this->linked_type.index()) {
-            case 0: // PrimitiveType
-                return std::get<PrimitiveType>(this->linked_type) == std::get<PrimitiveType>(other.linked_type);
-            case 1: // ClassDeclarationObject*
-                return std::get<ClassDeclarationObject*>(this->linked_type) == std::get<ClassDeclarationObject*>(other.linked_type);
-            case 2: // InterfaceDeclarationObject*
-                return std::get<InterfaceDeclarationObject*>(this->linked_type) == std::get<InterfaceDeclarationObject*>(other.linked_type);
-            case 3: // std::nullptr_t
-                return true;
-        }
-        return true;
-    }
-
     bool isNull() {
         return this->linked_type.index() == 3;
     }

@@ -160,9 +160,42 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
     }
 }
 
+bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, PackageDeclarationObject* default_package) {
+    if(linkedType1.isPrimitive()) {
+        auto typeEnum1 = std::get<PrimitiveType>(linkedType1.linked_type);
+        if(linkedType2.isPrimitive()) {
+            auto typeEnum2 = std::get<PrimitiveType>(linkedType2.linked_type);
+            if(typeEnum1 == typeEnum2) {
+                return true;
+            }
+            else if(((typeEnum1 == PrimitiveType::INT && linkedType2.isNumeric()) || 
+                    (typeEnum1 == PrimitiveType::SHORT && typeEnum2 == PrimitiveType::BYTE)) && 
+                    !linkedType1.is_array && !linkedType2.is_array) {
+                return true;
+            }
+        }
+    }
+    else {
+        if(linkedType2.isNull() || linkedType1.isSubType(linkedType2, default_package)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 void TypeChecker::operator()(Assignment &node) {
     this->visit_children(node);
+
+    LinkedType linkedType1 = getLink(node.assigned_to);
+    LinkedType linkedType2 = getLink(node.assigned_from);
+
+    if(checkAssignability(linkedType1, linkedType2, default_package))
+    {
+        node.link.linked_type = linkedType1.linked_type;
+    }
+    else {
+        THROW_TypeCheckerError("Invalid type for assignment operation");
+    }
 }
 
 void TypeChecker::operator()(InfixExpression &node) {
@@ -203,9 +236,11 @@ void TypeChecker::operator()(InfixExpression &node) {
             break;
         case InfixOperator::BOOLEAN_EQUAL:
         case InfixOperator::BOOLEAN_NOT_EQUAL:
-            if(linkedType1 == linkedType2 || (linkedType1.isNull() && (!linkedType2.isPrimitive() || linkedType2.is_array)) 
-                || (linkedType2.isNull() && (!linkedType1.isPrimitive() || linkedType1.is_array))) {
-                node.link = LinkedType(PrimitiveType::BOOLEAN); // Might need to add check for subclasses and base class comparison
+            if(linkedType1.isSubType(linkedType2, default_package) || linkedType2.isSubType(linkedType1, default_package) ||
+                (linkedType1.isNull() && (linkedType2.isReferenceType() || linkedType2.is_array))  
+                || (linkedType2.isNull() && (linkedType1.isReferenceType() || linkedType1.is_array))
+                || (linkedType1.isNumeric() && linkedType2.isNumeric())) {
+                node.link = LinkedType(PrimitiveType::BOOLEAN);
             }
             else {
                 THROW_TypeCheckerError("Invalid type for comparison operation");
@@ -311,7 +346,7 @@ bool isFinal(LinkedType type) {
     return false;
 }
 
-bool checkCastability(LinkedType type1, LinkedType type2) {
+bool checkCastability(LinkedType type1, LinkedType type2, PackageDeclarationObject* default_package) {
     if(type1.isNumeric() && type2.isNumeric() && !type1.is_array && !type2.is_array) {
         return true;
     }
@@ -319,7 +354,9 @@ bool checkCastability(LinkedType type1, LinkedType type2) {
             || (type1.getIfNonArrayIsInterface() && (type2.getIfNonArrayIsInterface() || !isFinal(type2)))) {
         return true;
     }
-    // else if check type and expression assignability for upcast/downcast classes
+    else if(type1.isSubType(type2, default_package)) {
+        return true;
+    }
     return false;
 }
 
@@ -329,7 +366,7 @@ void TypeChecker::operator()(CastExpression &node) {
     LinkedType type = node.type.get()->link;
     LinkedType expression = getLink(node.expression);
 
-    if(checkCastability(type, expression)) {
+    if(checkCastability(type, expression, default_package)) {
         node.link = type;
     }
     else {
@@ -342,7 +379,7 @@ void TypeChecker::operator()(InstanceOfExpression &node) {
 
     LinkedType expression = getLink(node.expression);
     LinkedType type = node.type.get()->link;
-    if(type.isReferenceType() && checkCastability(expression, type)) {
+    if(type.isReferenceType() && checkCastability(expression, type, default_package)) {
         node.link = LinkedType(PrimitiveType::BOOLEAN);
     }
     else {
