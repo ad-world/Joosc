@@ -97,6 +97,7 @@ void EnvironmentBuilder::operator()(FieldDeclaration &node) {
 
         // Field does not conflict in class and can be added
         auto field_env = current_class->fields->addSymbol<FieldDeclarationObject>(field_name);
+        field_env->containing_class = current_class;
         linkDeclaration(node, *field_env);
     } else {
         // This should not happen

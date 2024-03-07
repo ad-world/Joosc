@@ -99,6 +99,8 @@ struct FieldDeclarationObject {
     std::string identifier;
     class FieldDeclaration* ast_reference = nullptr;
 
+    ClassDeclarationObject* containing_class;
+
     // Fields resolved at type linking stage
     LinkedType type;
 

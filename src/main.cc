@@ -200,15 +200,15 @@ int main(int argc, char *argv[]) {
     }
 
 
-    // try {
-    //     // Type checking
-    //     for (auto &ast: asts ) {
-    //         TypeChecker(default_package).visit(ast);
-    //     }
-    // } catch (std::exception &e) {
-    //     cerr << e.what() << endl;
-    //     return INVALID_PROGRAM;
-    // }
+    try {
+        // Type checking
+        for (auto &ast: asts ) {
+            TypeChecker(default_package).visit(ast);
+        }
+    } catch (std::exception &e) {
+        cerr << e.what() << endl;
+        return INVALID_PROGRAM;
+    }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 

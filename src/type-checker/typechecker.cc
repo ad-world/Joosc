@@ -77,8 +77,11 @@ FieldDeclarationObject* checkIfFieldIsAccessible(
     bool must_be_static = false
 ) {
     // First, see if the field even exists
-    auto possible_field = class_with_field->fields->lookupUniqueSymbol<FieldDeclarationObject>(field_simple_name);
+    auto possible_field = class_with_field->accessible_fields[field_simple_name];
     if (!possible_field) { return nullptr; }
+
+    // Refactor if this works later
+    ClassDeclarationObject* class_that_declared_field = possible_field->containing_class;
 
     // Second, if the field must be static, ensure it is static
     if (must_be_static && !possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
@@ -89,8 +92,9 @@ FieldDeclarationObject* checkIfFieldIsAccessible(
     if (possible_field->ast_reference->hasModifier(Modifier::PROTECTED)) {
         if (
             !current_class->isSubType(class_with_field) && 
-            !(current_class->package_contained_in == class_with_field->package_contained_in)
+            !(current_class->package_contained_in == class_that_declared_field->package_contained_in)
         ) {
+            std::cerr << "Protected field not accessible\n";
             return nullptr;
         }
     }
@@ -105,11 +109,12 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
             if (qid.isSimple()) {
                 std::string& name = qid.identifiers.back().name;
                 // 1. Look up in local vars scope
-                auto possible_var = current_method->scope_manager.lookupDeclaredVariable(name);
-                if (possible_var) {
-                    qid.link = possible_var->type;
-                    return;
-                }
+                // auto possible_var = current_method->scope_manager.lookupDeclaredVariable(name);
+                auto possible_var = nullptr; //current_method->scope_manager.lookupVariable(name);
+                // if (possible_var) {
+                //     qid.link = possible_var->type;
+                //     return;
+                // }
                 // 2. Look up in parameters
                 auto possible_param 
                     = current_method->parameters->lookupUniqueSymbol<FormalParameterDeclarationObject>(name);
@@ -125,6 +130,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         return;
                     }
                 }
+                THROW_TypeCheckerError("Undefined reference to " + qid.getQualifiedName());
             } else {
                 // 6.5.6.2: Expression name is of the form Q.id
                 QualifiedIdentifier Q = qid.getQualifiedIdentifierWithoutLast();
@@ -167,18 +173,19 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                                 return;
                             }
                             THROW_TypeCheckerError(
-                                "No accessible field " + id + " in " + Q.getQualifiedName());
+                                "No accessible field " + id + " in " + Q.getQualifiedName() + " from class " + current_class->identifier
+                            );
                         }
                         THROW_TypeCheckerError(
-                                "Interface ExpressionName precedes ExpressionName in " + Q.getQualifiedName());
+                                "Interface ExpressionName " + Q.getQualifiedName() + " precedes ExpressionName " + id);
                     }
                     case METHOD_NAME:
                         THROW_CompilerError(
                             "MethodName precedes ExpressionName in " 
                             + qid.getQualifiedName() + " which should never happen");
                 }
+                THROW_TypeCheckerError("Undefined reference to " + qid.getQualifiedName());
             }
-            THROW_TypeCheckerError("Undefined reference to " + qid.getQualifiedName());
         default:
             // Not an expression
             return;
