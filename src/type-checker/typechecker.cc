@@ -336,7 +336,8 @@ void TypeChecker::operator()(PrefixExpression &node) {
 
 void TypeChecker::operator()(QualifiedThis &node) {
     this->visit_children(node);
-    node.link = node.qualified_this.get()->link;
+    if(node.qualified_this.get())
+        node.link = node.qualified_this.get()->link;
 }
 
 void TypeChecker::operator()(ArrayCreationExpression &node) {
