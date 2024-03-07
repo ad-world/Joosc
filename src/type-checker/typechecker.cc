@@ -39,7 +39,13 @@ LinkedType TypeChecker::getLink(std::unique_ptr<Expression>& node_ptr) {
 
 void TypeChecker::operator()(CompilationUnit &node) {
     this->compilation_unit_namespace = node.cu_namespace;
-    visit_children(node);
+    // Skip package declaration and imports
+    for (auto &child : node.class_declarations) {
+        this->operator()(child);
+    }
+    for (auto &child : node.interface_declarations) {
+        this->operator()(child);
+    }
 }
 
 void TypeChecker::operator()(ClassDeclaration &node) {
