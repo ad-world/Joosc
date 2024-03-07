@@ -168,7 +168,7 @@ bool isSubType(TypeDeclaration sub, TypeDeclaration super) {
     if (sub == super) { return true; }
     return std::visit(util::overload { 
         [&](ClassDeclarationObject* cls) -> bool {
-            if (::isSubType(cls->extended, super)) { return true; }
+            if (cls->extended && ::isSubType(cls->extended, super)) { return true; }
             for (auto sup_interface : cls->implemented) {
                 if (::isSubType(sup_interface, super)) { return true; }
             }
