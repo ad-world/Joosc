@@ -236,23 +236,24 @@ void TypeChecker::operator()(MethodInvocation &node) {
     if (node.parent_expr) {
         // Qualified method call
         LinkedType object_type = getLink(node.parent_expr);
+        ClassDeclarationObject* class_type = nullptr;
+        InterfaceDeclarationObject* interface_type = nullptr;
 
         if (object_type.is_array) {
             // Arrays have all the methods of Object
             // TODO : needs serializable and stuff too
             object_type = LinkedType(NonArrayLinkedType{default_package->getJavaLangObject()});
-        }
-        
-        ClassDeclarationObject* class_type;
-        InterfaceDeclarationObject* interface_type;
-        if (object_type.getIfNonArrayIsPrimitive()) { 
-            THROW_TypeCheckerError("Primitive type cannot call methods"); 
-        } else if (class_type = object_type.getIfNonArrayIsClass()) {
-            invoked_method = class_type->all_methods[node.method_name->name];
-        } else if (interface_type = object_type.getIfNonArrayIsInterface()) {
-            invoked_method = interface_type->all_methods[node.method_name->name];
+            invoked_method = default_package->getJavaLangObject()->all_methods[node.method_name->name];
         } else {
-            THROW_CompilerError("Flow should not reach here");
+            if (object_type.getIfNonArrayIsPrimitive()) { 
+                THROW_TypeCheckerError("Primitive type cannot call methods"); 
+            } else if (class_type = object_type.getIfNonArrayIsClass()) {
+                invoked_method = class_type->all_methods[node.method_name->name];
+            } else if (interface_type = object_type.getIfNonArrayIsInterface()) {
+                invoked_method = interface_type->all_methods[node.method_name->name];
+            } else {
+                THROW_CompilerError("Flow should not reach here");
+            }
         }
 
         if (object_type.not_expression) {
@@ -266,6 +267,28 @@ void TypeChecker::operator()(MethodInvocation &node) {
     } else {
         // Simple method call, must be in current class
         invoked_method = current_class->all_methods[node.method_name->name];
+    }
+
+    // See if method was found
+    if (!invoked_method) {
+        THROW_TypeCheckerError("No method with name " + node.method_name->name + " was found"); 
+    }
+
+    // Check method signature
+    bool compatible = true;
+    if (node.arguments.size() != invoked_method->getParameters().size()) {
+        // Not enough arguments to be compatible with call
+        compatible = false;
+    } else {
+        int index = 0;
+        auto parameters = invoked_method->getParameters();
+        for (auto &arg : node.arguments) {
+            if (!(getLink(arg) == parameters[index]->type)) {
+                // Parameter and argument is incorrect type; call is not compatible
+                compatible = false;
+            }
+            index++;
+        }
     }
 
     // The type of this expression is the methods return type

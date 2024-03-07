@@ -190,3 +190,15 @@ bool ClassDeclarationObject::isSubType(TypeDeclaration type_decl) {
 bool InterfaceDeclarationObject::isSubType(TypeDeclaration type_decl) {
     return ::isSubType(this, type_decl);
 }
+
+// TODO : Collapse into SymbolTable so no need to access internals
+std::vector<FormalParameterDeclarationObject*> MethodDeclarationObject::getParameters() {
+    std::vector<FormalParameterDeclarationObject*> params;
+    auto &param_table = this->parameters->hashmap;
+    for (auto &it : param_table) {
+        if (it.first != "") {
+            params.push_back(this->parameters->lookupUniqueSymbol<FormalParameterDeclarationObject>(it.first));
+        }
+    }
+    return params;
+}
