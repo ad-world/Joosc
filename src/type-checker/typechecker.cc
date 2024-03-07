@@ -233,6 +233,7 @@ void TypeChecker::operator()(MethodInvocation &node) {
     this->visit_children(node);
     // JLS 15.12.1
     MethodDeclarationObject* invoked_method;
+    std::string object_type_name;
     if (node.parent_expr) {
         // Qualified method call
         LinkedType object_type = getLink(node.parent_expr);
@@ -248,8 +249,10 @@ void TypeChecker::operator()(MethodInvocation &node) {
             if (object_type.getIfNonArrayIsPrimitive()) { 
                 THROW_TypeCheckerError("Primitive type cannot call methods"); 
             } else if (class_type = object_type.getIfNonArrayIsClass()) {
+                object_type_name = class_type->identifier;
                 invoked_method = class_type->all_methods[node.method_name->name];
             } else if (interface_type = object_type.getIfNonArrayIsInterface()) {
+                object_type_name = interface_type->identifier;
                 invoked_method = interface_type->all_methods[node.method_name->name];
             } else {
                 return;
@@ -272,7 +275,8 @@ void TypeChecker::operator()(MethodInvocation &node) {
 
     // See if method was found
     if (!invoked_method) {
-        THROW_TypeCheckerError("No method with name " + node.method_name->name + " was found"); 
+        THROW_TypeCheckerError(
+            "No method with name " + node.method_name->name + " on object " + object_type_name + " was found"); 
     }
 
     // Check method signature

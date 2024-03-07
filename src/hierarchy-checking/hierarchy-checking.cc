@@ -307,19 +307,16 @@ void HierarchyCheckingVisitor::operator()(ClassDeclaration &node) {
     // Get extended methods
     if ( extendedClass ) {
         extended_methods = getAllMethods(extendedClass);
-    } else {
-        // No direct superclass
-        // => implicitly inherit Object's methods
-        // (JLS 8.1.3)
+    }
 
-        // Get java.lang.Object
-        ClassDeclarationObject* object_class = root_symbol_table->getJavaLangObject();
+    // Everything implicitly inherits from Object (JLS 8.1.3)
+    // TODO handle double inherit from Object
+    ClassDeclarationObject* object_class = root_symbol_table->getJavaLangObject();
 
-        // Only apply this check if node is not java.lang.Object
-        if ( node.environment != object_class ) {
-            for ( auto& object_method : object_class->ast_reference->method_declarations ) {
-                extended_methods.push_back(object_method.environment);
-            }
+    // Only apply this check if node is not java.lang.Object
+    if ( node.environment != object_class ) {
+        for ( auto& object_method : object_class->ast_reference->method_declarations ) {
+            extended_methods.push_back(object_method.environment);
         }
     }
 
