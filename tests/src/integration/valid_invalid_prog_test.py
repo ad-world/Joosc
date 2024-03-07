@@ -82,11 +82,14 @@ def valid_invalid_prog_test():
             marmo_valid_tests = os.path.join(assignment_path, "marmoset/valid")
             marmo_invalid_tests = os.path.join(assignment_path, "marmoset/invalid")
 
-            for directory, expected_code in ((local_valid_tests, 0), (local_invalid_tests, 42), (marmo_valid_tests, 0), (marmo_invalid_tests, 42)):
+            local_warning_tests = os.path.join(assignment_path, "local/warning")
+            marmo_warning_tests = os.path.join(assignment_path, "marmoset/warning")
+
+            for directory, expected_code in ((local_valid_tests, 0), (local_invalid_tests, 42), (marmo_valid_tests, 0), (marmo_invalid_tests, 42), (local_warning_tests, 43), (marmo_warning_tests, 43)):
                 header_bold_underline = colors.HEADER + colors.BOLD + colors.UNDERLINE
-                print(f"\n{header_bold_underline}Testing all programs in {resolve_path(directory, '')}:{colors.ENDC}")
 
                 if os.path.exists(directory):
+                    print(f"\n{header_bold_underline}Testing all programs in {resolve_path(directory, '')}:{colors.ENDC}")
                     for program in os.listdir(directory):
                         program_path = resolve_path(directory, program)
 
