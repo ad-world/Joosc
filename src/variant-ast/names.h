@@ -15,6 +15,7 @@ enum Classification {
 
 struct Identifier: public AstNodeCommon {
     std::string name; // Identifier name
+    PackageDeclarationObject* package = nullptr; 
 
     Classification classification = UNCLASSIFIED;
 
