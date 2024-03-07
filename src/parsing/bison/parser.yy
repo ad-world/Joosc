@@ -12,6 +12,7 @@
   # include <memory>
   # include <vector>
   # include "../../variant-ast/astnode.h"
+  # include "../../add-location/add-location.h"
   #define COMMA ,
 
   class Driver;
@@ -281,10 +282,9 @@
 %parse-param {CompilationUnit **root}
 
 %{
-#define MAKE_EMPTY(me)      ; // me = new AstNodeVariant((symbol_kind::S_YYEMPTY))
-#define MAKE_ONE(me, you)   ; // me = you
-#define MAKE_NODE(me, symbol, children...) ;
-    // me = new AstNodeVariant((symbol)); me->addChild(children)
+#define SET_LOCATION(me, loc) \
+    AddLocation()(*me, loc)
+    // me->location = loc
 
 #define MAKE_STACK_OBJ(me, type, constructor...) \
     me = type(constructor)
@@ -383,44 +383,56 @@ CompilationUnit:
     PackageDeclaration ImportDeclarations TypeDeclarations
         { 
             MAKE_OBJ($$, CompilationUnit, move($1),   move($2.first), move($2.second),   move($3.first), move($3.second));
+            SET_LOCATION($$, @$); 
         }
     | ImportDeclarations TypeDeclarations   // No PackageDeclaration
-        { MAKE_OBJ($$, CompilationUnit, EMPTY,   move($1.first), move($1.second),   move($2.first), move($2.second)); }
+        {
+            MAKE_OBJ($$, CompilationUnit, EMPTY,   move($1.first), move($1.second),   move($2.first), move($2.second));
+            SET_LOCATION($$, @$); 
+        }
     | PackageDeclaration TypeDeclarations   // No ImportDeclarations
         { MAKE_OBJ($$, CompilationUnit,
             move($1),                                                               // package
             EMPTY_VECTOR(QualifiedIdentifier), EMPTY_VECTOR(QualifiedIdentifier),   // import
-            move($2.first), move($2.second)); }                                                 // type
+            move($2.first), move($2.second));                                       // type
+            SET_LOCATION($$, @$); 
+            }
     | PackageDeclaration ImportDeclarations // No TypeDeclarations
         { MAKE_OBJ($$, CompilationUnit,
             move($1),
             move($2.first), move($2.second),
-            EMPTY_VECTOR(ClassDeclaration), EMPTY_VECTOR(InterfaceDeclaration)); }
+            EMPTY_VECTOR(ClassDeclaration), EMPTY_VECTOR(InterfaceDeclaration));
+            SET_LOCATION($$, @$); 
+            }
     | PackageDeclaration { MAKE_OBJ($$, CompilationUnit,
             move($1),
             EMPTY_VECTOR(QualifiedIdentifier), EMPTY_VECTOR(QualifiedIdentifier),
             EMPTY_VECTOR(ClassDeclaration), EMPTY_VECTOR(InterfaceDeclaration));
+            SET_LOCATION($$, @$); 
         }
     | ImportDeclarations { MAKE_OBJ($$, CompilationUnit,
             EMPTY,
             move($1.first), move($1.second),
             EMPTY_VECTOR(ClassDeclaration), EMPTY_VECTOR(InterfaceDeclaration));
+            SET_LOCATION($$, @$); 
         }
     | TypeDeclarations { MAKE_OBJ($$, CompilationUnit,
             EMPTY,
             EMPTY_VECTOR(QualifiedIdentifier), EMPTY_VECTOR(QualifiedIdentifier),
             move($1.first), move($1.second));
+            SET_LOCATION($$, @$); 
         }
     | /* Empty */ { MAKE_OBJ($$, CompilationUnit,
             EMPTY,
             EMPTY_VECTOR(QualifiedIdentifier), EMPTY_VECTOR(QualifiedIdentifier),
             EMPTY_VECTOR(ClassDeclaration), EMPTY_VECTOR(InterfaceDeclaration));
+            SET_LOCATION($$, @$); 
         }
     ;
 
 PackageDeclaration:
     PACKAGE QualifiedIdentifier SEMI_COLON
-        { COPY_OBJ($$, $2); }
+        { COPY_OBJ($$, $2); SET_LOCATION($$, @$); }
     ;
 
 ImportDeclarations:
@@ -445,12 +457,12 @@ ImportDeclaration:
 
 SingleTypeImportDeclaration:
     IMPORT QualifiedIdentifier SEMI_COLON // TypeName
-        { COPY_OBJ($$, $2); }
+        { COPY_OBJ($$, $2); SET_LOCATION($$, @$); }
     ;
 
 TypeImportOnDemandDeclaration:
     IMPORT QualifiedIdentifier DOT ASTERISK SEMI_COLON // PackageOrTypeName
-        { COPY_OBJ($$, $2); }
+        { COPY_OBJ($$, $2); SET_LOCATION($$, @$); }
     ;
 
 TypeDeclaration:
@@ -462,75 +474,75 @@ TypeDeclaration:
 /*---------------------- Expressions ----------------------*/
 
 Expression:
-    AssignmentExpression { COPY_OBJ($$, $1); }
+    AssignmentExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 AssignmentExpression:
-    Assignment { COPY_OBJ($$, $1); }
-    | ConditionalOrExpression { COPY_OBJ($$, $1); }
+    Assignment { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | ConditionalOrExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 Assignment:
-    LeftHandSide ASSIGNMENT AssignmentExpression { MAKE_EXPRESSION_OBJ($$, Assignment, move($1), move($3)); }
+    LeftHandSide ASSIGNMENT AssignmentExpression { MAKE_EXPRESSION_OBJ($$, Assignment, move($1), move($3)); SET_LOCATION($$, @$); }
 
 LeftHandSide:
     QualifiedIdentifier // ExpressionName
-        { MAKE_OBJ($$, Expression, (Expression) move(*$1)); }
-    | FieldAccess { COPY_OBJ($$, $1); }
-    | ArrayAccess { COPY_OBJ($$, $1); }
+        { MAKE_OBJ($$, Expression, (Expression) move(*$1)); SET_LOCATION($$, @$); }
+    | FieldAccess { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | ArrayAccess { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 ConditionalOrExpression:
-    ConditionalAndExpression { COPY_OBJ($$, $1); }
+    ConditionalAndExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     | ConditionalOrExpression BOOLEAN_OR ConditionalAndExpression
-        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
     ;
 
 ConditionalAndExpression:
-    InclusiveOrExpression { COPY_OBJ($$, $1); }
+    InclusiveOrExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     | ConditionalAndExpression BOOLEAN_AND InclusiveOrExpression
-        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
     ;
 
 InclusiveOrExpression:
-    AndExpression { COPY_OBJ($$, $1); }
-    | InclusiveOrExpression PIPE AndExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+    AndExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | InclusiveOrExpression PIPE AndExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
 
 AndExpression:
-    EqualityExpression { COPY_OBJ($$, $1); }
-    | AndExpression AMPERSAND EqualityExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+    EqualityExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | AndExpression AMPERSAND EqualityExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
 
 EqualityExpression:
-    RelationalExpression { COPY_OBJ($$, $1); }
-    | EqualityExpression BOOLEAN_EQUAL RelationalExpression  { MAKE_INFIX_OBJ($$, $1, $2, $3); }
-    | EqualityExpression NOT_EQUAL RelationalExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+    RelationalExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | EqualityExpression BOOLEAN_EQUAL RelationalExpression  { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
+    | EqualityExpression NOT_EQUAL RelationalExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
     ;
 
 RelationalExpression:
-    AdditiveExpression { COPY_OBJ($$, $1); }
+    AdditiveExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     | RelationalExpression LESS_THAN AdditiveExpression
-        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
     | RelationalExpression GREATER_THAN AdditiveExpression
-        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
     | RelationalExpression LESS_THAN_EQUAL AdditiveExpression
-        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
     | RelationalExpression GREATER_THAN_EQUAL AdditiveExpression
-        { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+        { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
     | RelationalExpression INSTANCEOF ReferenceType // ReferenceType
-        { MAKE_EXPRESSION_OBJ($$, InstanceOfExpression, move($1), move($3)); }
+        { MAKE_EXPRESSION_OBJ($$, InstanceOfExpression, move($1), move($3)); SET_LOCATION($$, @$); }
     ;
 
 AdditiveExpression:
-    MultiplicativeExpression { COPY_OBJ($$, $1); }
-    | AdditiveExpression PLUS MultiplicativeExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
-    | AdditiveExpression MINUS MultiplicativeExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+    MultiplicativeExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | AdditiveExpression PLUS MultiplicativeExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
+    | AdditiveExpression MINUS MultiplicativeExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
     ;
 
 MultiplicativeExpression:
-    UnaryExpression { COPY_OBJ($$, $1); }
-    | MultiplicativeExpression ASTERISK UnaryExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
-    | MultiplicativeExpression DIVIDE UnaryExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
-    | MultiplicativeExpression MODULO UnaryExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); }
+    UnaryExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | MultiplicativeExpression ASTERISK UnaryExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
+    | MultiplicativeExpression DIVIDE UnaryExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
+    | MultiplicativeExpression MODULO UnaryExpression { MAKE_INFIX_OBJ($$, $1, $2, $3); SET_LOCATION($$, @$); }
     ;
 
 UnaryExpression:
@@ -542,87 +554,88 @@ UnaryExpression:
                 get<int64_t>(get<Literal>(*$2)) *= -1;
             }
             MAKE_PREFIX_OBJ($$, PrefixOperator::MINUS, move($2));
+            SET_LOCATION($$, @$); 
         }
-    | UnaryExpressionNotPlusMinus { COPY_OBJ($$, $1); }
+    | UnaryExpressionNotPlusMinus { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 UnaryExpressionNotPlusMinus:
-    NEGATE UnaryExpression { MAKE_PREFIX_OBJ($$, $1, move($2)); }
-    | CastExpression { COPY_OBJ($$, $1); }
-    | PrimaryOrExpressionName { COPY_OBJ($$, $1); }
+    NEGATE UnaryExpression { MAKE_PREFIX_OBJ($$, $1, move($2)); SET_LOCATION($$, @$); }
+    | CastExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | PrimaryOrExpressionName { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 CastExpression: // Done this way to avoid conflicts
     OPENING_PAREN PrimitiveType CLOSING_PAREN UnaryExpression
-        { MAKE_CASTEXPR_OBJ($$, move($2), move($4)); }
+        { MAKE_CASTEXPR_OBJ($$, move($2), move($4)); SET_LOCATION($$, @$); }
     | OPENING_PAREN Expression CLOSING_PAREN UnaryExpressionNotPlusMinus // Expression must be verified to be QualifiedIdentifier (ReferenceType no array)
-        { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(get<QualifiedIdentifier>(move(*$2)), false), move($4)); } // throws err if Expression not QI
+        { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(get<QualifiedIdentifier>(move(*$2)), false), move($4)); SET_LOCATION($$, @$); } // throws err if Expression not QI
     | OPENING_PAREN QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET CLOSING_PAREN UnaryExpressionNotPlusMinus // ReferenceType with array
-        { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(move(*$2), true), move($6)); }
+        { MAKE_CASTEXPR_OBJ($$, NEW_TYPE(move(*$2), true), move($6)); SET_LOCATION($$, @$); }
     | OPENING_PAREN
         PrimitiveType OPENING_BRACKET CLOSING_BRACKET // ReferenceType as PrimitiveType with array
             CLOSING_PAREN UnaryExpressionNotPlusMinus
-        { MAKE_CASTEXPR_OBJ($$, NEW_OBJ(Type, move($2->non_array_type), true), move($6)); }
+        { MAKE_CASTEXPR_OBJ($$, NEW_OBJ(Type, move($2->non_array_type), true), move($6)); SET_LOCATION($$, @$); }
     ;
 
 PrimaryOrExpressionName:
-    Primary { COPY_OBJ($$, $1); }
+    Primary { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     | QualifiedIdentifier // ExpressionName
-        { MAKE_OBJ($$, Expression, (Expression) move(*$1)); }
+        { MAKE_OBJ($$, Expression, (Expression) move(*$1)); SET_LOCATION($$, @$); }
     ;
 
 Primary:
-    PrimaryNoNewArray { COPY_OBJ($$, $1); }
-    | ArrayCreationExpression { COPY_OBJ($$, $1); }
+    PrimaryNoNewArray { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | ArrayCreationExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 ArrayCreationExpression:
     NEW PrimitiveType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, move($2), EMPTY); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, move($2), EMPTY); SET_LOCATION($$, @$); }
     | NEW PrimitiveType OPENING_BRACKET Expression CLOSING_BRACKET
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, move($2), move($4)); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, move($2), move($4)); SET_LOCATION($$, @$); }
     | NEW QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET // TypeName
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_TYPE(move(*$2), false), EMPTY); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_TYPE(move(*$2), false), EMPTY); SET_LOCATION($$, @$); }
     | NEW QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // TypeName
-        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_TYPE(move(*$2), false), move($4)); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayCreationExpression, NEW_TYPE(move(*$2), false), move($4)); SET_LOCATION($$, @$); }
     ;
 
 ClassInstanceCreationExpression:
     NEW QualifiedIdentifier OPENING_PAREN ArgumentListOpt CLOSING_PAREN
-        { MAKE_EXPRESSION_OBJ($$, ClassInstanceCreationExpression, move($2), move($4)); }
+        { MAKE_EXPRESSION_OBJ($$, ClassInstanceCreationExpression, move($2), move($4)); SET_LOCATION($$, @$); }
 
 PrimaryNoNewArray:
-    Literal { MAKE_EXPRESSION_OBJ($$, Literal, move(*$1)); }
-    | THIS { MAKE_EXPRESSION_OBJ($$, QualifiedThis, EMPTY); }
+    Literal { MAKE_EXPRESSION_OBJ($$, Literal, move(*$1)); SET_LOCATION($$, @$); }
+    | THIS { MAKE_EXPRESSION_OBJ($$, QualifiedThis, EMPTY); SET_LOCATION($$, @$); }
     | QualifiedIdentifier DOT THIS // ClassName     TODO: REMOVE
-        { MAKE_EXPRESSION_OBJ($$, QualifiedThis, move($1)); }
+        { MAKE_EXPRESSION_OBJ($$, QualifiedThis, move($1)); SET_LOCATION($$, @$); }
     | OPENING_PAREN Expression CLOSING_PAREN
-        { MAKE_EXPRESSION_OBJ($$, ParenthesizedExpression, move($2)); }
-    | ClassInstanceCreationExpression { COPY_OBJ($$, $1); }
-    | FieldAccess { COPY_OBJ($$, $1); }
-    | MethodInvocation { COPY_OBJ($$, $1); }
-    | ArrayAccess { COPY_OBJ($$, $1); }
+        { MAKE_EXPRESSION_OBJ($$, ParenthesizedExpression, move($2)); SET_LOCATION($$, @$); }
+    | ClassInstanceCreationExpression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | FieldAccess { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | MethodInvocation { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | ArrayAccess { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 Literal:
-    INTEGER  { MAKE_LITERAL_OBJ($$, int64_t, $1); }
-    | TRUE  { MAKE_LITERAL_OBJ($$, bool, $1); }
-    | FALSE  { MAKE_LITERAL_OBJ($$, bool, $1); }
-    | CHAR_LITERAL  { MAKE_LITERAL_OBJ($$, string, $1); }
-    | STRING_LITERAL  { MAKE_LITERAL_OBJ($$, string, $1); }
-    | NULL_TOKEN   { MAKE_LITERAL_OBJ($$, nullptr_t, $1); }
+    INTEGER  { MAKE_LITERAL_OBJ($$, int64_t, $1); SET_LOCATION($$, @$); }
+    | TRUE  { MAKE_LITERAL_OBJ($$, bool, $1); SET_LOCATION($$, @$); }
+    | FALSE  { MAKE_LITERAL_OBJ($$, bool, $1); SET_LOCATION($$, @$); }
+    | CHAR_LITERAL  { MAKE_LITERAL_OBJ($$, string, $1); SET_LOCATION($$, @$); }
+    | STRING_LITERAL  { MAKE_LITERAL_OBJ($$, string, $1); SET_LOCATION($$, @$); }
+    | NULL_TOKEN   { MAKE_LITERAL_OBJ($$, nullptr_t, $1); SET_LOCATION($$, @$); }
     ;
 
 ArrayAccess:
     QualifiedIdentifier OPENING_BRACKET Expression CLOSING_BRACKET // ExpressionName
-        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, OBJ_TO_VARIANT(Expression, *$1), move($3)); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, OBJ_TO_VARIANT(Expression, *$1), move($3)); SET_LOCATION($$, @$); }
     | PrimaryNoNewArray OPENING_BRACKET Expression CLOSING_BRACKET
-        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, move($1), move($3)); }
+        { MAKE_EXPRESSION_OBJ($$, ArrayAccess, move($1), move($3)); SET_LOCATION($$, @$); }
     ;
 
 FieldAccess:
     Primary DOT Identifier
-        { MAKE_EXPRESSION_OBJ($$, FieldAccess, move($1), move($3)); }
+        { MAKE_EXPRESSION_OBJ($$, FieldAccess, move($1), move($3)); SET_LOCATION($$, @$); }
     ;
 
 ArgumentListOpt:
@@ -652,19 +665,20 @@ MethodInvocation:
             } else { // QI has more than just method_name - eg. A.toString()
                 MAKE_EXPRESSION_OBJ($$, MethodInvocation, NEW_VARIANT_OBJ(Expression, QualifiedIdentifier, $1->getQualifiedIdentifierWithoutLast().identifiers), NEW_OBJ(Identifier, $1->identifiers.back()), move($2));
             }
+            SET_LOCATION($$, @$); 
         }
     | Primary DOT Identifier Arguments // Could we call this FieldAccess instead?
-        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, move($1), move($3), move($4)); }
+        { MAKE_EXPRESSION_OBJ($$, MethodInvocation, move($1), move($3), move($4)); SET_LOCATION($$, @$); }
     ;
 
 Type:
-    PrimitiveType { COPY_OBJ($$, $1); }
-    | ReferenceType { COPY_OBJ($$, $1); }
+    PrimitiveType { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | ReferenceType { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 PrimitiveType:
-    IntegralType { $$ = NEW_TYPE($1, false); }
-    | BooleanType { $$ = NEW_TYPE($1, false); }
+    IntegralType { $$ = NEW_TYPE($1, false); SET_LOCATION($$, @$); }
+    | BooleanType { $$ = NEW_TYPE($1, false); SET_LOCATION($$, @$); }
     ;
 
 IntegralType:
@@ -680,22 +694,22 @@ BooleanType:
 
 ClassOrInterfaceType:
     QualifiedIdentifier // ClassType, InterfaceType -> TypeName
-        { COPY_OBJ($$, $1); }
+        { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
 
 ReferenceType: // Done this way to disallow multidimensional arrays
     ClassOrInterfaceType
-        { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, move(*$1)), false); }
+        { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, move(*$1)), false); SET_LOCATION($$, @$); }
     | ClassOrInterfaceType OPENING_BRACKET CLOSING_BRACKET
-        { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, move(*$1)), true); }
+        { MAKE_OBJ($$, Type, NEW_OBJ(NonArrayType, move(*$1)), true); SET_LOCATION($$, @$); }
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET
-        { COPY_OBJ($$, $1); $$->is_array = true; }
+        { COPY_OBJ($$, $1); $$->is_array = true; SET_LOCATION($$, @$); }
     ;
 
 /*---------------------- Interfaces ----------------------*/
 
 InterfaceDeclaration:
     InterfaceModifiersOpt INTERFACE Identifier ExtendsInterfacesOpt InterfaceBody
-        { MAKE_OBJ($$, InterfaceDeclaration, move($1), move($3), move($4), move($5)); }
+        { MAKE_OBJ($$, InterfaceDeclaration, move($1), move($3), move($4), move($5)); SET_LOCATION($$, @$); }
     ;
 
 Modifiers:
@@ -718,7 +732,7 @@ InterfaceModifiersOpt:
     ;
 
 InterfaceType:
-    QualifiedIdentifier { COPY_OBJ($$, $1); }
+    QualifiedIdentifier { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 ExtendsInterfaces:
@@ -751,14 +765,14 @@ InterfaceMemberDeclarations:
     ;
 
 InterfaceMemberDeclaration: // Nested types and interface constants not supported
-    AbstractMethodDeclaration { COPY_OBJ($$, $1); }
+    AbstractMethodDeclaration { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 AbstractMethodDeclaration:
     AbstractMethodModifiersOpt Type MethodDeclarator SEMI_COLON
-        { MAKE_OBJ($$, MethodDeclaration, move($1), move($2), move($3.first), move($3.second), EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, move($1), move($2), move($3.first), move($3.second), EMPTY); SET_LOCATION($$, @$); }
     | AbstractMethodModifiersOpt VOID MethodDeclarator SEMI_COLON
-        { MAKE_OBJ($$, MethodDeclaration, move($1), NEW_TYPE($2, false), move($3.first), move($3.second), EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, move($1), NEW_TYPE($2, false), move($3.first), move($3.second), EMPTY); SET_LOCATION($$, @$); }
     ;
 
 AbstractMethodModifiersOpt:
@@ -784,9 +798,9 @@ AbstractMethodModifiers:
 // weeder: must contain public?
 ClassDeclaration:
     CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_OBJ($$, ClassDeclaration, EMPTY_VECTOR(Modifier), move($2), move($3), move($4), move($5.first), move($5.second)); }
+        { MAKE_OBJ($$, ClassDeclaration, EMPTY_VECTOR(Modifier), move($2), move($3), move($4), move($5.first), move($5.second)); SET_LOCATION($$, @$); }
     | Modifiers CLASS Identifier ExtendsOpt InterfacesOpt ClassBody
-        { MAKE_OBJ($$, ClassDeclaration, move($1), move($3), move($4), move($5), move($6.first), move($6.second)); }
+        { MAKE_OBJ($$, ClassDeclaration, move($1), move($3), move($4), move($5), move($6.first), move($6.second)); SET_LOCATION($$, @$); }
     ;
 
 /* Class interfaces */
@@ -807,7 +821,7 @@ InterfaceTypeList:
 /* Class Extends */
 ExtendsOpt:
     /* Empty - No extends */ { $$ = EMPTY; }
-    | EXTENDS QualifiedIdentifier { COPY_OBJ($$, $2); } // ClassType
+    | EXTENDS QualifiedIdentifier { COPY_OBJ($$, $2); SET_LOCATION($$, @$); } // ClassType
     ;
 
 /* Class body */
@@ -846,29 +860,29 @@ ClassBody:
 /* Fields */
 // Only one variable declaration is allowed at a time
 FieldDeclaration:
-    Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, EMPTY_VECTOR(Modifier), move($1), move($2)); }
-    | Modifiers Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, move($1), move($2), move($3)); }
+    Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, EMPTY_VECTOR(Modifier), move($1), move($2)); SET_LOCATION($$, @$); }
+    | Modifiers Type VariableDeclarator SEMI_COLON { MAKE_OBJ($$, FieldDeclaration, move($1), move($2), move($3)); SET_LOCATION($$, @$); }
     ;
 
 VariableInitializer:
-    Expression { COPY_OBJ($$, $1); }
+    Expression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 /* Methods */
 // weeder: methodbody exists if neither abstract nor native
 MethodDeclaration: // One of these must be constructor
-    MethodHeader MethodBody { COPY_OBJ($$, $1); COPY_OBJ($$->body, $2); }
+    MethodHeader MethodBody { COPY_OBJ($$, $1); COPY_OBJ($$->body, $2); SET_LOCATION($$, @$); }
     ;
 
 // weeder: allow static native int m(int)
 // weeder: see A1 specs for weeding modifiers
 MethodHeader:
-    Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), move($1), move($2.first), move($2.second), EMPTY); }
-    | Modifiers Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, move($1), move($2), move($3.first), move($3.second), EMPTY); }
-    | VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), NEW_TYPE($1, false), move($2.first), move($2.second), EMPTY); }
-    | Modifiers VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, move($1), NEW_TYPE($2, false), move($3.first), move($3.second), EMPTY); }
+    Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), move($1), move($2.first), move($2.second), EMPTY); SET_LOCATION($$, @$); }
+    | Modifiers Type MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, move($1), move($2), move($3.first), move($3.second), EMPTY); SET_LOCATION($$, @$); }
+    | VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, EMPTY_VECTOR(Modifier), NEW_TYPE($1, false), move($2.first), move($2.second), EMPTY); SET_LOCATION($$, @$); }
+    | Modifiers VOID MethodDeclarator { MAKE_OBJ($$, MethodDeclaration, move($1), NEW_TYPE($2, false), move($3.first), move($3.second), EMPTY); SET_LOCATION($$, @$); }
     | Modifiers MethodDeclarator // Represents constructor, todo weeding: reject if identifier is not class name
-        { MAKE_OBJ($$, MethodDeclaration, move($1), EMPTY, move($2.first), move($2.second), EMPTY); }
+        { MAKE_OBJ($$, MethodDeclaration, move($1), EMPTY, move($2.first), move($2.second), EMPTY); SET_LOCATION($$, @$); }
     ;
 
 MethodDeclarator:
@@ -878,7 +892,7 @@ MethodDeclarator:
 
 MethodBody:
     SEMI_COLON { $$ = EMPTY; }
-    | Block { COPY_OBJ($$, $1); }
+    | Block { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 /* Formal parameters */
@@ -899,49 +913,49 @@ AbstractMethodModifier:
     ;
 
 FormalParameter:
-	Type VariableDeclaratorId { MAKE_OBJ($$, FormalParameter, move($1), move($2)); }
+	Type VariableDeclaratorId { MAKE_OBJ($$, FormalParameter, move($1), move($2)); SET_LOCATION($$, @$); }
     ;
 
 VariableDeclaratorId:
-    Identifier { COPY_OBJ($$, $1); }
+    Identifier { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     // | Identifier OPENING_BRACKET CLOSING_BRACKET { MAKE_NODE($$, symbol_kind::S_VariableDeclaratorId, $1, $2, $3); }
     ;
 
 /*---------------------- Statements ----------------------*/
 
 Statement:
-    StatementWithoutTrailingSubstatement { COPY_OBJ($$, $1); }
-    | IfThenStatement { COPY_OBJ($$, $1); }
-    | IfThenElseStatement { COPY_OBJ($$, $1); }
-    | WhileStatement { COPY_OBJ($$, $1); }
-    | ForStatement { COPY_OBJ($$, $1); }
+    StatementWithoutTrailingSubstatement { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | IfThenStatement { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | IfThenElseStatement { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | WhileStatement { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | ForStatement { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 StatementWithoutTrailingSubstatement:
-    Block { MAKE_STATEMENT_OBJ($$, Block, EMPTY_VECTOR(LocalVariableDeclaration), move($1->statements)); }
-    | EmptyStatement { MAKE_STATEMENT_OBJ($$, EmptyStatement, $1); }
-    | ExpressionStatement { MAKE_OBJ($$, Statement, move(*$1)); }
-    | ReturnStatement { COPY_OBJ($$, $1); }
+    Block { MAKE_STATEMENT_OBJ($$, Block, EMPTY_VECTOR(LocalVariableDeclaration), move($1->statements)); SET_LOCATION($$, @$); }
+    | EmptyStatement { MAKE_STATEMENT_OBJ($$, EmptyStatement, $1); SET_LOCATION($$, @$); }
+    | ExpressionStatement { MAKE_OBJ($$, Statement, move(*$1)); SET_LOCATION($$, @$); }
+    | ReturnStatement { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 ExpressionStatement:
-    StatementExpression SEMI_COLON { COPY_OBJ($$, $1); }
+    StatementExpression SEMI_COLON { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 StatementExpression:
     Assignment
-        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<Assignment>(move(*$1))); }
+        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<Assignment>(move(*$1))); SET_LOCATION($$, @$); }
     | MethodInvocation
-        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<MethodInvocation>(move(*$1))); }
+        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<MethodInvocation>(move(*$1))); SET_LOCATION($$, @$); }
     | ClassInstanceCreationExpression
-        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<ClassInstanceCreationExpression>(move(*$1))); }
+        { $$ = OBJ_TO_VARIANT(ExpressionStatement, get<ClassInstanceCreationExpression>(move(*$1))); SET_LOCATION($$, @$); }
     ;
 
 StatementNoShortIf:
-    StatementWithoutTrailingSubstatement { COPY_OBJ($$, $1); }
-    | IfThenElseStatementNoShortIf { COPY_OBJ($$, $1); }
-    | WhileStatementNoShortIf { COPY_OBJ($$, $1); }
-    | ForStatementNoShortIf { COPY_OBJ($$, $1); }
+    StatementWithoutTrailingSubstatement { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | IfThenElseStatementNoShortIf { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | WhileStatementNoShortIf { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
+    | ForStatementNoShortIf { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 EmptyStatement:
@@ -949,61 +963,61 @@ EmptyStatement:
 	;
 
 IfThenStatement:
-	IF ParExpression Statement { MAKE_STATEMENT_OBJ($$, IfThenStatement, move($2), move($3)); }
+	IF ParExpression Statement { MAKE_STATEMENT_OBJ($$, IfThenStatement, move($2), move($3)); SET_LOCATION($$, @$); }
     ;
 
 IfThenElseStatement:
-	IF ParExpression StatementNoShortIf ELSE Statement { MAKE_STATEMENT_OBJ($$, IfThenElseStatement, move($2), move($3), move($5)); }
+	IF ParExpression StatementNoShortIf ELSE Statement { MAKE_STATEMENT_OBJ($$, IfThenElseStatement, move($2), move($3), move($5)); SET_LOCATION($$, @$); }
     ;
 
 IfThenElseStatementNoShortIf:
-	IF ParExpression StatementNoShortIf ELSE StatementNoShortIf { MAKE_STATEMENT_OBJ($$, IfThenElseStatement, move($2), move($3), move($5)); }
+	IF ParExpression StatementNoShortIf ELSE StatementNoShortIf { MAKE_STATEMENT_OBJ($$, IfThenElseStatement, move($2), move($3), move($5)); SET_LOCATION($$, @$); }
     ;
 
 WhileStatement:
-	  WHILE ParExpression Statement { MAKE_STATEMENT_OBJ($$, WhileStatement, move($2), move($3)); }
+	  WHILE ParExpression Statement { MAKE_STATEMENT_OBJ($$, WhileStatement, move($2), move($3)); SET_LOCATION($$, @$); }
     ;
 
 WhileStatementNoShortIf:
-	  WHILE ParExpression StatementNoShortIf { MAKE_STATEMENT_OBJ($$, WhileStatement, move($2), move($3)); }
+	  WHILE ParExpression StatementNoShortIf { MAKE_STATEMENT_OBJ($$, WhileStatement, move($2), move($3)); SET_LOCATION($$, @$); }
     ;
 
 ForStatement:
 	  FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN Statement
-          { MAKE_STATEMENT_OBJ($$, ForStatement, move($3), move($5), move($7), move($9)); }
+          { MAKE_STATEMENT_OBJ($$, ForStatement, move($3), move($5), move($7), move($9)); SET_LOCATION($$, @$); }
     ;
 
 ForStatementNoShortIf:
 	  FOR OPENING_PAREN ForInitOpt SEMI_COLON ExpressionOpt SEMI_COLON ForUpdateOpt CLOSING_PAREN StatementNoShortIf
-          { MAKE_STATEMENT_OBJ($$, ForStatement, move($3), move($5), move($7), move($9)); }
+          { MAKE_STATEMENT_OBJ($$, ForStatement, move($3), move($5), move($7), move($9)); SET_LOCATION($$, @$); }
     ;
 		
 ForInitOpt:
     /* No init */ { $$ = EMPTY; }
-    | ForInit { COPY_OBJ($$, $1); }
+    | ForInit { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 ForInit:
-    StatementExpression { $$ = OBJ_TO_VARIANT(Statement, *$1); }
-    | LocalVariableDeclaration { $$ = OBJ_TO_VARIANT(Statement, *$1); }
+    StatementExpression { $$ = OBJ_TO_VARIANT(Statement, *$1); SET_LOCATION($$, @$); }
+    | LocalVariableDeclaration { $$ = OBJ_TO_VARIANT(Statement, *$1); SET_LOCATION($$, @$); }
     ;
 
 ForUpdateOpt:
     /* Empty - no update */ { $$ = EMPTY; }
-    | StatementExpression { $$ = OBJ_TO_VARIANT(Statement, *$1); }
+    | StatementExpression { $$ = OBJ_TO_VARIANT(Statement, *$1); SET_LOCATION($$, @$); }
     ;
 
 ExpressionOpt:
     /* no expression */ { $$ = EMPTY; }
-    | Expression { COPY_OBJ($$, $1); }
+    | Expression { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
     ;
 
 ReturnStatement:
-    RETURN ExpressionOpt SEMI_COLON { MAKE_STATEMENT_OBJ($$, ReturnStatement, move($2)); }
+    RETURN ExpressionOpt SEMI_COLON { MAKE_STATEMENT_OBJ($$, ReturnStatement, move($2)); SET_LOCATION($$, @$); }
     ;
 
 ParExpression:
-    OPENING_PAREN Expression CLOSING_PAREN { MAKE_EXPRESSION_OBJ($$, ParenthesizedExpression, move($2)); }
+    OPENING_PAREN Expression CLOSING_PAREN { MAKE_EXPRESSION_OBJ($$, ParenthesizedExpression, move($2)); SET_LOCATION($$, @$); }
     ;
 
 QualifiedIdentifier:
@@ -1011,6 +1025,7 @@ QualifiedIdentifier:
         {
             MAKE_OBJ($$, QualifiedIdentifier, EMPTY_VECTOR(Identifier));
             $$->identifiers.push_back(move(*$1));
+            SET_LOCATION($$, @$);
         }
     | QualifiedIdentifier DOT Identifier
         { 
@@ -1020,24 +1035,24 @@ QualifiedIdentifier:
     ;
 
 Identifier:
-    IDENTIFIER { MAKE_OBJ($$, Identifier, $1); }
+    IDENTIFIER { MAKE_OBJ($$, Identifier, $1); SET_LOCATION($$, @$); }
     ;
 
 // Delay Type reduce due to conflict
 LocalVariableDeclaration:
     // Type VariableDeclarators
     QualifiedIdentifier VariableDeclarator // ClassOrInterfaceType VariableDeclarators
-        { MAKE_OBJ($$, LocalVariableDeclaration, NEW_TYPE(move(*$1), false), move($2)); }
+        { MAKE_OBJ($$, LocalVariableDeclaration, NEW_TYPE(move(*$1), false), move($2)); SET_LOCATION($$, @$); }
     | QualifiedIdentifier OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // ClassOrInterfaceTypeArray VariableDeclarators
-        { MAKE_OBJ($$, LocalVariableDeclaration, NEW_TYPE(move(*$1), true), move($4)); }
+        { MAKE_OBJ($$, LocalVariableDeclaration, NEW_TYPE(move(*$1), true), move($4)); SET_LOCATION($$, @$); }
     | PrimitiveType OPENING_BRACKET CLOSING_BRACKET VariableDeclarator // PrimitiveArray VariableDeclarators
-        { $1->is_array = true; MAKE_OBJ($$, LocalVariableDeclaration, move($1), move($4)); }
+        { $1->is_array = true; MAKE_OBJ($$, LocalVariableDeclaration, move($1), move($4)); SET_LOCATION($$, @$); }
     | PrimitiveType VariableDeclarator
-        { MAKE_OBJ($$, LocalVariableDeclaration, move($1), move($2)); }
+        { MAKE_OBJ($$, LocalVariableDeclaration, move($1), move($2)); SET_LOCATION($$, @$); }
     ;
 
 Block:
-    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE { MAKE_OBJ($$, Block, EMPTY_VECTOR(LocalVariableDeclaration), move($2)); }
+    OPENING_BRACE BlockStatementsOpt CLOSING_BRACE { MAKE_OBJ($$, Block, EMPTY_VECTOR(LocalVariableDeclaration), move($2)); SET_LOCATION($$, @$); }
     ;
 
 BlockStatementsOpt:
