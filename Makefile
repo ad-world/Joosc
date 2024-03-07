@@ -10,6 +10,9 @@ build: | generate-parser
 	(ninja --version && (mkdir -p build && cd build && cmake .. -G Ninja && ninja && cp joosc ../joosc)) || \
 	(mkdir -p build && cd build && cmake .. && make && cp joosc ../joosc)
 
+slow-build: | generate-parser
+	(mkdir -p build && cd build && cmake .. && make && cp joosc ../joosc)
+
 unit-test: build
 	(cd build && ctest -V)
 
