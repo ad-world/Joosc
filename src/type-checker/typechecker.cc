@@ -109,18 +109,22 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
             if (qid.isSimple()) {
                 std::string& name = qid.identifiers.back().name;
                 // 1. Look up in local vars scope
-                // auto possible_var = current_method->scope_manager.lookupDeclaredVariable(name);
-                auto possible_var = nullptr; //current_method->scope_manager.lookupVariable(name);
-                // if (possible_var) {
-                //     qid.link = possible_var->type;
-                //     return;
-                // }
+                if (current_method) {
+                    auto possible_var = current_method->scope_manager.lookupDeclaredVariable(name);
+                    // auto possible_var = current_method->scope_manager.lookupVariable(name);
+                    if (possible_var) {
+                        qid.link = possible_var->type;
+                        return;
+                    }
+                }
                 // 2. Look up in parameters
-                auto possible_param 
-                    = current_method->parameters->lookupUniqueSymbol<FormalParameterDeclarationObject>(name);
-                if (possible_param) {
-                    qid.link = possible_param->type;
-                    return;
+                if (current_method) {
+                    auto possible_param 
+                        = current_method->parameters->lookupUniqueSymbol<FormalParameterDeclarationObject>(name);
+                    if (possible_param) {
+                        qid.link = possible_param->type;
+                        return;
+                    }
                 }
                 // 3. Look up in fields
                 auto decl_type = compilation_unit_namespace.getDeclaredType();
