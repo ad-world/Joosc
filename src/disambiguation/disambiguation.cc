@@ -367,11 +367,11 @@ void DisambiguationVisitor::checkForwardDeclaration(std::string usage, std::stri
 // Rest of unclassified names
 
 void DisambiguationVisitor::operator()(VariableDeclarator &node) {
-    node.variable_name->classification = Classification::TYPE_NAME;
+    node.variable_name->classification = Classification::EXPRESSION_NAME;
     this->visit_children(node);
 }
 
 void DisambiguationVisitor::operator()(FormalParameter &node) {
-    node.parameter_name->classification = Classification::TYPE_NAME;
+    node.parameter_name->classification = Classification::EXPRESSION_NAME;
     this->visit_children(node);
 }
