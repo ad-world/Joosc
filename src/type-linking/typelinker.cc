@@ -181,7 +181,16 @@ void TypeLinker::operator()(Type &node) {
     
     // Resolve type if it refers to an identifier
     if (auto qualified_identifier = std::get_if<QualifiedIdentifier>(node.non_array_type.get())) {
-        node.link = compilation_unit_namespace.lookupQualifiedType(*qualified_identifier);
+        node.link = LinkedType(
+            compilation_unit_namespace.lookupQualifiedType(*qualified_identifier),
+            node.is_array
+        );
+    } else {
+        // Type linked to primitive type
+        node.link = LinkedType(
+            std::get<PrimitiveType>(*node.non_array_type),
+            node.is_array
+        );
     }
 
     this->visit_children(node);
