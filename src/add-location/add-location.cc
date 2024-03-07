@@ -1,6 +1,7 @@
 #include "add-location.h"
 #include "parsing/bison/location.hh"
 #include "variant-ast/astnode.h"
+#include <sstream>
 #include <variant>
 
 void AddLocation::operator()(CompilationUnit &node, yy::location &loc) {
@@ -142,4 +143,12 @@ void AddLocation::operator()(AstNodeVariant &node, yy::location &loc) {
             operator()(arg, loc);
         }, node);
     } catch (...) {}
+}
+
+std::string AddLocation::getString(yy::location &loc) {
+    std::stringstream location_stream;
+    location_stream << loc;
+    std::string s;
+    location_stream >> s;
+    return s;
 }

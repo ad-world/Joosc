@@ -50,4 +50,6 @@ public:
     void operator()(Expression &node, yy::location &loc);
 
     void operator()(AstNodeVariant &node, yy::location &loc);
+
+    static std::string getString(yy::location &loc);
 };
