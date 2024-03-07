@@ -10,6 +10,7 @@
 #include "type-decl/linkedtype.h"
 #include "type-decl/type_declaration.h"
 #include <iostream>
+#include <list>
 
 class SymbolTable;
 struct QualifiedIdentifier;
@@ -57,6 +58,7 @@ struct ClassDeclarationObject {
     std::unique_ptr<SymbolTable> fields; // SymbolTable mapping to FieldDeclarationObjects
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
     std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
+    std::unordered_map<std::string, std::list<MethodDeclarationObject*>> overloaded_methods; // declared and inherited methods
     PackageDeclarationObject* package_contained_in; // Back-link to the package that contains this class
 
     // Declared and inherited fields, aside from those that are shadowed
@@ -84,6 +86,7 @@ struct InterfaceDeclarationObject {
 
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
     std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
+    std::unordered_map<std::string, std::list<MethodDeclarationObject*>> overloaded_methods; // declared and inherited methods
     PackageDeclarationObject* package_contained_in; // Back-link to the package that contains this interface
 
     // Fields resolved at type linking stage
