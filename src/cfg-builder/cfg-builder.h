@@ -3,7 +3,7 @@
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
 #include <variant>
 #include <vector>
-#include "statements.h"
+#include "variant-ast/statements.h"
 
 /*
 This visitor is responsible for building the control flow graph (CFG) of our program / a method.
