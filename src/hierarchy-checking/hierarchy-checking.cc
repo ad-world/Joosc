@@ -409,13 +409,17 @@ void HierarchyCheckingVisitor::operator()(ClassDeclaration &node) {
     // Add my methods
     for ( auto& my_method : node.method_declarations ) {
         std::string method_name = my_method.environment->identifier;
-        node.environment->all_methods.insert({method_name, my_method.environment});
+        auto method_env = my_method.environment;
+        node.environment->all_methods.insert({method_name, method_env});
+        node.environment->overloaded_methods[method_name].push_back(method_env);
     }
     
     // Add inherited methods (non-replaced)
     for ( auto& inherited_method : non_replaced_methods ) {
         std::string method_name = inherited_method->identifier;
-        node.environment->all_methods.insert({method_name, inherited_method});
+        auto method_env = inherited_method;
+        node.environment->all_methods.insert({method_name, method_env});
+        node.environment->overloaded_methods[method_name].push_back(method_env);
     }
 };
 
@@ -488,19 +492,25 @@ void HierarchyCheckingVisitor::operator()(InterfaceDeclaration &node) {
     // Add my methods
     for ( auto& my_method : node.method_declarations ) {
         std::string method_name = my_method.environment->identifier;
-        node.environment->all_methods.insert({method_name, my_method.environment});
+        auto method_env = my_method.environment;
+        node.environment->all_methods.insert({method_name, method_env});
+        node.environment->overloaded_methods[method_name].push_back(method_env);
     }
     
     // Add implicit Object methods
     for ( auto& implicit_method : object_class->ast_reference->method_declarations ) {
         std::string method_name = implicit_method.environment->identifier;
-        node.environment->all_methods.insert({method_name, implicit_method.environment});
+        auto method_env = implicit_method.environment;
+        node.environment->all_methods.insert({method_name, method_env});
+        node.environment->overloaded_methods[method_name].push_back(method_env);
     }
 
     // Add inheritied methods
     for ( auto& parent_method : parent_methods ) {
         std::string method_name = parent_method->identifier;
-        node.environment->all_methods.insert({method_name, parent_method});
+        auto method_env = parent_method;
+        node.environment->all_methods.insert({method_name, method_env});
+        node.environment->overloaded_methods[method_name].push_back(method_env);
     }
 }
 

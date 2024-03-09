@@ -100,7 +100,7 @@ FieldDeclarationObject* checkIfFieldIsAccessible(
     // Third, if the field is protected, the current_class must be a subclass or in the same package of class_with_field
     if (possible_field->ast_reference->hasModifier(Modifier::PROTECTED)) {
         if (
-            !current_class->isSubType(class_with_field) && 
+            !current_class->isSubType(class_that_declared_field) && 
             !(current_class->package_contained_in == class_that_declared_field->package_contained_in)
         ) {
             std::cerr << "Protected field not accessible\n";
