@@ -3,6 +3,7 @@
 # include <climits>
 # include <cstdlib>
 # include <string>
+# include <sstream>
 # include "driver.h"
 # include "parser.hh"
 
@@ -20,7 +21,7 @@
 #endif
 %}
 
-%option noyywrap nounput batch noinput
+%option noyywrap nounput batch noinput stack
 /* %option debug */
 
 Whitespace      [ \b\t\f\r]
@@ -41,8 +42,16 @@ InvalidEscape \\[^0-7tbnrf\"'\\]
 %}
 
 %x IN_COMMENT
+%x IN_STRING
+%x IN_CHAR
+%x IN_ESCAPE
 
 %%
+
+%{
+    std::stringstream string_buf;
+%}
+
 %{
   // A handy shortcut to the location held by the driver.
   yy::location& loc = drv.location;
@@ -97,16 +106,43 @@ void      return yy::parser::make_VOID(PrimitiveType::VOID, loc);
 %{ // Literals %}
 true                return yy::parser::make_TRUE(true, loc);
 false               return yy::parser::make_FALSE(false, loc);
-\"({OctalEscapeString}|{Escape}|\\\"|\')*{InvalidEscape}.*\" {
-    throw yy::parser::syntax_error(loc, "invalid escape:"+ std::string(yytext));
-}
-\"({Ascii}|{OctalEscapeString}|{Escape}|\\\"|\')*\"  {
-    return yy::parser::make_STRING_LITERAL(((std::string) yytext).substr(1, ((std::string) yytext).size() - 2), loc);
-}
 {Integer}           return yy::parser::make_INTEGER(stol(yytext), loc);
 null                return yy::parser::make_NULL_TOKEN(nullptr, loc);
-\'({Ascii}|{OctalEscapeChar}|{Escape}|\\\"|\\\')\'         {
-    return yy::parser::make_CHAR_LITERAL(((std::string) yytext).substr(1, ((std::string) yytext).size() - 2), loc);
+
+\"      BEGIN(IN_STRING); string_buf.clear();
+<IN_STRING>{
+    \"      { BEGIN(INITIAL); return yy::parser::make_STRING_LITERAL(string_buf.str(), loc); }
+    \\      yy_push_state(IN_ESCAPE);
+    .       string_buf << yytext;
+}
+
+\'      BEGIN(IN_CHAR); string_buf.clear();
+<IN_CHAR>{
+    \'      {
+        BEGIN(INITIAL);
+        std::string outstr = string_buf.str();
+        if ( outstr.length() != 1 ) {
+            throw yy::parser::syntax_error(loc, "Invalid length of char:" + outstr.length());
+        } else {
+            return yy::parser::make_CHAR_LITERAL(outstr[0], loc);
+        }
+    }
+    \\      yy_push_state(IN_ESCAPE);
+    .       string_buf << yytext;
+}
+
+<IN_ESCAPE>{
+    t               { string_buf << "\t"; yy_pop_state(); }
+    b               { string_buf << "\b"; yy_pop_state(); }
+    n               { string_buf << "\n"; yy_pop_state(); }
+    r               { string_buf << "\r"; yy_pop_state(); }
+    f               { string_buf << "\f"; yy_pop_state(); }
+    \\              { string_buf << "\\"; yy_pop_state(); }
+    \"              { string_buf << "\""; yy_pop_state(); }
+    \'              { string_buf << "'" ; yy_pop_state(); }
+    [0-7]{1,2}      { string_buf << (char) std::stoi( yytext, 0, 8 ); yy_pop_state(); }
+    [0-3][0-7]{2}   { string_buf << (char) std::stoi( yytext, 0, 8 ); yy_pop_state(); }
+    .               { throw yy::parser::syntax_error(loc, "invalid escape:\\"+ std::string(yytext)); }
 }
 
 %{ // Comments %}
