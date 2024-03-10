@@ -5,10 +5,11 @@
 #include "type-decl/linkedtype.h"
 
 #include "primitivetype.h"
+#include "variant-ast/astnodecommon.h"
 
 typedef std::variant<PrimitiveType, struct QualifiedIdentifier> NonArrayType;
 
-struct Type {
+struct Type : public AstNodeCommon {
     std::unique_ptr<NonArrayType> non_array_type;
     bool is_array;
 
