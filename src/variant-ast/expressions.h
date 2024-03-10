@@ -161,7 +161,7 @@ struct MethodInvocation: public AstNodeCommon {
     );
 };
 
-struct InfixExpression {
+struct InfixExpression : public AstNodeCommon {
     std::unique_ptr<Expression> expression1;
     std::unique_ptr<Expression> expression2;
     InfixOperator op;
@@ -179,7 +179,7 @@ struct InfixExpression {
     );
 };
 
-struct PrefixExpression {
+struct PrefixExpression : public AstNodeCommon {
     std::unique_ptr<Expression> expression;
     PrefixOperator op;
     LinkedType link;
@@ -194,7 +194,7 @@ struct PrefixExpression {
     );
 };
 
-struct CastExpression {
+struct CastExpression : public AstNodeCommon {
     std::unique_ptr<Type> type;
     std::unique_ptr<Expression> expression;
     LinkedType link;
@@ -209,7 +209,7 @@ struct CastExpression {
     );
 };
 
-struct InstanceOfExpression {
+struct InstanceOfExpression : public AstNodeCommon {
     std::unique_ptr<Expression> expression;
     std::unique_ptr<Type> type;
     LinkedType link;
@@ -224,7 +224,7 @@ struct InstanceOfExpression {
     );
 };
 
-struct ParenthesizedExpression {
+struct ParenthesizedExpression : public AstNodeCommon {
     std::unique_ptr<Expression> expression;
     LinkedType link;
     

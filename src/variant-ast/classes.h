@@ -20,7 +20,7 @@ enum class Modifier {
     FINAL
 };
 
-struct VariableDeclarator {
+struct VariableDeclarator : public AstNodeCommon {
     std::unique_ptr<Identifier> variable_name;
     std::unique_ptr<Expression> expression;
 
@@ -55,7 +55,7 @@ struct FieldDeclaration: public AstNodeCommon {
     );
 };
 
-struct FormalParameter {
+struct FormalParameter : public AstNodeCommon {
     std::unique_ptr<Type> type;
     std::unique_ptr<Identifier> parameter_name;
 
@@ -73,7 +73,7 @@ struct FormalParameter {
     std::string toString() const;
 };
 
-struct MethodDeclaration {
+struct MethodDeclaration : public AstNodeCommon {
     std::vector<Modifier> modifiers;
     std::unique_ptr<Type> type;
     std::unique_ptr<Identifier> function_name;
