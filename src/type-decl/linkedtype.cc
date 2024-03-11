@@ -31,12 +31,6 @@ bool LinkedType::isSubType(LinkedType other, PackageDeclarationObject* default_p
         return false;
     }
 
-    // If this is java.lang.object return true or if other is true and this is a reference type/array return true
-    if((this->getIfNonArrayIsClass() == default_package->getJavaLangObject()) ||
-       (other.getIfNonArrayIsClass() == default_package->getJavaLangObject() && (this->is_array || this->isReferenceType()))) {
-        return true;
-    }
-
     // Both types now must be reference types
     if (this->is_array && other.is_array) {
         // Array is subtype of other array type, if and only if contained is

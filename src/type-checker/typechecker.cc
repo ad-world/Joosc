@@ -38,10 +38,8 @@ LinkedType TypeChecker::getLink(std::unique_ptr<Expression>& node_ptr) {
 }
 
 ClassDeclarationObject* TypeChecker::getStringClass(LinkedType &link) {
-    if(link.isReferenceType()) {
-        if(link.getIfNonArrayIsClass() == default_package->findClassDeclaration("java.lang.String")) {
-            return link.getIfNonArrayIsClass();
-        }
+    if(link.getIfNonArrayIsClass() == default_package->findClassDeclaration("java.lang.String")) {
+        return link.getIfNonArrayIsClass();
     }
     return nullptr;
 }
@@ -417,6 +415,11 @@ bool checkCastability(LinkedType& type, LinkedType& expression, PackageDeclarati
         return true;
     }
     else if(expression.isNull() && (type.isReferenceType() || type.is_array)) {
+        return true;
+    } 
+    // If this is java.lang.object return true or if other is true and this is a reference type/array return true
+    else if((type.getIfNonArrayIsClass() == default_package->getJavaLangObject()) ||
+       (expression.getIfNonArrayIsClass() == default_package->getJavaLangObject() && (type.is_array || type.isReferenceType()))) {
         return true;
     }
     else if(type.isSubType(expression, default_package)) {
