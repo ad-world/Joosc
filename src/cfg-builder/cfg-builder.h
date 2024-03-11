@@ -2,9 +2,7 @@
 
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
 #include <variant>
-#include <vector>
-#include "variant-ast/statements.h"
-#include <stack>
+
 
 /*
     This visitor is responsible for building the control flow graph (CFG) of our program / a method.
@@ -16,63 +14,44 @@
     blocks. The CFG is used to analyze the control flow of a program, and to perform optimizations such as
     dead code elimination, loop unrolling, and loop-invariant code motion.
 */
-
-class CfgNode {};
-
-struct CfgBlock : public CfgNode {
-    Block* block;
-    std::vector<CfgBlock*> successors;
-    std::vector<CfgBlock*> predecessors;
+class CfgNode {
+public:
+    CfgNode *parent;
+    CfgNode() : parent(nullptr) {}
 };
 
-struct CfgIf : public CfgNode {
-    CfgNode* parent;
-    IfThenStatement* if_stmt;
-    CfgBlock* then_block;
+struct CfgExpression : public CfgNode {
+    Expression* expression = nullptr;
+
+    CfgNode* true_branch = nullptr;
+    CfgNode* false_branch = nullptr;
+
+    CfgExpression(Expression* expression) : expression(expression) {}
 };
 
-struct CfgMethod : public CfgNode {
-    std::vector<CfgBlock*> blocks;
-    CfgBlock* entry_block;
-    CfgBlock* exit_block;
+struct CfgStatement : public CfgNode {
+    Statement* statement = nullptr;
+    bool is_return = false;
+    CfgNode* next = nullptr;
+
+    CfgStatement() {}
+    CfgStatement(Statement* statement) : statement(statement) {}
+    CfgStatement(Statement* statement, bool is_return) {
+        this->statement = statement;
+        this->is_return = is_return;
+    }
 };
 
-struct CfgIfThenElse : public CfgNode {
-    IfThenElseStatement* if_else_stmt;
-    Statement* then_block;
-    Statement* else_block;
-};
-
-struct CfgWhile : public CfgNode {
-    std::unique_ptr<Expression> condition;
-    CfgBlock* body_block;
-};
-
-struct CfgFor : public CfgNode {
-    Statement* init;
-    Expression* condition;
-    Statement* update;
-    CfgBlock* body_block;
-};
-
-struct CfgReturn : public CfgNode {
-    std::unique_ptr<Expression> return_value;
-};
 
 class CfgBuilderVisitor : public DefaultSkipVisitor<void> {
-    std::stack<CfgBlock*> block_stack;
+    std::pair<CfgStatement*, CfgStatement*> createCfg(Statement &stmt);
 public:
     CfgBuilderVisitor() {}
 
     using DefaultSkipVisitor<void>::operator();
-    void operator()(IfThenStatement &node) override;
-    void operator()(IfThenElseStatement &node) override;
-    void operator()(WhileStatement &node) override;
-    void operator()(ForStatement &node) override;
     void operator()(MethodDeclaration &node) override;
-    void operator()(ReturnStatement &node) override;
-    void operator()(ExpressionStatement &node) override;
-    void operator()(Statement &node) override;
-    void operator()(Block &node) override;
 
+    void visit(AstNodeVariant &node) override {
+        std::visit(*this, node);
+    }
 };

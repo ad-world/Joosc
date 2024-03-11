@@ -5,7 +5,6 @@
 #include <vector>
 #include "astnodecommon.h"
 #include "expressions.h"
-#include "cfg-builder/cfg-builder.h"
 
 struct Type;
 struct VariableDeclarator;
@@ -100,7 +99,6 @@ struct Block: public AstNodeCommon {
 
     size_t scope_id;
     
-    CfgBlock *cfg_block = nullptr;
 
     Block(
         std::vector<Statement>& statements
