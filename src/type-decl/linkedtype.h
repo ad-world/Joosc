@@ -40,4 +40,42 @@ struct LinkedType {
     friend bool operator==(const LinkedType &lhs, const LinkedType &rhs) {
         return (lhs.linked_type == rhs.linked_type) && (lhs.is_array == rhs.is_array);
     }
+
+    // Returns whether the type stored is INT, SHORT, BYTE, or CHAR
+    bool isNumeric() {
+        if(isPrimitive()) {
+            auto typeEnum = std::get<PrimitiveType>(linked_type);
+            if(typeEnum == PrimitiveType::INT || typeEnum == PrimitiveType::SHORT || typeEnum == PrimitiveType::BYTE || 
+                typeEnum == PrimitiveType::CHAR) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Returns whether the type stored is BOOLEAN
+    bool isBoolean() {
+        if(isPrimitive()) {
+            auto typeEnum = std::get<PrimitiveType>(linked_type);
+            if(typeEnum == PrimitiveType::BOOLEAN) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Returns whether the type stored is VOID
+    bool isVoid() {
+        if(isPrimitive()) {
+            auto typeEnum = std::get<PrimitiveType>(linked_type);
+            if(typeEnum == PrimitiveType::VOID) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool isNull() {
+        return (isPrimitive() && std::get<PrimitiveType>(this->linked_type) == PrimitiveType::NULL_T);
+    }
 };

@@ -85,7 +85,7 @@ struct ArrayCreationExpression: public AstNodeCommon {
     std::unique_ptr<Type> type;
     std::unique_ptr<Expression> expression;
     LinkedType link;
-;
+
 
     ArrayCreationExpression(
         std::unique_ptr<Type>& type,
