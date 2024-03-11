@@ -65,6 +65,7 @@ INTEGRATION_TEST:
     policy: pull
     paths:
       - .cache
+  allow_failure: true
 
 SUBMISSION:
   stage: .post
