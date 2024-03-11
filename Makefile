@@ -4,11 +4,11 @@ generate-parser:
 	make -C src/parsing/bison
 
 graph: | generate-parser
-	(ninja --version && (mkdir -p build && cd build && cmake -DGRAPHVIZ=ON .. -G Ninja  && ninja && cp joosc ../joosc)) || \
+	(ninja --version && ((mkdir -p build && cd build && cmake -DGRAPHVIZ=ON .. -G Ninja  && ninja && cp joosc ../joosc) || true)) || \
 	(mkdir -p build && cd build && cmake -DGRAPHVIZ=ON .. && make && cp joosc ../joosc)
 
 build: | generate-parser
-	(ninja --version && (mkdir -p build && cd build && cmake .. -G Ninja && ninja && cp joosc ../joosc)) || \
+	(ninja --version && ((mkdir -p build && cd build && cmake .. -G Ninja && ninja && cp joosc ../joosc) || true)) || \
 	(mkdir -p build && cd build && cmake .. && make && cp joosc ../joosc)
 
 fast-build: | generate-parser
