@@ -23,12 +23,16 @@ void CfgBuilderVisitor::operator()(MethodDeclaration &node) {
 
     // [0]: while statement
     // [1]: return statement
-    for (int i = 0; i + 1 < children.size(); i++) {
-        children[i].second->next = children[i + 1].first;
-    }
+    if ( children.size() > 0 ) {
+        for (int i = 0; i + 1 < children.size(); i++) {
+            children[i].second->next = children[i + 1].first;
+        }
 
-    node.cfg_start = children.front().first;
-    node.cfg_end = children.back().second;
+        if ( children.size() > 0 ) {
+            node.cfg_start = children.front().first;
+            node.cfg_end = children.back().second;
+        }
+    }
 }
 
 std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &stmt) {
@@ -113,12 +117,18 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
                 children.push_back(createCfg(new_stmt));
             }
 
-            for (int i = 0; i + 1 < children.size(); i++) {
-                children[i].second->next = children[i + 1].first;
-            }
+            if ( children.size() > 0 ) {
+                for (int i = 0; i + 1 < children.size(); i++) {
+                    children[i].second->next = children[i + 1].first;
+                }
 
-            start = children.front().first;
-            end = children.back().second;
+                start = children.front().first;
+                end = children.back().second;
+            } else {
+                auto dummy_stmt = new CfgStatement();
+                start = dummy_stmt;
+                end = dummy_stmt;
+            }
         },
         [&](ExpressionStatement &node) -> void {
             // build CFG for expression statement
