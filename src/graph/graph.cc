@@ -7,9 +7,20 @@
 #include <iostream>
 #include <string>
 #include <variant>
+#include "add-location/add-location.h"
+
+#define GRAPH_LOCATION
+
+#ifdef GRAPH_LOCATION
+#define PRINT_LOC \
+    label_map[(AstNodeVariant*)&node] += "\n\n" + AddLocation::getString(node.location)
+#endif
 
 void GraphVisitor::operator()(CompilationUnit &node) {
     label_map[(AstNodeVariant*)&node] = "CompilationUnit";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -47,6 +58,9 @@ std::string classificationToString(Classification classification) {
 
 void GraphVisitor::operator()(QualifiedIdentifier &node) {
     label_map[(AstNodeVariant*)&node] = "QualifiedIdentifier\n" + node.getQualifiedName() + "\n" + classificationToString(node.getClassification());
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -59,6 +73,9 @@ void GraphVisitor::operator()(QualifiedIdentifier &node) {
 
 void GraphVisitor::operator()(Identifier &node) {
     label_map[(AstNodeVariant*)&node] = "Identifier\n" + node.name + "\n" + classificationToString(node.classification);
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -67,6 +84,9 @@ void GraphVisitor::operator()(Identifier &node) {
 
 void GraphVisitor::operator()(Type &node) {
     label_map[(AstNodeVariant*)&node] = "Type";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -77,13 +97,7 @@ void GraphVisitor::operator()(Type &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 void GraphVisitor::operator()(NonArrayType &node) {
-    label_map[(AstNodeVariant*)&node] = "NonArrayType\n" + (
-        (std::holds_alternative<QualifiedIdentifier>(node))
-        ?
-        std::get<QualifiedIdentifier>(node).getQualifiedName()
-        :
-        getPrimitiveName(std::get<PrimitiveType>(node))
-    );
+    label_map[(AstNodeVariant*)&node] = "NonArrayType";
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -99,6 +113,9 @@ void GraphVisitor::operator()(PrimitiveType &node) {
 
 void GraphVisitor::operator()(ClassDeclaration &node) {
     label_map[(AstNodeVariant*)&node] = "ClassDeclaration\n" + node.class_name->name;
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -125,6 +142,9 @@ void GraphVisitor::operator()(ClassDeclaration &node) {
 }
 void GraphVisitor::operator()(InterfaceDeclaration &node) {
     label_map[(AstNodeVariant*)&node] = "InterfaceDeclaration\n" + node.interface_name->name;
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -145,6 +165,9 @@ void GraphVisitor::operator()(InterfaceDeclaration &node) {
 }
 void GraphVisitor::operator()(FieldDeclaration &node) {
     label_map[(AstNodeVariant*)&node] = "FieldDeclaration\n" + node.variable_declarator->variable_name->name;
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -162,6 +185,9 @@ void GraphVisitor::operator()(FieldDeclaration &node) {
 }
 void GraphVisitor::operator()(MethodDeclaration &node) {
     label_map[(AstNodeVariant*)&node] = "MethodDeclaration\n" + node.function_name->name;
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -185,6 +211,9 @@ void GraphVisitor::operator()(MethodDeclaration &node) {
 }
 void GraphVisitor::operator()(VariableDeclarator &node) {
     label_map[(AstNodeVariant*)&node] = "VariableDeclarator\n" + node.variable_name->name;
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -199,6 +228,9 @@ void GraphVisitor::operator()(VariableDeclarator &node) {
 }
 void GraphVisitor::operator()(FormalParameter &node) {
     label_map[(AstNodeVariant*)&node] = "FormalParameter\n" + node.parameter_name->name;
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -242,6 +274,9 @@ void GraphVisitor::operator()(Modifier &node) {
 
 void GraphVisitor::operator()(LocalVariableDeclaration &node) {
     label_map[(AstNodeVariant*)&node] = "LocalVariableDeclaration\n" + node.variable_declarator->variable_name->name;
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -256,6 +291,10 @@ void GraphVisitor::operator()(LocalVariableDeclaration &node) {
 }
 void GraphVisitor::operator()(Block &node) {
     label_map[(AstNodeVariant*)&node] = "Block";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
+
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -267,6 +306,9 @@ void GraphVisitor::operator()(Block &node) {
 }
 void GraphVisitor::operator()(IfThenStatement &node) {
     label_map[(AstNodeVariant*)&node] = "IfThenStatement";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -281,6 +323,9 @@ void GraphVisitor::operator()(IfThenStatement &node) {
 }
 void GraphVisitor::operator()(IfThenElseStatement &node) {
     label_map[(AstNodeVariant*)&node] = "IfThenElseStatement";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -298,6 +343,9 @@ void GraphVisitor::operator()(IfThenElseStatement &node) {
 }
 void GraphVisitor::operator()(WhileStatement &node) {
     label_map[(AstNodeVariant*)&node] = "WhileStatement";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -312,6 +360,9 @@ void GraphVisitor::operator()(WhileStatement &node) {
 }
 void GraphVisitor::operator()(ForStatement &node) {
     label_map[(AstNodeVariant*)&node] = "ForStatement";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -332,6 +383,9 @@ void GraphVisitor::operator()(ForStatement &node) {
 }
 void GraphVisitor::operator()(ReturnStatement &node) {
     label_map[(AstNodeVariant*)&node] = "ReturnStatement";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -351,6 +405,9 @@ void GraphVisitor::operator()(EmptyStatement &node) {
 
 void GraphVisitor::operator()(InfixExpression &node) {
     label_map[(AstNodeVariant*)&node] = "InfixExpression";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -365,6 +422,9 @@ void GraphVisitor::operator()(InfixExpression &node) {
 }
 void GraphVisitor::operator()(PrefixExpression &node) {
     label_map[(AstNodeVariant*)&node] = "PrefixExpression";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -376,6 +436,9 @@ void GraphVisitor::operator()(PrefixExpression &node) {
 }
 void GraphVisitor::operator()(CastExpression &node) {
     label_map[(AstNodeVariant*)&node] = "CastExpression";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -390,6 +453,9 @@ void GraphVisitor::operator()(CastExpression &node) {
 }
 void GraphVisitor::operator()(Assignment &node) {
     label_map[(AstNodeVariant*)&node] = "Assignment";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -404,6 +470,9 @@ void GraphVisitor::operator()(Assignment &node) {
 }
 void GraphVisitor::operator()(QualifiedThis &node) {
     label_map[(AstNodeVariant*)&node] = "QualifiedThis";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -415,6 +484,9 @@ void GraphVisitor::operator()(QualifiedThis &node) {
 }
 void GraphVisitor::operator()(ArrayCreationExpression &node) {
     label_map[(AstNodeVariant*)&node] = "ArrayCreationExpression";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -451,6 +523,9 @@ void GraphVisitor::operator()(Literal &node) {
 }
 void GraphVisitor::operator()(ClassInstanceCreationExpression &node) {
     label_map[(AstNodeVariant*)&node] = "ClassInstanceCreationExpression";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -465,6 +540,9 @@ void GraphVisitor::operator()(ClassInstanceCreationExpression &node) {
 }
 void GraphVisitor::operator()(FieldAccess &node) {
     label_map[(AstNodeVariant*)&node] = "FieldAccess";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -479,6 +557,9 @@ void GraphVisitor::operator()(FieldAccess &node) {
 }
 void GraphVisitor::operator()(ArrayAccess &node) {
     label_map[(AstNodeVariant*)&node] = "ArrayAccess";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -493,6 +574,9 @@ void GraphVisitor::operator()(ArrayAccess &node) {
 }
 void GraphVisitor::operator()(MethodInvocation &node) {
     label_map[(AstNodeVariant*)&node] = "MethodInvocation";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -510,6 +594,9 @@ void GraphVisitor::operator()(MethodInvocation &node) {
 }
 void GraphVisitor::operator()(InstanceOfExpression &node) {
     label_map[(AstNodeVariant*)&node] = "InstanceOfExpression";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
@@ -524,6 +611,9 @@ void GraphVisitor::operator()(InstanceOfExpression &node) {
 }
 void GraphVisitor::operator()(ParenthesizedExpression &node) {
     label_map[(AstNodeVariant*)&node] = "ParenthesizedExpression";
+#ifdef GRAPH_LOCATION
+    PRINT_LOC;
+#endif
     this->visit_children(node);
     std::vector<AstNodeVariant*> children;
 
