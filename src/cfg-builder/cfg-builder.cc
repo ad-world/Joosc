@@ -23,7 +23,7 @@ void CfgBuilderVisitor::operator()(MethodDeclaration &node) {
 
     // [0]: while statement
     // [1]: return statement
-    for (int i = 0; i < children.size() - 1; i++) {
+    for (int i = 0; i + 1 < children.size(); i++) {
         children[i].second->next = children[i + 1].first;
     }
 
@@ -113,7 +113,7 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
                 children.push_back(createCfg(new_stmt));
             }
 
-            for (int i = 0; i < children.size() - 1; i++) {
+            for (int i = 0; i + 1 < children.size(); i++) {
                 children[i].second->next = children[i + 1].first;
             }
 
