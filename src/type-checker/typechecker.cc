@@ -233,7 +233,7 @@ void TypeChecker::operator()(Assignment &node) {
 
     LinkedType linkedType1 = getLink(node.assigned_to);
     LinkedType linkedType2 = getLink(node.assigned_from);
-
+    
     if(checkAssignability(linkedType1, linkedType2, default_package))
     {
         node.link.linked_type = linkedType1.linked_type;
@@ -241,6 +241,11 @@ void TypeChecker::operator()(Assignment &node) {
     else {
         THROW_TypeCheckerError("Invalid type for assignment operation");
     }
+}
+
+void TypeChecker::operator()(ParenthesizedExpression &node) {
+    this->visit_children(node);
+    node.link = getLink(node.expression);
 }
 
 void TypeChecker::operator()(InfixExpression &node) {
@@ -251,9 +256,16 @@ void TypeChecker::operator()(InfixExpression &node) {
 
     switch (node.op) {
         case InfixOperator::PLUS:
-            if((getStringClass(linkedType1) && !linkedType2.isVoid()) || (getStringClass(linkedType2) && !linkedType1.isVoid())) {
-                node.link = LinkedType(NonArrayLinkedType(default_package->findClassDeclaration("java.lang.String")));
+            if(linkedType1.isNumeric() && linkedType2.isNumeric()) {
+                node.link = LinkedType(PrimitiveType::INT);
             }
+            else if((getStringClass(linkedType1) && !linkedType2.isVoid()) || (getStringClass(linkedType2) && !linkedType1.isVoid())) {
+                node.link = LinkedType(NonArrayLinkedType(default_package->findClassDeclaration("java.lang.String")));
+            } 
+            else {
+                THROW_TypeCheckerError("Invalid type for addition operation");
+            }
+            break;
         case InfixOperator::MINUS:
         case InfixOperator::MULTIPLY:
         case InfixOperator::DIVIDE:
@@ -335,17 +347,23 @@ void TypeChecker::operator()(PrefixExpression &node) {
 }
 
 void TypeChecker::operator()(QualifiedThis &node) {
+    if (current_method && current_method->ast_reference->hasModifier(Modifier::STATIC)) {
+        THROW_TypeCheckerError("Static method cannot call 'this'");
+    }
+
+    // Type of 'this' is type of enclosing class
+    NonArrayLinkedType non_array_current = current_class;
+    node.link = LinkedType(non_array_current);
     this->visit_children(node);
-    if(node.qualified_this.get())
-        node.link = node.qualified_this.get()->link;
 }
 
 void TypeChecker::operator()(ArrayCreationExpression &node) {
     this->visit_children(node);
 
-    LinkedType linkedType = getLink(node.expression);
-    if(linkedType.isNumeric()) {
-        node.link.linked_type = linkedType.linked_type;
+    LinkedType type = node.type.get()->link;
+    LinkedType expression = getLink(node.expression);
+    if(expression.isNumeric()) {
+        node.link.linked_type = type.linked_type;
         node.link.is_array = true;
     }
     else {
@@ -389,15 +407,19 @@ bool isFinal(LinkedType type) {
     return false;
 }
 
-bool checkCastability(LinkedType type1, LinkedType type2, PackageDeclarationObject* default_package) {
-    if(type1.isNumeric() && type2.isNumeric() && !type1.is_array && !type2.is_array) {
+// Checking (type)expression castability
+bool checkCastability(LinkedType& type, LinkedType& expression, PackageDeclarationObject* default_package) {
+    if(type.isNumeric() && expression.isNumeric() && !type.is_array && !expression.is_array) {
         return true;
     }
-    else if((type2.getIfNonArrayIsInterface() && (type1.getIfNonArrayIsInterface() || !isFinal(type1))) 
-            || (type1.getIfNonArrayIsInterface() && (type2.getIfNonArrayIsInterface() || !isFinal(type2)))) {
+    else if((expression.getIfNonArrayIsInterface() && (type.getIfNonArrayIsInterface() || !isFinal(type))) 
+            || (type.getIfNonArrayIsInterface() && (expression.getIfNonArrayIsInterface() || !isFinal(expression)))) {
         return true;
     }
-    else if(type1.isSubType(type2, default_package)) {
+    else if(expression.isNull() && (type.isReferenceType() || type.is_array)) {
+        return true;
+    }
+    else if(type.isSubType(expression, default_package)) {
         return true;
     }
     return false;
@@ -422,7 +444,7 @@ void TypeChecker::operator()(InstanceOfExpression &node) {
 
     LinkedType expression = getLink(node.expression);
     LinkedType type = node.type.get()->link;
-    if(type.isReferenceType() && checkCastability(expression, type, default_package)) {
+    if(type.isReferenceType() && checkCastability(type, expression, default_package)) {
         node.link = LinkedType(PrimitiveType::BOOLEAN);
     }
     else {

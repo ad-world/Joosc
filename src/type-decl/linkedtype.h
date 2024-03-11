@@ -76,6 +76,7 @@ struct LinkedType {
     }
 
     bool isNull() {
-        return this->linked_type.index() == 3;
+        return (this->linked_type.index() == 3 || 
+                (this->linked_type.index() == 0 && std::get<PrimitiveType>(this->linked_type) == PrimitiveType::NULL_T));
     }
 };

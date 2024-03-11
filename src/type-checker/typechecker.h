@@ -58,6 +58,8 @@ class TypeChecker: public DefaultSkipVisitor<void> {
 
     void operator()(InstanceOfExpression &node) override;
 
+    void operator()(ParenthesizedExpression &node) override;
+
     TypeChecker(PackageDeclarationObject& default_package);
 
     void visit(AstNodeVariant &node) override {
