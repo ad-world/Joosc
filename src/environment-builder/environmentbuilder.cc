@@ -116,6 +116,7 @@ void EnvironmentBuilder::operator()(MethodDeclaration &node) {
     // Add method to class or interface, whatever the current type may be
     std::visit([&](auto cls_or_int_obj) {
         this->current_method = cls_or_int_obj->methods->template addSymbol<MethodDeclarationObject>(method_name);
+        this->current_method->containing_type = cls_or_int_obj;
     }, current_type);
 
     this->current_method->scope_manager.closeAllScopes();

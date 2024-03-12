@@ -51,15 +51,22 @@ struct PackageDeclarationObject {
     InterfaceDeclarationObject* findInterfaceDeclaration(std::string str);
 };
 
-struct ClassDeclarationObject {
+// Common fields for class and interface
+struct TypeDeclarationObject {
+    std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
+    std::unordered_map<std::string, std::list<MethodDeclarationObject*>> overloaded_methods; // declared and inherited methods
+    std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
+
+    PackageDeclarationObject* package_contained_in; // Back-link to the package that contains this type
+
+    TypeDeclarationObject();
+};
+
+struct ClassDeclarationObject : public TypeDeclarationObject {
     std::string identifier;
     class ClassDeclaration* ast_reference = nullptr;
 
     std::unique_ptr<SymbolTable> fields; // SymbolTable mapping to FieldDeclarationObjects
-    std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
-    std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
-    std::unordered_map<std::string, std::list<MethodDeclarationObject*>> overloaded_methods; // declared and inherited methods
-    PackageDeclarationObject* package_contained_in; // Back-link to the package that contains this class
 
     // Declared and inherited fields, aside from those that are shadowed
     std::unordered_map<std::string, FieldDeclarationObject*> accessible_fields;
@@ -80,14 +87,9 @@ struct ClassDeclarationObject {
     ClassDeclarationObject(const std::string &identifier);
 };
 
-struct InterfaceDeclarationObject {
+struct InterfaceDeclarationObject : public TypeDeclarationObject {
     std::string identifier;
     class InterfaceDeclaration* ast_reference = nullptr;
-
-    std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
-    std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
-    std::unordered_map<std::string, std::list<MethodDeclarationObject*>> overloaded_methods; // declared and inherited methods
-    PackageDeclarationObject* package_contained_in; // Back-link to the package that contains this interface
 
     // Fields resolved at type linking stage
     std::vector<InterfaceDeclarationObject*> extended;
@@ -123,6 +125,8 @@ struct MethodDeclarationObject {
 
     // Fields resolved at type linking stage
     LinkedType return_type;
+
+    TypeDeclarationObject* containing_type; // Back-link to the type that contains this method
 
     MethodDeclarationObject(const std::string &identifier);
 };

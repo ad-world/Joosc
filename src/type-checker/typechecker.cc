@@ -112,10 +112,14 @@ FieldDeclarationObject* checkIfFieldIsAccessible(
 bool TypeChecker::checkifMethodIsAccessible(
     MethodDeclarationObject* method_to_access
 ) {
-    if (method_to_access->hasModifier(Modifier::PROTECTED)) {
+    if (method_to_access->ast_reference->hasModifier(Modifier::PROTECTED)) {
         // JLS 6.6.2
         PackageDeclarationObject* current_package = compilation_unit_namespace.getCurrentPackage();
-        if (current_package == method_to_access->containing_class)
+        if (current_package == method_to_access->containing_type->package_contained_in) {
+            return true;
+        }
+
+        return false;
     } else {
         // Method is public
         return true;
@@ -257,7 +261,8 @@ void TypeChecker::operator()(MethodInvocation &node) {
     LinkedType type_to_search;
     if (!node.parent_expr) {
         // Simple MethodName
-        type_to_search = LinkedType(current_class);
+        NonArrayLinkedType current_class_casted = current_class;
+        type_to_search = LinkedType(current_class_casted);
     } else {
         type_to_search = getLink(node.parent_expr);
     }
@@ -276,23 +281,23 @@ void TypeChecker::operator()(MethodInvocation &node) {
 
         if (parameters.size() != arguments.size()) {
             // Method is not applicable; mismatched number of arguments
-            continue
+            continue;
         }
 
         for (size_t i = 0; i < parameters.size(); ++i) {
-            if (parameters[i]->type != arguments[i]->link) {
+            if (parameters[i]->type != getLink(arguments[i])) {
                 // Method is not applicable; mismatched type of arguments
                 goto not_applicable_or_accessible;
             }
         }
 
-        if (!checkifMethodIsAccessible(current_class, candidate)) {
+        if (!checkifMethodIsAccessible(candidate)) {
             // Method is applicable, but not accessible
-            continue
+            continue;
         }
 
         found_methods.push_back(candidate);
-        not_applicable_or_accessible:
+        not_applicable_or_accessible:;
     }
 
     MethodDeclarationObject* determined_method = nullptr;
@@ -301,7 +306,7 @@ void TypeChecker::operator()(MethodInvocation &node) {
     } else if (found_methods.size() > 1) {
         // JLS 15.12.2.2: If one of the methods is not declared abstract, it is the most specific method
         for (auto found_method : found_methods) {
-            if (!found_method->hasModifier(Modifier::ABSTRACT)) {
+            if (!found_method->ast_reference->hasModifier(Modifier::ABSTRACT)) {
                 determined_method = found_method;
             }
         }
@@ -317,7 +322,7 @@ void TypeChecker::operator()(MethodInvocation &node) {
     // JLS 15.12.3 Compile-Time Step 3 - Is the Chosen Method Appropriate?
     if (type_to_search.not_expression) {
         // Static method call
-        if (!determined_method->hasModifier(Modifier::STATIC)) {
+        if (!determined_method->ast_reference->hasModifier(Modifier::STATIC)) {
             THROW_TypeCheckerError("Static method call invoked on instance method"); 
         }
     } else {

@@ -59,3 +59,15 @@ bool LinkedType::isSubType(LinkedType other, PackageDeclarationObject* default_p
     // Determine if class/interface is subclass/subinterface by calling into SymbolTableEntry's logic
     return std::visit([&](auto type_dec){ return type_dec->isSubType(other_type); }, this_type);
 }
+
+std::list<struct MethodDeclarationObject*> LinkedType::getAllMethods(std::string& method_name) {
+    // TODO : handle arrays specially
+    if (getIfNonArrayIsPrimitive()) { return {}; }
+
+    if (auto cls = getIfNonArrayIsClass()) {
+        return cls->overloaded_methods[method_name];
+    } else {
+        auto ifc = getIfNonArrayIsInterface();
+        return ifc->overloaded_methods[method_name];
+    }
+}

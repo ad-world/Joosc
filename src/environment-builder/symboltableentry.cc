@@ -128,11 +128,13 @@ InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(s
     return findInterfaceDeclaration(ids);
 }
 
+TypeDeclarationObject::TypeDeclarationObject() : methods{init_table()} {}
+
 ClassDeclarationObject::ClassDeclarationObject(const std::string &identifier) :
-    identifier{identifier}, fields{init_table()}, methods{init_table()} {}
+    TypeDeclarationObject(), identifier{identifier}, fields{init_table()} {}
 
 InterfaceDeclarationObject::InterfaceDeclarationObject(const std::string &identifier) :
-    identifier{identifier}, methods{init_table()} {}
+    TypeDeclarationObject(), identifier{identifier} {}
 
 FieldDeclarationObject::FieldDeclarationObject(const std::string &identifier) :
     identifier{identifier} {}
