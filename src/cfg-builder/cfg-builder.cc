@@ -181,7 +181,6 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
 }
 
 CfgExpression::CfgExpression(Expression* expression) : expression(expression) {}
-CfgNode::CfgNode() : parent(nullptr) {}
 CfgStatement::CfgStatement() : is_return(false) {}
 CfgStatement::CfgStatement(Statement* statement) : statement(statement) {}
 CfgStatement::CfgStatement(Statement* statement, bool is_return): statement(statement), is_return(is_return) {}

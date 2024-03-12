@@ -91,6 +91,7 @@ int main(int argc, char *argv[]) {
     Driver drv;
     AstWeeder weeder;
     vector<AstNodeVariant> asts;
+    Main::linked_asts = &asts;
 #ifdef GRAPHVIZ
     GraphVisitor gv(asts); // runs on return/destruct
 #endif

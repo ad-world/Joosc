@@ -1,14 +1,8 @@
 #include "reachability.h"
 #include "utillities/overload.h"
 #include "variant-ast/expressions.h"
-#include "variant-ast/names.h"
 
-bool isString() {
-    // if ( linked_type == Main::root_package )
-    return false;
-}
-
-bool isConstantExpression(Expression &node) {
+bool ReachabilityVisitor::isConstantExpression(Expression &node) {
     bool is_const = true;
 
     std::visit(util::overload{
@@ -24,4 +18,3 @@ bool isConstantExpression(Expression &node) {
 
     return is_const;
 }
-
