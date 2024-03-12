@@ -21,6 +21,8 @@
 #include "type-checker/typechecker.h"
 #include "cfg-builder/cfg-builder.h"
 #include "main.h"
+PackageDeclarationObject* Main::root_package = nullptr;
+std::vector<AstNodeVariant>* Main::linked_asts = nullptr;
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
