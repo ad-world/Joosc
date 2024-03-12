@@ -17,7 +17,7 @@
 class CfgNode {
 public:
     CfgNode *parent;
-    CfgNode() : parent(nullptr) {}
+    CfgNode();
 };
 
 struct CfgExpression : public CfgNode {
@@ -26,7 +26,7 @@ struct CfgExpression : public CfgNode {
     CfgNode* true_branch = nullptr;
     CfgNode* false_branch = nullptr;
 
-    CfgExpression(Expression* expression) : expression(expression) {}
+    CfgExpression(Expression* expression);
 };
 
 struct CfgStatement : public CfgNode {
@@ -34,19 +34,16 @@ struct CfgStatement : public CfgNode {
     bool is_return = false;
     CfgNode* next = nullptr;
 
-    CfgStatement() {}
-    CfgStatement(Statement* statement) : statement(statement) {}
-    CfgStatement(Statement* statement, bool is_return) {
-        this->statement = statement;
-        this->is_return = is_return;
-    }
+    CfgStatement();
+    CfgStatement(Statement* statement);
+    CfgStatement(Statement* statement, bool is_return);
 };
 
 
 class CfgBuilderVisitor : public DefaultSkipVisitor<void> {
     std::pair<CfgStatement*, CfgStatement*> createCfg(Statement &stmt);
 public:
-    CfgBuilderVisitor() {}
+    CfgBuilderVisitor();
 
     using DefaultSkipVisitor<void>::operator();
     void operator()(MethodDeclaration &node) override;
