@@ -98,6 +98,7 @@ struct Block: public AstNodeCommon {
     std::vector<Statement> statements;
 
     size_t scope_id;
+    
 
     Block(
         std::vector<Statement>& statements

@@ -19,6 +19,7 @@
 #include "disambiguation/forward-decl.h"
 #include "disambiguation/search-unclassified.h"
 #include "type-checker/typechecker.h"
+#include "cfg-builder/cfg-builder.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
@@ -215,6 +216,15 @@ int main(int argc, char *argv[]) {
         for (auto &ast: asts ) {
             TypeChecker(default_package).visit(ast);
         }
+    } catch (std::exception &e) {
+        cerr << e.what() << endl;
+        return INVALID_PROGRAM;
+    }
+
+    try {
+        for (auto &ast: asts) {
+            CfgBuilderVisitor().visit(ast);
+        } 
     } catch (std::exception &e) {
         cerr << e.what() << endl;
         return INVALID_PROGRAM;
