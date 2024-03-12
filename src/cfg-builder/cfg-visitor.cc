@@ -1,6 +1,11 @@
 #include "cfg-visitor.h"
 #include "exceptions/exceptions.h"
 #include "variant-ast/classes.h"
+#include <variant>
+
+void CfgVisitor::operator()(MethodDeclaration &node) {
+    operator()(node.cfg_start);
+}
 
 void CfgVisitor::visit_children(CfgStatement *node) {
     if ( node->next ) {
@@ -33,4 +38,4 @@ void CfgVisitor::operator()(CfgNode *node) {
 
 void CfgVisitor::operator()(CfgStatement *node) { this->visit_children(node); }
 void CfgVisitor::operator()(CfgExpression *node) { this->visit_children(node); }
-void CfgVisitor::visit(CfgStatement *node) { this->operator()(node); }
+void CfgVisitor::visit(AstNodeVariant &node) { std::visit(*this, node); }

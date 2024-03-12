@@ -1,15 +1,17 @@
 #include "reachability.h"
-#include "utillities/overload.h"
-#include "variant-ast/expressions.h"
+#include "utillities/util.h"
 
-bool ReachabilityVisitor::isConstantExpression(Expression &node) {
+bool isJavaLangString(LinkedType &link) {
+    return link.getIfNonArrayIsClass() == Util::root_package->findClassDeclaration("java.lang.String");
+}
+
+bool CfgReachabilityVisitor::isConstantExpression(Expression &node) {
     bool is_const = true;
 
     std::visit(util::overload{
         [&](Literal &lit) { /* pass */ },
         [&](CastExpression &castexpr) {
-            // TODO: how to check for string
-            if ( !castexpr.link.isPrimitive() && !castexpr.link.getIfNonArrayIsClass() ) {
+            if ( !castexpr.link.isPrimitive() && !isJavaLangString(castexpr.link) ) {
                 is_const = false;
             }
         },
@@ -17,4 +19,12 @@ bool ReachabilityVisitor::isConstantExpression(Expression &node) {
     }, node);
 
     return is_const;
+}
+
+void CfgReachabilityVisitor::operator()(CfgStatement *stmt) {
+    // TODO: implement
+}
+
+void CfgReachabilityVisitor::operator()(CfgExpression *expr) {
+    // TODO: implement
 }

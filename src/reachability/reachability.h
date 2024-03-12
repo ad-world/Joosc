@@ -1,6 +1,6 @@
 #include "cfg-builder/cfg-visitor.h"
 
-class ReachabilityVisitor : public CfgVisitor {
+class CfgReachabilityVisitor : public CfgVisitor {
     bool isString() { return false; } // TODO: temp function - remove
 
     bool isConstantExpression(Expression &node);
@@ -8,6 +8,4 @@ class ReachabilityVisitor : public CfgVisitor {
 public:
     void operator()(CfgStatement *stmt) override;
     void operator()(CfgExpression *expr) override;
-
-    void visit(CfgStatement *start_node); // leave default
 };

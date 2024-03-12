@@ -20,9 +20,8 @@
 #include "disambiguation/search-unclassified.h"
 #include "type-checker/typechecker.h"
 #include "cfg-builder/cfg-builder.h"
-#include "main.h"
-PackageDeclarationObject* Main::root_package = nullptr;
-std::vector<AstNodeVariant>* Main::linked_asts = nullptr;
+#include "reachability/reachability.h"
+#include "utillities/util.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
@@ -93,7 +92,7 @@ int main(int argc, char *argv[]) {
     Driver drv;
     AstWeeder weeder;
     vector<AstNodeVariant> asts;
-    Main::linked_asts = &asts;
+    Util::linked_asts = &asts;
 #ifdef GRAPHVIZ
     GraphVisitor gv(asts); // runs on return/destruct
 #endif
@@ -134,7 +133,7 @@ int main(int argc, char *argv[]) {
 
     // Environment building
     PackageDeclarationObject default_package;
-    Main::root_package = &default_package;
+    Util::root_package = &default_package;
 
     try {
         // Environment building
@@ -177,6 +176,11 @@ int main(int argc, char *argv[]) {
         for (auto &ast: asts) {
             CfgBuilderVisitor().visit(ast);
         } 
+
+        // Reachability testing
+        for (auto &ast : asts) {
+            CfgReachabilityVisitor().visit(ast);
+        }
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";
         return COMPILER_DEVELOPMENT_ERROR;
