@@ -20,6 +20,7 @@
 #include "disambiguation/search-unclassified.h"
 #include "type-checker/typechecker.h"
 #include "cfg-builder/cfg-builder.h"
+#include "main.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
@@ -130,6 +131,7 @@ int main(int argc, char *argv[]) {
 
     // Environment building
     PackageDeclarationObject default_package;
+    Main::root_package = &default_package;
     try {
         for (auto &ast : asts) {
             EnvironmentBuilder(default_package).visit(ast);
