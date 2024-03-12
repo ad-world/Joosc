@@ -135,104 +135,57 @@ int main(int argc, char *argv[]) {
     // Environment building
     PackageDeclarationObject default_package;
     Main::root_package = &default_package;
+
     try {
+        // Environment building
         for (auto &ast : asts) {
             EnvironmentBuilder(default_package).visit(ast);
         }
-    } catch (const EnvBuilderError &e) {
-        cerr << "EnvBuilderError Exception occured: " << e.message << "\n";
-        return INVALID_PROGRAM;
-    } catch (const CompilerDevelopmentError &e) {
-        cerr << "CompilerDevelopmentError Exception occured: " << e.message << "\n";
-        return COMPILER_DEVELOPMENT_ERROR;
-    } catch (...) {
-        cerr << "Unknown Exception occured\n";
-        return COMPILER_DEVELOPMENT_ERROR;
-    }
 
-    // Type linking
-    try {
+        // Type linking
         for (auto& ast : asts) {
             CompilationUnit &current_ast = std::get<CompilationUnit>(ast);
             TypeLinker(default_package).visit(ast);
         } 
-    } catch (const TypeLinkerError &e) {
-        cerr << "TypeLinkerError Exception occured: " << e.message << "\n";
-        return INVALID_PROGRAM;
-    } catch (const CompilerDevelopmentError &e) {
-        cerr << "Development error occured: " << e.message << "\n";
-        return COMPILER_DEVELOPMENT_ERROR; 
-    } catch (const std::exception &e) {
-        cerr << e.what() << "\n";
-        return COMPILER_DEVELOPMENT_ERROR;
-    }
 
-    try {
         // Hierarchy checking
         for ( auto& ast : asts ) {
             HierarchyCheckingVisitor(default_package).visit(ast);
         }
-    } catch (const std::exception &e) {
-        cerr << e.what() << "\n";
-        return INVALID_PROGRAM;
-    } catch (...) {
-        cerr << "Unknown hierarchy checking error occurred\n";
-        return COMPILER_DEVELOPMENT_ERROR;
-    }
 
-    try {
         // Disambiguation of names
         for (auto &ast: asts ) {
             DisambiguationVisitor(default_package).visit(ast);
         }
-    } catch (DisambiguationError &e) {
-        cerr << "Disambiguation error occurred: " << e.what() << "\n";
-        return INVALID_PROGRAM;
-    } catch (std::exception &e) {
-        cerr << "Unknown disambiguation error occurred:" << e.what() << endl;
-        return COMPILER_DEVELOPMENT_ERROR;
-    }
 
-    try {
-    // Disambiguation of names
-    for (auto &ast: asts ) {
-        ForwardDeclarationVisitor(default_package).visit(ast);
-    }
-    } catch (DisambiguationError &e) {
-        cerr << "Disambiguation error occurred: " << e.what() << "\n";
-        return INVALID_PROGRAM;
-    } catch (std::exception &e) {
-        cerr << "Unknown disambiguation error occurred:" << e.what() << endl;
-        return COMPILER_DEVELOPMENT_ERROR;
-    }
+        // Disambiguation of names (forward decl)
+        for (auto &ast: asts ) {
+            ForwardDeclarationVisitor(default_package).visit(ast);
+        }
 
-    // Error on unclassified identifiers
-    try {
+        // Check for unclassified identifiers (optional)
         for (auto &ast: asts ) {
             SearchUnclassifiedVisitor().visit(ast);
         }
-    } catch (std::exception &e) {
-        cerr << e.what() << endl;
-        return COMPILER_DEVELOPMENT_ERROR;
-    }
 
-    try {
         // Type checking
         for (auto &ast: asts ) {
             TypeChecker(default_package).visit(ast);
         }
-    } catch (std::exception &e) {
-        cerr << e.what() << endl;
-        return INVALID_PROGRAM;
-    }
 
-    try {
+        // CfgBuilder
         for (auto &ast: asts) {
             CfgBuilderVisitor().visit(ast);
         } 
-    } catch (std::exception &e) {
-        cerr << e.what() << endl;
+    } catch (const CompilerError &e ) {
+        cerr << e.what() << "\n";
+        return COMPILER_DEVELOPMENT_ERROR;
+    } catch (const std::exception &e) {
+        cerr << e.what() << "\n";
         return INVALID_PROGRAM;
+    } catch (...) {
+        cerr << "Unknown error occurred\n";
+        return COMPILER_DEVELOPMENT_ERROR;
     }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
