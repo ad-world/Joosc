@@ -86,15 +86,13 @@ FieldDeclarationObject* checkIfFieldIsAccessible(
     auto possible_field = class_with_field->accessible_fields[field_simple_name];
     if (!possible_field) { return nullptr; }
 
-    // Refactor if this works later
-    ClassDeclarationObject* class_that_declared_field = possible_field->containing_class;
-
     // Second, if the field must be static, ensure it is static
     if (must_be_static && !possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
         return nullptr;
     }
 
-    // Third, if the field is protected, the current_class must be a subclass or in the same package of class_with_field
+    // Third, if the field is protected, the current_class must be a subclass or in the same package of class declaring it
+    ClassDeclarationObject* class_that_declared_field = possible_field->containing_class;
     if (possible_field->ast_reference->hasModifier(Modifier::PROTECTED)) {
         if (
             !current_class->isSubType(class_that_declared_field) && 
@@ -108,7 +106,22 @@ FieldDeclarationObject* checkIfFieldIsAccessible(
     return possible_field;
 }
 
-// TODO : ensure public/private fields are accessible in correct place
+// Return true iff method_to_access is accessible when called on an object within current_class
+// in current_package.
+// This function assumes the method already exists on the object it's called on.
+bool TypeChecker::checkifMethodIsAccessible(
+    MethodDeclarationObject* method_to_access
+) {
+    if (method_to_access->hasModifier(Modifier::PROTECTED)) {
+        // JLS 6.6.2
+        PackageDeclarationObject* current_package = compilation_unit_namespace.getCurrentPackage();
+        if (current_package == method_to_access->containing_class)
+    } else {
+        // Method is public
+        return true;
+    }
+}
+
 void TypeChecker::operator()(QualifiedIdentifier &qid) {
     switch (qid.getClassification()) {
         case EXPRESSION_NAME: 
@@ -236,74 +249,86 @@ void TypeChecker::operator()(InfixExpression &node) {
 }
 
 void TypeChecker::operator()(MethodInvocation &node) {
+
+    /* JLS 15.12: Method Invocation Expressions */
     this->visit_children(node);
-    // JLS 15.12.1
-    std::list<MethodDeclarationObject*> invoked_methods_candidates;
-    std::string object_type_name;
-    if (node.parent_expr) {
-        // Qualified method call
-        LinkedType object_type = getLink(node.parent_expr);
-        ClassDeclarationObject* class_type = nullptr;
-        InterfaceDeclarationObject* interface_type = nullptr;
 
-        if (object_type.is_array) {
-            // Arrays have all the methods of Object
-            // TODO : needs serializable and stuff too
-            object_type = LinkedType(NonArrayLinkedType{default_package->getJavaLangObject()});
-            invoked_methods_candidates 
-                = default_package->getJavaLangObject()->overloaded_methods[node.method_name->name];
-        } else {
-            if (object_type.getIfNonArrayIsPrimitive()) { 
-                THROW_TypeCheckerError("Primitive type cannot call methods"); 
-            } else if (class_type = object_type.getIfNonArrayIsClass()) {
-                object_type_name = class_type->identifier;
-                invoked_methods_candidates = class_type->overloaded_methods[node.method_name->name];
-            } else if (interface_type = object_type.getIfNonArrayIsInterface()) {
-                object_type_name = interface_type->identifier;
-                invoked_methods_candidates = interface_type->overloaded_methods[node.method_name->name];
-            } else {
-                return;
-                THROW_CompilerError("Flow should not reach here; LinkedType non array type is probably null");
-            }
-        }
-
-        // if (object_type.not_expression) {
-        //     // Must be a static method call
-        //     if (interface_type) {
-        //         THROW_TypeCheckerError("Interface type cannot call static methods"); 
-        //     } else if (!invoked_methods_candidates->ast_reference->hasModifier(Modifier::STATIC)) {
-        //         THROW_TypeCheckerError("Non-static method called where only static is available"); 
-        //     }
-        // }
+    // JLS 15.12.1: Compile-Time Step 1 - Determine Class or Interface to Search
+    LinkedType type_to_search;
+    if (!node.parent_expr) {
+        // Simple MethodName
+        type_to_search = LinkedType(current_class);
     } else {
-        // Simple method call, must be in current class
-        invoked_methods_candidates = current_class->overloaded_methods[node.method_name->name];
+        type_to_search = getLink(node.parent_expr);
+    }
+    // Static methods can only be called on TypeName that does not refer to an interface
+    if (type_to_search.not_expression && type_to_search.getIfIsInterface()) {
+        THROW_TypeCheckerError("Interface type cannot perform static method calls"); 
     }
 
-    for (auto candidate : invoked_methods_candidates) {
-        // Check method signature
-        bool compatible = true;
-        if (node.arguments.size() != candidate->getParameters().size()) {
-            // Not enough arguments to be compatible with call
-            compatible = false;
-        } else {
-            int index = 0;
-            auto parameters = candidate->getParameters();
-            for (auto &arg : node.arguments) {
-                if (!(getLink(arg) == parameters[index]->type)) {
-                    // Parameter and argument is incorrect type; call is not compatible
-                    compatible = false;
-                }
-                index++;
+    // JLS 15.12.2: Compile Time Step 2 - Determine Method Signature
+    std::list<MethodDeclarationObject*> invoked_method_candidates = type_to_search.getAllMethods(node.method_name->name);
+    // Find all applicable & accessible methods
+    std::vector<MethodDeclarationObject*> found_methods;
+    for (auto candidate : invoked_method_candidates) {
+        auto parameters = candidate->getParameters();
+        auto &arguments = node.arguments;
+
+        if (parameters.size() != arguments.size()) {
+            // Method is not applicable; mismatched number of arguments
+            continue
+        }
+
+        for (size_t i = 0; i < parameters.size(); ++i) {
+            if (parameters[i]->type != arguments[i]->link) {
+                // Method is not applicable; mismatched type of arguments
+                goto not_applicable_or_accessible;
             }
         }
-        if (compatible) {
-            // The type of this expression is the methods return type
-            node.link = candidate->return_type;
-            return;
+
+        if (!checkifMethodIsAccessible(current_class, candidate)) {
+            // Method is applicable, but not accessible
+            continue
+        }
+
+        found_methods.push_back(candidate);
+        not_applicable_or_accessible:
+    }
+
+    MethodDeclarationObject* determined_method = nullptr;
+    if (found_methods.empty()) {
+        THROW_TypeCheckerError("No method declaration is applicable and accessible");
+    } else if (found_methods.size() > 1) {
+        // JLS 15.12.2.2: If one of the methods is not declared abstract, it is the most specific method
+        for (auto found_method : found_methods) {
+            if (!found_method->hasModifier(Modifier::ABSTRACT)) {
+                determined_method = found_method;
+            }
+        }
+        if (!determined_method) {
+            // JLS 15.12.2.2: All the methods are necessarily abstract, the method is chosen arbitrarily
+            determined_method = found_methods[0];
+        }
+    } else {
+        // Exactly one method is applicable and accessible
+        determined_method = found_methods[0];
+    }
+
+    // JLS 15.12.3 Compile-Time Step 3 - Is the Chosen Method Appropriate?
+    if (type_to_search.not_expression) {
+        // Static method call
+        if (!determined_method->hasModifier(Modifier::STATIC)) {
+            THROW_TypeCheckerError("Static method call invoked on instance method"); 
+        }
+    } else {
+        // Instance method call
+        if (current_class == nullptr) {
+            // Instance method call in static-only context; e.g. member initialization
+            THROW_TypeCheckerError("Instance method call invoked in static context"); 
         }
     }
-    THROW_TypeCheckerError("No compatible method call found");
+
+    node.link = determined_method->return_type;
 }
 
 void TypeChecker::operator()(QualifiedThis &node) {

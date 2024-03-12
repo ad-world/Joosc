@@ -1,5 +1,6 @@
 #pragma once
 #include <variant>
+#include <list>
 #include "type-decl/type_declaration.h"
 #include "variant-ast/primitivetype.h"
 
@@ -38,6 +39,14 @@ struct LinkedType {
     // Returns a pointer to the PrimitiveType that is contained in the NonArrayType,
     // if it is, and nullptr otherwise
     PrimitiveType* getIfNonArrayIsPrimitive();
+
+    // Equivalent versions of the above that return non-null only if the type isn't an array
+    ClassDeclarationObject* getIfIsClass() { return is_array ? nullptr : getIfNonArrayIsClass() };
+    InterfaceDeclarationObject* getIfIsInterface() { return is_array ? nullptr : getIfNonArrayIsInterface() };
+    PrimitiveType* getIfIsPrimitive() { return is_array ? nullptr : getIfNonArrayIsPrimitive() };
+
+    // Return all defined and inherited methods on the type this LinkedType represents
+    std::list<MethodDeclarationObject*> getAllMethods();
 
     friend bool operator==(const LinkedType &lhs, const LinkedType &rhs) {
         return (lhs.linked_type == rhs.linked_type) && (lhs.is_array == rhs.is_array);

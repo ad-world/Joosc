@@ -18,6 +18,9 @@ class TypeChecker: public DefaultSkipVisitor<void> {
     LinkedType getLink(Expression &node);
     LinkedType getLink(std::unique_ptr<Expression>& node_ptr);
 
+    // Helper methods
+    bool TypeChecker::checkifMethodIsAccessible(MethodDeclarationObject* method_to_access);
+
   public:
     using DefaultSkipVisitor<void>::operator();
 
