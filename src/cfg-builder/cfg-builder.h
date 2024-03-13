@@ -14,12 +14,14 @@
     blocks. The CFG is used to analyze the control flow of a program, and to perform optimizations such as
     dead code elimination, loop unrolling, and loop-invariant code motion.
 */
+
+// Unused base class
 class CfgNode {
 public:
-    CfgNode *parent;
-    CfgNode();
+    virtual ~CfgNode() {}
 };
 
+// Used for branches in the CFG (eg. ifthen, while)
 struct CfgExpression : public CfgNode {
     Expression* expression = nullptr;
 
@@ -29,10 +31,14 @@ struct CfgExpression : public CfgNode {
     CfgExpression(Expression* expression);
 };
 
+// Used for a straight path through the CFG (eg. assignment, start/end)
 struct CfgStatement : public CfgNode {
     Statement* statement = nullptr;
     bool is_return = false;
     CfgNode* next = nullptr;
+
+    bool in = false;
+    bool out = false;
 
     CfgStatement();
     CfgStatement(Statement* statement);

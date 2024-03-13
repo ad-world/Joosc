@@ -20,6 +20,7 @@
 #include "disambiguation/search-unclassified.h"
 #include "type-checker/typechecker.h"
 #include "cfg-builder/cfg-builder.h"
+#include "reachability/reachability.h"
 #include "utillities/util.h"
 
 #ifdef GRAPHVIZ
@@ -31,6 +32,7 @@ using namespace std;
 enum return_codes {
     VALID_PROGRAM = 0,
     INVALID_PROGRAM = 42,
+    WARN_PROGRAM = 43,
     COMPILER_DEVELOPMENT_ERROR = 1
 };
 
@@ -175,6 +177,11 @@ int main(int argc, char *argv[]) {
         for (auto &ast: asts) {
             CfgBuilderVisitor().visit(ast);
         } 
+
+        // Reachability testing
+        for (auto &ast : asts) {
+            CfgReachabilityVisitor().visit(ast);
+        }
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";
         return COMPILER_DEVELOPMENT_ERROR;

@@ -4,10 +4,7 @@
 #include <assert.h>
 #include <vector>
 #include "variant-ast/statements.h"
-#include <stack>
 #include "variant-ast/expressions.h"
-#include "type-decl/type_declaration.h"
-#include "type-decl/linkedtype.h"
 
 // We only want to start building CFGs from the MethodDeclaration node - our recursive function will handle the rest
 void CfgBuilderVisitor::operator()(MethodDeclaration &node) {
@@ -184,7 +181,6 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
 }
 
 CfgExpression::CfgExpression(Expression* expression) : expression(expression) {}
-CfgNode::CfgNode() : parent(nullptr) {}
 CfgStatement::CfgStatement() : is_return(false) {}
 CfgStatement::CfgStatement(Statement* statement) : statement(statement) {}
 CfgStatement::CfgStatement(Statement* statement, bool is_return): statement(statement), is_return(is_return) {}
