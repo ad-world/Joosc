@@ -1,4 +1,5 @@
 #include "cfg-builder/cfg-builder.h"
+#include <unordered_set>
 
 class CfgVisitor : public DefaultSkipVisitor<void> {
 protected:
@@ -6,6 +7,9 @@ protected:
     void operator()(CfgNode *node);
     void visit_children(CfgStatement *stmt);
     void visit_children(CfgExpression *expr);
+
+    std::unordered_set<CfgNode*> visited;
+    void visit_child(CfgNode* node);
 public:
     // Ast visitor code
     using DefaultSkipVisitor<void>::operator();

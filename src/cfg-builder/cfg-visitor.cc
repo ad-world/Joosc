@@ -4,25 +4,33 @@
 #include <variant>
 
 void CfgVisitor::operator()(MethodDeclaration &node) {
-    operator()(node.cfg_start);
+    visit_child(node.cfg_start);
+}
+
+void CfgVisitor::visit_child(CfgNode* child) {
+    if ( child && (visited.find(child) == visited.end()) ) {
+        // Not visited before
+        visited.insert(child);
+        operator()(child);
+    }
 }
 
 void CfgVisitor::visit_children(CfgStatement *node) {
-    if ( node->next ) {
-        operator()(node->next);
-    }
+    if ( !node ) { return; }
+
+    visit_child(node->next);
 }
 
 void CfgVisitor::visit_children(CfgExpression *node) {
-    if ( node->true_branch ) {
-        operator()(node->true_branch);
-    }
-    if ( node->false_branch ) {
-        operator()(node->false_branch);
-    } 
+    if ( !node ) { return; }
+
+    visit_child(node->true_branch);
+    visit_child(node->false_branch);
 }
 
 void CfgVisitor::operator()(CfgNode *node) {
+    if ( !node ) { return; }
+
     if ( CfgStatement* stmt = dynamic_cast<CfgStatement*>(node) ) {
         this->visit_children(stmt);
     } else if ( CfgExpression* expr = dynamic_cast<CfgExpression*>(node) ) {
