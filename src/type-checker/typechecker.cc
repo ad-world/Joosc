@@ -86,6 +86,7 @@ FieldDeclarationObject* checkIfFieldIsAccessible(
     bool must_be_static = false
 ) {
     // First, see if the field even exists
+    if (!class_with_field) { return nullptr; }
     auto possible_field = class_with_field->accessible_fields[field_simple_name];
     if (!possible_field) { return nullptr; }
 
@@ -403,6 +404,22 @@ void TypeChecker::operator()(ClassInstanceCreationExpression &node) {
 
 void TypeChecker::operator()(FieldAccess &node) {
     this->visit_children(node);
+
+    LinkedType object_type = getLink(node.expression);
+    std::string& field_name = node.identifier->name;
+    bool must_be_static = object_type.not_expression;
+
+    FieldDeclarationObject* resolved_field = checkIfFieldIsAccessible(
+        current_class,
+        object_type.getIfNonArrayIsClass(),
+        field_name,
+        must_be_static
+    );
+    if (resolved_field) {
+        node.link = resolved_field->type;
+    } else {
+        THROW_TypeCheckerError("No accessible field " + field_name + " in " + object_type.toSimpleString());
+    }
 }
 
 void TypeChecker::operator()(ArrayAccess &node) {
