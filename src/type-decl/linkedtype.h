@@ -60,4 +60,7 @@ struct LinkedType {
     friend bool operator!=(const LinkedType &lhs, const LinkedType &rhs) {
         return !(lhs == rhs);
     }
+
+    // Returns the name of the type without any qualifications, for debugging.
+    std::string toSimpleString();
 };

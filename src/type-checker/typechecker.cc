@@ -162,7 +162,6 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                 // 1. Look up in local vars scope
                 if (current_method) {
                     auto possible_var = current_method->scope_manager.lookupDeclaredVariable(name);
-                    // auto possible_var = current_method->scope_manager.lookupVariable(name);
                     if (possible_var) {
                         qid.link = possible_var->type;
                         return;
@@ -283,6 +282,7 @@ void TypeChecker::operator()(InfixExpression &node) {
 void TypeChecker::operator()(MethodInvocation &node) {
 
     /* JLS 15.12: Method Invocation Expressions */
+    std::string& method_name = node.method_name->name;
     this->visit_children(node);
 
     // JLS 15.12.1: Compile-Time Step 1 - Determine Class or Interface to Search
@@ -300,27 +300,35 @@ void TypeChecker::operator()(MethodInvocation &node) {
     }
 
     // JLS 15.12.2: Compile Time Step 2 - Determine Method Signature
-    std::list<MethodDeclarationObject*> invoked_method_candidates = type_to_search.getAllMethods(node.method_name->name);
+    std::list<MethodDeclarationObject*> invoked_method_candidates = type_to_search.getAllMethods(method_name);
     // Find all applicable & accessible methods
     std::vector<MethodDeclarationObject*> found_methods;
     for (auto candidate : invoked_method_candidates) {
+        std::cout << "found candidate for " << method_name << "\n";
         auto parameters = candidate->getParameters();
         auto &arguments = node.arguments;
 
         if (parameters.size() != arguments.size()) {
             // Method is not applicable; mismatched number of arguments
+            std::cout << "param size " << parameters.size() << "\n";
+            std::cout << "arg size " << arguments.size() << "\n";
+            std::cout << "mismatch arg num\n";
             continue;
         }
 
         for (size_t i = 0; i < parameters.size(); ++i) {
-            if (parameters[i]->type != getLink(arguments[i])) {
+            LinkedType param_type = parameters[i]->type;
+            LinkedType arg_type = getLink(arguments[i]);
+            if (param_type != arg_type) {
                 // Method is not applicable; mismatched type of arguments
+                // std::cout << "mismatch arg type, expected: " + param_type.toSimpleString() + ", recieved: " + arg_type.toSimpleString() + "\n";
                 goto not_applicable_or_accessible;
             }
         }
 
         if (!checkifMethodIsAccessible(candidate, type_to_search)) {
             // Method is applicable, but not accessible
+            std::cout << "Not applicable" << std::endl;
             continue;
         }
 
@@ -330,7 +338,9 @@ void TypeChecker::operator()(MethodInvocation &node) {
 
     MethodDeclarationObject* determined_method = nullptr;
     if (found_methods.empty()) {
-        THROW_TypeCheckerError("No method declaration is applicable and accessible");
+        THROW_TypeCheckerError(
+            "No method declaration for " + method_name + " is applicable and accessible in " + type_to_search.toSimpleString()
+        );
     } else if (found_methods.size() > 1) {
         // JLS 15.12.2.2: If one of the methods is not declared abstract, it is the most specific method
         for (auto found_method : found_methods) {

@@ -80,3 +80,20 @@ std::list<struct MethodDeclarationObject*> LinkedType::getAllMethods(std::string
         return ifc->overloaded_methods[method_name];
     }
 }
+
+std::string LinkedType::toSimpleString() {
+    std::string result = "";
+    if (auto prim = getIfNonArrayIsPrimitive()) {
+        result += getPrimitiveName(*prim);
+    } else if (auto cls = getIfNonArrayIsClass()) {
+        result += cls->identifier;
+    } else if (auto ifc = getIfNonArrayIsInterface()) {
+        result += ifc->identifier;
+    } else {
+        result += "!UNINITIALIZED_LINK_TYPE_LIKELY_ERROR";
+    }
+    if (is_array) {
+        result += "[]";
+    }
+    return result;
+}

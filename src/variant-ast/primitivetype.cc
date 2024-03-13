@@ -15,6 +15,8 @@ std::string getPrimitiveName(PrimitiveType pt) {
             return "boolean";
         case PrimitiveType::VOID:
             return "void";
+        case PrimitiveType::NULL_T:
+            return "null";
         default:
             THROW_CompilerError("Unrecognized primitive type");
     }

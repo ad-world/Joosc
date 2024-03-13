@@ -198,7 +198,7 @@ std::vector<FormalParameterDeclarationObject*> MethodDeclarationObject::getParam
     std::vector<FormalParameterDeclarationObject*> params;
     auto &param_table = this->parameters->hashmap;
     for (auto &it : param_table) {
-        if (it.first != "") {
+        if (!it.second.empty()) { // Not default constructed
             params.push_back(this->parameters->lookupUniqueSymbol<FormalParameterDeclarationObject>(it.first));
         }
     }
