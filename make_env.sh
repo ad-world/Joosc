@@ -8,6 +8,13 @@ fi
 # Export STDLIB
 export STDLIB="$(find tests/stdlib/java/ -name '*.java')"
 
+# Get all tests for autocompletion
+function _test_completions {
+    local FILES=$(ls tests/programs/*/marmoset/*/* -d | cut -d'/' -f 6 | sort --unique)
+    local cur=$"${COMP_WORDS[COMP_CWORD]}"
+    COMPREPLY=($(compgen -W "${FILES}" -- "$cur"))
+}
+
 # Find input files from test name
 #   Not for use
 function getinput {
@@ -21,6 +28,7 @@ function getinput {
         echo ${INPUT}
     fi
 }
+complete -F _test_completions getinput
 
 # Find test and run with gdb
 #   (supports folders & files)
@@ -31,6 +39,7 @@ function rundebug {
         gdb --args ./joosc $INPUT ${STDLIB}
     fi
 }
+complete -F _test_completions rundebug
 
 # Find test and run
 #   (supports folders & files)
@@ -41,6 +50,7 @@ function runtest {
         ./joosc ${INPUT} ${STDLIB}
     fi
 }
+complete -F _test_completions runtest
 
 function runvalgrind {
     INPUT=$(getinput $1)
@@ -48,6 +58,7 @@ function runvalgrind {
         valgrind ./joosc ${INPUT} ${STDLIB}
     fi
 }
+complete -F _test_completions runvalgrind
 
 # Run gdb on stdlib
 #   (useful for debugging critical errors on minimal input)
@@ -61,6 +72,7 @@ function viewtest {
     INPUT=$(getinput $1)
     ${EDITOR} ${INPUT}
 }
+complete -F _test_completions viewtest
 
 # Get failing tests
 # -> Do a grep on each test
@@ -85,3 +97,4 @@ function rungraph {
         )
     fi
 }
+complete -F _test_completions rungraph
