@@ -22,6 +22,7 @@ class CompilationUnitNamespace {
     // Throws semantic error if there are multiple candidates in the namespace.
     TypeDeclaration lookupQualifiedType(QualifiedIdentifier &qualified_identifier);
     TypeDeclaration getDeclaredType() { return declared_type; }
+    PackageDeclarationObject* getCurrentPackage() { return current_package; }
 
     CompilationUnitNamespace() = default;
     CompilationUnitNamespace(

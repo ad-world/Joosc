@@ -128,11 +128,13 @@ InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(s
     return findInterfaceDeclaration(ids);
 }
 
+TypeDeclarationObject::TypeDeclarationObject() : methods{init_table()} {}
+
 ClassDeclarationObject::ClassDeclarationObject(const std::string &identifier) :
-    identifier{identifier}, fields{init_table()}, methods{init_table()} {}
+    TypeDeclarationObject(), identifier{identifier}, fields{init_table()} {}
 
 InterfaceDeclarationObject::InterfaceDeclarationObject(const std::string &identifier) :
-    identifier{identifier}, methods{init_table()} {}
+    TypeDeclarationObject(), identifier{identifier} {}
 
 FieldDeclarationObject::FieldDeclarationObject(const std::string &identifier) :
     identifier{identifier} {}
@@ -189,4 +191,16 @@ bool ClassDeclarationObject::isSubType(TypeDeclaration type_decl) {
 
 bool InterfaceDeclarationObject::isSubType(TypeDeclaration type_decl) {
     return ::isSubType(this, type_decl);
+}
+
+// TODO : Collapse into SymbolTable so no need to access internals
+std::vector<FormalParameterDeclarationObject*> MethodDeclarationObject::getParameters() {
+    std::vector<FormalParameterDeclarationObject*> params;
+    auto &param_table = this->parameters->hashmap;
+    for (auto &it : param_table) {
+        if (!it.second.empty()) { // Not default constructed
+            params.push_back(this->parameters->lookupUniqueSymbol<FormalParameterDeclarationObject>(it.first));
+        }
+    }
+    return params;
 }

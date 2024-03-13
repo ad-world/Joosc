@@ -1,6 +1,15 @@
 #include "linkedtype.h"
 #include "environment-builder/symboltableentry.h"
 
+LinkedType::LinkedType(TypeDeclarationObject* type_declaration, bool is_array, bool not_expression) 
+    : is_array{is_array}, not_expression{not_expression} {
+    if (ClassDeclarationObject* cls = dynamic_cast<ClassDeclarationObject*>(type_declaration)) {
+        this->linked_type = cls;
+    } else {
+        this->linked_type = dynamic_cast<InterfaceDeclarationObject*>(type_declaration);
+    }
+}
+
 ClassDeclarationObject* LinkedType::getIfNonArrayIsClass() {
     if (std::get_if<ClassDeclarationObject*>(&linked_type)) {
         return std::get<ClassDeclarationObject*>(linked_type);
@@ -57,4 +66,33 @@ bool LinkedType::isSubType(LinkedType other, PackageDeclarationObject* default_p
     
     // Determine if class/interface is subclass/subinterface by calling into SymbolTableEntry's logic
     return std::visit([&](auto type_dec){ return type_dec->isSubType(other_type); }, this_type);
+}
+
+std::list<struct MethodDeclarationObject*> LinkedType::getAllMethods(std::string& method_name) {
+    // TODO : handle arrays specially
+    if (getIfNonArrayIsPrimitive()) { return {}; }
+
+    if (auto cls = getIfNonArrayIsClass()) {
+        return cls->overloaded_methods[method_name];
+    } else {
+        auto ifc = getIfNonArrayIsInterface();
+        return ifc->overloaded_methods[method_name];
+    }
+}
+
+std::string LinkedType::toSimpleString() {
+    std::string result = "";
+    if (auto prim = getIfNonArrayIsPrimitive()) {
+        result += getPrimitiveName(*prim);
+    } else if (auto cls = getIfNonArrayIsClass()) {
+        result += cls->identifier;
+    } else if (auto ifc = getIfNonArrayIsInterface()) {
+        result += ifc->identifier;
+    } else {
+        result += "!UNINITIALIZED_LINK_TYPE_LIKELY_ERROR";
+    }
+    if (is_array) {
+        result += "[]";
+    }
+    return result;
 }

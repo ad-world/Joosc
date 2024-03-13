@@ -8,7 +8,6 @@
 #include "variant-ast/names.h"
 
 class SymbolTable {
-    std::unordered_map<std::string, std::list<SymbolTableEntry>> hashmap;
     std::unordered_map<std::string, int> insert_position;
     int current_insert_position = 0;
     
@@ -19,6 +18,8 @@ class SymbolTable {
     }
     
   public:
+  // TODO : make private again
+    std::unordered_map<std::string, std::list<SymbolTableEntry>> hashmap;
     SymbolTable() = default;
 
     // Lookup a symbol in the environment and return pointer to list of all matches if found
