@@ -32,6 +32,7 @@ using namespace std;
 enum return_codes {
     VALID_PROGRAM = 0,
     INVALID_PROGRAM = 42,
+    WARN_PROGRAM = 43,
     COMPILER_DEVELOPMENT_ERROR = 1
 };
 
