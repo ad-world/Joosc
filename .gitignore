@@ -21,3 +21,4 @@ tests/programs/marmoset
 compile_commands.json
 graphs/*.gv
 graphs/*.png
+.gdbhistory
