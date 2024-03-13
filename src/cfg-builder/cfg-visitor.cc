@@ -23,16 +23,12 @@ void CfgVisitor::visit_children(CfgExpression *node) {
 }
 
 void CfgVisitor::operator()(CfgNode *node) {
-    CfgStatement* stmt = dynamic_cast<CfgStatement*>(node);
-    if ( stmt != nullptr ) {
+    if ( CfgStatement* stmt = dynamic_cast<CfgStatement*>(node) ) {
         this->visit_children(stmt);
+    } else if ( CfgExpression* expr = dynamic_cast<CfgExpression*>(node) ) {
+        this->visit_children(expr);
     } else {
-        CfgExpression* expr = dynamic_cast<CfgExpression*>(node);
-        if ( expr != nullptr ) {
-            this->visit_children(stmt);
-        } else {
-            THROW_CompilerError("Unable to convert CfgNode to Statement/Expression");
-        }
+        THROW_CompilerError("Unable to convert CfgNode to Statement/Expression");
     }
 }
 
