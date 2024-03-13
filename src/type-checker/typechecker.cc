@@ -72,6 +72,9 @@ void TypeChecker::operator()(LocalVariableDeclaration &node) {
     visit_children(node);
 }
 
+// TODO : It's probably nicer to refactor checkIfFieldIsAccessible and checkIfMethodIsAccessible
+// so they work the same way.
+
 // Return whether the class_with_field has a field with simple name field_simple_name
 // that is accessible by current_class
 //
@@ -106,20 +109,45 @@ FieldDeclarationObject* checkIfFieldIsAccessible(
     return possible_field;
 }
 
-// Return true iff method_to_access is accessible when called on an object within current_class
-// in current_package.
+// Return true iff method_to_access is accessible when called on an object of type
+// type_method_called_on within current_class.
+//
 // This function assumes the method already exists on the object it's called on.
 bool TypeChecker::checkifMethodIsAccessible(
-    MethodDeclarationObject* method_to_access
+    MethodDeclarationObject* method_to_access,
+    LinkedType type_method_called_on
 ) {
     if (method_to_access->ast_reference->hasModifier(Modifier::PROTECTED)) {
         // JLS 6.6.2
         PackageDeclarationObject* current_package = compilation_unit_namespace.getCurrentPackage();
+        // If the access to a protected member is in the same package as the declaration, it is accessible
         if (current_package == method_to_access->containing_type->package_contained_in) {
             return true;
         }
+        // JLS: Let C be the class in which a protected member is declared
+        // Access is permitted within the body of a subclass S of C,
+        // with Q.id, iff the type of Q is S or a subclass of S
 
-        return false;
+        // S = current_class
+        // C = method_to_access->containing_type
+        // Q = type_method_called_on
+        NonArrayLinkedType non_array_curr_class = current_class;
+        auto current_class_as_linked_type = LinkedType(non_array_curr_class);
+
+        // S is a subclass of C
+        // Class in which the method is being called in must be subclass of declaring class
+        if (!current_class_as_linked_type.isSubType(LinkedType(method_to_access->containing_type), default_package)) {
+            return false;
+        }
+
+        // Q is a subclass of S
+        // Class of the object the method is called on must be subclass of class the method
+        // is called in
+        if (!type_method_called_on.isSubType(current_class_as_linked_type, default_package)) {
+            return false;
+        }
+
+        return true;
     } else {
         // Method is public
         return true;
@@ -291,7 +319,7 @@ void TypeChecker::operator()(MethodInvocation &node) {
             }
         }
 
-        if (!checkifMethodIsAccessible(candidate)) {
+        if (!checkifMethodIsAccessible(candidate, type_to_search)) {
             // Method is applicable, but not accessible
             continue;
         }

@@ -1,6 +1,15 @@
 #include "linkedtype.h"
 #include "environment-builder/symboltableentry.h"
 
+LinkedType::LinkedType(TypeDeclarationObject* type_declaration, bool is_array, bool not_expression) 
+    : is_array{is_array}, not_expression{not_expression} {
+    if (ClassDeclarationObject* cls = dynamic_cast<ClassDeclarationObject*>(type_declaration)) {
+        this->linked_type = cls;
+    } else {
+        this->linked_type = dynamic_cast<InterfaceDeclarationObject*>(type_declaration);
+    }
+}
+
 ClassDeclarationObject* LinkedType::getIfNonArrayIsClass() {
     if (std::get_if<ClassDeclarationObject*>(&linked_type)) {
         return std::get<ClassDeclarationObject*>(linked_type);

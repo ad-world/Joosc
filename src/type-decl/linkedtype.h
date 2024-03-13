@@ -4,6 +4,7 @@
 #include "type-decl/type_declaration.h"
 #include "variant-ast/primitivetype.h"
 
+struct TypeDeclarationObject;
 using NonArrayLinkedType 
     = std::variant<PrimitiveType, struct ClassDeclarationObject*, struct InterfaceDeclarationObject*, std::nullptr_t>;
 
@@ -12,13 +13,18 @@ struct LinkedType {
     bool is_array;
     NonArrayLinkedType linked_type;
 
+    // TODO : Remove one of the middle two constructors, requires some refactoring on code using them
     LinkedType() : is_array{false}, linked_type{nullptr} {}
+
     LinkedType(NonArrayLinkedType non_array_type, bool is_array=false, bool not_expression=false) 
         : is_array{is_array}, not_expression{not_expression}, linked_type{non_array_type} {}
+
     LinkedType(TypeDeclaration type_declaration, bool is_array=false, bool not_expression=false) 
         : is_array{is_array}, not_expression{not_expression} {
         std::visit([&](auto type_dec){ this->linked_type = type_dec; }, type_declaration);
     }
+
+    LinkedType(TypeDeclarationObject* type_declaration, bool is_array=false, bool not_expression=false);
 
     // Return whether the type stored is a primitive type rather than a class/interface link or array
     bool isPrimitive() { return bool(std::get_if<PrimitiveType>(&linked_type)) && !is_array; }

@@ -60,6 +60,10 @@ struct TypeDeclarationObject {
     PackageDeclarationObject* package_contained_in; // Back-link to the package that contains this type
 
     TypeDeclarationObject();
+
+    virtual ~TypeDeclarationObject() = default;
+    TypeDeclarationObject(TypeDeclarationObject&&) = default;
+    TypeDeclarationObject &operator=(TypeDeclarationObject&&) = default;
 };
 
 struct ClassDeclarationObject : public TypeDeclarationObject {
