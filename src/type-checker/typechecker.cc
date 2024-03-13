@@ -476,10 +476,6 @@ void TypeChecker::operator()(QualifiedThis &node) {
     this->visit_children(node);
 }
 
-void TypeChecker::operator()(CastExpression &node) {
-    this->visit_children(node);
-}
-
 void TypeChecker::operator()(PrefixExpression &node) {
     this->visit_children(node);
 
@@ -508,17 +504,6 @@ void TypeChecker::operator()(PrefixExpression &node) {
         default:
             THROW_TypeCheckerError("Invalid type for PrefixExpression");
     }
-}
-
-void TypeChecker::operator()(QualifiedThis &node) {
-    if (current_method && current_method->ast_reference->hasModifier(Modifier::STATIC)) {
-        THROW_TypeCheckerError("Static method cannot call 'this'");
-    }
-
-    // Type of 'this' is type of enclosing class
-    NonArrayLinkedType non_array_current = current_class;
-    node.link = LinkedType(non_array_current);
-    this->visit_children(node);
 }
 
 void TypeChecker::operator()(ArrayCreationExpression &node) {
@@ -571,10 +556,6 @@ void TypeChecker::operator()(ArrayAccess &node) {
     else {
         THROW_TypeCheckerError("Invalid type for ArrayAccess");
     }
-}
-
-void TypeChecker::operator()(ArrayAccess &node) {
-    this->visit_children(node);
 }
 
 bool isFinal(LinkedType type) {
