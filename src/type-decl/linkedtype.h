@@ -63,4 +63,42 @@ struct LinkedType {
 
     // Returns the name of the type without any qualifications, for debugging.
     std::string toSimpleString();
+
+    // Returns whether the type stored is INT, SHORT, BYTE, or CHAR
+    bool isNumeric() {
+        if(isPrimitive()) {
+            auto typeEnum = std::get<PrimitiveType>(linked_type);
+            if(typeEnum == PrimitiveType::INT || typeEnum == PrimitiveType::SHORT || typeEnum == PrimitiveType::BYTE || 
+                typeEnum == PrimitiveType::CHAR) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Returns whether the type stored is BOOLEAN
+    bool isBoolean() {
+        if(isPrimitive()) {
+            auto typeEnum = std::get<PrimitiveType>(linked_type);
+            if(typeEnum == PrimitiveType::BOOLEAN) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Returns whether the type stored is VOID
+    bool isVoid() {
+        if(isPrimitive()) {
+            auto typeEnum = std::get<PrimitiveType>(linked_type);
+            if(typeEnum == PrimitiveType::VOID) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool isNull() {
+        return (isPrimitive() && std::get<PrimitiveType>(this->linked_type) == PrimitiveType::NULL_T);
+    }
 };

@@ -10,6 +10,7 @@ struct Identifier;
 struct QualifiedIdentifier;
 struct Type;
 struct Block;
+struct CfgStatement;
 
 enum class Modifier {
     PUBLIC,
@@ -79,6 +80,8 @@ struct MethodDeclaration : public AstNodeCommon {
     std::unique_ptr<Identifier> function_name;
     std::vector<FormalParameter> parameters;
     std::unique_ptr<Block> body;
+    CfgStatement* cfg_start = nullptr;
+    CfgStatement* cfg_end = nullptr;
 
     struct MethodDeclarationObject *environment = nullptr;
 

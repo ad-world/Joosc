@@ -41,7 +41,6 @@ bool LinkedType::isSubType(LinkedType other, PackageDeclarationObject* default_p
     }
 
     // Both types now must be reference types
-
     if (this->is_array && other.is_array) {
         // Array is subtype of other array type, if and only if contained is
         // Call recursively without array being set to true
