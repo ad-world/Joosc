@@ -37,6 +37,9 @@ struct CfgStatement : public CfgNode {
     bool is_return = false;
     CfgNode* next = nullptr;
 
+    bool in = false;
+    bool out = false;
+
     CfgStatement();
     CfgStatement(Statement* statement);
     CfgStatement(Statement* statement, bool is_return);
