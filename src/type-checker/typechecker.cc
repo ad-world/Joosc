@@ -395,15 +395,11 @@ void TypeChecker::operator()(MethodInvocation &node) {
     // Find all applicable & accessible methods
     std::vector<MethodDeclarationObject*> found_methods;
     for (auto candidate : invoked_method_candidates) {
-        std::cout << "found candidate for " << method_name << "\n";
         auto parameters = candidate->getParameters();
         auto &arguments = node.arguments;
 
         if (parameters.size() != arguments.size()) {
             // Method is not applicable; mismatched number of arguments
-            std::cout << "param size " << parameters.size() << "\n";
-            std::cout << "arg size " << arguments.size() << "\n";
-            std::cout << "mismatch arg num\n";
             continue;
         }
 
@@ -411,15 +407,12 @@ void TypeChecker::operator()(MethodInvocation &node) {
             LinkedType param_type = parameters[i]->type;
             LinkedType arg_type = getLink(arguments[i]);
             if (param_type != arg_type) {
-                // Method is not applicable; mismatched type of arguments
-                // std::cout << "mismatch arg type, expected: " + param_type.toSimpleString() + ", recieved: " + arg_type.toSimpleString() + "\n";
                 goto not_applicable_or_accessible;
             }
         }
 
         if (!checkifMethodIsAccessible(candidate, type_to_search)) {
             // Method is applicable, but not accessible
-            std::cout << "Not applicable" << std::endl;
             continue;
         }
 
