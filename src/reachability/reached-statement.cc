@@ -8,17 +8,13 @@
 #include <variant>
 
 void checkStatement(Statement &stmt) {
-    yy::location *location = nullptr;
-
     std::visit(util::overload{
         [&](IfThenStatement &node) -> void {
-            location = &node.location;
             if ( node.then_clause ) {
                 checkStatement(*node.then_clause);
             }
         },
         [&](IfThenElseStatement &node) -> void {
-            location = &node.location;
             if ( node.then_clause ) {
                 checkStatement(*node.then_clause);
             }
@@ -27,42 +23,24 @@ void checkStatement(Statement &stmt) {
             }
         },
         [&](WhileStatement &node) -> void {
-            location = &node.location;
             if ( node.body_statement ) {
                 checkStatement(*node.body_statement);
             }
         },
         [&](ForStatement &node) -> void {
-            location = &node.location;
             if ( node.body_statement ) {
                 checkStatement(*node.body_statement);
             }
         },
         [&](Block &node) -> void {
-            location = &node.location;
             for ( auto& stmt : node.statements ) {
                 checkStatement(stmt);
             }
         },
-        [&](ExpressionStatement &node) -> void {
-            std::visit(util::overload{
-                [&](auto &node) -> void {
-                    location = &node.location;
-                }
-            }, node);
-        },
-        [&](std::monostate &node) -> void {},
-        // Default case for all other statement types
-        [&](auto &node) -> void {
-            location = &node.location;
-        },
+        [&](auto &node) -> void {}
      }, stmt);
 
-    std::string location_str;
-    if ( location ) {
-        location_str = Util::locationToString(*location);
-    }
-
+    std::string location_str = Util::statementToLocationString(stmt);
     // std::cout << &stmt << std::endl;
     if ( CfgReachabilityVisitor::reached.find(&stmt) == CfgReachabilityVisitor::reached.end() ) {
         THROW_ReachabilityError("Statement not reached: " + location_str);
