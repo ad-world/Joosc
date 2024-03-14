@@ -47,3 +47,20 @@ std::string Util::statementToLocationString(Statement &stmt) {
     }
     return location_str;
 }
+
+std::string Util::expressionToLocationString(Expression &expr) {
+    yy::location *location = nullptr;
+
+    std::visit(util::overload{
+        [&](Literal &node) { /* pass */ },
+        [&](auto &node) {
+            location = &node.location;
+        }
+    }, expr);
+
+    std::string location_str;
+    if ( location ) {
+        location_str = Util::locationToString(*location);
+    }
+    return location_str;
+}
