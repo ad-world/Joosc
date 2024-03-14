@@ -274,6 +274,9 @@ bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, Packag
             }
         }
     }
+    else if((linkedType1.getIfNonArrayIsClass() == default_package->getJavaLangObject())) {
+        return true;
+    }
     else {
         if(linkedType2.isNull() || linkedType1.isSubType(linkedType2, default_package)) {
             return true;
@@ -287,10 +290,10 @@ void TypeChecker::operator()(Assignment &node) {
 
     LinkedType linkedType1 = getLink(node.assigned_to);
     LinkedType linkedType2 = getLink(node.assigned_from);
-    
+
     if(checkAssignability(linkedType1, linkedType2, default_package))
     {
-        node.link.linked_type = linkedType1.linked_type;
+        node.link = linkedType1;
     }
     else {
         THROW_TypeCheckerError("Invalid type for assignment operation");
