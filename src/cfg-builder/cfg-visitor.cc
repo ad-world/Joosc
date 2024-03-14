@@ -32,9 +32,9 @@ void CfgVisitor::operator()(CfgNode *node) {
     if ( !node ) { return; }
 
     if ( CfgStatement* stmt = dynamic_cast<CfgStatement*>(node) ) {
-        this->visit_children(stmt);
+        operator()(stmt);
     } else if ( CfgExpression* expr = dynamic_cast<CfgExpression*>(node) ) {
-        this->visit_children(expr);
+        operator()(expr);
     } else {
         THROW_CompilerError("Unable to convert CfgNode to Statement/Expression");
     }
