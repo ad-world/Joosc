@@ -74,7 +74,7 @@ SUBMISSION:
   script: make submission anum=4
   artifacts:
     paths:
-      - a3.zip
+      - a*.zip
   cache:
     key: "$CI_PIPELINE_ID"
     policy: pull
