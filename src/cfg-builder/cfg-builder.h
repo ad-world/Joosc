@@ -23,6 +23,7 @@ public:
 
 // Used for branches in the CFG (eg. ifthen, while)
 struct CfgExpression : public CfgNode {
+    Statement* source_statement = nullptr;
     Expression* expression = nullptr;
 
     CfgNode* true_branch = nullptr;

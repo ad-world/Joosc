@@ -8,6 +8,8 @@
 #include <string>
 #include <variant>
 
+std::unordered_set<Statement*> CfgReachabilityVisitor::reached;
+
 bool isJavaLangString(LinkedType &link) {
     return link.getIfNonArrayIsClass() == Util::root_package->findClassDeclaration("java.lang.String");
 }
@@ -339,10 +341,31 @@ Literal CfgReachabilityVisitor::evalConstantExpression(Expression &node) {
 
 void CfgReachabilityVisitor::operator()(CfgStatement *stmt) {
     // TODO: implement
-    this->visit_children(stmt);
+    reached.insert(stmt->statement);
+    if ( stmt->is_return ) {
+        return;
+    } else {
+        this->visit_children(stmt);
+    }
 }
 
 void CfgReachabilityVisitor::operator()(CfgExpression *expr) {
     // TODO: implement
+    assert(expr->expression);
+    reached.insert(expr->source_statement);
+
+    if ( isConstantExpression(*expr->expression) ) {
+        Literal eval = evalConstantExpression(*expr->expression);
+        if ( auto eval_bool = std::get_if<bool>(&eval) ) {
+            if ( *eval_bool == true ) {
+                this->visit_child(expr->true_branch);
+                return;
+            } else { // false
+                this->visit_child(expr->false_branch);
+                return;
+            }
+        }
+    }
+
     this->visit_children(expr);
 }

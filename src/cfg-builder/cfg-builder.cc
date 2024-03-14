@@ -1,5 +1,6 @@
 #include "cfg-builder.h"
 #include "utillities/overload.h"
+#include <iostream>
 #include <vector>
 #include <assert.h>
 #include <vector>
@@ -52,6 +53,7 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
             
             // Create a CFG Expression based on if clause
             auto expr = new CfgExpression(node.if_clause.get());
+            expr->source_statement = &stmt;
 
             // Point start to the expression
             dummy_start->next = expr;
@@ -75,6 +77,7 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
 
             // Create a CFG Expression based on if clause
             auto expr = new CfgExpression(node.if_clause.get());
+            expr->source_statement = &stmt;
             // Point the start to the expression
             dummy_start->next = expr;
             // Point the true branch of the expression to the start of the then clause
@@ -96,6 +99,7 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
 
             // Create a CFG Expression based on while clause
             auto expr = new CfgExpression(node.condition_expression.get());
+            expr->source_statement = &stmt;
             // Point the start to the expression
             dummy_start->next = expr;
             // Point the true branch of the expression to the start of the while body
@@ -116,6 +120,7 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
             
             // Create a CFG Expression based on for clause condition
             auto expr = new CfgExpression(node.condition_expression.get());
+            expr->source_statement = &stmt;
             // Point the start to the expression
             dummy_start->next = expr;
             // Point the true branch of the expression to the start of the for body
@@ -150,7 +155,7 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
                 start = children.front().first;
                 end = children.back().second;
             } else {
-                auto dummy_stmt = new CfgStatement();
+                auto dummy_stmt = new CfgStatement(&stmt);
                 start = dummy_stmt;
                 end = dummy_stmt;
             }
@@ -182,7 +187,7 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
 
 CfgExpression::CfgExpression(Expression* expression) : expression(expression) {}
 CfgStatement::CfgStatement() : is_return(false) {}
-CfgStatement::CfgStatement(bool is_start, bool is_end) : in(is_start), is_starting_node{is_start}, is_ending_node{is_start} {}
+CfgStatement::CfgStatement(bool is_start, bool is_end) : in(is_start), is_starting_node{is_start}, is_ending_node{is_end} {}
 CfgStatement::CfgStatement(Statement* statement) : statement(statement) {}
 CfgStatement::CfgStatement(Statement* statement, bool is_return): statement(statement), is_return(is_return) {}
 CfgBuilderVisitor::CfgBuilderVisitor() {}
