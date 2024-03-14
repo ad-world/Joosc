@@ -100,6 +100,7 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
             // Create a CFG Expression based on while clause
             auto expr = new CfgExpression(node.condition_expression.get());
             expr->source_statement = &stmt;
+            expr->is_for_while = true;
             // Point the start to the expression
             dummy_start->next = expr;
             // Point the true branch of the expression to the start of the while body
@@ -121,6 +122,7 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
             // Create a CFG Expression based on for clause condition
             auto expr = new CfgExpression(node.condition_expression.get());
             expr->source_statement = &stmt;
+            expr->is_for_while = true;
             // Point the start to the expression
             dummy_start->next = expr;
             // Point the true branch of the expression to the start of the for body
@@ -152,7 +154,10 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
                     children[i].second->next = children[i + 1].first;
                 }
 
-                start = children.front().first;
+                auto dummy_start = new CfgStatement(&stmt);
+                dummy_start->next = children.front().first;
+
+                start = dummy_start;
                 end = children.back().second;
             } else {
                 auto dummy_stmt = new CfgStatement(&stmt);

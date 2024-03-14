@@ -14,28 +14,28 @@ void checkStatement(Statement &stmt) {
         [&](IfThenStatement &node) -> void {
             location = &node.location;
             if ( node.then_clause ) {
-                // checkStatement(*node.then_clause);
+                checkStatement(*node.then_clause);
             }
         },
         [&](IfThenElseStatement &node) -> void {
             location = &node.location;
             if ( node.then_clause ) {
-                // checkStatement(*node.then_clause);
+                checkStatement(*node.then_clause);
             }
             if ( node.else_clause ) {
-                // checkStatement(*node.else_clause);
+                checkStatement(*node.else_clause);
             }
         },
         [&](WhileStatement &node) -> void {
             location = &node.location;
             if ( node.body_statement ) {
-                // checkStatement(*node.body_statement);
+                checkStatement(*node.body_statement);
             }
         },
         [&](ForStatement &node) -> void {
             location = &node.location;
             if ( node.body_statement ) {
-                // checkStatement(*node.body_statement);
+                checkStatement(*node.body_statement);
             }
         },
         [&](Block &node) -> void {

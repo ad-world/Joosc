@@ -354,7 +354,7 @@ void CfgReachabilityVisitor::operator()(CfgExpression *expr) {
     assert(expr->expression);
     reached.insert(expr->source_statement);
 
-    if ( isConstantExpression(*expr->expression) ) {
+    if ( expr->is_for_while && isConstantExpression(*expr->expression) ) {
         Literal eval = evalConstantExpression(*expr->expression);
         if ( auto eval_bool = std::get_if<bool>(&eval) ) {
             if ( *eval_bool == true ) {

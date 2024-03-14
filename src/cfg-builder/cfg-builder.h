@@ -25,6 +25,7 @@ public:
 struct CfgExpression : public CfgNode {
     Statement* source_statement = nullptr;
     Expression* expression = nullptr;
+    bool is_for_while = false;
 
     CfgNode* true_branch = nullptr;
     CfgNode* false_branch = nullptr;
