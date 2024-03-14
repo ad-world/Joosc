@@ -4,143 +4,143 @@
 #include <sstream>
 #include <variant>
 
-void AddLocation::operator()(CompilationUnit &node, yy::location &loc) {
+void AddLocation::operator()(CompilationUnit &node) {
     node.location = loc;
 }
 
-void AddLocation::operator()(QualifiedIdentifier &node, yy::location &loc) {
+void AddLocation::operator()(QualifiedIdentifier &node) {
     node.location = loc;
 }
-void AddLocation::operator()(Identifier &node, yy::location &loc) {
+void AddLocation::operator()(Identifier &node) {
     node.location = loc;
 }
 
-void AddLocation::operator()(Type &node, yy::location &loc) {
+void AddLocation::operator()(Type &node) {
     node.location = loc;
 }
-void AddLocation::operator()(NonArrayType &node, yy::location &loc) {
+void AddLocation::operator()(NonArrayType &node) {
     try {
         std::visit([&](auto &arg) {
-            operator()(arg, loc);
+            operator()(arg);
         }, node);
     } catch (...) {}
 }
-void AddLocation::operator()(PrimitiveType &node, yy::location &loc) {
+void AddLocation::operator()(PrimitiveType &node) {
     // Not a class
 }
 
-void AddLocation::operator()(ClassDeclaration &node, yy::location &loc) {
+void AddLocation::operator()(ClassDeclaration &node) {
     node.location = loc;
 }
-void AddLocation::operator()(InterfaceDeclaration &node, yy::location &loc) {
+void AddLocation::operator()(InterfaceDeclaration &node) {
     node.location = loc;
 }
-void AddLocation::operator()(FieldDeclaration &node, yy::location &loc) {
+void AddLocation::operator()(FieldDeclaration &node) {
     node.location = loc;
 }
-void AddLocation::operator()(MethodDeclaration &node, yy::location &loc) {
+void AddLocation::operator()(MethodDeclaration &node) {
     node.location = loc;
 }
-void AddLocation::operator()(VariableDeclarator &node, yy::location &loc) {
+void AddLocation::operator()(VariableDeclarator &node) {
     node.location = loc;
 }
-void AddLocation::operator()(FormalParameter &node, yy::location &loc) {
+void AddLocation::operator()(FormalParameter &node) {
     node.location = loc;
 }
-void AddLocation::operator()(Modifier &node, yy::location &loc) {
+void AddLocation::operator()(Modifier &node) {
     // Not a class
 }
 
-void AddLocation::operator()(LocalVariableDeclaration &node, yy::location &loc) {
+void AddLocation::operator()(LocalVariableDeclaration &node) {
     node.location = loc;
 }
-void AddLocation::operator()(Block &node, yy::location &loc) {
+void AddLocation::operator()(Block &node) {
     node.location = loc;
 }
-void AddLocation::operator()(IfThenStatement &node, yy::location &loc) {
+void AddLocation::operator()(IfThenStatement &node) {
     node.location = loc;
 }
-void AddLocation::operator()(IfThenElseStatement &node, yy::location &loc) {
+void AddLocation::operator()(IfThenElseStatement &node) {
     node.location = loc;
 }
-void AddLocation::operator()(WhileStatement &node, yy::location &loc) {
+void AddLocation::operator()(WhileStatement &node) {
     node.location = loc;
 }
-void AddLocation::operator()(ForStatement &node, yy::location &loc) {
+void AddLocation::operator()(ForStatement &node) {
     node.location = loc;
 }
-void AddLocation::operator()(ReturnStatement &node, yy::location &loc) {
+void AddLocation::operator()(ReturnStatement &node) {
     node.location = loc;
 }
-void AddLocation::operator()(EmptyStatement &node, yy::location &loc) {
+void AddLocation::operator()(EmptyStatement &node) {
     // Not a class
 }
 
-void AddLocation::operator()(InfixExpression &node, yy::location &loc) {
+void AddLocation::operator()(InfixExpression &node) {
     node.location = loc;
 }
-void AddLocation::operator()(PrefixExpression &node, yy::location &loc) {
+void AddLocation::operator()(PrefixExpression &node) {
     node.location = loc;
 }
-void AddLocation::operator()(CastExpression &node, yy::location &loc) {
+void AddLocation::operator()(CastExpression &node) {
     node.location = loc;
 }
-void AddLocation::operator()(Assignment &node, yy::location &loc) {
+void AddLocation::operator()(Assignment &node) {
     node.location = loc;
 }
-void AddLocation::operator()(QualifiedThis &node, yy::location &loc) {
+void AddLocation::operator()(QualifiedThis &node) {
     node.location = loc;
 }
-void AddLocation::operator()(ArrayCreationExpression &node, yy::location &loc) {
+void AddLocation::operator()(ArrayCreationExpression &node) {
     node.location = loc;
 }
-void AddLocation::operator()(Literal &node, yy::location &loc) {
+void AddLocation::operator()(Literal &node) {
     // Not a class
 }
-void AddLocation::operator()(ClassInstanceCreationExpression &node, yy::location &loc) {
+void AddLocation::operator()(ClassInstanceCreationExpression &node) {
     node.location = loc;
 }
-void AddLocation::operator()(FieldAccess &node, yy::location &loc) {
+void AddLocation::operator()(FieldAccess &node) {
     node.location = loc;
 }
-void AddLocation::operator()(ArrayAccess &node, yy::location &loc) {
+void AddLocation::operator()(ArrayAccess &node) {
     node.location = loc;
 }
-void AddLocation::operator()(MethodInvocation &node, yy::location &loc) {
+void AddLocation::operator()(MethodInvocation &node) {
     node.location = loc;
 }
-void AddLocation::operator()(InstanceOfExpression &node, yy::location &loc) {
+void AddLocation::operator()(InstanceOfExpression &node) {
     node.location = loc;
 }
-void AddLocation::operator()(ParenthesizedExpression &node, yy::location &loc) {
+void AddLocation::operator()(ParenthesizedExpression &node) {
     node.location = loc;
 }
 
-void AddLocation::operator()(Statement &node, yy::location &loc) {
+void AddLocation::operator()(Statement &node) {
     try {
         std::visit([&](auto &arg) {
-            operator()(arg, loc);
+            operator()(arg);
         }, node);
     } catch (...) {}
 }
-void AddLocation::operator()(ExpressionStatement &node, yy::location &loc) {
+void AddLocation::operator()(ExpressionStatement &node) {
     try {
         std::visit([&](auto &arg) {
-            operator()(arg, loc);
+            operator()(arg);
         }, node);
     } catch (...) {}
 }
-void AddLocation::operator()(Expression &node, yy::location &loc) {
+void AddLocation::operator()(Expression &node) {
     try {
         std::visit([&](auto &arg) {
-            operator()(arg, loc);
+            operator()(arg);
         }, node);
     } catch (...) {}
 }
-void AddLocation::operator()(AstNodeVariant &node, yy::location &loc) {
+void AddLocation::operator()(AstNodeVariant &node) {
     try {
         std::visit([&](auto &arg) {
-            operator()(arg, loc);
+            operator()(arg);
         }, node);
     } catch (...) {}
 }

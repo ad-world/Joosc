@@ -3,53 +3,65 @@
 #include "variant-ast/packages.h"
 
 class AddLocation {
+    yy::location loc;
 public:
-    void operator()(CompilationUnit &node, yy::location &loc);
+    void operator()(CompilationUnit &node);
 
-    void operator()(QualifiedIdentifier &node, yy::location &loc);
-    void operator()(Identifier &node, yy::location &loc);
+    void operator()(QualifiedIdentifier &node);
+    void operator()(Identifier &node);
 
-    void operator()(Type &node, yy::location &loc);
-    void operator()(NonArrayType &node, yy::location &loc);
-    void operator()(PrimitiveType &node, yy::location &loc);
+    void operator()(Type &node);
+    void operator()(NonArrayType &node);
+    void operator()(PrimitiveType &node);
 
-    void operator()(ClassDeclaration &node, yy::location &loc);
-    void operator()(InterfaceDeclaration &node, yy::location &loc);
-    void operator()(FieldDeclaration &node, yy::location &loc);
-    void operator()(MethodDeclaration &node, yy::location &loc);
-    void operator()(VariableDeclarator &node, yy::location &loc);
-    void operator()(FormalParameter &node, yy::location &loc);
-    void operator()(Modifier &node, yy::location &loc);
+    void operator()(ClassDeclaration &node);
+    void operator()(InterfaceDeclaration &node);
+    void operator()(FieldDeclaration &node);
+    void operator()(MethodDeclaration &node);
+    void operator()(VariableDeclarator &node);
+    void operator()(FormalParameter &node);
+    void operator()(Modifier &node);
 
-    void operator()(LocalVariableDeclaration &node, yy::location &loc);
-    void operator()(Block &node, yy::location &loc);
-    void operator()(IfThenStatement &node, yy::location &loc);
-    void operator()(IfThenElseStatement &node, yy::location &loc);
-    void operator()(WhileStatement &node, yy::location &loc);
-    void operator()(ForStatement &node, yy::location &loc);
-    void operator()(ReturnStatement &node, yy::location &loc);
-    void operator()(EmptyStatement &node, yy::location &loc);
+    void operator()(LocalVariableDeclaration &node);
+    void operator()(Block &node);
+    void operator()(IfThenStatement &node);
+    void operator()(IfThenElseStatement &node);
+    void operator()(WhileStatement &node);
+    void operator()(ForStatement &node);
+    void operator()(ReturnStatement &node);
+    void operator()(EmptyStatement &node);
 
-    void operator()(InfixExpression &node, yy::location &loc);
-    void operator()(PrefixExpression &node, yy::location &loc);
-    void operator()(CastExpression &node, yy::location &loc);
-    void operator()(Assignment &node, yy::location &loc);
-    void operator()(QualifiedThis &node, yy::location &loc);
-    void operator()(ArrayCreationExpression &node, yy::location &loc);
-    void operator()(Literal &node, yy::location &loc);
-    void operator()(ClassInstanceCreationExpression &node, yy::location &loc);
-    void operator()(FieldAccess &node, yy::location &loc);
-    void operator()(ArrayAccess &node, yy::location &loc);
-    void operator()(MethodInvocation &node, yy::location &loc);
-    void operator()(InstanceOfExpression &node, yy::location &loc);
-    void operator()(ParenthesizedExpression &node, yy::location &loc);
+    void operator()(InfixExpression &node);
+    void operator()(PrefixExpression &node);
+    void operator()(CastExpression &node);
+    void operator()(Assignment &node);
+    void operator()(QualifiedThis &node);
+    void operator()(ArrayCreationExpression &node);
+    void operator()(Literal &node);
+    void operator()(ClassInstanceCreationExpression &node);
+    void operator()(FieldAccess &node);
+    void operator()(ArrayAccess &node);
+    void operator()(MethodInvocation &node);
+    void operator()(InstanceOfExpression &node);
+    void operator()(ParenthesizedExpression &node);
 
     // Missing before...
-    void operator()(Statement &node, yy::location &loc);
-    void operator()(ExpressionStatement &node, yy::location &loc);
-    void operator()(Expression &node, yy::location &loc);
+    void operator()(Statement &node);
+    void operator()(ExpressionStatement &node);
+    void operator()(Expression &node);
 
-    void operator()(AstNodeVariant &node, yy::location &loc);
+    void operator()(AstNodeVariant &node);
 
     static std::string getString(yy::location &loc);
+
+    AddLocation(yy::location &location) {
+        if ( location.begin.filename ) {
+            const std::string *filename = new std::string(*location.begin.filename);
+            yy::position begin{filename, location.begin.line, location.begin.column};
+            yy::position end{filename, location.end.line, location.end.column};
+            loc = {begin, end};
+        } else {
+            loc = location;
+        }
+    }
 };
