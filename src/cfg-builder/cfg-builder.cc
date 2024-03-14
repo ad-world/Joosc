@@ -155,6 +155,7 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
                 }
 
                 auto dummy_start = new CfgStatement(&stmt);
+                dummy_start->is_starting_node = true;
                 dummy_start->next = children.front().first;
 
                 start = dummy_start;
