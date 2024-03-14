@@ -42,6 +42,7 @@ void CfgVisitor::operator()(CfgNode *node) {
     }
 }
 
+void CfgVisitor::operator()(InterfaceDeclaration &node) {}
 void CfgVisitor::operator()(CfgStatement *node) { this->visit_children(node); }
 void CfgVisitor::operator()(CfgExpression *node) { this->visit_children(node); }
 void CfgVisitor::visit(AstNodeVariant &node) { visited.clear(); std::visit(*this, node); }

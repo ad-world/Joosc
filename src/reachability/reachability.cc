@@ -340,19 +340,37 @@ Literal CfgReachabilityVisitor::evalConstantExpression(Expression &node) {
 }
 
 void CfgReachabilityVisitor::operator()(CfgStatement *stmt) {
-    // TODO: implement
+    auto current_method_return = current_method->return_type.getIfNonArrayIsPrimitive();
+
     reached.insert(stmt->statement);
     if ( stmt->is_return ) {
         return;
     } else {
+        if ((current_method_return == nullptr || *current_method_return != PrimitiveType::VOID) && !current_method->is_constructor) {
+            // We are in a function with a non-void return type, and we are in a statement that is NOT a return statement
+            std::string location_str;
+            if(stmt->statement) {
+                location_str = Util::statementToLocationString(*stmt->statement);
+            }
+            // std::cout << "Location string: " << location_str << std::endl;
+            if (stmt->next == nullptr) {                
+                THROW_ReachabilityError("Non-void function does not return a value: " + location_str);
+            }
+        }
+        
         this->visit_children(stmt);
     }
 }
 
 void CfgReachabilityVisitor::operator()(CfgExpression *expr) {
     // TODO: implement
-    assert(expr->expression);
     reached.insert(expr->source_statement);
+    
+    // Empty expression in for/while evaluates to true
+    if (expr->is_for_while && !expr->expression) {
+        this->visit_child(expr->true_branch);
+        return;    
+    }
 
     if ( expr->is_for_while && isConstantExpression(*expr->expression) ) {
         Literal eval = evalConstantExpression(*expr->expression);
