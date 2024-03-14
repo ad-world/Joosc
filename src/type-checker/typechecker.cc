@@ -38,7 +38,7 @@ LinkedType TypeChecker::getLink(std::unique_ptr<Expression>& node_ptr) {
 }
 
 ClassDeclarationObject* TypeChecker::getStringClass(LinkedType &link) {
-    if(link.getIfNonArrayIsClass() == default_package->findClassDeclaration("java.lang.String")) {
+    if (link.getIfNonArrayIsClass() == default_package->findClassDeclaration("java.lang.String")) {
         return link.getIfNonArrayIsClass();
     }
     return nullptr;
@@ -288,9 +288,8 @@ void TypeChecker::operator()(Assignment &node) {
     LinkedType linkedType1 = getLink(node.assigned_to);
     LinkedType linkedType2 = getLink(node.assigned_from);
     
-    if(checkAssignability(linkedType1, linkedType2, default_package))
-    {
-        node.link.linked_type = linkedType1.linked_type;
+    if (checkAssignability(linkedType1, linkedType2, default_package)) {
+        node.link = linkedType1;
     }
     else {
         THROW_TypeCheckerError("Invalid type for assignment operation");
