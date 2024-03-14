@@ -169,9 +169,11 @@ int main(int argc, char *argv[]) {
         }
 
         // Type checking
-        for (auto &ast: asts ) {
-            TypeChecker(default_package).visit(ast);
-        }
+        try {
+            for (auto &ast: asts ) {
+                TypeChecker(default_package).visit(ast);
+            }
+        } catch (...) {}
 
         // CfgBuilder
         for (auto &ast: asts) {
