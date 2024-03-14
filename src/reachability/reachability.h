@@ -1,9 +1,9 @@
 #include "cfg-builder/cfg-visitor.h"
+#include <unordered_set>
 
 class CfgReachabilityVisitor : public CfgVisitor {
-    bool isString() { return false; } // TODO: temp function - remove
-
 public:
+    static std::unordered_set<Statement*> reached;
     static bool isConstantExpression(Expression &node);
     static Literal evalConstantExpression(Expression &node);
 public:

@@ -21,6 +21,7 @@
 #include "type-checker/typechecker.h"
 #include "cfg-builder/cfg-builder.h"
 #include "reachability/reachability.h"
+#include "reachability/reached-statement.h"
 #include "utillities/util.h"
 
 #ifdef GRAPHVIZ
@@ -169,9 +170,11 @@ int main(int argc, char *argv[]) {
         }
 
         // Type checking
-        for (auto &ast: asts ) {
-            TypeChecker(default_package).visit(ast);
-        }
+        try {
+            for (auto &ast: asts ) {
+                TypeChecker(default_package).visit(ast);
+            }
+        } catch (...) {}
 
         // CfgBuilder
         for (auto &ast: asts) {
@@ -181,6 +184,11 @@ int main(int argc, char *argv[]) {
         // Reachability testing
         for (auto &ast : asts) {
             CfgReachabilityVisitor().visit(ast);
+        }
+
+        // Reachability testing
+        for (auto &ast : asts) {
+            StatementVisitor().visit(ast);
         }
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";
