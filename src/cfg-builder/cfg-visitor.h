@@ -15,6 +15,7 @@ public:
     // Ast visitor code
     using DefaultSkipVisitor<void>::operator();
     void operator()(MethodDeclaration &node) override;
+    void operator()(InterfaceDeclaration &node) override;
     void visit(AstNodeVariant &node) override;
 
     // Override these when extended

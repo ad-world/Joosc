@@ -30,6 +30,11 @@ void CfgBuilderVisitor::operator()(MethodDeclaration &node) {
             node.cfg_start = children.front().first;
             node.cfg_end = children.back().second;
         }
+    } else {
+        // If there are no children, then the start and end nodes are the same
+        auto dummy_stmt = new CfgStatement();
+        node.cfg_start = dummy_stmt;
+        node.cfg_end = dummy_stmt;
     }
 }
 
