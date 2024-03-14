@@ -278,7 +278,7 @@ bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, Packag
         return true;
     }
     else {
-        if(linkedType2.isNull() || linkedType1.isSubType(linkedType2, default_package)) {
+        if(linkedType2.isNull() || linkedType2.isSubType(linkedType1, default_package)) {
             return true;
         }
     }
@@ -350,7 +350,9 @@ void TypeChecker::operator()(InfixExpression &node) {
             if(linkedType1.isSubType(linkedType2, default_package) || linkedType2.isSubType(linkedType1, default_package) ||
                 (linkedType1.isNull() && (linkedType2.isReferenceType() || linkedType2.is_array))  
                 || (linkedType2.isNull() && (linkedType1.isReferenceType() || linkedType1.is_array))
-                || (linkedType1.isNumeric() && linkedType2.isNumeric())) {
+                || (linkedType1.isNumeric() && linkedType2.isNumeric()) 
+                || (linkedType1.isBoolean() && linkedType2.isBoolean())
+                || (linkedType1.isNull() && linkedType2.isNull())) {
                 node.link = LinkedType(PrimitiveType::BOOLEAN);
             }
             else {
