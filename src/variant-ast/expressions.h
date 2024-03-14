@@ -36,6 +36,10 @@ enum class PrefixOperator {
 
 typedef std::variant<int64_t, bool, char, std::string, std::nullptr_t> Literal;
 
+typedef int8_t joos_byte_t;
+typedef int16_t joos_short_t;
+typedef int32_t joos_int_t;
+
 typedef std::variant<
     struct Assignment,
     struct InfixExpression,

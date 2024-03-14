@@ -1,4 +1,7 @@
 #include "graph.h"
+#include "utillities/overload.h"
+#include "variant-ast/astnode.h"
+#include "variant-ast/expressions.h"
 #include "variant-ast/names.h"
 #include "variant-ast/primitivetype.h"
 #include <fstream>
@@ -9,11 +12,13 @@
 #include <variant>
 #include "add-location/add-location.h"
 
+#include "reachability/reachability.h"
+
 #define GRAPH_LOCATION
 
 #ifdef GRAPH_LOCATION
 #define PRINT_LOC \
-    label_map[(AstNodeVariant*)&node] += "\n\n" + AddLocation::getString(node.location)
+    label_map[(AstNodeVariant*)&node] += "\n" + AddLocation::getString(node.location)
 #endif
 
 void GraphVisitor::operator()(CompilationUnit &node) {
@@ -405,6 +410,41 @@ void GraphVisitor::operator()(EmptyStatement &node) {
 
 void GraphVisitor::operator()(InfixExpression &node) {
     label_map[(AstNodeVariant*)&node] = "InfixExpression";
+    std::string op;
+    switch (node.op) {
+        case InfixOperator::BOOLEAN_OR:
+            op = "||"; break;
+        case InfixOperator::BOOLEAN_AND:
+            op = "&&"; break;
+        case InfixOperator::EAGER_OR:
+            op = "|"; break;
+        case InfixOperator::EAGER_AND:
+            op = "&"; break;
+        case InfixOperator::BOOLEAN_EQUAL:
+            op = "=="; break;
+        case InfixOperator::BOOLEAN_NOT_EQUAL:
+            op = "!="; break;
+        case InfixOperator::PLUS:
+            op = "+"; break;
+        case InfixOperator::MINUS:
+            op = "-"; break;
+        case InfixOperator::DIVIDE:
+            op = "/"; break;
+        case InfixOperator::MULTIPLY:
+            op = "*"; break;
+        case InfixOperator::LESS_THAN:
+            op = "<"; break;
+        case InfixOperator::GREATER_THAN:
+            op = ">"; break;
+        case InfixOperator::LESS_THAN_EQUAL:
+            op = "<="; break;
+        case InfixOperator::GREATER_THAN_EQUAL:
+            op = ">="; break;
+        case InfixOperator::MODULO:
+            op = "%"; break;
+        default: break;
+    }
+    label_map[(AstNodeVariant*)&node] += "\n" + op;
 #ifdef GRAPH_LOCATION
     PRINT_LOC;
 #endif
@@ -622,6 +662,30 @@ void GraphVisitor::operator()(ParenthesizedExpression &node) {
     }
 
     map.insert({(AstNodeVariant*) &node, children});
+}
+void GraphVisitor::operator()(Expression &expr) {
+    this->visit_children(expr);
+    if ( CfgReachabilityVisitor::isConstantExpression(expr) ) {
+        Literal evaluated = CfgReachabilityVisitor::evalConstantExpression(expr);
+        label_map[(AstNodeVariant*)&expr] += "\nCONSTANT EXPRESSION\n";
+        std::visit(util::overload{
+            [&](int64_t &literal) {
+                label_map[(AstNodeVariant*)&expr] += std::to_string(literal);
+            },
+            [&](bool &literal) {
+                label_map[(AstNodeVariant*)&expr] += (literal ? "true" : "false");
+            },
+            [&](char &literal) {
+                label_map[(AstNodeVariant*)&expr] += (std::string("\'") + literal) + "\'";
+            },
+            [&](std::string &literal) {
+                label_map[(AstNodeVariant*)&expr] += "\\\"" + literal + "\\\"";
+            },
+            [&](std::nullptr_t &literal) {
+                label_map[(AstNodeVariant*)&expr] += "null";
+            },
+        }, evaluated);
+    }
 }
 
 std::string GraphVisitor::getGraph() {
