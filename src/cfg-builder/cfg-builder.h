@@ -37,10 +37,14 @@ struct CfgStatement : public CfgNode {
     bool is_return = false;
     CfgNode* next = nullptr;
 
+    bool is_starting_node = false;
+    bool is_ending_node = false;
+
     bool in = false;
     bool out = false;
 
     CfgStatement();
+    CfgStatement(bool is_start, bool is_end);
     CfgStatement(Statement* statement);
     CfgStatement(Statement* statement, bool is_return);
 };

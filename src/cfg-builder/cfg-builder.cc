@@ -47,8 +47,8 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
             auto child_statement = createCfg(*node.then_clause);
 
             // Create start and end dummy nodes
-            auto dummy_start = new CfgStatement();
-            auto dummy_end = new CfgStatement();
+            auto dummy_start = new CfgStatement(true, false);
+            auto dummy_end = new CfgStatement(false, true);
             
             // Create a CFG Expression based on if clause
             auto expr = new CfgExpression(node.if_clause.get());
@@ -70,8 +70,8 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
             auto then_statement = createCfg(*node.then_clause);
             auto else_statement = createCfg(*node.else_clause);
 
-            auto dummy_start = new CfgStatement();
-            auto dummy_end = new CfgStatement();
+            auto dummy_start = new CfgStatement(true, false);
+            auto dummy_end = new CfgStatement(false, true);
 
             // Create a CFG Expression based on if clause
             auto expr = new CfgExpression(node.if_clause.get());
@@ -91,8 +91,8 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
         [&](WhileStatement &node) -> void{
             // Recursively build CFG for the body of the while statement
             auto body = createCfg(*node.body_statement);
-            auto dummy_start = new CfgStatement();
-            auto dummy_end = new CfgStatement();
+            auto dummy_start = new CfgStatement(true, false);
+            auto dummy_end = new CfgStatement(false, true);
 
             // Create a CFG Expression based on while clause
             auto expr = new CfgExpression(node.condition_expression.get());
@@ -111,8 +111,8 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
         [&](ForStatement &node) -> void{
             // Recursively build CFG for the body of the for statement
             auto body = createCfg(*node.body_statement);
-            auto dummy_start = new CfgStatement();
-            auto dummy_end = new CfgStatement();
+            auto dummy_start = new CfgStatement(true, false);
+            auto dummy_end = new CfgStatement(false, true);
             
             // Create a CFG Expression based on for clause condition
             auto expr = new CfgExpression(node.condition_expression.get());
@@ -182,6 +182,7 @@ std::pair<CfgStatement*, CfgStatement*> CfgBuilderVisitor::createCfg(Statement &
 
 CfgExpression::CfgExpression(Expression* expression) : expression(expression) {}
 CfgStatement::CfgStatement() : is_return(false) {}
+CfgStatement::CfgStatement(bool is_start, bool is_end) : in(is_start), is_starting_node{is_start}, is_ending_node{is_start} {}
 CfgStatement::CfgStatement(Statement* statement) : statement(statement) {}
 CfgStatement::CfgStatement(Statement* statement, bool is_return): statement(statement), is_return(is_return) {}
 CfgBuilderVisitor::CfgBuilderVisitor() {}

@@ -4,7 +4,9 @@
 #include <variant>
 
 void CfgVisitor::operator()(MethodDeclaration &node) {
+    current_method = node.environment;
     visit_child(node.cfg_start);
+    current_method = nullptr;
 }
 
 void CfgVisitor::visit_child(CfgNode* child) {
