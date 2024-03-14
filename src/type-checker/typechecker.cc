@@ -274,6 +274,9 @@ bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, Packag
             }
         }
     }
+    else if((linkedType1.getIfNonArrayIsClass() == default_package->getJavaLangObject())) {
+        return true;
+    }
     else {
         if(linkedType2.isNull() || linkedType1.isSubType(linkedType2, default_package)) {
             return true;
