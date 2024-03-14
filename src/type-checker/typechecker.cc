@@ -38,7 +38,7 @@ LinkedType TypeChecker::getLink(std::unique_ptr<Expression>& node_ptr) {
 }
 
 ClassDeclarationObject* TypeChecker::getStringClass(LinkedType &link) {
-    if(link.getIfNonArrayIsClass() == default_package->findClassDeclaration("java.lang.String")) {
+    if (link.getIfNonArrayIsClass() == default_package->findClassDeclaration("java.lang.String")) {
         return link.getIfNonArrayIsClass();
     }
     return nullptr;
@@ -288,9 +288,8 @@ void TypeChecker::operator()(Assignment &node) {
     LinkedType linkedType1 = getLink(node.assigned_to);
     LinkedType linkedType2 = getLink(node.assigned_from);
     
-    if(checkAssignability(linkedType1, linkedType2, default_package))
-    {
-        node.link.linked_type = linkedType1.linked_type;
+    if (checkAssignability(linkedType1, linkedType2, default_package)) {
+        node.link = linkedType1;
     }
     else {
         THROW_TypeCheckerError("Invalid type for assignment operation");
@@ -521,21 +520,32 @@ void TypeChecker::operator()(ClassInstanceCreationExpression &node) {
 void TypeChecker::operator()(FieldAccess &node) {
     this->visit_children(node);
 
-    LinkedType object_type = getLink(node.expression);
     std::string& field_name = node.identifier->name;
-    bool must_be_static = object_type.not_expression;
+    FieldDeclarationObject* resolved_field = nullptr;
 
-    FieldDeclarationObject* resolved_field = checkIfFieldIsAccessible(
-        current_class,
-        object_type.getIfNonArrayIsClass(),
-        field_name,
-        must_be_static
-    );
-    if (resolved_field) {
-        node.link = resolved_field->type;
+    // Type that the field is being accessed on
+    LinkedType object_type = getLink(node.expression);
+
+    // If the type is an array, only length is accessible
+    if (object_type.is_array) {
+        if (field_name == "length") {
+            node.link = LinkedType(PrimitiveType::INT);
+            return;
+        }
     } else {
-        THROW_TypeCheckerError("No accessible field " + field_name + " in " + object_type.toSimpleString());
+        resolved_field = checkIfFieldIsAccessible(
+            current_class,
+            object_type.getIfNonArrayIsClass(),
+            field_name,
+            object_type.not_expression
+        );
+        if (resolved_field) {
+            node.link = resolved_field->type;
+            return;
+        }
     }
+
+    THROW_TypeCheckerError("No accessible field " + field_name + " in " + object_type.toSimpleString());
 }
 
 void TypeChecker::operator()(ArrayAccess &node) {
