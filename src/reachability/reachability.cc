@@ -14,6 +14,17 @@ bool isJavaLangString(LinkedType &link) {
     return link.getIfNonArrayIsClass() == Util::root_package->findClassDeclaration("java.lang.String");
 }
 
+// TODO: override method invocation visitor so that we can set the IN for the block to be POSSIBLE
+// ASK JAGVIR HOW TO DO THIS
+
+Statement* CfgReachabilityVisitor::getPrevStatement() {
+    if ( statements.size() > 0 ) {
+        return statements.back();
+    } else {
+        return nullptr;
+    }
+}
+
 bool CfgReachabilityVisitor::isConstantExpression(Expression &node) {
     // A compile-time constant expression is an expression denoting a value of
     //  primitive type or a String that is composed using only the following:
@@ -342,11 +353,75 @@ Literal CfgReachabilityVisitor::evalConstantExpression(Expression &node) {
 void CfgReachabilityVisitor::operator()(CfgStatement *stmt) {
     // TODO: implement
     reached.insert(stmt->statement);
-    if ( stmt->is_return ) {
-        return;
-    } else {
+
+    if (in.find(stmt->statement) == in.end()) {
+        Statement* prev = getPrevStatement();
+        if (prev) {
+            in[stmt->statement] = out[prev];
+        }
+    }
+
+    if (std::holds_alternative<ReturnStatement>(*stmt->statement) || stmt->is_return) {
+        out[stmt->statement] = ReachabilityEnum::IMPOSSIBLE;
+        // this->visit_children(stmt);
+    } else if (std::holds_alternative<IfThenStatement>(*stmt->statement)) {
+        auto then_cast = std::get<IfThenStatement>(*stmt->statement).then_clause.get();
+        in[then_cast] = in[stmt->statement];
+        out[stmt->statement] = in[stmt->statement];
+        this->visit_children(stmt);
+    } else if (std::holds_alternative<IfThenElseStatement>(*stmt->statement)) {
+        auto then_cast = std::get<IfThenElseStatement>(*stmt->statement).then_clause.get();
+        auto else_cast = std::get<IfThenElseStatement>(*stmt->statement).else_clause.get();
+        in[then_cast] = in[stmt->statement];
+        in[else_cast] = in[stmt->statement];
+        this->visit_children(stmt);
+        out[stmt->statement] = ((out[then_cast] == ReachabilityEnum::POSSIBLE || out[else_cast] == ReachabilityEnum::POSSIBLE) ? ReachabilityEnum::POSSIBLE : ReachabilityEnum::IMPOSSIBLE);
+    } else if (std::holds_alternative<ForStatement>(*stmt->statement)) {
+        auto body_cast = std::get<ForStatement>(*stmt->statement).body_statement.get();
+
+        // check for constant value in expression
+        if (false) {
+            // do nothing
+        } else {
+            if (body_cast) {
+                in[body_cast] = in[stmt->statement];
+            }
+            out[stmt->statement] = in[stmt->statement];
+        }
+        this->visit_children(stmt);
+    } else if (std::holds_alternative<WhileStatement>(*stmt->statement)) {
+        auto body_cast = std::get<WhileStatement>(*stmt->statement).body_statement.get();
+
+        // check for constant value in expression
+        if (false) {
+
+        } else {
+            if (body_cast) {
+                in[body_cast] = in[stmt->statement];
+            }
+            out[stmt->statement] = in[stmt->statement];
+        }
+        this->visit_children(stmt);
+    } else if (std::holds_alternative<Block>(*stmt->statement)) {
+        
+        auto block = std::get<Block>(*stmt->statement);
+        auto stmts = block.statements;
+        if (!stmts.empty()) {
+            in[&stmts.front()] = in[stmt->statement];
+
+            for (int i = stmts.size() - 2; i >= 0; i--) {
+                statements.push_back(&stmts[i]);
+            }
+        }
+
         this->visit_children(stmt);
     }
+
+    // if ( stmt->is_return ) {
+    //     return;
+    // } else {
+    //     this->visit_children(stmt);
+    // }
 }
 
 void CfgReachabilityVisitor::operator()(CfgExpression *expr) {

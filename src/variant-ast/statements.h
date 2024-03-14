@@ -5,6 +5,7 @@
 #include <vector>
 #include "astnodecommon.h"
 #include "expressions.h"
+#include <string>
 
 struct Type;
 struct VariableDeclarator;
@@ -41,6 +42,10 @@ struct IfThenStatement: public AstNodeCommon {
         std::unique_ptr<Expression>&& if_clause,
         std::unique_ptr<Statement>&& then_clause
     );
+
+    std::string toString() {
+        return "IfThenStatement";
+    }
 };
 
 struct IfThenElseStatement: public AstNodeCommon {
@@ -58,6 +63,10 @@ struct IfThenElseStatement: public AstNodeCommon {
         std::unique_ptr<Statement>&& then_clause,
         std::unique_ptr<Statement>&& else_clause
     );
+
+    std::string toString() {
+        return "IfThenElseStatement";
+    }
 };
 
 struct WhileStatement: public AstNodeCommon {
@@ -72,6 +81,10 @@ struct WhileStatement: public AstNodeCommon {
         std::unique_ptr<Expression>&& condition_expression,
         std::unique_ptr<Statement>&& body_statement
     );
+
+    std::string toString() {
+        return "WhileStatement";
+    }
 };
 
 struct ForStatement: public AstNodeCommon {
@@ -92,6 +105,10 @@ struct ForStatement: public AstNodeCommon {
         std::unique_ptr<Statement>&& update_statement,
         std::unique_ptr<Statement>&& body_statement
     );
+
+    std::string toString() {
+        return "ForStatement";
+    }
 };
 
 struct Block: public AstNodeCommon {
@@ -107,6 +124,10 @@ struct Block: public AstNodeCommon {
         std::vector<LocalVariableDeclaration>&& useless,
         std::vector<Statement>&& statements
     );
+
+    std::string toString() {
+        return "Block";
+    }
 };
 
 struct ReturnStatement: public AstNodeCommon {
@@ -118,6 +139,10 @@ struct ReturnStatement: public AstNodeCommon {
     ReturnStatement(
         std::unique_ptr<Expression>&& return_expression
     );
+
+    std::string toString() {
+        return "ReturnStatement";
+    }
 };
 
 struct LocalVariableDeclaration: public AstNodeCommon {
@@ -134,4 +159,8 @@ struct LocalVariableDeclaration: public AstNodeCommon {
         std::unique_ptr<Type>&& type,
         std::unique_ptr<VariableDeclarator>&& variable_declarator
     );
+
+    std::string toString() {
+        return "LocalVariableDeclaration";
+    }
 };

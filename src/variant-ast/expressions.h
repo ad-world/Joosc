@@ -71,6 +71,10 @@ struct Assignment: public AstNodeCommon {
         std::unique_ptr<Expression>&& assigned_to,
         std::unique_ptr<Expression>&& assigned_from
     );
+
+    std::string toString () {
+        return "Assignment";
+    }
 };
 
 struct QualifiedThis: public AstNodeCommon {
@@ -115,6 +119,10 @@ struct ClassInstanceCreationExpression: public AstNodeCommon {
         std::unique_ptr<QualifiedIdentifier>&& class_name,
         std::vector<Expression>&& arguments
     );
+
+    std::string toString() {
+        return "ClassInstanceCreationExpression";
+    }
 };
 
 struct FieldAccess: public AstNodeCommon {
@@ -163,6 +171,10 @@ struct MethodInvocation: public AstNodeCommon {
         std::unique_ptr<Identifier>&& method_name,
         std::vector<Expression>&& arguments
     );
+
+    std::string toString() {
+        return "MethodInvocation";
+    }
 };
 
 struct InfixExpression : public AstNodeCommon {
