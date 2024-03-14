@@ -9,4 +9,5 @@
 struct Util {
     static PackageDeclarationObject* root_package;
     static std::vector<AstNodeVariant>* linked_asts;
+    static std::string locationToString(yy::location &loc);
 };

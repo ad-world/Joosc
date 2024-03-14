@@ -148,7 +148,5 @@ void AddLocation::operator()(AstNodeVariant &node, yy::location &loc) {
 std::string AddLocation::getString(yy::location &loc) {
     std::stringstream location_stream;
     location_stream << loc;
-    std::string s;
-    location_stream >> s;
-    return s;
+    return location_stream.str();
 }
