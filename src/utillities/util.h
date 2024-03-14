@@ -11,4 +11,5 @@ struct Util {
     static std::vector<AstNodeVariant>* linked_asts;
     static std::string locationToString(yy::location &loc);
     static std::string statementToLocationString(Statement &stmt);
+    static std::string expressionToLocationString(Expression &expr);
 };
