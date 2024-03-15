@@ -595,7 +595,7 @@ void TypeChecker::operator()(CastExpression &node) {
     LinkedType type = node.type.get()->link;
     LinkedType expression = getLink(node.expression);
 
-    if(checkCastability(type, expression, default_package)) {
+    if(checkCastability(type, expression, default_package) || checkCastability(expression, type, default_package)) {
         node.link = type;
     }
     else {
@@ -608,7 +608,8 @@ void TypeChecker::operator()(InstanceOfExpression &node) {
 
     LinkedType expression = getLink(node.expression);
     LinkedType type = node.type.get()->link;
-    if(type.isReferenceType() && checkCastability(type, expression, default_package)) {
+    if((expression.isReferenceType() || expression.isNull()) && type.isReferenceType() &&
+        (checkCastability(type, expression, default_package) || checkCastability(expression, type, default_package))) {
         node.link = LinkedType(PrimitiveType::BOOLEAN);
     }
     else {
