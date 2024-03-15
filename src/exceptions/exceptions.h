@@ -106,3 +106,12 @@ public:
     ReachabilityError(std::string message, std::string file, int line)
         : runtime_error(make_message("Reachability error", message, file, line)) {}
 };
+
+#define THROW_LocalVariableError(message) throw LocalVariableError(message, __FILE__, __LINE__)
+class LocalVariableError : public std::runtime_error {
+public:
+    std::string message;
+    LocalVariableError(std::string message) : runtime_error("LocalVariable error: " + message) {}
+    LocalVariableError(std::string message, std::string file, int line)
+        : runtime_error(make_message("LocalVariable error", message, file, line)) {}
+};
