@@ -27,6 +27,7 @@
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
+#include "graph/cfg-graph.h"
 #endif
 
 using namespace std;
@@ -98,6 +99,7 @@ int main(int argc, char *argv[]) {
     Util::linked_asts = &asts;
 #ifdef GRAPHVIZ
     GraphVisitor gv(asts); // runs on return/destruct
+    CfgGraph cfgv(asts); // runs on return/destruct
 #endif
 
     // Lexing and parsing

@@ -8,6 +8,7 @@ class GraphVisitor : public DefaultSkipVisitor<std::string> {
     std::unordered_map<AstNodeVariant*, std::vector<AstNodeVariant*>> map;
     std::unordered_map<AstNodeVariant*, std::string> label_map;
     std::vector<AstNodeVariant>* asts;
+    std::string graph_file = "graphs/graph.gv";
 public:
     using DefaultSkipVisitor<std::string>::operator();
     void operator()(CompilationUnit &node) override;

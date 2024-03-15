@@ -741,7 +741,7 @@ GraphVisitor::GraphVisitor(std::vector<AstNodeVariant>& asts) : asts{&asts} {}
 
 GraphVisitor::~GraphVisitor() {
     std::ofstream graph;
-    graph.open("graphs/graph.gv");
+    graph.open(graph_file);
     for ( auto& ast : *asts ) {
         graph << visit(ast);
     }
