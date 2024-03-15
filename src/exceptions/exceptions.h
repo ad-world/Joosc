@@ -115,3 +115,14 @@ public:
     LocalVariableError(std::string message, std::string file, int line)
         : runtime_error(make_message("LocalVariable error", message, file, line)) {}
 };
+
+// Warnings
+
+#define THROW_DeadAssignmentWarning(message) throw DeadAssignmentWarning(message, __FILE__, __LINE__)
+class DeadAssignmentWarning : public std::runtime_error {
+public:
+    std::string message;
+    DeadAssignmentWarning(std::string message) : runtime_error("Dead assignment warning: " + message) {}
+    DeadAssignmentWarning(std::string message, std::string file, int line)
+        : runtime_error(make_message("Dead assignment warning", message, file, line)) {}
+};
