@@ -12,4 +12,5 @@ struct Util {
     static std::string locationToString(yy::location &loc);
     static std::string statementToLocationString(Statement &stmt);
     static std::string expressionToLocationString(Expression &expr);
+    static bool checkExpressionForIdentifier(Expression &expr, Identifier &identifier);
 };

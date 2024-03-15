@@ -24,6 +24,7 @@
 #include "reachability/reached-statement.h"
 #include "utillities/util.h"
 #include "local-variables/local-variable-visitor.h"
+#include "dead-assignment/dead-assignment.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
@@ -195,6 +196,14 @@ int main(int argc, char *argv[]) {
         for (auto &ast: asts) {
             LocalVariableVisitor().visit(ast);
         }
+
+        bool warnings = DeadAssignmentVisitor().checkWarnings(asts);
+
+        if (warnings) {
+            return WARN_PROGRAM;
+        }
+
+
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";
         return COMPILER_DEVELOPMENT_ERROR;

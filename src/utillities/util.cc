@@ -64,3 +64,43 @@ std::string Util::expressionToLocationString(Expression &expr) {
     }
     return location_str;
 }
+
+bool Util::checkExpressionForIdentifier(Expression &expr, Identifier &identifier) {
+     std::visit(util::overload {
+        [&](QualifiedIdentifier &node) {
+            if (node.identifiers.size() == 1) {
+                if (node.identifiers.front().name == identifier.name) {
+                    return true;
+                }
+            }
+
+            return false;
+        },
+        [&](Literal &node) { return false; },
+        [&](MethodInvocation &node) {
+            bool flag = false;
+            for (auto &arg: node.arguments) flag = flag || checkExpressionForIdentifier(arg, identifier);
+            return flag;
+        },
+        [&](ArrayAccess &node) {
+            return (checkExpressionForIdentifier(*node.array, identifier) || checkExpressionForIdentifier(*node.selector, identifier));
+        },
+        [&](ClassInstanceCreationExpression &node) {
+            bool flag = false;
+            for (auto &arg: node.arguments) flag = flag || checkExpressionForIdentifier(arg, identifier);
+            return flag;
+        },
+        [&](InfixExpression &node) {
+            return (checkExpressionForIdentifier(*node.expression1, identifier) || checkExpressionForIdentifier(*node.expression2, identifier));
+        },
+        [&](Assignment &node) {
+            return (checkExpressionForIdentifier(*node.assigned_from, identifier) || checkExpressionForIdentifier(*node.assigned_to, identifier));
+        },
+        [&](QualifiedThis &node) { return false; },
+        [&](auto &node) {
+            return checkExpressionForIdentifier(*node.expression, identifier);
+        }
+    }, expr); 
+
+    return false;
+}
