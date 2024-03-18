@@ -261,7 +261,21 @@ void TypeLinker::operator()(MethodDeclaration &node) {
         // This method is not a constructor
         node.environment->return_type = node.type->link;
     } else {
+        // This method is a constructor
         node.environment->is_constructor = true;
+
+        // Name must be the same as the class name
+        std::string& constructor_name = node.environment->identifier;
+        std::visit(util::overload {
+            [&](ClassDeclarationObject* cls){
+                if (cls->identifier != constructor_name) {
+                    THROW_TypeLinkerError("Constructor declared with name not equal to class name");
+                }
+            },
+            [&](InterfaceDeclarationObject*){   
+                THROW_TypeLinkerError("Interface attempting to define constructor");
+            },
+        }, compilation_unit_namespace.getDeclaredType());
     }
 }
 
