@@ -526,13 +526,25 @@ void TypeChecker::operator()(ArrayCreationExpression &node) {
 }
 
 void TypeChecker::operator()(ClassInstanceCreationExpression &node) {
+    // Linked already in type linking; just check validity according to JLS 15.9
     this->visit_children(node);
 
-    LinkedType class_constructed = node.linked_class_type;
+    LinkedType class_constructed = node.link;
     std::string constructor_name = node.class_name->identifiers.back().name;
 
+    // Check class can be instantiated
+    if (ClassDeclarationObject* cls = class_constructed.getIfIsClass()) {
+        if (cls->ast_reference->hasModifier(Modifier::ABSTRACT)) {
+            THROW_TypeCheckerError(
+                "Attempted to instantiate abstract class in ClassInstanceCreationExpression");
+        }
+    } else {
+        THROW_TypeCheckerError(
+            "Attempted to instantiate interface in ClassInstanceCreationExpression");
+    }
+
+    // Check constructor call is valid
     MethodDeclarationObject* correct_constructor = determineMethodSignature(class_constructed, constructor_name, node.arguments);
-    node.link = node.linked_class_type;
 }
 
 void TypeChecker::operator()(FieldAccess &node) {

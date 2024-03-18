@@ -100,7 +100,6 @@ struct ArrayCreationExpression: public AstNodeCommon {
 struct ClassInstanceCreationExpression: public AstNodeCommon {
     std::unique_ptr<QualifiedIdentifier> class_name;
     std::vector<Expression> arguments;
-    LinkedType linked_class_type;
     LinkedType link;
 
     ClassInstanceCreationExpression(

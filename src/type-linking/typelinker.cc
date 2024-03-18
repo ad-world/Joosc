@@ -171,7 +171,7 @@ void TypeLinker::operator()(CompilationUnit &node) {
 
 void TypeLinker::operator()(ClassInstanceCreationExpression &node) {
     this->visit_children(node);
-    node.linked_class_type = compilation_unit_namespace.lookupQualifiedType(*node.class_name);
+    node.link = compilation_unit_namespace.lookupQualifiedType(*node.class_name);
 }
 
 void TypeLinker::operator()(Type &node) {

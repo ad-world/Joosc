@@ -29,8 +29,7 @@ ClassInstanceCreationExpression::ClassInstanceCreationExpression(
     std::vector<Expression>& arguments
 ): 
     class_name{std::move(class_name)},
-    arguments{std::move(arguments)},
-    linked_class_type{}
+    arguments{std::move(arguments)}
 {}
 
 FieldAccess::FieldAccess(
@@ -128,8 +127,7 @@ ClassInstanceCreationExpression::ClassInstanceCreationExpression(
     std::vector<Expression>&& arguments
 ): 
     class_name{std::move(class_name)},
-    arguments{std::move(arguments)},
-    linked_class_type{}
+    arguments{std::move(arguments)}
 {}
 
 FieldAccess::FieldAccess(
