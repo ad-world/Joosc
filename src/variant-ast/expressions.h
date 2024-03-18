@@ -53,11 +53,16 @@ typedef std::variant<
     struct ParenthesizedExpression
 > Expression;
 
-struct Assignment: public AstNodeCommon {
+// Shared fields for all expression subtypes
+struct ExpressionCommon: public AstNodeCommon {
+    LinkedType link; // The compile-time type of the expression; resolved in type-linking & type-checking
+    bool is_variable; // Whether is expression is an assignable variable; the Java equivalent to a C++ lvalue
+};
+
+struct Assignment: public ExpressionCommon {
     // Represents assigned_to = assigned_from
     std::unique_ptr<Expression> assigned_to;
     std::unique_ptr<Expression> assigned_from;
-    LinkedType link;
 
     Assignment(
         std::unique_ptr<Expression>& assigned_to,
@@ -69,9 +74,8 @@ struct Assignment: public AstNodeCommon {
     );
 };
 
-struct QualifiedThis: public AstNodeCommon {
+struct QualifiedThis: public ExpressionCommon {
     std::unique_ptr<QualifiedIdentifier> qualified_this;
-    LinkedType link;
 
     QualifiedThis(
         std::unique_ptr<QualifiedIdentifier>& qt
@@ -81,11 +85,9 @@ struct QualifiedThis: public AstNodeCommon {
     );
 };
 
-struct ArrayCreationExpression: public AstNodeCommon {
+struct ArrayCreationExpression: public ExpressionCommon {
     std::unique_ptr<Type> type;
     std::unique_ptr<Expression> expression;
-    LinkedType link;
-
 
     ArrayCreationExpression(
         std::unique_ptr<Type>& type,
@@ -97,10 +99,9 @@ struct ArrayCreationExpression: public AstNodeCommon {
     );
 };
 
-struct ClassInstanceCreationExpression: public AstNodeCommon {
+struct ClassInstanceCreationExpression: public ExpressionCommon {
     std::unique_ptr<QualifiedIdentifier> class_name;
     std::vector<Expression> arguments;
-    LinkedType link;
 
     ClassInstanceCreationExpression(
         std::unique_ptr<QualifiedIdentifier>& class_name,
@@ -112,10 +113,9 @@ struct ClassInstanceCreationExpression: public AstNodeCommon {
     );
 };
 
-struct FieldAccess: public AstNodeCommon {
+struct FieldAccess: public ExpressionCommon {
     std::unique_ptr<Expression> expression;
     std::unique_ptr<Identifier> identifier;
-    LinkedType link;
 
     FieldAccess(
         std::unique_ptr<Expression>& expression,
@@ -127,10 +127,9 @@ struct FieldAccess: public AstNodeCommon {
     );
 };
 
-struct ArrayAccess: public AstNodeCommon {
+struct ArrayAccess: public ExpressionCommon {
     std::unique_ptr<Expression> array;
     std::unique_ptr<Expression> selector;
-    LinkedType link;
 
     ArrayAccess(
         std::unique_ptr<Expression>& array,
@@ -142,11 +141,10 @@ struct ArrayAccess: public AstNodeCommon {
     );
 };
 
-struct MethodInvocation: public AstNodeCommon {
+struct MethodInvocation: public ExpressionCommon {
     std::unique_ptr<Expression> parent_expr;    // CAN BE NULL
     std::unique_ptr<Identifier> method_name;
     std::vector<Expression> arguments;
-    LinkedType link;
 
     MethodInvocation(
         std::unique_ptr<Expression>& parent_expr,
@@ -160,11 +158,10 @@ struct MethodInvocation: public AstNodeCommon {
     );
 };
 
-struct InfixExpression : public AstNodeCommon {
+struct InfixExpression : public ExpressionCommon {
     std::unique_ptr<Expression> expression1;
     std::unique_ptr<Expression> expression2;
     InfixOperator op;
-    LinkedType link;
 
     InfixExpression(
         std::unique_ptr<Expression>& ex1,
@@ -178,10 +175,9 @@ struct InfixExpression : public AstNodeCommon {
     );
 };
 
-struct PrefixExpression : public AstNodeCommon {
+struct PrefixExpression : public ExpressionCommon {
     std::unique_ptr<Expression> expression;
     PrefixOperator op;
-    LinkedType link;
 
     PrefixExpression(
         std::unique_ptr<Expression>& expression,
@@ -193,10 +189,9 @@ struct PrefixExpression : public AstNodeCommon {
     );
 };
 
-struct CastExpression : public AstNodeCommon {
+struct CastExpression : public ExpressionCommon {
     std::unique_ptr<Type> type;
     std::unique_ptr<Expression> expression;
-    LinkedType link;
 
     CastExpression(
         std::unique_ptr<Type>& type,
@@ -208,10 +203,9 @@ struct CastExpression : public AstNodeCommon {
     );
 };
 
-struct InstanceOfExpression : public AstNodeCommon {
+struct InstanceOfExpression : public ExpressionCommon {
     std::unique_ptr<Expression> expression;
     std::unique_ptr<Type> type;
-    LinkedType link;
 
     InstanceOfExpression(
         std::unique_ptr<Expression>& expression,
@@ -223,9 +217,8 @@ struct InstanceOfExpression : public AstNodeCommon {
     );
 };
 
-struct ParenthesizedExpression : public AstNodeCommon {
+struct ParenthesizedExpression : public ExpressionCommon {
     std::unique_ptr<Expression> expression;
-    LinkedType link;
     
     ParenthesizedExpression(
         std::unique_ptr<Expression>& expression
