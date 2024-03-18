@@ -146,6 +146,7 @@ void EnvironmentBuilder::operator()(FormalParameter &node) {
     // Add parameter to method
     auto param_env =
         this->current_method->parameters->addSymbol<FormalParameterDeclarationObject>(parameter_name);
+    this->current_method->parameter_list.push_back(param_env);
 
     linkDeclaration(node, *param_env);
     visit_children(node);
