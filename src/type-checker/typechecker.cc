@@ -18,7 +18,7 @@ LinkedType TypeChecker::getLink(Expression &node) {
                     return LinkedType(PrimitiveType::CHAR);
                 },
                 [&] (std::string& literal_type) -> LinkedType {
-                    NonArrayLinkedType string_type = default_package->findClassDeclaration("java.lang.String");
+                    NonArrayLinkedType string_type = Util::root_package->findClassDeclaration("java.lang.String");
                     return LinkedType(string_type);
                 },
                 [&] (std::nullptr_t literal_type) -> LinkedType {

@@ -283,7 +283,7 @@
 
 %{
 #define SET_LOCATION(me, loc) \
-    AddLocation()(*me, loc)
+    AddLocation(loc)(*me)
     // me->location = loc
 
 #define MAKE_STACK_OBJ(me, type, constructor...) \

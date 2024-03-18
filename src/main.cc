@@ -21,7 +21,9 @@
 #include "type-checker/typechecker.h"
 #include "cfg-builder/cfg-builder.h"
 #include "reachability/reachability.h"
+#include "reachability/reached-statement.h"
 #include "utillities/util.h"
+#include "local-variables/local-variable-visitor.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
@@ -181,6 +183,15 @@ int main(int argc, char *argv[]) {
         // Reachability testing
         for (auto &ast : asts) {
             CfgReachabilityVisitor().visit(ast);
+        }
+
+        // Reachability testing
+        for (auto &ast : asts) {
+            StatementVisitor().visit(ast);
+        }
+
+        for (auto &ast: asts) {
+            LocalVariableVisitor().visit(ast);
         }
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";

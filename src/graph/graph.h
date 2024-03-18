@@ -1,4 +1,5 @@
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
+#include "variant-ast/expressions.h"
 #include "variant-ast/packages.h"
 #include <unordered_map>
 
@@ -48,6 +49,8 @@ public:
     void operator()(MethodInvocation &node) override;
     void operator()(InstanceOfExpression &node) override;
     void operator()(ParenthesizedExpression &node) override;
+
+    void operator()(Expression &expr) override;
 
     std::string visit(AstNodeVariant &node) override;
 

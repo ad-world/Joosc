@@ -23,7 +23,9 @@ public:
 
 // Used for branches in the CFG (eg. ifthen, while)
 struct CfgExpression : public CfgNode {
+    Statement* source_statement = nullptr;
     Expression* expression = nullptr;
+    bool is_for_while = false;
 
     CfgNode* true_branch = nullptr;
     CfgNode* false_branch = nullptr;
@@ -37,10 +39,14 @@ struct CfgStatement : public CfgNode {
     bool is_return = false;
     CfgNode* next = nullptr;
 
+    bool is_starting_node = false;
+    bool is_ending_node = false;
+
     bool in = false;
     bool out = false;
 
     CfgStatement();
+    CfgStatement(bool is_start, bool is_end);
     CfgStatement(Statement* statement);
     CfgStatement(Statement* statement, bool is_return);
 };
