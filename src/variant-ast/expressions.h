@@ -34,14 +34,12 @@ enum class PrefixOperator {
     NEGATE
 };
 
-typedef std::variant<int64_t, bool, char, std::string, std::nullptr_t> Literal;
-
 typedef std::variant<
     struct Assignment,
     struct InfixExpression,
     struct PrefixExpression,
     struct CastExpression,
-    Literal,
+    struct Literal,
     struct ClassInstanceCreationExpression,
     struct FieldAccess,
     struct MethodInvocation,
@@ -56,7 +54,13 @@ typedef std::variant<
 // Shared fields for all expression subtypes
 struct ExpressionCommon: public AstNodeCommon {
     LinkedType link; // The compile-time type of the expression; resolved in type-linking & type-checking
-    bool is_variable; // Whether is expression is an assignable variable; the Java equivalent to a C++ lvalue
+    bool is_variable = false; // Whether this expression is an assignable variable; the Java equivalent to a C++ lvalue
+};
+
+using LiteralVariant = std::variant<int64_t, bool, char, std::string, std::nullptr_t>;
+struct Literal : public LiteralVariant, public ExpressionCommon {
+    using LiteralVariant::LiteralVariant;
+    using LiteralVariant::operator=;
 };
 
 struct Assignment: public ExpressionCommon {
