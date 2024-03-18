@@ -61,6 +61,25 @@ void TypeChecker::operator()(ClassDeclaration &node) {
 }
 
 void TypeChecker::operator()(MethodDeclaration &node) {
+    // Every constructor implicitly calls 0 argument constructor of super class;
+    // check if this constructor exists.
+    if (current_class && current_class->extended) {
+        ClassDeclarationObject* superclass = current_class->extended;
+        bool superclass_default_constructor_exists = false;
+
+        std::list<MethodDeclarationObject*> constructors = superclass->overloaded_methods[superclass->identifier];
+        for (auto constructor : constructors) {
+            if (constructor->getParameters().size() == 0) {
+                superclass_default_constructor_exists = true;
+            }
+        }
+
+        if (!superclass_default_constructor_exists) {
+            THROW_TypeCheckerError("No default superclass constructor in inherited class");
+        }
+    }
+
+    // Scope boilerplate
     current_method = node.environment;
     current_method->scope_manager.closeAllScopes();
     visit_children(node);

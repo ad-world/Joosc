@@ -9,10 +9,10 @@
 
 class TypeChecker: public DefaultSkipVisitor<void> {
 
-    PackageDeclarationObject* default_package;
+    PackageDeclarationObject* default_package = nullptr;
     CompilationUnitNamespace compilation_unit_namespace;
-    MethodDeclarationObject* current_method;
-    ClassDeclarationObject* current_class;
+    MethodDeclarationObject* current_method = nullptr;
+    ClassDeclarationObject* current_class = nullptr;
 
     // Shorthand for getting linked type from any expression node
     LinkedType getLink(Expression &node);
