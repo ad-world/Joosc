@@ -121,6 +121,7 @@ struct MethodDeclarationObject {
     class MethodDeclaration* ast_reference = nullptr;
 
     std::unique_ptr<SymbolTable> parameters; // SymbolTable mapping to FormalParameterDeclarationObject
+    std::vector<FormalParameterDeclarationObject*> parameter_list;
     LocalVariableScopeManager scope_manager; // Manager of SymbolTables mapping to LocalVariableDeclarationObject
 
     std::vector<FormalParameterDeclarationObject*> getParameters();

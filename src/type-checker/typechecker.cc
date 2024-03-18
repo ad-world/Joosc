@@ -61,6 +61,25 @@ void TypeChecker::operator()(ClassDeclaration &node) {
 }
 
 void TypeChecker::operator()(MethodDeclaration &node) {
+    // Every constructor implicitly calls 0 argument constructor of super class;
+    // check if this constructor exists.
+    if (current_class && current_class->extended) {
+        ClassDeclarationObject* superclass = current_class->extended;
+        bool superclass_default_constructor_exists = false;
+
+        std::list<MethodDeclarationObject*> constructors = superclass->overloaded_methods[superclass->identifier];
+        for (auto constructor : constructors) {
+            if (constructor->getParameters().size() == 0) {
+                superclass_default_constructor_exists = true;
+            }
+        }
+
+        if (!superclass_default_constructor_exists) {
+            THROW_TypeCheckerError("No default superclass constructor in inherited class");
+        }
+    }
+
+    // Scope boilerplate
     current_method = node.environment;
     current_method->scope_manager.closeAllScopes();
     visit_children(node);
@@ -97,20 +116,33 @@ FieldDeclarationObject* checkIfFieldIsAccessible(
     auto possible_field = class_with_field->accessible_fields[field_simple_name];
     if (!possible_field) { return nullptr; }
 
-    // Second, if the field must be static, ensure it is static
+    // Second, if the field access is static, ensure it is static; if the field access is non-static, ensure it is non static
     if (must_be_static && !possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
         return nullptr;
     }
+    if (!must_be_static && possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
+        return nullptr;
+    }
 
-    // Third, if the field is protected, the current_class must be a subclass or in the same package of class declaring it
+    // Third, if the field is protected, follow JLS 6.6.2
     ClassDeclarationObject* class_that_declared_field = possible_field->containing_class;
     if (possible_field->ast_reference->hasModifier(Modifier::PROTECTED)) {
-        if (
-            !current_class->isSubType(class_that_declared_field) && 
-            !(current_class->package_contained_in == class_that_declared_field->package_contained_in)
-        ) {
-            std::cerr << "Protected field not accessible\n";
+        // Accessing protected field in same package is always permissable
+        if (current_class->package_contained_in == class_that_declared_field->package_contained_in) {
+            return possible_field;
+        }
+
+        // JLS 6.6.2.1: Accessing protected field outside of the same package it was declared in
+        
+        if (!current_class->isSubType(class_that_declared_field)) {
             return nullptr;
+        }
+
+        // if the field is a protected instance field, the class of the object the field is accessed on must be subclass of the class the access occurs in
+        if (!possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
+            if (!class_with_field->isSubType(current_class)) {
+                return nullptr;
+            }
         }
     }
 
@@ -133,8 +165,10 @@ bool TypeChecker::checkifMethodIsAccessible(
             return true;
         }
         // JLS: Let C be the class in which a protected member is declared
-        // Access is permitted within the body of a subclass S of C,
-        // with Q.id, iff the type of Q is S or a subclass of S
+        //
+        // Access is permitted only within the body of a subclass S of C
+        //
+        // Let the access be Q.id. If id is an instance member, the type of Q must be S or a subclass of S
 
         // S = current_class
         // C = method_to_access->containing_type
@@ -149,10 +183,12 @@ bool TypeChecker::checkifMethodIsAccessible(
         }
 
         // Q is a subclass of S
-        // Class of the object the method is called on must be subclass of class the method
+        // If instance method, the class of the object the method is called on must be subclass of class the method
         // is called in
-        if (!type_method_called_on.isSubType(current_class_as_linked_type, default_package)) {
-            return false;
+        if (!method_to_access->ast_reference->hasModifier(Modifier::STATIC)) {
+            if (!type_method_called_on.isSubType(current_class_as_linked_type, default_package)) {
+                return false;
+            }
         }
 
         return true;
@@ -274,8 +310,11 @@ bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, Packag
             }
         }
     }
+    else if (linkedType1.getIfNonArrayIsClass() == default_package->getJavaLangObject()) {
+        return true;
+    }
     else {
-        if(linkedType2.isNull() || linkedType1.isSubType(linkedType2, default_package)) {
+        if(linkedType2.isNull() || linkedType2.isSubType(linkedType1, default_package)) {
             return true;
         }
     }
@@ -346,7 +385,9 @@ void TypeChecker::operator()(InfixExpression &node) {
             if(linkedType1.isSubType(linkedType2, default_package) || linkedType2.isSubType(linkedType1, default_package) ||
                 (linkedType1.isNull() && (linkedType2.isReferenceType() || linkedType2.is_array))  
                 || (linkedType2.isNull() && (linkedType1.isReferenceType() || linkedType1.is_array))
-                || (linkedType1.isNumeric() && linkedType2.isNumeric())) {
+                || (linkedType1.isNumeric() && linkedType2.isNumeric()) 
+                || (linkedType1.isBoolean() && linkedType2.isBoolean())
+                || (linkedType1.isNull() && linkedType2.isNull())) {
                 node.link = LinkedType(PrimitiveType::BOOLEAN);
             }
             else {
@@ -366,6 +407,58 @@ void TypeChecker::operator()(InfixExpression &node) {
             break;
         default:
             THROW_TypeCheckerError("Invalid type for InfixExpression");
+    }
+}
+
+// Finds applicable and accessible method_name within type_to_search with matching arguments
+// Throws if no method is applicable and accessible
+MethodDeclarationObject* TypeChecker::determineMethodSignature(LinkedType& type_to_search, std::string& method_name, std::vector<Expression>& arguments) {
+    std::list<MethodDeclarationObject*> invoked_method_candidates = type_to_search.getAllMethods(method_name);
+
+    // Find all applicable & accessible methods
+    std::vector<MethodDeclarationObject*> found_methods;
+    for (auto candidate : invoked_method_candidates) {
+        auto parameters = candidate->getParameters();
+
+        if (parameters.size() != arguments.size()) {
+            // Method is not applicable; mismatched number of arguments
+            continue;
+        }
+
+        for (size_t i = 0; i < parameters.size(); ++i) {
+            LinkedType param_type = parameters[i]->type;
+            LinkedType arg_type = getLink(arguments[i]);
+            if (param_type != arg_type) {
+                goto not_applicable_or_accessible;
+            }
+        }
+
+        if (!checkifMethodIsAccessible(candidate, type_to_search)) {
+            // Method is applicable, but not accessible
+            continue;
+        }
+
+        found_methods.push_back(candidate);
+        not_applicable_or_accessible:;
+    }
+
+    // Determine best method based on applicable & accessible methods
+    if (found_methods.empty()) {
+        THROW_TypeCheckerError(
+            "No method declaration for " + method_name + " is applicable and accessible in " + type_to_search.toSimpleString()
+        );
+    } else if (found_methods.size() > 1) {
+        // JLS 15.12.2.2: If one of the methods is not declared abstract, it is the most specific method
+        for (auto found_method : found_methods) {
+            if (!found_method->ast_reference->hasModifier(Modifier::ABSTRACT)) {
+                return found_method;
+            }
+        }
+        // JLS 15.12.2.2: All the methods are necessarily abstract, the method is chosen arbitrarily
+        return found_methods[0];
+    } else {
+        // Exactly one method is applicable and accessible
+        return found_methods[0];
     }
 }
 
@@ -390,55 +483,7 @@ void TypeChecker::operator()(MethodInvocation &node) {
     }
 
     // JLS 15.12.2: Compile Time Step 2 - Determine Method Signature
-    std::list<MethodDeclarationObject*> invoked_method_candidates = type_to_search.getAllMethods(method_name);
-    // Find all applicable & accessible methods
-    std::vector<MethodDeclarationObject*> found_methods;
-    for (auto candidate : invoked_method_candidates) {
-        auto parameters = candidate->getParameters();
-        auto &arguments = node.arguments;
-
-        if (parameters.size() != arguments.size()) {
-            // Method is not applicable; mismatched number of arguments
-            continue;
-        }
-
-        for (size_t i = 0; i < parameters.size(); ++i) {
-            LinkedType param_type = parameters[i]->type;
-            LinkedType arg_type = getLink(arguments[i]);
-            if (param_type != arg_type) {
-                goto not_applicable_or_accessible;
-            }
-        }
-
-        if (!checkifMethodIsAccessible(candidate, type_to_search)) {
-            // Method is applicable, but not accessible
-            continue;
-        }
-
-        found_methods.push_back(candidate);
-        not_applicable_or_accessible:;
-    }
-
-    MethodDeclarationObject* determined_method = nullptr;
-    if (found_methods.empty()) {
-        THROW_TypeCheckerError(
-            "No method declaration for " + method_name + " is applicable and accessible in " + type_to_search.toSimpleString()
-        );
-    } else if (found_methods.size() > 1) {
-        // JLS 15.12.2.2: If one of the methods is not declared abstract, it is the most specific method
-        for (auto found_method : found_methods) {
-            if (!found_method->ast_reference->hasModifier(Modifier::ABSTRACT)) {
-                determined_method = found_method;
-            }
-        }
-        if (!determined_method) {
-            // JLS 15.12.2.2: All the methods are necessarily abstract, the method is chosen arbitrarily
-            determined_method = found_methods[0];
-        }
-    } else {
-        // Exactly one method is applicable and accessible
-        determined_method = found_methods[0];
-    }
+    MethodDeclarationObject* determined_method = determineMethodSignature(type_to_search, method_name, node.arguments);
 
     // JLS 15.12.3 Compile-Time Step 3 - Is the Chosen Method Appropriate?
     if (type_to_search.not_expression) {
@@ -448,6 +493,9 @@ void TypeChecker::operator()(MethodInvocation &node) {
         }
     } else {
         // Instance method call
+        if (determined_method->ast_reference->hasModifier(Modifier::STATIC)) {
+            THROW_TypeCheckerError("Instance method call used to invoke static method"); 
+        }
         if (current_class == nullptr) {
             // Instance method call in static-only context; e.g. member initialization
             THROW_TypeCheckerError("Instance method call invoked in static context"); 
@@ -513,8 +561,25 @@ void TypeChecker::operator()(ArrayCreationExpression &node) {
 }
 
 void TypeChecker::operator()(ClassInstanceCreationExpression &node) {
+    // Linked already in type linking; just check validity according to JLS 15.9
     this->visit_children(node);
-    node.link = node.linked_class_type;
+
+    LinkedType class_constructed = node.link;
+    std::string constructor_name = node.class_name->identifiers.back().name;
+
+    // Check class can be instantiated
+    if (ClassDeclarationObject* cls = class_constructed.getIfIsClass()) {
+        if (cls->ast_reference->hasModifier(Modifier::ABSTRACT)) {
+            THROW_TypeCheckerError(
+                "Attempted to instantiate abstract class in ClassInstanceCreationExpression");
+        }
+    } else {
+        THROW_TypeCheckerError(
+            "Attempted to instantiate interface in ClassInstanceCreationExpression");
+    }
+
+    // Check constructor call is valid
+    MethodDeclarationObject* correct_constructor = determineMethodSignature(class_constructed, constructor_name, node.arguments);
 }
 
 void TypeChecker::operator()(FieldAccess &node) {
@@ -600,7 +665,7 @@ void TypeChecker::operator()(CastExpression &node) {
     LinkedType type = node.type.get()->link;
     LinkedType expression = getLink(node.expression);
 
-    if(checkCastability(type, expression, default_package)) {
+    if(checkCastability(type, expression, default_package) || checkCastability(expression, type, default_package)) {
         node.link = type;
     }
     else {
@@ -613,7 +678,8 @@ void TypeChecker::operator()(InstanceOfExpression &node) {
 
     LinkedType expression = getLink(node.expression);
     LinkedType type = node.type.get()->link;
-    if(type.isReferenceType() && checkCastability(type, expression, default_package)) {
+    if((expression.isReferenceType() || expression.isNull()) && type.isReferenceType() &&
+        (checkCastability(type, expression, default_package) || checkCastability(expression, type, default_package))) {
         node.link = LinkedType(PrimitiveType::BOOLEAN);
     }
     else {

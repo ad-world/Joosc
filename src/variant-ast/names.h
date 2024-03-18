@@ -23,10 +23,8 @@ struct Identifier: public AstNodeCommon {
     Identifier(std::string&& name) : name(std::move(name)) {}
 };
 
-struct QualifiedIdentifier: public AstNodeCommon {
-    LinkedType link;
-
-    std::vector<Identifier> identifiers; // Vector of identifiers for this qualitfed identifier
+struct QualifiedIdentifier: public ExpressionCommon {
+    std::vector<Identifier> identifiers; // Vector of identifiers for this qualified identifier
 
     QualifiedIdentifier() {}
     QualifiedIdentifier(std::vector<Identifier>& identifiers) : identifiers(std::move(identifiers)) {}
