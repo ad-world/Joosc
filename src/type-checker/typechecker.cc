@@ -97,24 +97,33 @@ FieldDeclarationObject* checkIfFieldIsAccessible(
     auto possible_field = class_with_field->accessible_fields[field_simple_name];
     if (!possible_field) { return nullptr; }
 
-    // Second, if the field must be static, ensure it is static
+    // Second, if the field access is static, ensure it is static; if the field access is non-static, ensure it is non static
     if (must_be_static && !possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
         return nullptr;
     }
-    // Also, as a Joos1W specific rule, if the field access is non-static, the field must be non-static
     if (!must_be_static && possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
         return nullptr;
     }
 
-    // Third, if the field is protected, the current_class must be a subclass or in the same package of class declaring it
+    // Third, if the field is protected, follow JLS 6.6.2
     ClassDeclarationObject* class_that_declared_field = possible_field->containing_class;
     if (possible_field->ast_reference->hasModifier(Modifier::PROTECTED)) {
-        if (
-            !current_class->isSubType(class_that_declared_field) && 
-            !(current_class->package_contained_in == class_that_declared_field->package_contained_in)
-        ) {
-            std::cerr << "Protected field not accessible\n";
+        // Accessing protected field in same package is always permissable
+        if (current_class->package_contained_in == class_that_declared_field->package_contained_in) {
+            return possible_field;
+        }
+
+        // JLS 6.6.2.1: Accessing protected field outside of the same package it was declared in
+        
+        if (!current_class->isSubType(class_that_declared_field)) {
             return nullptr;
+        }
+
+        // if the field is a protected instance field, the class of the object the field is accessed on must be subclass of the class the access occurs in
+        if (!possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
+            if (!class_with_field->isSubType(current_class)) {
+                return nullptr;
+            }
         }
     }
 
