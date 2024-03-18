@@ -193,14 +193,6 @@ bool InterfaceDeclarationObject::isSubType(TypeDeclaration type_decl) {
     return ::isSubType(this, type_decl);
 }
 
-// TODO : Collapse into SymbolTable so no need to access internals
 std::vector<FormalParameterDeclarationObject*> MethodDeclarationObject::getParameters() {
-    std::vector<FormalParameterDeclarationObject*> params;
-    auto &param_table = this->parameters->hashmap;
-    for (auto &it : param_table) {
-        if (!it.second.empty()) { // Not default constructed
-            params.push_back(this->parameters->lookupUniqueSymbol<FormalParameterDeclarationObject>(it.first));
-        }
-    }
-    return params;
+    return parameter_list;
 }

@@ -35,34 +35,42 @@ bool LinkedType::isSubType(LinkedType other, PackageDeclarationObject* default_p
     // Type is trivally subtype of itself
     if (*this == other) { return true; }
 
+    // Non equal primitive types are not subtypes
     if (this->isPrimitive() || other.isPrimitive()) {
-        // Non equal primitive types are not subtypes
         return false;
     }
 
     // Both types now must be reference types
+
+    // Array is subtype of other array type, if and only if contained is
     if (this->is_array && other.is_array) {
-        // Array is subtype of other array type, if and only if contained is
         // Call recursively without array being set to true
         return LinkedType(this->linked_type).isSubType(LinkedType(other.linked_type), default_package);
     }
 
-    // All arrays are subtype of Object
-    // TODO : I think it needs to be subtype of java.io.Serializable or something as well
+    // Any array is only subtype of 3 non-array types: Object, Java.io.Serializable, or Cloneable
     if (this->is_array) {
-        if (other.getIfNonArrayIsClass() == default_package->getJavaLangObject()) {
+        if (other.getIfNonArrayIsClass() == default_package->findClassDeclaration("java.lang.Object")) {
             return true;
-        } else {
-            // If one type is an array and one isn't, not a subtype
-            return false;
+        } else if (other.getIfNonArrayIsInterface() == default_package->findInterfaceDeclaration("java.lang.Cloneable")) {
+            return true;
+        } else if (other.getIfNonArrayIsInterface() == default_package->findInterfaceDeclaration("java.io.Serializable")) {
+            return true;
         }
+
+        return false;
     }
 
     // Both types are declared types (class or interface)
     TypeDeclaration this_type = this->getIfNonArrayIsClass();
+    if (this->getIfNonArrayIsInterface()) { 
+        this_type = this->getIfNonArrayIsInterface(); 
+    }
+
     TypeDeclaration other_type = other.getIfNonArrayIsClass();
-    if (this->getIfNonArrayIsInterface()) { this_type = this->getIfNonArrayIsInterface(); }
-    if (other.getIfNonArrayIsInterface()) { other_type = other.getIfNonArrayIsInterface(); }
+    if (other.getIfNonArrayIsInterface()) { 
+        other_type = other.getIfNonArrayIsInterface(); 
+    }
     
     // Determine if class/interface is subclass/subinterface by calling into SymbolTableEntry's logic
     return std::visit([&](auto type_dec){ return type_dec->isSubType(other_type); }, this_type);

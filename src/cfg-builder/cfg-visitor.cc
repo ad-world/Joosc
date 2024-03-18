@@ -4,7 +4,9 @@
 #include <variant>
 
 void CfgVisitor::operator()(MethodDeclaration &node) {
+    current_method = node.environment;
     visit_child(node.cfg_start);
+    current_method = nullptr;
 }
 
 void CfgVisitor::visit_child(CfgNode* child) {
@@ -32,14 +34,15 @@ void CfgVisitor::operator()(CfgNode *node) {
     if ( !node ) { return; }
 
     if ( CfgStatement* stmt = dynamic_cast<CfgStatement*>(node) ) {
-        this->visit_children(stmt);
+        operator()(stmt);
     } else if ( CfgExpression* expr = dynamic_cast<CfgExpression*>(node) ) {
-        this->visit_children(expr);
+        operator()(expr);
     } else {
         THROW_CompilerError("Unable to convert CfgNode to Statement/Expression");
     }
 }
 
+void CfgVisitor::operator()(InterfaceDeclaration &node) {}
 void CfgVisitor::operator()(CfgStatement *node) { this->visit_children(node); }
 void CfgVisitor::operator()(CfgExpression *node) { this->visit_children(node); }
-void CfgVisitor::visit(AstNodeVariant &node) { std::visit(*this, node); }
+void CfgVisitor::visit(AstNodeVariant &node) { visited.clear(); std::visit(*this, node); }
