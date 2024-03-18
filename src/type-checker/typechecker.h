@@ -24,6 +24,10 @@ class TypeChecker: public DefaultSkipVisitor<void> {
       MethodDeclarationObject* method_to_access, LinkedType type_method_called_on
     );
 
+    // Finds applicable and accessible method_name within type_to_search with matching arguments
+    // Throws if no method is applicable and accessible
+    MethodDeclarationObject* determineMethodSignature(LinkedType& type_to_search, std::string& method_name, std::vector<Expression>& arguments);
+
   public:
     using DefaultSkipVisitor<void>::operator();
 

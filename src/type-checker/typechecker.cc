@@ -374,33 +374,15 @@ void TypeChecker::operator()(InfixExpression &node) {
     }
 }
 
-void TypeChecker::operator()(MethodInvocation &node) {
-
-    /* JLS 15.12: Method Invocation Expressions */
-    std::string& method_name = node.method_name->name;
-    this->visit_children(node);
-
-    // JLS 15.12.1: Compile-Time Step 1 - Determine Class or Interface to Search
-    LinkedType type_to_search;
-    if (!node.parent_expr) {
-        // Simple MethodName
-        NonArrayLinkedType current_class_casted = current_class;
-        type_to_search = LinkedType(current_class_casted);
-    } else {
-        type_to_search = getLink(node.parent_expr);
-    }
-    // Static methods can only be called on TypeName that does not refer to an interface
-    if (type_to_search.not_expression && type_to_search.getIfIsInterface()) {
-        THROW_TypeCheckerError("Interface type cannot perform static method calls"); 
-    }
-
-    // JLS 15.12.2: Compile Time Step 2 - Determine Method Signature
+// Finds applicable and accessible method_name within type_to_search with matching arguments
+// Throws if no method is applicable and accessible
+MethodDeclarationObject* TypeChecker::determineMethodSignature(LinkedType& type_to_search, std::string& method_name, std::vector<Expression>& arguments) {
     std::list<MethodDeclarationObject*> invoked_method_candidates = type_to_search.getAllMethods(method_name);
+
     // Find all applicable & accessible methods
     std::vector<MethodDeclarationObject*> found_methods;
     for (auto candidate : invoked_method_candidates) {
         auto parameters = candidate->getParameters();
-        auto &arguments = node.arguments;
 
         if (parameters.size() != arguments.size()) {
             // Method is not applicable; mismatched number of arguments
@@ -424,7 +406,7 @@ void TypeChecker::operator()(MethodInvocation &node) {
         not_applicable_or_accessible:;
     }
 
-    MethodDeclarationObject* determined_method = nullptr;
+    // Determine best method based on applicable & accessible methods
     if (found_methods.empty()) {
         THROW_TypeCheckerError(
             "No method declaration for " + method_name + " is applicable and accessible in " + type_to_search.toSimpleString()
@@ -433,17 +415,39 @@ void TypeChecker::operator()(MethodInvocation &node) {
         // JLS 15.12.2.2: If one of the methods is not declared abstract, it is the most specific method
         for (auto found_method : found_methods) {
             if (!found_method->ast_reference->hasModifier(Modifier::ABSTRACT)) {
-                determined_method = found_method;
+                return found_method;
             }
         }
-        if (!determined_method) {
-            // JLS 15.12.2.2: All the methods are necessarily abstract, the method is chosen arbitrarily
-            determined_method = found_methods[0];
-        }
+        // JLS 15.12.2.2: All the methods are necessarily abstract, the method is chosen arbitrarily
+        return found_methods[0];
     } else {
         // Exactly one method is applicable and accessible
-        determined_method = found_methods[0];
+        return found_methods[0];
     }
+}
+
+void TypeChecker::operator()(MethodInvocation &node) {
+
+    /* JLS 15.12: Method Invocation Expressions */
+    std::string& method_name = node.method_name->name;
+    this->visit_children(node);
+
+    // JLS 15.12.1: Compile-Time Step 1 - Determine Class or Interface to Search
+    LinkedType type_to_search;
+    if (!node.parent_expr) {
+        // Simple MethodName
+        NonArrayLinkedType current_class_casted = current_class;
+        type_to_search = LinkedType(current_class_casted);
+    } else {
+        type_to_search = getLink(node.parent_expr);
+    }
+    // Static methods can only be called on TypeName that does not refer to an interface
+    if (type_to_search.not_expression && type_to_search.getIfIsInterface()) {
+        THROW_TypeCheckerError("Interface type cannot perform static method calls"); 
+    }
+
+    // JLS 15.12.2: Compile Time Step 2 - Determine Method Signature
+    MethodDeclarationObject* determined_method = determineMethodSignature(type_to_search, method_name, node.arguments);
 
     // JLS 15.12.3 Compile-Time Step 3 - Is the Chosen Method Appropriate?
     if (type_to_search.not_expression) {
@@ -519,6 +523,11 @@ void TypeChecker::operator()(ArrayCreationExpression &node) {
 
 void TypeChecker::operator()(ClassInstanceCreationExpression &node) {
     this->visit_children(node);
+
+    LinkedType class_constructed = node.linked_class_type;
+    std::string constructor_name = node.class_name->identifiers.back().name;
+
+    MethodDeclarationObject* correct_constructor = determineMethodSignature(class_constructed, constructor_name, node.arguments);
     node.link = node.linked_class_type;
 }
 
