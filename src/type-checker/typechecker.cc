@@ -133,8 +133,10 @@ bool TypeChecker::checkifMethodIsAccessible(
             return true;
         }
         // JLS: Let C be the class in which a protected member is declared
-        // Access is permitted within the body of a subclass S of C,
-        // with Q.id, iff the type of Q is S or a subclass of S
+        //
+        // Access is permitted only within the body of a subclass S of C
+        //
+        // Let the access be Q.id. If id is an instance member, the type of Q must be S or a subclass of S
 
         // S = current_class
         // C = method_to_access->containing_type
@@ -149,10 +151,12 @@ bool TypeChecker::checkifMethodIsAccessible(
         }
 
         // Q is a subclass of S
-        // Class of the object the method is called on must be subclass of class the method
+        // If instance method, the class of the object the method is called on must be subclass of class the method
         // is called in
-        if (!type_method_called_on.isSubType(current_class_as_linked_type, default_package)) {
-            return false;
+        if (!method_to_access->ast_reference->hasModifier(Modifier::STATIC)) {
+            if (!type_method_called_on.isSubType(current_class_as_linked_type, default_package)) {
+                return false;
+            }
         }
 
         return true;
