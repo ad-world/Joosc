@@ -101,6 +101,10 @@ FieldDeclarationObject* checkIfFieldIsAccessible(
     if (must_be_static && !possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
         return nullptr;
     }
+    // Also, as a Joos1W specific rule, if the field access is non-static, the field must be non-static
+    if (!must_be_static && possible_field->ast_reference->hasModifier(Modifier::STATIC)) {
+        return nullptr;
+    }
 
     // Third, if the field is protected, the current_class must be a subclass or in the same package of class declaring it
     ClassDeclarationObject* class_that_declared_field = possible_field->containing_class;
@@ -461,6 +465,9 @@ void TypeChecker::operator()(MethodInvocation &node) {
         }
     } else {
         // Instance method call
+        if (determined_method->ast_reference->hasModifier(Modifier::STATIC)) {
+            THROW_TypeCheckerError("Instance method call used to invoke static method"); 
+        }
         if (current_class == nullptr) {
             // Instance method call in static-only context; e.g. member initialization
             THROW_TypeCheckerError("Instance method call invoked in static context"); 
