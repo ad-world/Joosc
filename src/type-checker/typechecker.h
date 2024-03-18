@@ -45,7 +45,7 @@ class TypeChecker: public DefaultSkipVisitor<void> {
     void operator()(QualifiedIdentifier &node) override;
 
     // All subexpression types
-    void operator()(Assignment &node) override; //
+    void operator()(Assignment &node) override;
 
     void operator()(QualifiedThis &node) override;
 
@@ -53,11 +53,11 @@ class TypeChecker: public DefaultSkipVisitor<void> {
 
     void operator()(ClassInstanceCreationExpression &node) override;
 
-    void operator()(FieldAccess &node) override; //
+    void operator()(FieldAccess &node) override;
 
     void operator()(ArrayAccess &node) override;
 
-    void operator()(MethodInvocation &node) override; //
+    void operator()(MethodInvocation &node) override;
 
     void operator()(InfixExpression &node) override;
 
