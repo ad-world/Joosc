@@ -37,11 +37,32 @@ LinkedType TypeChecker::getLink(std::unique_ptr<Expression>& node_ptr) {
     return getLink(*node_ptr);
 }
 
+bool TypeChecker::isVariable(Expression& node) {
+    return std::visit([&](auto& expr){ return expr.is_variable; }, node);
+}
+
+bool TypeChecker::isVariable(std::unique_ptr<Expression>& node_ptr) {
+    return isVariable(*node_ptr);
+}
+
 ClassDeclarationObject* TypeChecker::getStringClass(LinkedType &link) {
     if (link.getIfNonArrayIsClass() == default_package->findClassDeclaration("java.lang.String")) {
         return link.getIfNonArrayIsClass();
     }
     return nullptr;
+}
+
+bool TypeChecker::isThisAccessAllowed() {
+    if (current_field) {
+        // Allowed only in non-static field initializers
+        return !current_field->ast_reference->hasModifier(Modifier::STATIC);
+    }
+    if (current_method) {
+        // Allowed only in non-static method declarations, including constructors
+        return !current_method->ast_reference->hasModifier(Modifier::STATIC);
+    }
+
+    THROW_CompilerError("All code is supposed to be within a field or method declaration");
 }
 
 void TypeChecker::operator()(CompilationUnit &node) {
@@ -96,6 +117,12 @@ void TypeChecker::operator()(Block &node) {
 void TypeChecker::operator()(LocalVariableDeclaration &node) {
     current_method->scope_manager.declareVariable(node.variable_declarator->variable_name->name);
     visit_children(node);
+}
+
+void TypeChecker::operator()(FieldDeclaration &node) {
+    current_field = node.environment;
+    visit_children(node);
+    current_field = nullptr;
 }
 
 // TODO : It's probably nicer to refactor checkIfFieldIsAccessible and checkIfMethodIsAccessible
@@ -208,6 +235,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                     auto possible_var = current_method->scope_manager.lookupDeclaredVariable(name);
                     if (possible_var) {
                         qid.link = possible_var->type;
+                        qid.is_variable = true;
                         return;
                     }
                 }
@@ -217,14 +245,20 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         = current_method->parameters->lookupUniqueSymbol<FormalParameterDeclarationObject>(name);
                     if (possible_param) {
                         qid.link = possible_param->type;
+                        qid.is_variable = true;
                         return;
                     }
                 }
-                // 3. Look up in fields
+                // 3. Look up in fields of declared class (implicit this)
+                if (!isThisAccessAllowed()) {
+                    THROW_TypeCheckerError("Implicit this access for field " + name + " in disallowed context"); 
+                }
                 auto decl_type = compilation_unit_namespace.getDeclaredType();
                 if (auto cls = std::get_if<ClassDeclarationObject*>(&decl_type)) {
-                    if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, name)) {
+                    // Look up in instance fields
+                    if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, name, false)) {
                         qid.link = possible_field->type;
+                        qid.is_variable = true;
                         return;
                     }
                 }
@@ -242,6 +276,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         if (auto cls = std::get_if<ClassDeclarationObject*>(&cls_lookup)) {
                             if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, id, true)) {
                                 qid.link = possible_field->type;
+                                qid.is_variable = true;
                                 return;
                             }
                             THROW_TypeCheckerError(
@@ -263,11 +298,13 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         if (T.is_array && id == "length") {
                             // Special case: "length" field of an array
                             qid.link = LinkedType(PrimitiveType::INT);
+                            qid.is_variable = false;
                             return;
                         }
                         if (auto class_type = T.getIfNonArrayIsClass()) {
                             if (auto possible_field = checkIfFieldIsAccessible(current_class, class_type, id)) {
                                 qid.link = possible_field->type;
+                                qid.is_variable = true;
                                 return;
                             }
                             THROW_TypeCheckerError(
@@ -288,6 +325,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
             // Link this even though its not an expression, as it will be used for static method calls 
             auto type_lookup = compilation_unit_namespace.lookupQualifiedType(qid);
             qid.link = LinkedType(type_lookup, false, true);
+            qid.is_variable = false;
         }
         default:
             // Not an expression
@@ -323,6 +361,10 @@ bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, Packag
 
 void TypeChecker::operator()(Assignment &node) {
     this->visit_children(node);
+
+    if (!isVariable(node.assigned_to)) {
+        THROW_TypeCheckerError("Assignment to non-mutable value");
+    }
 
     LinkedType linkedType1 = getLink(node.assigned_to);
     LinkedType linkedType2 = getLink(node.assigned_from);
@@ -468,12 +510,21 @@ void TypeChecker::operator()(MethodInvocation &node) {
     std::string& method_name = node.method_name->name;
     this->visit_children(node);
 
+    // Whether the method call is in the form A(), which is implicitly this.A()
+    // not allowed for static methods, or in certain contexts
+    bool implicit_this_access = false;
+
     // JLS 15.12.1: Compile-Time Step 1 - Determine Class or Interface to Search
     LinkedType type_to_search;
     if (!node.parent_expr) {
-        // Simple MethodName
+        // Simple MethodName (implicit this)
         NonArrayLinkedType current_class_casted = current_class;
         type_to_search = LinkedType(current_class_casted);
+
+        implicit_this_access = true;
+        if (!isThisAccessAllowed()) {
+            THROW_TypeCheckerError("Implicit this access for method call in disallowed context"); 
+        }
     } else {
         type_to_search = getLink(node.parent_expr);
     }
@@ -491,6 +542,9 @@ void TypeChecker::operator()(MethodInvocation &node) {
         if (!determined_method->ast_reference->hasModifier(Modifier::STATIC)) {
             THROW_TypeCheckerError("Static method call invoked on instance method"); 
         }
+        if (implicit_this_access) {
+            THROW_TypeCheckerError("Implicit this for static methods; not allowed in Joos1W"); 
+        }
     } else {
         // Instance method call
         if (determined_method->ast_reference->hasModifier(Modifier::STATIC)) {
@@ -506,8 +560,8 @@ void TypeChecker::operator()(MethodInvocation &node) {
 }
 
 void TypeChecker::operator()(QualifiedThis &node) {
-    if (current_method && current_method->ast_reference->hasModifier(Modifier::STATIC)) {
-        THROW_TypeCheckerError("Static method cannot call 'this'");
+    if (!isThisAccessAllowed()) {
+        THROW_TypeCheckerError("Explicit this access in disallowed context");
     }
 
     // Type of 'this' is type of enclosing class
@@ -595,6 +649,7 @@ void TypeChecker::operator()(FieldAccess &node) {
     if (object_type.is_array) {
         if (field_name == "length") {
             node.link = LinkedType(PrimitiveType::INT);
+            node.is_variable = false;
             return;
         }
     } else {
@@ -606,6 +661,7 @@ void TypeChecker::operator()(FieldAccess &node) {
         );
         if (resolved_field) {
             node.link = resolved_field->type;
+            node.is_variable = true;
             return;
         }
     }
@@ -620,6 +676,7 @@ void TypeChecker::operator()(ArrayAccess &node) {
     LinkedType typeSelector = getLink(node.selector);
     if(typeArray.is_array && typeSelector.isNumeric()) {
         node.link.linked_type = typeArray.linked_type;
+        node.is_variable = true;
     }
     else {
         THROW_TypeCheckerError("Invalid type for ArrayAccess");

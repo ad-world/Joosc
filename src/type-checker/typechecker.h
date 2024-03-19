@@ -11,17 +11,28 @@ class TypeChecker: public DefaultSkipVisitor<void> {
 
     PackageDeclarationObject* default_package = nullptr;
     CompilationUnitNamespace compilation_unit_namespace;
+
+    // If these values are set, the traversal is currently within the respective declaration
     MethodDeclarationObject* current_method = nullptr;
     ClassDeclarationObject* current_class = nullptr;
+    FieldDeclarationObject* current_field = nullptr;
 
     // Shorthand for getting linked type from any expression node
     LinkedType getLink(std::unique_ptr<Expression>& node_ptr);
+
     ClassDeclarationObject* getStringClass(LinkedType &link);
+
+    // Return true iff expression node is mutable
+    bool isVariable(Expression& node);
+    bool isVariable(std::unique_ptr<Expression>& node_ptr);
 
     // Helper methods
     bool checkifMethodIsAccessible(
       MethodDeclarationObject* method_to_access, LinkedType type_method_called_on
     );
+
+    // Return true iff an explicit or implicit this access is allowed based on the state of the visitor traversal
+    bool isThisAccessAllowed();
 
     // Finds applicable and accessible method_name within type_to_search with matching arguments
     // Throws if no method is applicable and accessible
@@ -37,6 +48,8 @@ class TypeChecker: public DefaultSkipVisitor<void> {
     void operator()(ClassDeclaration &node) override;
 
     void operator()(MethodDeclaration &node) override;
+
+    void operator()(FieldDeclaration &node) override;
 
     void operator()(Block &node) override;
 
