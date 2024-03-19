@@ -175,24 +175,24 @@ int main(int argc, char *argv[]) {
             TypeChecker(default_package).visit(ast);
         }
 
-        // // CfgBuilder
-        // for (auto &ast: asts) {
-        //     CfgBuilderVisitor().visit(ast);
-        // } 
+        // CfgBuilder
+        for (auto &ast: asts) {
+            CfgBuilderVisitor().visit(ast);
+        } 
 
-        // // Reachability testing
-        // for (auto &ast : asts) {
-        //     CfgReachabilityVisitor().visit(ast);
-        // }
+        // Reachability testing
+        for (auto &ast : asts) {
+            CfgReachabilityVisitor().visit(ast);
+        }
 
-        // // Reachability testing
-        // for (auto &ast : asts) {
-        //     StatementVisitor().visit(ast);
-        // }
+        // Reachability testing
+        for (auto &ast : asts) {
+            StatementVisitor().visit(ast);
+        }
 
-        // for (auto &ast: asts) {
-        //     LocalVariableVisitor().visit(ast);
-        // }
+        for (auto &ast: asts) {
+            LocalVariableVisitor().visit(ast);
+        }
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";
         return COMPILER_DEVELOPMENT_ERROR;
