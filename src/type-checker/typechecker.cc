@@ -3,6 +3,8 @@
 #include "exceptions/exceptions.h"
 #include "environment-builder/symboltable.h"
 
+bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, PackageDeclarationObject* default_package);
+
 LinkedType TypeChecker::getLink(Expression &node) {
     return std::visit(util::overload {
         // Literal handled seperately as it is not a class
@@ -96,6 +98,14 @@ void TypeChecker::operator()(Block &node) {
 void TypeChecker::operator()(LocalVariableDeclaration &node) {
     current_method->scope_manager.declareVariable(node.variable_declarator->variable_name->name);
     visit_children(node);
+    LinkedType type = node.type.get()->link;
+    if (node.variable_declarator->expression) {
+        LinkedType expression = getLink(node.variable_declarator->expression);
+        bool assignable = checkAssignability(type, expression, default_package);
+        if(!assignable) {
+            THROW_TypeCheckerError("Invalid type for LocalVariableDeclaration");
+        }
+    }
 }
 
 // TODO : It's probably nicer to refactor checkIfFieldIsAccessible and checkIfMethodIsAccessible
