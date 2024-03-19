@@ -52,6 +52,19 @@ ClassDeclarationObject* TypeChecker::getStringClass(LinkedType &link) {
     return nullptr;
 }
 
+bool TypeChecker::isThisAccessAllowed() {
+    if (current_field) {
+        // Allowed only in non-static field initializers
+        return !current_field->ast_reference->hasModifier(Modifier::STATIC);
+    }
+    if (current_method) {
+        // Allowed only in non-static method declarations, including constructors
+        return !current_method->ast_reference->hasModifier(Modifier::STATIC);
+    }
+
+    THROW_CompilerError("All code is supposed to be within a field or method declaration");
+}
+
 void TypeChecker::operator()(CompilationUnit &node) {
     this->compilation_unit_namespace = node.cu_namespace;
     // Skip package declaration and imports
@@ -104,6 +117,12 @@ void TypeChecker::operator()(Block &node) {
 void TypeChecker::operator()(LocalVariableDeclaration &node) {
     current_method->scope_manager.declareVariable(node.variable_declarator->variable_name->name);
     visit_children(node);
+}
+
+void TypeChecker::operator()(FieldDeclaration &node) {
+    current_field = node.environment;
+    visit_children(node);
+    current_field = nullptr;
 }
 
 // TODO : It's probably nicer to refactor checkIfFieldIsAccessible and checkIfMethodIsAccessible
@@ -231,6 +250,9 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                     }
                 }
                 // 3. Look up in fields of declared class (implicit this)
+                if (!isThisAccessAllowed()) {
+                    THROW_TypeCheckerError("Implicit this access for field " + name + " in disallowed context"); 
+                }
                 auto decl_type = compilation_unit_namespace.getDeclaredType();
                 if (auto cls = std::get_if<ClassDeclarationObject*>(&decl_type)) {
                     // Look up in instance fields
@@ -488,14 +510,21 @@ void TypeChecker::operator()(MethodInvocation &node) {
     std::string& method_name = node.method_name->name;
     this->visit_children(node);
 
+    // Whether the method call is in the form A(), which is implicitly this.A()
+    // not allowed for static methods, or in certain contexts
+    bool implicit_this_access = false;
+
     // JLS 15.12.1: Compile-Time Step 1 - Determine Class or Interface to Search
     LinkedType type_to_search;
-    bool implicit_this_access = false;
     if (!node.parent_expr) {
         // Simple MethodName (implicit this)
         NonArrayLinkedType current_class_casted = current_class;
         type_to_search = LinkedType(current_class_casted);
+
         implicit_this_access = true;
+        if (!isThisAccessAllowed()) {
+            THROW_TypeCheckerError("Implicit this access for method call in disallowed context"); 
+        }
     } else {
         type_to_search = getLink(node.parent_expr);
     }
@@ -531,8 +560,8 @@ void TypeChecker::operator()(MethodInvocation &node) {
 }
 
 void TypeChecker::operator()(QualifiedThis &node) {
-    if (current_method && current_method->ast_reference->hasModifier(Modifier::STATIC)) {
-        THROW_TypeCheckerError("Static method cannot call 'this'");
+    if (!isThisAccessAllowed()) {
+        THROW_TypeCheckerError("Explicit this access in disallowed context");
     }
 
     // Type of 'this' is type of enclosing class

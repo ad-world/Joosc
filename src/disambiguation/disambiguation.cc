@@ -21,8 +21,13 @@ void DisambiguationVisitor::operator()(MethodInvocation &node) {
 }
 
 void DisambiguationVisitor::operator()(ClassInstanceCreationExpression &node) {
+    // Class name is A.B.C ... .D
+    // Since no nested types, all but the last must be package names
     auto &class_name = node.class_name;
-    disambiguate(*class_name, class_name->identifiers.size() - 1);
+    for (auto &identifier : class_name->identifiers) {
+        identifier.classification = Classification::PACKAGE_NAME;
+    }
+    node.class_name->identifiers.back().classification = Classification::TYPE_NAME;
     this->visit_children(node);
 }
 
