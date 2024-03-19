@@ -621,6 +621,7 @@ void TypeChecker::operator()(FieldAccess &node) {
     if (object_type.is_array) {
         if (field_name == "length") {
             node.link = LinkedType(PrimitiveType::INT);
+            node.is_variable = false;
             return;
         }
     } else {
