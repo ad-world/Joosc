@@ -37,6 +37,14 @@ LinkedType TypeChecker::getLink(std::unique_ptr<Expression>& node_ptr) {
     return getLink(*node_ptr);
 }
 
+bool TypeChecker::isVariable(Expression& node) {
+    return std::visit([&](auto& expr){ return expr.is_variable; }, node);
+}
+
+bool TypeChecker::isVariable(std::unique_ptr<Expression>& node_ptr) {
+    return isVariable(*node_ptr);
+}
+
 ClassDeclarationObject* TypeChecker::getStringClass(LinkedType &link) {
     if (link.getIfNonArrayIsClass() == default_package->findClassDeclaration("java.lang.String")) {
         return link.getIfNonArrayIsClass();
@@ -208,6 +216,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                     auto possible_var = current_method->scope_manager.lookupDeclaredVariable(name);
                     if (possible_var) {
                         qid.link = possible_var->type;
+                        qid.is_variable = true;
                         return;
                     }
                 }
@@ -217,14 +226,23 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         = current_method->parameters->lookupUniqueSymbol<FormalParameterDeclarationObject>(name);
                     if (possible_param) {
                         qid.link = possible_param->type;
+                        qid.is_variable = true;
                         return;
                     }
                 }
                 // 3. Look up in fields
                 auto decl_type = compilation_unit_namespace.getDeclaredType();
                 if (auto cls = std::get_if<ClassDeclarationObject*>(&decl_type)) {
-                    if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, name)) {
+                    // Look up in instance fields
+                    if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, name, false)) {
                         qid.link = possible_field->type;
+                        qid.is_variable = true;
+                        return;
+                    }
+                    // Look up in static fields
+                    if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, name, true)) {
+                        qid.link = possible_field->type;
+                        qid.is_variable = false;
                         return;
                     }
                 }
@@ -242,6 +260,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         if (auto cls = std::get_if<ClassDeclarationObject*>(&cls_lookup)) {
                             if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, id, true)) {
                                 qid.link = possible_field->type;
+                                qid.is_variable = false;
                                 return;
                             }
                             THROW_TypeCheckerError(
@@ -263,11 +282,13 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         if (T.is_array && id == "length") {
                             // Special case: "length" field of an array
                             qid.link = LinkedType(PrimitiveType::INT);
+                            qid.is_variable = false;
                             return;
                         }
                         if (auto class_type = T.getIfNonArrayIsClass()) {
                             if (auto possible_field = checkIfFieldIsAccessible(current_class, class_type, id)) {
                                 qid.link = possible_field->type;
+                                qid.is_variable = true;
                                 return;
                             }
                             THROW_TypeCheckerError(
@@ -288,6 +309,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
             // Link this even though its not an expression, as it will be used for static method calls 
             auto type_lookup = compilation_unit_namespace.lookupQualifiedType(qid);
             qid.link = LinkedType(type_lookup, false, true);
+            qid.is_variable = false;
         }
         default:
             // Not an expression
@@ -323,6 +345,10 @@ bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, Packag
 
 void TypeChecker::operator()(Assignment &node) {
     this->visit_children(node);
+
+    if (!isVariable(node.assigned_to)) {
+        THROW_TypeCheckerError("Assignment to non-mutable value");
+    }
 
     LinkedType linkedType1 = getLink(node.assigned_to);
     LinkedType linkedType2 = getLink(node.assigned_from);
@@ -606,6 +632,7 @@ void TypeChecker::operator()(FieldAccess &node) {
         );
         if (resolved_field) {
             node.link = resolved_field->type;
+            node.is_variable = !object_type.not_expression;
             return;
         }
     }
@@ -620,6 +647,7 @@ void TypeChecker::operator()(ArrayAccess &node) {
     LinkedType typeSelector = getLink(node.selector);
     if(typeArray.is_array && typeSelector.isNumeric()) {
         node.link.linked_type = typeArray.linked_type;
+        node.is_variable = true;
     }
     else {
         THROW_TypeCheckerError("Invalid type for ArrayAccess");

@@ -16,7 +16,12 @@ class TypeChecker: public DefaultSkipVisitor<void> {
 
     // Shorthand for getting linked type from any expression node
     LinkedType getLink(std::unique_ptr<Expression>& node_ptr);
+
     ClassDeclarationObject* getStringClass(LinkedType &link);
+
+    // Return true iff expression node is mutable
+    bool isVariable(Expression& node);
+    bool isVariable(std::unique_ptr<Expression>& node_ptr);
 
     // Helper methods
     bool checkifMethodIsAccessible(
