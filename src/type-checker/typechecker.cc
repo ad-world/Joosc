@@ -276,7 +276,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         if (auto cls = std::get_if<ClassDeclarationObject*>(&cls_lookup)) {
                             if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, id, true)) {
                                 qid.link = possible_field->type;
-                                qid.is_variable = false;
+                                qid.is_variable = true;
                                 return;
                             }
                             THROW_TypeCheckerError(
@@ -661,7 +661,7 @@ void TypeChecker::operator()(FieldAccess &node) {
         );
         if (resolved_field) {
             node.link = resolved_field->type;
-            node.is_variable = !object_type.not_expression;
+            node.is_variable = true;
             return;
         }
     }
