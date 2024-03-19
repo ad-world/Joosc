@@ -230,19 +230,13 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         return;
                     }
                 }
-                // 3. Look up in fields
+                // 3. Look up in fields of declared class (implicit this)
                 auto decl_type = compilation_unit_namespace.getDeclaredType();
                 if (auto cls = std::get_if<ClassDeclarationObject*>(&decl_type)) {
                     // Look up in instance fields
                     if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, name, false)) {
                         qid.link = possible_field->type;
                         qid.is_variable = true;
-                        return;
-                    }
-                    // Look up in static fields
-                    if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, name, true)) {
-                        qid.link = possible_field->type;
-                        qid.is_variable = false;
                         return;
                     }
                 }
@@ -496,10 +490,12 @@ void TypeChecker::operator()(MethodInvocation &node) {
 
     // JLS 15.12.1: Compile-Time Step 1 - Determine Class or Interface to Search
     LinkedType type_to_search;
+    bool implicit_this_access = false;
     if (!node.parent_expr) {
-        // Simple MethodName
+        // Simple MethodName (implicit this)
         NonArrayLinkedType current_class_casted = current_class;
         type_to_search = LinkedType(current_class_casted);
+        implicit_this_access = true;
     } else {
         type_to_search = getLink(node.parent_expr);
     }
@@ -516,6 +512,9 @@ void TypeChecker::operator()(MethodInvocation &node) {
         // Static method call
         if (!determined_method->ast_reference->hasModifier(Modifier::STATIC)) {
             THROW_TypeCheckerError("Static method call invoked on instance method"); 
+        }
+        if (implicit_this_access) {
+            THROW_TypeCheckerError("Implicit this for static methods; not allowed in Joos1W"); 
         }
     } else {
         // Instance method call
