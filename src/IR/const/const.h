@@ -1,6 +1,7 @@
+#pragma once
+
 #include "IR/ir.h"
 #include <string>
-
 
 class ConstIR {
     int value;

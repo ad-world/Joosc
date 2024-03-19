@@ -1,3 +1,5 @@
+#pragma once
+
 #include "IR/ir.h"
 #include <string>
 
@@ -8,13 +10,13 @@ class BinOpIR {
     };
 
     OpType op;
-    ExpressionIR *left;
-    ExpressionIR *right;
+    std::unique_ptr<ExpressionIR> left;
+    std::unique_ptr<ExpressionIR> right;
 public:
-    BinOpIR(OpType op, ExpressionIR *left, ExpressionIR *right) : op(op), left(left), right(right) {}
+    BinOpIR(OpType op, std::unique_ptr<ExpressionIR> left, std::unique_ptr<ExpressionIR> right) : op(op), left{std::move(left)}, right{std::move(right)} {}
     OpType opType() { return op; }
-    ExpressionIR *left() { return left; }
-    ExpressionIR *right() { return right; }
+    ExpressionIR &left() { return *left; }
+    ExpressionIR &right() { return *right; }
     
     bool isConstant() {
         // TODO: implement helpers to determine constant of IRExpression variatn, return left->isConstant() && right->isConstant();

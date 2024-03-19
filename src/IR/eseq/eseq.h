@@ -1,13 +1,15 @@
+#pragma once
+
 #include "IR/ir.h"
 #include <string>
 
 class ESeqIR {
-    StatementIR* stmt;
-    ExpressionIR *expr;
+    std::unique_ptr<StatementIR> stmt;
+    std::unique_ptr<ExpressionIR> expr;
 
 public:
-    ESeqIR(StatementIR* stmt, ExpressionIR *expr) : stmt(stmt), expr(expr) {}
-    StatementIR* stmt() { return stmt; }
-    ExpressionIR* expr() { return expr; }
+    ESeqIR(std::unique_ptr<StatementIR> stmt, std::unique_ptr<ExpressionIR> expr) : stmt(std::move(stmt)), expr(std::move(expr)) {}
+    StatementIR &stmt() { return *stmt; }
+    ExpressionIR &expr() { return *expr; }
     std::string label() { return "ESEQ"; }
 };

@@ -8,9 +8,9 @@ class MoveIR {
     std::unique_ptr<ExpressionIR> target; // The destination of the move
     std::unique_ptr<ExpressionIR> source; // The value to be moved
 
-  public:
-    MemIR(std::unique_ptr<ExpressionIR> target, std::unique_ptr<ExpressionIR> source) 
-        : target{std::move(address)}, source{std::move(address)} {}
+public:
+    MoveIR(std::unique_ptr<ExpressionIR> target, std::unique_ptr<ExpressionIR> source) 
+        : target{std::move(target)}, source{std::move(source)} {}
 
     ExpressionIR &target() { return *target; }
     ExpressionIR &source() { return *source; }
