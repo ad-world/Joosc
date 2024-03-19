@@ -8,7 +8,7 @@ using ExpressionIR = std::variant<
     struct BinOpIR,
     struct MemIR,
     struct CallIR,
-    struct NameIR
+    struct NameIR,
     struct ESeqIR
 >;
 
@@ -23,3 +23,4 @@ using StatementIR = std::variant<
 >;
 
 using IR = std::variant<ExpressionIR, StatementIR, struct FuncDeclIR, struct CompUnitIR>;
+
