@@ -13,4 +13,6 @@ class MemIR {
     ExpressionIR &address() { return *address; }
 
     std::string label() { return "MEM"; }
+
+    bool isConstant() { return false; }; 
 };

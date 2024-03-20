@@ -5,10 +5,9 @@
 class NameIR {
     std::string name; 
 
-    public:
-        NameIR(std::string name) : name{std::move(name)} {}
-
-        std::string &name() { return name; }
-        
-        std::string label() { return "NAME(" + name + ")"; }
+public:
+    NameIR(std::string name) : name{std::move(name)} {}
+    std::string &name() { return name; }        
+    std::string label() { return "NAME(" + name + ")"; }
+    bool isConstant() { return false; }
 };

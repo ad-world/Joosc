@@ -14,4 +14,5 @@ public:
     std::vector<std::unique_ptr<ExpressionIR>> args() { return args; };
     int getNumArgs() { return args.size(); };
     std::string label() { return "CALL"; }
+    bool isConstant() { return false; };
 };

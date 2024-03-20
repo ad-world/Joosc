@@ -12,4 +12,5 @@ public:
     StatementIR &stmt() { return *stmt; }
     ExpressionIR &expr() { return *expr; }
     std::string label() { return "ESEQ"; }
+    bool isConstant() { return false; }
 };

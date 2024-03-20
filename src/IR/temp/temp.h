@@ -11,4 +11,5 @@ class TempIR {
         std::string &name() { return name; }
         
         std::string label() { return "TEMP(" + name + ")"; }
+        bool isConstant() { return false; }
 };

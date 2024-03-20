@@ -2,6 +2,8 @@
 
 #include "IR/ir.h"
 #include <string>
+#include <variant>
+#include "utillities/overload.h"
 
 class BinOpIR {
     enum OpType {
@@ -19,8 +21,9 @@ public:
     ExpressionIR &right() { return *right; }
     
     bool isConstant() {
-        // TODO: implement helpers to determine constant of IRExpression variatn, return left->isConstant() && right->isConstant();
-        return false;
+        bool first = std::visit([&](auto &x) { return x.isConstant(); }, *left);
+        bool second = std::visit([&](auto &x){ return x.isConstant(); }, *right);
+        return first && second;
     }
 
 };
