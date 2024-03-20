@@ -14,7 +14,7 @@ class FuncDeclIR {
         : name{std::move(name)}, body{std::move(body)}, num_params{num_params} {}
 
     std::string &getName() { return name; }
-    StatementIR &getBody() { return *body; }
+    StatementIR &getBody() { return *body.get(); }
     int getNumParams() { return num_params; }
 
     std::string label() { return "FUNC " + name; }

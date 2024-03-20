@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include "IR/ir.h"
 #include "unordered_map"
 #include "IR/func-decl/func-decl.h"

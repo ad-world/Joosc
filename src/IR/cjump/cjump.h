@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include "IR/ir.h"
 #include <string>
 class CJumpIR {

@@ -1,10 +1,10 @@
 #pragma once
 
+#include <memory>
 #include "IR/ir.h"
 #include <string>
 #include <variant>
 #include "utillities/overload.h"
-#include <memory>
 
 class BinOpIR {
     enum OpType {
@@ -18,8 +18,8 @@ class BinOpIR {
 public:
     BinOpIR(OpType op, std::unique_ptr<ExpressionIR> left, std::unique_ptr<ExpressionIR> right) : op(op), left{std::move(left)}, right{std::move(right)} {}
     OpType opType() { return op; }
-    ExpressionIR &getLeft() { return *left; }
-    ExpressionIR &getRight() { return *right; }
+    ExpressionIR &getLeft() { return *left.get(); }
+    ExpressionIR &getRight() { return *right.get(); }
     
     bool isConstant() {
         bool first = std::visit([&](auto &x) { return x.isConstant(); }, *left);
