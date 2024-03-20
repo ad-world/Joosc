@@ -1,26 +1,19 @@
 #pragma once
 
-#include <variant>
-
-using ExpressionIR = std::variant<
-    struct ConstIR, 
-    struct TempIR,
-    struct BinOpIR,
-    struct MemIR,
-    struct CallIR,
-    struct NameIR,
-    struct ESeqIR
->;
-
-using StatementIR = std::variant<
-    struct MoveIR,
-    struct ExpIR,
-    struct SeqIR,
-    struct JumpIR,
-    struct CJumpIR,
-    struct LabelIR,
-    struct ReturnIR
->;
-
-using IR = std::variant<ExpressionIR, StatementIR, struct FuncDeclIR, struct CompUnitIR>;
+#include "bin-op/bin-op.h"
+#include "call/call.h"
+#include "cjump/cjump.h"
+#include "comp-unit/comp-unit.h"
+#include "const/const.h"
+#include "eseq/eseq.h"
+#include "func-decl/func-decl.h"
+#include "jump/jump.h"
+#include "label/label.h"
+#include "mem/mem.h"
+#include "move/move.h"
+#include "name/name.h"
+#include "return/return.h"
+#include "seq/seq.h"
+#include "temp/temp.h"
+#include "ir_variant.h"
 
