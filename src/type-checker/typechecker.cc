@@ -354,7 +354,7 @@ void TypeChecker::operator()(InfixExpression &node) {
     this->visit_children(node);
 
     LinkedType linkedType1 = getLink(node.expression1);
-    LinkedType linkedType2 = getLink(node.expression1);
+    LinkedType linkedType2 = getLink(node.expression2);
 
     switch (node.op) {
         case InfixOperator::PLUS:
