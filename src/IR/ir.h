@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ir_variant.h"
 #include "bin-op/bin-op.h"
 #include "call/call.h"
 #include "cjump/cjump.h"
@@ -16,4 +17,3 @@
 #include "seq/seq.h"
 #include "temp/temp.h"
 #include "ir_variant.h"
-

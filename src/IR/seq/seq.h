@@ -26,7 +26,7 @@ class SeqIR {
             this->replaceParent = replaceParent;
         }
 
-        std::vector<std::unique_ptr<StatementIR>> &stmts() { return stmts; }
+        std::vector<std::unique_ptr<StatementIR>> &getStmts() { return stmts; }
 
         std::string label() { return "SEQ"; }
 };

@@ -7,7 +7,7 @@ class NameIR {
 
 public:
     NameIR(std::string name) : name{std::move(name)} {}
-    std::string &name() { return name; }        
+    std::string &getName() { return name; }
     std::string label() { return "NAME(" + name + ")"; }
     bool isConstant() { return false; }
 };

@@ -10,7 +10,7 @@ class MemIR {
   public:
     MemIR(std::unique_ptr<ExpressionIR> address) : address{std::move(address)} {}
 
-    ExpressionIR &address() { return *address; }
+    ExpressionIR &getAddress() { return *address; }
 
     std::string label() { return "MEM"; }
 

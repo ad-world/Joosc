@@ -10,7 +10,7 @@ class ReturnIR {
 public:
     ReturnIR(std::unique_ptr<ExpressionIR> ret) : ret{std::move(ret)} {}
 
-    ExpressionIR &ret() { return *ret; }
+    ExpressionIR &getRet() { return *ret; }
 
     std::string label() { return "RETURN"; }
 };

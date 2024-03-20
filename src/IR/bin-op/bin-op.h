@@ -4,6 +4,7 @@
 #include <string>
 #include <variant>
 #include "utillities/overload.h"
+#include <memory>
 
 class BinOpIR {
     enum OpType {
@@ -17,8 +18,8 @@ class BinOpIR {
 public:
     BinOpIR(OpType op, std::unique_ptr<ExpressionIR> left, std::unique_ptr<ExpressionIR> right) : op(op), left{std::move(left)}, right{std::move(right)} {}
     OpType opType() { return op; }
-    ExpressionIR &left() { return *left; }
-    ExpressionIR &right() { return *right; }
+    ExpressionIR &getLeft() { return *left; }
+    ExpressionIR &getRight() { return *right; }
     
     bool isConstant() {
         bool first = std::visit([&](auto &x) { return x.isConstant(); }, *left);

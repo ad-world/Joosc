@@ -10,7 +10,7 @@ class JumpIR {
   public:
     JumpIR(std::unique_ptr<ExpressionIR> target) : target{std::move(target)} {}
 
-    ExpressionIR &target() { return *target; }
+    ExpressionIR &getTarget() { return *target; }
 
     std::string label() { return "JUMP"; }
 };
