@@ -2,7 +2,8 @@
 
 #include <string>
 #include <memory>
-#include "IR/ir.h"
+#include "IR/ir_variant.h"
+#include <cassert>
 
 class FuncDeclIR {
     std::string name;
@@ -10,11 +11,11 @@ class FuncDeclIR {
     int num_params;
 
   public:
-    FuncDeclIR(std::string name, std::unique_ptr<StatementIR> body, int num_params);
-        // : name{std::move(name)}, body{std::move(body)}, num_params{num_params} {}
+    FuncDeclIR(std::string name, std::unique_ptr<StatementIR> body, int num_params)
+        : name{std::move(name)}, body{std::move(body)}, num_params{num_params} {}
 
     std::string &getName() { return name; }
-    StatementIR &getBody() { return *body.get(); }
+    StatementIR &getBody() { assert(body.get()); return *body.get(); }
     int getNumParams() { return num_params; }
 
     std::string label() { return "FUNC " + name; }

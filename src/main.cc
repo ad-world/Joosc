@@ -24,6 +24,7 @@
 #include "reachability/reached-statement.h"
 #include "utillities/util.h"
 #include "local-variables/local-variable-visitor.h"
+#include "IR/ir.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"

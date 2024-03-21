@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IR/ir.h"
+#include "IR/ir_variant.h"
 #include <string>
 
 class ConstIR {

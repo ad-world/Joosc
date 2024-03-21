@@ -2,7 +2,8 @@
 
 #include <string>
 #include <memory>
-#include "IR/ir.h"
+#include "IR/ir_variant.h"
+#include <cassert>
 
 class MoveIR {
     std::unique_ptr<ExpressionIR> target; // The destination of the move
@@ -12,8 +13,8 @@ public:
     MoveIR(std::unique_ptr<ExpressionIR> target, std::unique_ptr<ExpressionIR> source) 
         : target{std::move(target)}, source{std::move(source)} {}
 
-    ExpressionIR &getTarget() { return *target.get(); }
-    ExpressionIR &getSource() { return *source.get(); }
+    ExpressionIR &getTarget() { assert(target.get()); return *target.get(); }
+    ExpressionIR &getSource() { assert(source.get()); return *source.get(); }
 
     std::string label() { return "MOVE"; }
 };

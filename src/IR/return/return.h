@@ -1,8 +1,9 @@
 #pragma once
 
-#include "IR/ir.h"
+#include "IR/ir_variant.h"
 #include <memory>
 #include <string>
+#include <cassert>
 
 class ReturnIR {
     std::unique_ptr<ExpressionIR> ret;
@@ -10,7 +11,7 @@ class ReturnIR {
 public:
     ReturnIR(std::unique_ptr<ExpressionIR> ret) : ret{std::move(ret)} {}
 
-    ExpressionIR &getRet() { return *ret.get(); }
+    ExpressionIR &getRet() { assert(ret.get()); return *ret.get(); }
 
     std::string label() { return "RETURN"; }
 };

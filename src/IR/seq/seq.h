@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IR/ir.h"
+#include "IR/ir_variant.h"
 #include <vector>
 #include <algorithm>
 #include <memory>
@@ -11,7 +11,7 @@ class SeqIR {
     bool replaceParent = false;
 
     static void filterNulls(std::vector<std::unique_ptr<StatementIR>>& list) {
-        // list.erase(std::remove_if(list.begin(), list.end(), [](const std::unique_ptr<StatementIR>& ptr) { return ptr.get() == nullptr; }), list.end());
+        list.erase(std::remove_if(list.begin(), list.end(), [](const std::unique_ptr<StatementIR>& ptr) { return ptr.get() == nullptr; }), list.end());
     }
 
     public:

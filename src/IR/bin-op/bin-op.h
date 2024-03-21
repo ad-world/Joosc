@@ -2,9 +2,8 @@
 
 #include <memory>
 #include "IR/ir.h"
-#include <string>
 #include <variant>
-#include "utillities/overload.h"
+#include <cassert>
 
 class BinOpIR {
     enum OpType {
@@ -18,14 +17,13 @@ class BinOpIR {
 public:
     BinOpIR(OpType op, std::unique_ptr<ExpressionIR> left, std::unique_ptr<ExpressionIR> right) : op(op), left{std::move(left)}, right{std::move(right)} {}
     OpType opType() { return op; }
-    ExpressionIR &getLeft() { return *left.get(); }
-    ExpressionIR &getRight() { return *right.get(); }
+    ExpressionIR &getLeft() { assert(left.get()); return *left.get(); }
+    ExpressionIR &getRight() { assert(right.get()); return *right.get(); }
     
     bool isConstant() {
-        // bool first = std::visit([&](auto &x) { return x.isConstant(); }, *left);
-        // bool second = std::visit([&](auto &x){ return x.isConstant(); }, *right);
-        // return first && second;
-        return false;
+        bool first = std::visit([&](auto &x) { return x.isConstant(); }, *left);
+        bool second = std::visit([&](auto &x){ return x.isConstant(); }, *right);
+        return first && second;
     }
 
 };
