@@ -1,7 +1,8 @@
 #pragma once
 
 #include <memory>
-#include "IR/ir.h"
+#include "IR/ir_variant.h"
+#include <cassert>
 #include <vector>
 #include <string>
 

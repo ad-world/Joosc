@@ -3,10 +3,9 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include "IR/ir.h"
+#include "IR/ir_variant.h"
 #include "unordered_map"
 #include "IR/func-decl/func-decl.h"
-
 
 class CompUnitIR {
     std::string name;

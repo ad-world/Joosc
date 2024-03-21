@@ -2,7 +2,8 @@
 
 #include <string>
 #include <memory>
-#include "IR/ir.h"
+#include "IR/ir_variant.h"
+#include <cassert>
 
 class MemIR {
     std::unique_ptr<ExpressionIR> address;

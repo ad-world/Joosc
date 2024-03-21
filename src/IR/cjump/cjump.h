@@ -1,8 +1,10 @@
 #pragma once
 
 #include <memory>
-#include "IR/ir.h"
+#include "IR/ir_variant.h"
+#include <cassert>
 #include <string>
+
 class CJumpIR {
     std::unique_ptr<ExpressionIR> cond;
     std::string true_label;

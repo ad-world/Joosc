@@ -9,7 +9,7 @@
 #include "mem/mem.h"
 #include "name/name.h"
 #include "temp/temp.h"
-#include "bin-op/bin-op.h"
+#include "bin-op/bin-op.h"      // Needs to be last because of std::visit on ExpressionIR
 
 // StatementIR
 #include "cjump/cjump.h"

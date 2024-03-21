@@ -2,7 +2,8 @@
 
 #include <string>
 #include <memory>
-#include "IR/ir.h"
+#include "IR/ir_variant.h"
+#include <cassert>
 
 class JumpIR {
     std::unique_ptr<ExpressionIR> target;

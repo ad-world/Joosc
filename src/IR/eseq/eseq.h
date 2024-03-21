@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "IR/ir.h"
+#include "IR/ir_variant.h"
 #include <string>
 #include <cassert>
 
