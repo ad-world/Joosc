@@ -16,4 +16,3 @@
 #include "return/return.h"
 #include "seq/seq.h"
 #include "temp/temp.h"
-#include "ir_variant.h"

@@ -22,9 +22,10 @@ public:
     ExpressionIR &getRight() { return *right.get(); }
     
     bool isConstant() {
-        bool first = std::visit([&](auto &x) { return x.isConstant(); }, *left);
-        bool second = std::visit([&](auto &x){ return x.isConstant(); }, *right);
-        return first && second;
+        // bool first = std::visit([&](auto &x) { return x.isConstant(); }, *left);
+        // bool second = std::visit([&](auto &x){ return x.isConstant(); }, *right);
+        // return first && second;
+        return false;
     }
 
 };
