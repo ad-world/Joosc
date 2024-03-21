@@ -12,7 +12,7 @@ protected:
 public:
     CallIR(std::unique_ptr<ExpressionIR> target, std::vector<std::unique_ptr<ExpressionIR> > args);
         // : target{std::move(target)}, args(args) {}
-    ExpressionIR &getTarget() { return *target.get(); };
+    ExpressionIR &getTarget() { assert(target.get()); return *target.get(); };
     std::vector<std::unique_ptr<ExpressionIR>> &getArgs() { return args; };
     int getNumArgs() { return args.size(); };
     std::string label() { return "CALL"; }

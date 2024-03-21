@@ -12,8 +12,8 @@ public:
     MoveIR(std::unique_ptr<ExpressionIR> target, std::unique_ptr<ExpressionIR> source) 
         : target{std::move(target)}, source{std::move(source)} {}
 
-    ExpressionIR &getTarget() { return *target.get(); }
-    ExpressionIR &getSource() { return *source.get(); }
+    ExpressionIR &getTarget() { assert(target.get()); return *target.get(); }
+    ExpressionIR &getSource() { assert(source.get()); return *source.get(); }
 
     std::string label() { return "MOVE"; }
 };
