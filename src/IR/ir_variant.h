@@ -3,23 +3,23 @@
 #include <variant>
 
 using ExpressionIR = std::variant<
-    struct ConstIR, 
-    struct TempIR,
     struct BinOpIR,
-    struct MemIR,
     struct CallIR,
+    struct ConstIR, 
+    struct ESeqIR,
+    struct MemIR,
     struct NameIR,
-    struct ESeqIR
+    struct TempIR
 >;
 
 using StatementIR = std::variant<
-    struct MoveIR,
-    struct ExpIR,
-    struct SeqIR,
-    struct JumpIR,
     struct CJumpIR,
+    struct JumpIR,
     struct LabelIR,
-    struct ReturnIR
+    struct MoveIR,
+    struct ReturnIR,
+    struct SeqIR
+    // struct ExpIR, (TODO what is this?)
 >;
 
 using IR = std::variant<ExpressionIR, StatementIR, struct FuncDeclIR, struct CompUnitIR>;
