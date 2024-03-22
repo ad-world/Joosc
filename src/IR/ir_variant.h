@@ -14,12 +14,12 @@ using ExpressionIR = std::variant<
 
 using StatementIR = std::variant<
     struct CJumpIR,
+    struct ExpIR,
     struct JumpIR,
     struct LabelIR,
     struct MoveIR,
     struct ReturnIR,
     struct SeqIR
-    // struct ExpIR, (TODO what is this?)
 >;
 
 using IR = std::variant<ExpressionIR, StatementIR, struct FuncDeclIR, struct CompUnitIR>;

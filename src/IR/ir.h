@@ -13,10 +13,12 @@
 
 // StatementIR
 #include "cjump/cjump.h"
-#include "comp-unit/comp-unit.h"
-#include "func-decl/func-decl.h"
+#include "exp/exp.h"
 #include "jump/jump.h"
 #include "label/label.h"
 #include "move/move.h"
 #include "return/return.h"
 #include "seq/seq.h"
+
+#include "comp-unit/comp-unit.h"
+#include "func-decl/func-decl.h"

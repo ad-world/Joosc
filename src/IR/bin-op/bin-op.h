@@ -6,10 +6,12 @@
 #include <cassert>
 
 class BinOpIR {
+public:
     enum OpType {
         ADD, SUB, MUL, DIV, MOD, AND, OR, XOR, LSHIFT, RSHIFT, ARSHIFT,
         EQ, NEQ, LT, GT, LEQ, GEQ
     };
+private:
 
     OpType op;
     std::unique_ptr<ExpressionIR> left;
