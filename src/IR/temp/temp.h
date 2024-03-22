@@ -3,10 +3,12 @@
 #include <string>
 
 class TempIR {
+    static int num_temps;
     std::string name;
 
     public:
-        TempIR(std::string name) : name{std::move(name)} {}
+        TempIR() { num_temps++; name = "t" + std::to_string(num_temps); }
+        TempIR(std::string name) : name{std::move(name)} { num_temps++; }
 
         std::string &getName() { return name; }
         
