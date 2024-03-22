@@ -7,6 +7,8 @@
 #include "variant-ast/expressions.h"
 #include <memory>
 #include <utility>
+#include <variant>
+#include "exceptions/exceptions.h"
 using namespace std;
 
 /***************************************************************
@@ -184,8 +186,44 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(CastExpression &expr) {
     #warning TODO: implement
 }
 
+// int64_t, bool, char, std::string, std::nullptr_t
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Literal &expr) {
-    #warning TODO: implement
+    if ( auto lit = std::get_if<int64_t>(&expr) ) {
+        // int64_t
+        int64_t value = *lit;
+        auto const_ir = make_unique<ExpressionIR>(
+            in_place_type<ConstIR>,
+            value
+        );
+        return const_ir;
+    } else if ( auto lit = std::get_if<bool>(&expr) ) {
+        // bool
+        bool value = *lit;
+        auto const_ir = (value)
+            ? (ConstIR::makeOne())
+            : (ConstIR::makeZero());
+        return const_ir;
+    } else if ( auto lit = std::get_if<char>(&expr) ) {
+        // char
+        char value = *lit;
+        auto const_ir = make_unique<ExpressionIR>(
+            in_place_type<ConstIR>,
+            value
+        );
+        return const_ir;
+    } else if ( auto lit = std::get_if<string>(&expr) ) {
+        // string
+        string value = *lit;
+
+        #warning TODO: Deferred to A6
+        THROW_ASTtoIRError("TODO: Deferred to A6 unhandled literal type");
+
+    } else if ( auto lit = std::get_if<nullptr_t>(&expr) ) {
+        // nullptr_t
+        return ConstIR::makeZero();
+    } else {
+        THROW_ASTtoIRError("Unhandled literal type");
+    }
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ClassInstanceCreationExpression &expr) {

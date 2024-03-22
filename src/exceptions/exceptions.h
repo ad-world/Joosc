@@ -115,3 +115,12 @@ public:
     LocalVariableError(std::string message, std::string file, int line)
         : runtime_error(make_message("LocalVariable error", message, file, line)) {}
 };
+
+#define THROW_ASTtoIRError(message) throw ASTtoIRError(message, __FILE__, __LINE__)
+class ASTtoIRError : public std::runtime_error {
+public:
+    std::string message;
+    ASTtoIRError(std::string message) : runtime_error("Ast to IR error: " + message) {}
+    ASTtoIRError(std::string message, std::string file, int line)
+        : runtime_error(make_message("Ast to IR error", message, file, line)) {}
+};

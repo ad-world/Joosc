@@ -5,9 +5,9 @@
 #include <string>
 
 class ConstIR {
-    int value;
+    int64_t value;
 public:
-    ConstIR(int value) : value(value) {}
+    ConstIR(int64_t value) : value(value) {}
     int getValue() { return value; }
     std::string label() { return "CONST"; }
     bool isConstant() { return true; }
