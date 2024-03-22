@@ -1,3 +1,3 @@
 #include "temp.h"
 
-int TempIR::num_temps = 0;
+size_t TempIR::num_temps = 0;

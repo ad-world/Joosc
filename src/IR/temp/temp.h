@@ -3,7 +3,7 @@
 #include <string>
 
 class TempIR {
-    static int num_temps;
+    static size_t num_temps;
     std::string name;
 
 public:
@@ -12,7 +12,7 @@ public:
     std::string &getName() { return name; }
     static std::string generateName() {
         num_temps++;
-        return "t" + std::to_string(num_temps);
+        return "temp" + std::to_string(num_temps);
     }
 
     std::string label() { return "TEMP(" + name + ")"; }
