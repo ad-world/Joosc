@@ -1,5 +1,7 @@
 #pragma once
 
+#include "IR/ir_variant.h"
+#include <memory>
 #include <string>
 
 class LabelIR {
@@ -16,4 +18,6 @@ class LabelIR {
     }
     
     std::string label() { return "LABEL(" + name + ")"; }
+
+    static std::unique_ptr<StatementIR> makeStmt(std::string str);
 };
