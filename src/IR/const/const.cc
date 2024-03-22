@@ -2,9 +2,17 @@
 #include <utility>
 
 std::unique_ptr<ExpressionIR> ConstIR::makeZero() {
-    return std::make_unique<ExpressionIR>(std::in_place_type<ConstIR>, 0);
+    return makeExpr(0);
 }
 
 std::unique_ptr<ExpressionIR> ConstIR::makeOne() {
-    return std::make_unique<ExpressionIR>(std::in_place_type<ConstIR>, 1);
+    return makeExpr(1);
+}
+
+std::unique_ptr<ExpressionIR> ConstIR::makeWord() {
+    return makeExpr(4);
+}
+
+std::unique_ptr<ExpressionIR> ConstIR::makeExpr(int64_t value) {
+    return std::make_unique<ExpressionIR>(std::in_place_type<ConstIR>, value);
 }
