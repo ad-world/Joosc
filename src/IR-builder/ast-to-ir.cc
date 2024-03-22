@@ -1,7 +1,6 @@
 #include "ast-to-ir.h"
 #include "IR/bin-op/bin-op.h"
 #include "IR/comp-unit/comp-unit.h"
-#include "IR/func-decl/func-decl.h"
 #include "IR/ir_variant.h"
 #include "utillities/overload.h"
 #include "variant-ast/expressions.h"
@@ -183,7 +182,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(CastExpression &expr) {
-    #warning TODO: implement
+
 }
 
 // int64_t, bool, char, std::string, std::nullptr_t
@@ -215,8 +214,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Literal &expr) {
         // string
         string value = *lit;
 
-        #warning TODO: Deferred to A6
-        THROW_ASTtoIRError("TODO: Deferred to A6 unhandled literal type");
+        THROW_ASTtoIRError("TODO: Deferred to A6 - unhandled literal type");
 
     } else if ( auto lit = std::get_if<nullptr_t>(&expr) ) {
         // nullptr_t
@@ -227,39 +225,81 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Literal &expr) {
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ClassInstanceCreationExpression &expr) {
-    #warning TODO: implement
+    assert(expr.class_name.get());
+
+    // Call the appropriate constructor of the class
+    THROW_ASTtoIRError("TODO: Deferred to A6 - feature of OOP");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
-    #warning TODO: implement
+    assert(expr.expression.get());
+    assert(expr.identifier.get());
+
+    THROW_ASTtoIRError("TODO: Deferred to A6 - non-static field");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(MethodInvocation &expr) {
-    #warning TODO: implement
+    // assert(expr.parent_expr.get());  // can be null
+    assert(expr.method_name.get());
+
+    if ( auto qi = std::get_if<QualifiedIdentifier>(expr.parent_expr.get()) ) {
+        // Static methods
+
+        // Args vectors
+        vector<unique_ptr<ExpressionIR>> call_args_vec = {};
+        for ( auto &arg : expr.arguments ) {
+            call_args_vec.push_back(std::move(convert(arg)));
+        }
+
+        // Name string
+        string name_str;
+        for ( auto &identifier : qi->identifiers ) {
+            name_str += identifier.name + ".";
+        }
+        name_str += expr.method_name->name;
+
+        // Name IR
+        auto name_ir = make_unique<ExpressionIR>(
+            in_place_type<NameIR>,
+            name_str
+        );
+
+        // Call IR
+        auto call_ir = make_unique<ExpressionIR>(
+            in_place_type<CallIR>,
+            std::move(name_ir),
+            std::move(call_args_vec)
+        );
+
+        return call_ir;
+    } else {
+        // Non-static methods
+        THROW_ASTtoIRError("TODO: Deferred to A6 - non-static method");
+    }
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedThis &expr) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression &expr) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &expr) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(InstanceOfExpression &expr) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ParenthesizedExpression &expr) {
-    #warning TODO: implement
+
 }
 
 /***************************************************************
@@ -273,39 +313,39 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(Statement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenStatement &stmt) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenElseStatement &stmt) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(WhileStatement &stmt) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(Block &stmt) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(EmptyStatement &stmt) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ExpressionStatement &stmt) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ReturnStatement &stmt) {
-    #warning TODO: implement
+
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration &stmt) {
-    #warning TODO: implement
+
 }
 
 /***************************************************************
