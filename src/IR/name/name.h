@@ -13,6 +13,6 @@ public:
     std::string label() { return "NAME(" + name + ")"; }
     bool isConstant() { return false; }
 
-    static std::unique_ptr<ExpressionIR> getMalloc();
-    static std::unique_ptr<ExpressionIR> getException();
+    static std::unique_ptr<ExpressionIR> makeMalloc();
+    static std::unique_ptr<ExpressionIR> makeException();
 };
