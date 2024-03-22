@@ -1,5 +1,7 @@
 #pragma once
 
+#include "IR/ir_variant.h"
+#include <memory>
 #include <string>
 
 class TempIR {
@@ -17,4 +19,6 @@ public:
 
     std::string label() { return "TEMP(" + name + ")"; }
     bool isConstant() { return false; }
+
+    static std::unique_ptr<ExpressionIR> makeExpr(std::string str);
 };
