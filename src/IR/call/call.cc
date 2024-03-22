@@ -19,3 +19,11 @@ std::unique_ptr<ExpressionIR> CallIR::makeException() {
         std::move(args)
     );
 }
+
+std::unique_ptr<ExpressionIR> CallIR::makeExpr(std::unique_ptr<ExpressionIR> target, std::vector<std::unique_ptr<ExpressionIR> > args) {
+    return std::make_unique<ExpressionIR>(
+        std::in_place_type<CallIR>,
+        std::move(target),
+        std::move(args)
+    );
+}

@@ -15,4 +15,6 @@ public:
 
     static std::unique_ptr<ExpressionIR> makeMalloc();
     static std::unique_ptr<ExpressionIR> makeException();
+
+    static std::unique_ptr<ExpressionIR> makeExpr(std::string name);
 };

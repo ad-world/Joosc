@@ -14,4 +14,6 @@ class JumpIR {
     ExpressionIR &getTarget() { assert(target.get()); return *target.get(); }
 
     std::string label() { return "JUMP"; }
+
+    static std::unique_ptr<StatementIR> makeStmt(std::unique_ptr<ExpressionIR> target);
 };

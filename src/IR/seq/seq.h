@@ -15,12 +15,7 @@ class SeqIR {
     }
 
 public:
-    SeqIR(std::vector<std::unique_ptr<StatementIR>> stmts) {
-        filterNulls(stmts);
-        this->stmts = std::move(stmts);
-    }
-
-    SeqIR(std::vector<std::unique_ptr<StatementIR>> stmts, bool replaceParent) {
+    SeqIR(std::vector<std::unique_ptr<StatementIR>> stmts, bool replaceParent = false) {
         filterNulls(stmts);
         this->stmts = std::move(stmts);
         this->replaceParent = replaceParent;
@@ -29,4 +24,6 @@ public:
     std::vector<std::unique_ptr<StatementIR>> &getStmts() { return stmts; }
 
     std::string label() { return "SEQ"; }
+
+    static std::unique_ptr<StatementIR> makeStmt(std::vector<std::unique_ptr<StatementIR>> stmts, bool replaceParent = false);
 };

@@ -14,4 +14,6 @@ public:
     ExpressionIR &getRet() { assert(ret.get()); return *ret.get(); }
 
     std::string label() { return "RETURN"; }
+
+    static std::unique_ptr<StatementIR> makeStmt(std::unique_ptr<ExpressionIR> ret);
 };

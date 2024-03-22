@@ -1,8 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "IR/ir.h"
-#include <variant>
+#include "IR/ir_variant.h"
 #include <cassert>
 
 class BinOpIR {
@@ -22,10 +21,6 @@ public:
     ExpressionIR &getLeft() { assert(left.get()); return *left.get(); }
     ExpressionIR &getRight() { assert(right.get()); return *right.get(); }
     
-    bool isConstant() {
-        bool first = std::visit([&](auto &x) { return x.isConstant(); }, *left);
-        bool second = std::visit([&](auto &x){ return x.isConstant(); }, *right);
-        return first && second;
-    }
-
+    bool isConstant();
+    static std::unique_ptr<ExpressionIR> makeExpr(OpType op, std::unique_ptr<ExpressionIR> left, std::unique_ptr<ExpressionIR> right);
 };

@@ -17,4 +17,6 @@ public:
     ExpressionIR &getSource() { assert(source.get()); return *source.get(); }
 
     std::string label() { return "MOVE"; }
+
+    static std::unique_ptr<StatementIR> makeStmt(std::unique_ptr<ExpressionIR> target, std::unique_ptr<ExpressionIR> source);
 };

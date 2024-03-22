@@ -16,4 +16,5 @@ public:
     ExpressionIR &getExpr() { assert(expr.get()); return *expr.get(); }
     std::string label() { return "ESEQ"; }
     bool isConstant() { return false; }
+    static std::unique_ptr<ExpressionIR> makeExpr(std::unique_ptr<StatementIR> stmt, std::unique_ptr<ExpressionIR> expr);
 };

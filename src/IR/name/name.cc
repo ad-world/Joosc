@@ -9,3 +9,10 @@ std::unique_ptr<ExpressionIR> NameIR::makeMalloc() {
 std::unique_ptr<ExpressionIR> NameIR::makeException() {
     return std::make_unique<ExpressionIR>(std::in_place_type<NameIR>, "__exception");
 }
+
+std::unique_ptr<ExpressionIR> NameIR::makeExpr(std::string name) {
+    return std::make_unique<ExpressionIR>(
+        std::in_place_type<NameIR>,
+        name
+    );
+}
