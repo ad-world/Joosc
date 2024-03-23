@@ -25,6 +25,7 @@
 #include "utillities/util.h"
 #include "local-variables/local-variable-visitor.h"
 #include "IR/ir.h"
+#include "IR-builder/ast-to-ir.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"

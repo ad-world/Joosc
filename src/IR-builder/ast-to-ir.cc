@@ -106,8 +106,8 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
             assert(false); // We should never visit this code ideally... (asserting for now)
 
             // Generate unique labels
-            auto true_name = LabelIR::generateName();
-            auto false_name = LabelIR::generateName();
+            auto true_name = LabelIR::generateName("true");
+            auto false_name = LabelIR::generateName("false");
 
             // Generate unique result temp
             auto result_name = TempIR::generateName();
@@ -289,8 +289,8 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
     );
 
     // Non-null check
-    string error_name = LabelIR::generateName();
-    string non_null_name = LabelIR::generateName();
+    string error_name = LabelIR::generateName("error");
+    string non_null_name = LabelIR::generateName("nonnull");
     auto non_null_check = CJumpIR::makeStmt(
         // NEQ(t_a, 0)
         BinOpIR::makeExpr(
@@ -315,7 +315,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
     );
 
     // Bounds check
-    auto inbound_name = LabelIR::generateName();
+    auto inbound_name = LabelIR::generateName("inbounds");
     auto bounds_check = CJumpIR::makeStmt(
         // GEQ(t_i, MEM(t_a - 4))
         BinOpIR::makeExpr(
@@ -327,7 +327,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
                 BinOpIR::makeExpr(
                     BinOpIR::SUB,
                     TempIR::makeExpr(array_name),
-                    ConstIR::makeWord()
+                    ConstIR::makeWords()
                 )
             )
         ),
@@ -344,10 +344,10 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
             TempIR::makeExpr(array_name),
             BinOpIR::makeExpr(
                 BinOpIR::ADD,
-                ConstIR::makeWord(),
+                ConstIR::makeWords(),
                 BinOpIR::makeExpr(
                     BinOpIR::MUL,
-                    ConstIR::makeWord(),
+                    ConstIR::makeWords(),
                     TempIR::makeExpr(selector_name)
                 )
             )
@@ -374,11 +374,162 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedThis &expr) {
-
+    THROW_ASTtoIRError("QualifiedThis is not supported (I think)");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression &expr) {
+    assert(expr.type.get());
+    assert(expr.expression.get());
 
+    if ( auto primitive = expr.type->link.getIfIsPrimitive() ) {
+        // Primitive type
+
+        // Get inner expression
+        auto size_name = TempIR::generateName();
+        auto size_get = MoveIR::makeStmt(
+            TempIR::makeExpr(size_name),
+            convert(*expr.expression)
+        );
+
+        // Check non-negative
+        auto error_name = LabelIR::generateName("error");
+        auto non_negative_name = LabelIR::generateName("nonneg");
+        auto non_negative_check = CJumpIR::makeStmt(
+            // t_e >= 0
+            BinOpIR::makeExpr(
+                BinOpIR::GEQ,
+                TempIR::makeExpr(size_name),
+                ConstIR::makeZero()
+            ),
+            non_negative_name,
+            error_name
+        );
+
+        // Error call
+        auto error_label = LabelIR::makeStmt(error_name);
+        auto error_call = CallIR::makeException();
+
+        // Allocate space
+        auto non_negative_label = LabelIR::makeStmt(non_negative_name);
+        auto array_name = TempIR::generateName();
+        auto malloc = MoveIR::makeStmt(
+            TempIR::makeExpr(array_name),
+            CallIR::makeMalloc(
+                // 4*t_size + 8
+                BinOpIR::makeExpr(
+                    BinOpIR::ADD,
+                    BinOpIR::makeExpr(
+                        BinOpIR::MUL,
+                        ConstIR::makeWords(),
+                        TempIR::makeExpr(size_name)
+                    ),
+                    ConstIR::makeWords(2)
+                )
+            )
+        );
+
+        // Write size
+        auto write_size = MoveIR::makeStmt(
+            MemIR::makeExpr(TempIR::makeExpr(array_name)),
+            TempIR::makeExpr(size_name)
+        );
+
+        // Zero initialize array (loop)
+        auto iterator_name = TempIR::generateName();
+        auto start_loop = LabelIR::generateName("start_loop");
+        auto exit_loop = LabelIR::generateName("exit_loop");
+        auto dummy_name = LabelIR::generateName("dummy");
+        vector<unique_ptr<StatementIR>> seq_vec;
+
+        seq_vec.push_back(
+            // Move(t_i, 0)
+            MoveIR::makeStmt(
+                TempIR::makeExpr(iterator_name),
+                ConstIR::makeZero()
+            )
+        );
+        seq_vec.push_back(
+            // start_loop:
+            LabelIR::makeStmt(start_loop)
+        );
+        seq_vec.push_back(
+            // MOVE(t_i, t_i + 4)
+            MoveIR::makeStmt(
+                TempIR::makeExpr(iterator_name),
+                BinOpIR::makeExpr(
+                    BinOpIR::ADD,
+                    TempIR::makeExpr(iterator_name),
+                    ConstIR::makeWords()
+                )
+            )
+        );
+        seq_vec.push_back(
+            // CJump(t_i >= 4 * t_size, exit_loop, start_loop)
+            CJumpIR::makeStmt(
+                BinOpIR::makeExpr(
+                    BinOpIR::GEQ,
+                    TempIR::makeExpr(iterator_name),
+                    BinOpIR::makeExpr(
+                        BinOpIR::MUL,
+                        TempIR::makeExpr(size_name),
+                        ConstIR::makeWords()
+                    )
+                ),
+                exit_loop,
+                dummy_name
+            )
+        );
+        seq_vec.push_back(
+            // dummy:
+            LabelIR::makeStmt(dummy_name)
+        );
+        seq_vec.push_back(
+            // MOVE(MEM(t_a + t_i), 0) 
+            MoveIR::makeStmt(
+                MemIR::makeExpr(
+                    BinOpIR::makeExpr(
+                        BinOpIR::ADD,
+                        TempIR::makeExpr(array_name),
+                        TempIR::makeExpr(iterator_name)
+                    )
+                ),
+                ConstIR::makeZero()
+            )
+        );
+        seq_vec.push_back(
+            // Jump to start_loop
+            CJumpIR::makeStmt(
+                ConstIR::makeOne(), // true
+                start_loop,
+                exit_loop
+            )
+        );
+        seq_vec.push_back(
+            // exit_loop:
+            LabelIR::makeStmt(exit_loop)
+        );
+
+        //  INIT t_i
+        // start_loop:
+        //  t_i = t_i + 4
+        //  CJump to exit if outbounds
+        // dummy:
+        //  a[t_i] = 0
+        //  Jump to start
+        // exit_loop:
+        return ESeqIR::makeExpr(
+            SeqIR::makeStmt(std::move(seq_vec)),
+            // t_array + 4
+            BinOpIR::makeExpr(
+                BinOpIR::ADD,
+                TempIR::makeExpr(array_name),
+                ConstIR::makeWords()
+            )
+        );
+    } else {
+        // Non-primitive type
+        THROW_ASTtoIRError("TODO: Deferred to A6 - non-primitive array creation");
+    }
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &expr) {
