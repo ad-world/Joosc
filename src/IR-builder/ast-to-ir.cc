@@ -498,10 +498,8 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
         );
         seq_vec.push_back(
             // Jump to start_loop
-            CJumpIR::makeStmt(
-                ConstIR::makeOne(), // true
-                start_loop,
-                exit_loop
+            JumpIR::makeStmt(
+                NameIR::makeExpr(start_loop)
             )
         );
         seq_vec.push_back(
@@ -556,7 +554,39 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(Statement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenStatement &stmt) {
+    assert(stmt.if_clause.get());
+    assert(stmt.then_clause.get());
 
+    auto if_true = LabelIR::generateName("if_true");
+    auto if_false = LabelIR::generateName("if_false");
+   
+    vector<unique_ptr<StatementIR>> seq_vec;
+    // CJump(expr, true, exit)
+    seq_vec.push_back(
+        CJumpIR::makeStmt(
+            convert(*stmt.if_clause),
+            if_true,
+            if_false
+            #warning False condition does not fall through
+        )
+    );
+
+    // if_true
+    seq_vec.push_back(
+        LabelIR::makeStmt(if_true)
+    );
+
+    // then_clause
+    seq_vec.push_back(
+        convert(*stmt.then_clause)
+    );
+
+    // if_false
+    seq_vec.push_back(
+        LabelIR::makeStmt(if_false)
+    );
+
+    return SeqIR::makeStmt(std::move(seq_vec));
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenElseStatement &stmt) {
