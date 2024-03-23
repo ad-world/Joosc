@@ -12,9 +12,9 @@ class LabelIR {
     LabelIR(std::string name) : name{std::move(name)} {}
 
     std::string &getName() { return name; }
-    static std::string generateName() {
+    static std::string generateName(std::string prefix = "") {
         num_labels++;
-        return "label" + std::to_string(num_labels);
+        return ( ( prefix.empty() ? "label" : prefix ) + std::to_string(num_labels) );
     }
     
     std::string label() { return "LABEL(" + name + ")"; }
