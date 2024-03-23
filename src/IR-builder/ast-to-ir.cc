@@ -1,6 +1,5 @@
 #include "ast-to-ir.h"
-#include "IR/bin-op/bin-op.h"
-#include "IR/comp-unit/comp-unit.h"
+#include "IR/ir.h"
 #include "IR/ir_variant.h"
 #include "utillities/overload.h"
 #include "variant-ast/expressions.h"
@@ -147,11 +146,11 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
 
             // Create vector for sequence
             std::vector<unique_ptr<StatementIR>> seq_vec;
-            seq_vec.push_back(std::move(false_move));
-            seq_vec.push_back(std::move(cjump_ir));
-            seq_vec.push_back(std::move(true_label));
-            seq_vec.push_back(std::move(true_move));
-            seq_vec.push_back(std::move(false_label));
+            seq_vec.push_back(std::move(true_move));    // Move(t, 0)
+            seq_vec.push_back(std::move(cjump_ir));     // Cjump(e, true, false)
+            seq_vec.push_back(std::move(false_label));  // false:
+            seq_vec.push_back(std::move(false_move));   // Move(t, 1)
+            seq_vec.push_back(std::move(true_label));   // true:
 
             // Sequence
             auto seq_ir = make_unique<StatementIR>(
@@ -279,7 +278,99 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(MethodInvocation &expr) 
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
+    assert(expr.array.get());
+    assert(expr.selector.get());
 
+    // Get array in temp
+    string array_name = TempIR::generateName();
+    auto get_array = MoveIR::makeStmt(
+        TempIR::makeExpr(array_name),
+        std::move(convert(*expr.array))
+    );
+
+    // Non-null check
+    string error_name = LabelIR::generateName();
+    string non_null_name = LabelIR::generateName();
+    auto non_null_check = CJumpIR::makeStmt(
+        // NEQ(t_a, 0)
+        BinOpIR::makeExpr(
+            BinOpIR::NEQ,
+            TempIR::makeExpr(array_name),
+            ConstIR::makeZero()
+        ),
+        non_null_name,
+        error_name
+    );
+
+    // Exception on null
+    auto error_label = LabelIR::makeStmt(error_name);
+    auto exception_call = ExpIR::makeStmt(std::move(CallIR::makeException()));
+
+    // Non-null
+    auto non_null_label = LabelIR::makeStmt(non_null_name);
+    string selector_name = TempIR::generateName();
+    auto get_selector = MoveIR::makeStmt(
+        TempIR::makeExpr(selector_name),
+        std::move(convert(*expr.selector))
+    );
+
+    // Bounds check
+    auto inbound_name = LabelIR::generateName();
+    auto bounds_check = CJumpIR::makeStmt(
+        // GEQ(t_i, MEM(t_a - 4))
+        BinOpIR::makeExpr(
+            BinOpIR::GEQ,
+            TempIR::makeExpr(selector_name),
+            // MEM(t_a - 4)
+            MemIR::makeExpr(
+                // SUB(t_a, 4)
+                BinOpIR::makeExpr(
+                    BinOpIR::SUB,
+                    TempIR::makeExpr(array_name),
+                    ConstIR::makeWord()
+                )
+            )
+        ),
+        error_name,    // out of bounds
+        inbound_name   // in bounds
+    );
+
+    // Inbound call
+    auto inbound_label = LabelIR::makeStmt(inbound_name);
+    auto inbound_call = MemIR::makeExpr(
+        // t_a + 4 + (4 * t_i)
+        BinOpIR::makeExpr(
+            BinOpIR::ADD,
+            TempIR::makeExpr(array_name),
+            BinOpIR::makeExpr(
+                BinOpIR::ADD,
+                ConstIR::makeWord(),
+                BinOpIR::makeExpr(
+                    BinOpIR::MUL,
+                    ConstIR::makeWord(),
+                    TempIR::makeExpr(selector_name)
+                )
+            )
+        )
+    );
+
+    vector<unique_ptr<StatementIR>> seq_vec;
+
+    seq_vec.push_back(std::move(get_array));            // Temp t_a
+    seq_vec.push_back(std::move(non_null_check));       // CJump(NEQ(t_a, 0), non_null, error)
+    seq_vec.push_back(std::move(error_label));          // error:
+    seq_vec.push_back(std::move(exception_call));       // CALL(NAME(__exception))
+    seq_vec.push_back(std::move(non_null_label));       // non_null:
+    seq_vec.push_back(std::move(get_selector));         // Temp t_i
+    seq_vec.push_back(std::move(bounds_check));         // CJump(GEQ(t_i, MEM(t_a - 4)), error, inbound)
+    seq_vec.push_back(std::move(inbound_label));        // inbound:
+
+    auto eseq_ir = ESeqIR::makeExpr(
+        SeqIR::makeStmt(std::move(seq_vec)),
+        std::move(inbound_call)                         // MEM(t_a + 4 + 4*t_i)
+    );
+
+    return eseq_ir;
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedThis &expr) {
