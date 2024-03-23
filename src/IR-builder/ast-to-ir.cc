@@ -533,15 +533,16 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &expr) {
-
+    THROW_ASTtoIRError("TODO: Deferred to A6 - qualified identifiers");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(InstanceOfExpression &expr) {
-
+    THROW_ASTtoIRError("TODO: Deferred to A6 - instanceof");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ParenthesizedExpression &expr) {
-
+    assert(expr.expression.get());
+    return convert(*expr.expression);
 }
 
 /***************************************************************
