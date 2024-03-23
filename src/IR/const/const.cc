@@ -9,8 +9,8 @@ std::unique_ptr<ExpressionIR> ConstIR::makeOne() {
     return makeExpr(1);
 }
 
-std::unique_ptr<ExpressionIR> ConstIR::makeWord() {
-    return makeExpr(4);
+std::unique_ptr<ExpressionIR> ConstIR::makeWords(int num_words) {
+    return makeExpr(4 * num_words);
 }
 
 std::unique_ptr<ExpressionIR> ConstIR::makeExpr(int64_t value) {

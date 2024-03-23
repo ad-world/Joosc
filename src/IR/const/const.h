@@ -14,6 +14,6 @@ public:
 
     static std::unique_ptr<ExpressionIR> makeZero();
     static std::unique_ptr<ExpressionIR> makeOne();
-    static std::unique_ptr<ExpressionIR> makeWord();
+    static std::unique_ptr<ExpressionIR> makeWords(int num_words = 1);
     static std::unique_ptr<ExpressionIR> makeExpr(int64_t value);
 };
