@@ -1,3 +1,5 @@
+#pragma once
+
 #include "ir.h"
 
 class IRSkipVisitor {
