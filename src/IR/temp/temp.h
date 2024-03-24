@@ -12,9 +12,9 @@ public:
     TempIR(std::string name) : name{std::move(name)} {}
 
     std::string &getName() { return name; }
-    static std::string generateName() {
+    static std::string generateName(std::string prefix = "") {
         num_temps++;
-        return "temp" + std::to_string(num_temps);
+        return (prefix.empty() ? "temp" : prefix) + std::to_string(num_temps);
     }
 
     std::string label() { return "TEMP(" + name + ")"; }
