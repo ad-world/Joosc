@@ -571,7 +571,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenStatement &stmt) {
         )
     );
 
-    // if_true
+    // if_true:
     seq_vec.push_back(
         LabelIR::makeStmt(if_true)
     );
@@ -581,7 +581,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenStatement &stmt) {
         convert(*stmt.then_clause)
     );
 
-    // if_false
+    // if_false:
     seq_vec.push_back(
         LabelIR::makeStmt(if_false)
     );
@@ -590,7 +590,58 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenStatement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenElseStatement &stmt) {
+    assert(stmt.if_clause.get());
+    assert(stmt.then_clause.get());
+    assert(stmt.else_clause.get());
 
+    auto if_true = LabelIR::generateName("if_true");
+    auto if_false = LabelIR::generateName("if_false");
+    auto if_exit = LabelIR::generateName("if_exit");
+   
+    vector<unique_ptr<StatementIR>> seq_vec;
+    // CJump(expr, true, exit)
+    seq_vec.push_back(
+        CJumpIR::makeStmt(
+            convert(*stmt.if_clause),
+            if_true,
+            if_false
+            #warning False condition does not fall through
+        )
+    );
+
+    // if_true:
+    seq_vec.push_back(
+        LabelIR::makeStmt(if_true)
+    );
+
+    // then_clause
+    seq_vec.push_back(
+        convert(*stmt.then_clause)
+    );
+
+    // jump to exit
+    seq_vec.push_back(
+        JumpIR::makeStmt(NameIR::makeExpr(if_exit))
+    );
+
+    // if_false:
+    seq_vec.push_back(
+        LabelIR::makeStmt(if_false)
+    );
+
+    // else_clause
+    seq_vec.push_back(
+        convert(*stmt.else_clause)
+    );
+
+    // jump to exit (fall through)
+
+    // exit:
+    seq_vec.push_back(
+        LabelIR::makeStmt(if_exit)
+    );
+
+    return SeqIR::makeStmt(std::move(seq_vec));
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(WhileStatement &stmt) {
