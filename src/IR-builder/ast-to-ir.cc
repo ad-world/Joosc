@@ -655,12 +655,13 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(WhileStatement &stmt) {
     assert(stmt.body_statement.get());
 
     vector<unique_ptr<StatementIR>> seq_vec;
+    auto while_start = LabelIR::generateName("while_start");
     auto while_true = LabelIR::generateName("while_true");
     auto while_exit = LabelIR::generateName("while_exit");
 
-    // while_true:
+    // while_start:
     seq_vec.push_back(
-        LabelIR::makeStmt(while_true)
+        LabelIR::makeStmt(while_start)
     );
 
     // CJump(expr == 0, exit, true)
@@ -676,14 +677,19 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(WhileStatement &stmt) {
         )
     );
 
+    // while_true:
+    seq_vec.push_back(
+        LabelIR::makeStmt(while_true)
+    );
+
     // Body stmt
     seq_vec.push_back(
         convert(*stmt.body_statement)
     );
 
-    // Jump to while_true
+    // Jump to while_start
     seq_vec.push_back(
-        JumpIR::makeStmt(NameIR::makeExpr(while_true))
+        JumpIR::makeStmt(NameIR::makeExpr(while_start))
     );
 
     // while_exit:
