@@ -182,7 +182,8 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(CastExpression &expr) {
-
+    assert(expr.expression.get());
+    return convert(*expr.expression);
 }
 
 // int64_t, bool, char, std::string, std::nullptr_t
@@ -806,8 +807,8 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ReturnStatement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration &stmt) {
-    assert(stmt.variable_declarator);
-    assert(stmt.variable_declarator->expression);
+    assert(stmt.variable_declarator.get());
+    assert(stmt.variable_declarator->expression.get());
 
     vector<unique_ptr<StatementIR>> seq_vec;
     auto var_name = stmt.variable_declarator->variable_name->name;
