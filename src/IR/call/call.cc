@@ -10,8 +10,7 @@ std::unique_ptr<ExpressionIR> CallIR::makeMalloc(std::unique_ptr<ExpressionIR> a
 }
 
 std::unique_ptr<ExpressionIR> CallIR::makeException() {
-    std::vector<std::unique_ptr<ExpressionIR>> args(0); // empty vector
-    return makeExpr(NameIR::makeException(), std::move(args));
+    return makeExpr(NameIR::makeException(), {});
 }
 
 std::unique_ptr<ExpressionIR> CallIR::makeExpr(std::unique_ptr<ExpressionIR> target, std::vector<std::unique_ptr<ExpressionIR> > args) {
