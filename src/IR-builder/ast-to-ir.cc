@@ -701,9 +701,9 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(WhileStatement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
-    assert(stmt.init_statement.get());
+    // assert(stmt.init_statement.get());
     assert(stmt.condition_expression.get());
-    assert(stmt.update_statement.get());
+    // assert(stmt.update_statement.get());
     assert(stmt.body_statement.get());
 
     vector<unique_ptr<StatementIR>> seq_vec;
@@ -712,9 +712,11 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
     auto for_exit = LabelIR::generateName("for_exit");
 
     // Init statement
-    seq_vec.push_back(
-        convert(*stmt.init_statement)
-    );
+    if ( stmt.init_statement.get() ) {
+        seq_vec.push_back(
+            convert(*stmt.init_statement)
+        );
+    }
 
     // for_start:
     seq_vec.push_back(
@@ -745,9 +747,11 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
     );
 
     // Update
-    seq_vec.push_back(
-        convert(*stmt.update_statement)
-    );
+    if ( stmt.update_statement.get() ) {
+        seq_vec.push_back(
+            convert(*stmt.update_statement)
+        );
+    }
 
     // Jump to start
     seq_vec.push_back(
