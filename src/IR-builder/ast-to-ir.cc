@@ -792,11 +792,17 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(EmptyStatement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ExpressionStatement &stmt) {
-
+    return std::visit(
+        [&](auto &expr) {
+            return ExpIR::makeStmt(convert(expr));
+        }, stmt
+    );
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ReturnStatement &stmt) {
+    assert(stmt.return_expression.get());
 
+    return ReturnIR::makeStmt(convert(*stmt.return_expression));
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration &stmt) {
