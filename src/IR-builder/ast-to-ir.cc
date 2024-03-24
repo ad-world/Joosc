@@ -29,7 +29,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
     auto dest_address = convert(*expr.assigned_to);
     auto src = convert(*expr.assigned_from);
 
-    // TODO: see if this can be simplified (instead of getting dest twice, use temp?)
+    #warning see if this can be simplified (instead of getting dest twice, use temp?)
     auto statement_ir = std::make_unique<StatementIR>(std::in_place_type<MoveIR>, std::move(dest), std::move(src));
     auto expression_ir = std::make_unique<ExpressionIR>(std::in_place_type<MemIR>, std::move(dest_address));
     auto eseq = std::make_unique<ExpressionIR>(std::in_place_type<ESeqIR>, std::move(statement_ir), std::move(expression_ir));
@@ -806,7 +806,17 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ReturnStatement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration &stmt) {
+    assert(stmt.variable_declarator);
+    assert(stmt.variable_declarator->expression);
 
+    vector<unique_ptr<StatementIR>> seq_vec;
+    auto var_name = stmt.variable_declarator->variable_name->name;
+
+    // Move(var, rhs)
+    return MoveIR::makeStmt(
+        TempIR::makeExpr(var_name),
+        convert(*stmt.variable_declarator->expression)
+    );
 }
 
 /***************************************************************
