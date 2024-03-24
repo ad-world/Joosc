@@ -2,6 +2,7 @@
 #include "IR/ir.h"
 #include "IR/ir_variant.h"
 #include "utillities/overload.h"
+#include "utillities/util.h"
 #include "variant-ast/expressions.h"
 #include <memory>
 #include <utility>
@@ -767,11 +768,27 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(Block &stmt) {
+    vector<unique_ptr<StatementIR>> seq_vec;
 
+    for ( auto &stmt : stmt.statements ) {
+        seq_vec.push_back(
+            convert(stmt)
+        );
+    }
+
+    if ( seq_vec.empty() ) {
+        #warning How should we handle empty Block?
+        return SeqIR::makeStmt({});
+    } else if ( seq_vec.size() == 1 ) {
+        return std::move(seq_vec.back());
+    } else {
+        return SeqIR::makeStmt(std::move(seq_vec));
+    }
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(EmptyStatement &stmt) {
-
+    #warning How should we handle empty statement?
+    return SeqIR::makeStmt({});
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ExpressionStatement &stmt) {
