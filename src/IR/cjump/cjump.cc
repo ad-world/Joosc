@@ -2,6 +2,7 @@
 #include "IR/ir.h"
 
 std::unique_ptr<StatementIR> CJumpIR::makeStmt(std::unique_ptr<ExpressionIR> cond, std::string true_label, std::string false_label) {
+    #warning Should do cond preprocessing
     return std::make_unique<StatementIR>(
         std::in_place_type<CJumpIR>,
         std::move(cond),

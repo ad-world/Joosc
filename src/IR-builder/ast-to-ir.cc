@@ -701,7 +701,65 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(WhileStatement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
+    assert(stmt.init_statement.get());
+    assert(stmt.condition_expression.get());
+    assert(stmt.update_statement.get());
+    assert(stmt.body_statement.get());
 
+    vector<unique_ptr<StatementIR>> seq_vec;
+    auto for_start = LabelIR::generateName("for_start");
+    auto for_true = LabelIR::generateName("for_true");
+    auto for_exit = LabelIR::generateName("for_exit");
+
+    // Init statement
+    seq_vec.push_back(
+        convert(*stmt.init_statement)
+    );
+
+    // for_start:
+    seq_vec.push_back(
+        LabelIR::makeStmt(for_start)
+    );
+
+    // CJump(cond == 0, exit, true)
+    seq_vec.push_back(
+        CJumpIR::makeStmt(
+            BinOpIR::makeExpr(
+                BinOpIR::EQ,
+                convert(*stmt.condition_expression),
+                ConstIR::makeZero()
+            ),
+            for_exit,
+            for_true
+        )
+    );
+
+    // for_true:
+    seq_vec.push_back(
+        LabelIR::makeStmt(for_true)
+    );
+
+    // Body
+    seq_vec.push_back(
+        convert(*stmt.body_statement)
+    );
+
+    // Update
+    seq_vec.push_back(
+        convert(*stmt.update_statement)
+    );
+
+    // Jump to start
+    seq_vec.push_back(
+        JumpIR::makeStmt(NameIR::makeExpr(for_start))
+    );
+
+    // for_exit:
+    seq_vec.push_back(
+        LabelIR::makeStmt(for_exit)
+    );
+
+    return SeqIR::makeStmt(std::move(seq_vec));
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(Block &stmt) {
