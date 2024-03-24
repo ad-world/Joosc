@@ -12,7 +12,7 @@ class CJumpIR {
 
 public:
     CJumpIR(std::unique_ptr<ExpressionIR> cond, std::string true_label, std::string false_label = "") : cond{std::move(cond)}, true_label(true_label), false_label(false_label) {}
-    ExpressionIR &condition() { assert(cond.get()); return *cond.get(); }
+    ExpressionIR &getCondition() { assert(cond.get()); return *cond.get(); }
     std::string trueLabel() { return true_label; }
     std::string falseLabel() { return false_label; }
     std::string label() { return "CJUMP"; }

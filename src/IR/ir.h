@@ -3,13 +3,13 @@
 #include "ir_variant.h"
 
 // ExpressionIR
+#include "bin-op/bin-op.h"
 #include "call/call.h"
 #include "const/const.h"
 #include "eseq/eseq.h"
 #include "mem/mem.h"
 #include "name/name.h"
 #include "temp/temp.h"
-#include "bin-op/bin-op.h"      // Needs to be last because of std::visit on ExpressionIR
 
 // StatementIR
 #include "cjump/cjump.h"
