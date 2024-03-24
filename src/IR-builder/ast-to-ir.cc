@@ -110,7 +110,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
             auto false_name = LabelIR::generateName("false");
 
             // Generate unique result temp
-            auto result_name = TempIR::generateName();
+            auto result_name = TempIR::generateName("result");
 
             // Cond jump
             auto cjump_ir = make_unique<StatementIR>(
@@ -282,7 +282,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
     assert(expr.selector.get());
 
     // Get array in temp
-    string array_name = TempIR::generateName();
+    string array_name = TempIR::generateName("array");
     auto get_array = MoveIR::makeStmt(
         TempIR::makeExpr(array_name),
         std::move(convert(*expr.array))
@@ -308,7 +308,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
 
     // Non-null
     auto non_null_label = LabelIR::makeStmt(non_null_name);
-    string selector_name = TempIR::generateName();
+    string selector_name = TempIR::generateName("selector");
     auto get_selector = MoveIR::makeStmt(
         TempIR::makeExpr(selector_name),
         std::move(convert(*expr.selector))
@@ -385,7 +385,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
         // Primitive type
 
         // Get inner expression
-        auto size_name = TempIR::generateName();
+        auto size_name = TempIR::generateName("size");
         auto size_get = MoveIR::makeStmt(
             TempIR::makeExpr(size_name),
             convert(*expr.expression)
@@ -411,7 +411,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 
         // Allocate space
         auto non_negative_label = LabelIR::makeStmt(non_negative_name);
-        auto array_name = TempIR::generateName();
+        auto array_name = TempIR::generateName("array");
         auto malloc = MoveIR::makeStmt(
             TempIR::makeExpr(array_name),
             CallIR::makeMalloc(
@@ -435,7 +435,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
         );
 
         // Zero initialize array (loop)
-        auto iterator_name = TempIR::generateName();
+        auto iterator_name = TempIR::generateName("iter");
         auto start_loop = LabelIR::generateName("start_loop");
         auto exit_loop = LabelIR::generateName("exit_loop");
         auto dummy_name = LabelIR::generateName("dummy");
@@ -558,16 +558,19 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenStatement &stmt) {
     assert(stmt.then_clause.get());
 
     auto if_true = LabelIR::generateName("if_true");
-    auto if_false = LabelIR::generateName("if_false");
+    auto if_exit = LabelIR::generateName("if_exit");
    
     vector<unique_ptr<StatementIR>> seq_vec;
-    // CJump(expr, true, exit)
+    // CJump(expr == 0, exit, true)
     seq_vec.push_back(
         CJumpIR::makeStmt(
-            convert(*stmt.if_clause),
-            if_true,
-            if_false
-            #warning False condition does not fall through
+            BinOpIR::makeExpr(
+                BinOpIR::EQ,
+                convert(*stmt.if_clause),
+                ConstIR::makeZero()
+            ),
+            if_exit,
+            if_true
         )
     );
 
@@ -581,9 +584,9 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenStatement &stmt) {
         convert(*stmt.then_clause)
     );
 
-    // if_false:
+    // if_exit:
     seq_vec.push_back(
-        LabelIR::makeStmt(if_false)
+        LabelIR::makeStmt(if_exit)
     );
 
     return SeqIR::makeStmt(std::move(seq_vec));
@@ -599,13 +602,16 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenElseStatement &stmt
     auto if_exit = LabelIR::generateName("if_exit");
    
     vector<unique_ptr<StatementIR>> seq_vec;
-    // CJump(expr, true, exit)
+    // CJump(expr == 0, false, true)
     seq_vec.push_back(
         CJumpIR::makeStmt(
-            convert(*stmt.if_clause),
-            if_true,
-            if_false
-            #warning False condition does not fall through
+            BinOpIR::makeExpr(
+                BinOpIR::EQ,
+                convert(*stmt.if_clause),
+                ConstIR::makeZero()
+            ),
+            if_false,
+            if_true
         )
     );
 
@@ -636,7 +642,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenElseStatement &stmt
 
     // jump to exit (fall through)
 
-    // exit:
+    // if_exit:
     seq_vec.push_back(
         LabelIR::makeStmt(if_exit)
     );
@@ -645,7 +651,47 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenElseStatement &stmt
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(WhileStatement &stmt) {
+    assert(stmt.condition_expression.get());
+    assert(stmt.body_statement.get());
 
+    vector<unique_ptr<StatementIR>> seq_vec;
+    auto while_true = LabelIR::generateName("while_true");
+    auto while_exit = LabelIR::generateName("while_exit");
+
+    // while_true:
+    seq_vec.push_back(
+        LabelIR::makeStmt(while_true)
+    );
+
+    // CJump(expr == 0, exit, true)
+    seq_vec.push_back(
+        CJumpIR::makeStmt(
+            BinOpIR::makeExpr(
+                BinOpIR::EQ,
+                convert(*stmt.condition_expression),
+                ConstIR::makeZero()
+            ),
+            while_exit,
+            while_true
+        )
+    );
+
+    // Body stmt
+    seq_vec.push_back(
+        convert(*stmt.body_statement)
+    );
+
+    // Jump to while_true
+    seq_vec.push_back(
+        JumpIR::makeStmt(NameIR::makeExpr(while_true))
+    );
+
+    // while_exit:
+    seq_vec.push_back(
+        LabelIR::makeStmt(while_exit)
+    );
+
+    return SeqIR::makeStmt(std::move(seq_vec));
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
