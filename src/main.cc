@@ -200,10 +200,10 @@ int main(int argc, char *argv[]) {
 
         // Convert to IR
         auto &main_ast = asts.front();
-        auto main_ir = IRBuilderVisitor().visit(main_ast);
+        IR main_ir = IRBuilderVisitor().visit(main_ast);
 
         // Graph IR
-        // IRGraphVisitor()
+        IRGraphVisitor().visit(main_ir);
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";
         return COMPILER_DEVELOPMENT_ERROR;

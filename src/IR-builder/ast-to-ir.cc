@@ -865,7 +865,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration 
 
 void IRBuilderVisitor::operator()(ClassDeclaration &node) {
     // CREATE CompUnit
-    comp_unit = std::make_unique<CompUnitIR>(node.environment->identifier);
+    comp_unit = {node.environment->identifier};
     this->visit_children(node);
 }
 
@@ -878,7 +878,7 @@ void IRBuilderVisitor::operator()(MethodDeclaration &node) {
             (int) node.parameters.size()
         );
 
-        comp_unit->appendFunc(node.environment->identifier, std::move(func_decl));
+        comp_unit.appendFunc(node.environment->identifier, std::move(func_decl));
     }
 }
 

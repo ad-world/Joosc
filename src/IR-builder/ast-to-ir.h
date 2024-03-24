@@ -4,8 +4,8 @@
 #include "variant-ast/astnode.h"
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
 
-class IRBuilderVisitor : public DefaultSkipVisitor<std::unique_ptr<CompUnitIR>> {
-    std::unique_ptr<CompUnitIR> comp_unit;
+class IRBuilderVisitor : public DefaultSkipVisitor<CompUnitIR> {
+    CompUnitIR comp_unit;
 
     // Statement converters
     std::unique_ptr<StatementIR> convert(Statement &stmt);
@@ -37,7 +37,7 @@ class IRBuilderVisitor : public DefaultSkipVisitor<std::unique_ptr<CompUnitIR>> 
     std::unique_ptr<ExpressionIR> convert(ParenthesizedExpression &expr);
 
 public:
-    using DefaultSkipVisitor<std::unique_ptr<CompUnitIR>>::operator();
+    using DefaultSkipVisitor<CompUnitIR>::operator();
     // void operator()(CompilationUnit &node) override;
 
     void operator()(ClassDeclaration &node) override;
@@ -45,7 +45,9 @@ public:
     // void operator()(InterfaceDeclaration &node) override;
     // void operator()(FieldDeclaration &node) override;
 
-    std::unique_ptr<CompUnitIR> visit(AstNodeVariant &ast) override {
+    IRBuilderVisitor() : comp_unit{""} {}
+
+    CompUnitIR visit(AstNodeVariant &ast) override {
         std::visit(*this, ast);
         return std::move(comp_unit);
     }
