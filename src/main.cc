@@ -26,6 +26,7 @@
 #include "local-variables/local-variable-visitor.h"
 #include "IR/ir.h"
 #include "IR-builder/ast-to-ir.h"
+#include "graph/irgraph.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
@@ -192,9 +193,17 @@ int main(int argc, char *argv[]) {
             StatementVisitor().visit(ast);
         }
 
+        // Local variable checking
         for (auto &ast: asts) {
             LocalVariableVisitor().visit(ast);
         }
+
+        // Convert to IR
+        auto &main_ast = asts.front();
+        auto main_ir = IRBuilderVisitor().visit(main_ast);
+
+        // Graph IR
+        // IRGraphVisitor()
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";
         return COMPILER_DEVELOPMENT_ERROR;

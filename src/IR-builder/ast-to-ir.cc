@@ -1,6 +1,7 @@
 #include "ast-to-ir.h"
 #include "IR/ir.h"
 #include "IR/ir_variant.h"
+#include "type-checker/typechecker.h"
 #include "utillities/overload.h"
 #include "utillities/util.h"
 #include "variant-ast/expressions.h"
@@ -44,10 +45,12 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(InfixExpression &expr) {
 
     switch ( expr.op ) {
         case InfixOperator::BOOLEAN_OR:
+        #warning Should handle short-circuiting
         case InfixOperator::EAGER_OR:
             bin_op = BinOpIR::OR;
             break;
         case InfixOperator::BOOLEAN_AND:
+        #warning Should handle short-circuiting
         case InfixOperator::EAGER_AND:
             bin_op = BinOpIR::AND;
             break;
@@ -103,8 +106,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
             return expression_ir;
         }
         case PrefixOperator::NEGATE: {
-            // TODO: This can be handled by embedding booleans into the jump code (L16)
-            assert(false); // We should never visit this code ideally... (asserting for now)
+            #warning This can be handled by embedding booleans into the jump code (L16)
 
             // Generate unique labels
             auto true_name = LabelIR::generateName("true");
@@ -236,6 +238,30 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
     assert(expr.expression.get());
     assert(expr.identifier.get());
 
+    auto link = TypeChecker::getLink(*expr.expression);
+    if ( link.is_array && expr.identifier->name == "length" ) {
+        // Access length of array
+        vector<unique_ptr<StatementIR>> seq_vec;
+
+        // Get array in temp
+        string array_name = TempIR::generateName("array");
+
+        // MoveIR(t_a, e)
+        // MemIR(t_a - 4)
+        return ESeqIR::makeExpr(
+            MoveIR::makeStmt(
+                TempIR::makeExpr(array_name),
+                std::move(convert(*expr.expression))
+            ),
+            MemIR::makeExpr(
+                BinOpIR::makeExpr(
+                    BinOpIR::SUB,
+                    TempIR::makeExpr(array_name),
+                    ConstIR::makeWords()
+                )
+            )
+        );
+    }
     THROW_ASTtoIRError("TODO: Deferred to A6 - non-static field");
 }
 
@@ -533,7 +559,17 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &expr) {
-    THROW_ASTtoIRError("TODO: Deferred to A6 - qualified identifiers");
+    if (expr.identifiers.size() == 1) {
+        // Local variable access
+        auto identifier = expr.identifiers.front();
+        return MemIR::makeExpr(TempIR::makeExpr(identifier.name));
+    } else {
+        // Static field access (typically)
+        string qualified_str = expr.getQualifiedName();
+        #warning Not always a static field
+        return MemIR::makeExpr(NameIR::makeExpr(qualified_str));
+    }
+    // THROW_ASTtoIRError("TODO: Deferred to A6 - qualified identifiers");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(InstanceOfExpression &expr) {
@@ -801,9 +837,11 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ExpressionStatement &stmt
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ReturnStatement &stmt) {
-    assert(stmt.return_expression.get());
-
-    return ReturnIR::makeStmt(convert(*stmt.return_expression));
+    if ( stmt.return_expression.get() ) {
+        return ReturnIR::makeStmt(convert(*stmt.return_expression));
+    } else {
+        return ReturnIR::makeStmt(nullptr);
+    }
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration &stmt) {
@@ -814,6 +852,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration 
     auto var_name = stmt.variable_declarator->variable_name->name;
 
     // Move(var, rhs)
+    #warning This will overwrite a previous LVD (should have some kind of stack)
     return MoveIR::makeStmt(
         TempIR::makeExpr(var_name),
         convert(*stmt.variable_declarator->expression)

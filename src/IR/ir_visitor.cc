@@ -77,7 +77,9 @@ void IRSkipVisitor::visit_children(MoveIR &node) {
     this->operator()(node.getSource());
 }
 void IRSkipVisitor::visit_children(ReturnIR &node) {
-    this->operator()(node.getRet());
+    if ( node.getRet() ) {
+        this->operator()(*node.getRet());
+    }
 }
 void IRSkipVisitor::visit_children(SeqIR &node) {
     for ( auto &stmt : node.getStmts() ) {
