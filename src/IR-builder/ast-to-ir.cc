@@ -825,40 +825,22 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration 
  ***************************************************************/
 
 void IRBuilderVisitor::operator()(ClassDeclaration &node) {
-    // TODO: implement
-    
     // CREATE CompUnit
     comp_unit = std::make_unique<CompUnitIR>(node.environment->identifier);
+    this->visit_children(node);
 }
 
 void IRBuilderVisitor::operator()(MethodDeclaration &node) {
-    // TODO: implement
+    if ( node.body.get() ) {
+        // CREATE FuncDecl
+        auto func_decl = make_unique<FuncDeclIR>(
+            node.environment->identifier,
+            convert(*node.body),
+            (int) node.parameters.size()
+        );
 
-    // Convert CFG to IR
-    if ( node.cfg_start == nullptr ) {
-        // CFG does not exist
-        // => Method is abstract (ie. no body)
-        // => Skip creating IR for method
-
-        assert(node.body.get() == nullptr);
-        return;
+        comp_unit->appendFunc(node.environment->identifier, std::move(func_decl));
     }
-
-    // Convert body to a vector of StatementIR's
-    std::vector<std::unique_ptr<StatementIR>> statements;
-    for ( auto &stmt : node.body->statements ) {
-        std::unique_ptr<StatementIR> statementIR = convert(stmt);
-        if ( statementIR.get() != nullptr ) {
-            statements.emplace_back(std::move(statementIR));
-        }
-    }
-
-    // CREATE FuncDecl
-    // FuncDeclIR func_decl = {
-    //     node.environment->identifier,
-    //     nullptr,                        // TODO: add body
-    //     (int) node.parameters.size()
-    // };
 }
 
 // Rest of the operators are probably not needed?
