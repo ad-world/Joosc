@@ -31,11 +31,20 @@ IRCanonicalizer::LoweredExpression IRCanonicalizer::convert(ExpressionIR &ir) {
     return std::visit(util::overload {
         // [&](BinOpIR &node) {},
         // [&](CallIR &node) {},
-        [&](ConstIR &node) { return IRCanonicalizer::LoweredExpression(std::move(node)); },
+        [&](ConstIR &node) { 
+            // Leave alone
+            return IRCanonicalizer::LoweredExpression(std::move(node)); 
+        },
         // [&](ESeqIR &node) {},
         // [&](MemIR &node) {},
-        [&](NameIR &node) { return IRCanonicalizer::LoweredExpression(std::move(node)); },
-        [&](TempIR &node) { return IRCanonicalizer::LoweredExpression(std::move(node)); },
+        [&](NameIR &node) { 
+            // Leave alone
+            return IRCanonicalizer::LoweredExpression(std::move(node)); 
+        },
+        [&](TempIR &node) { 
+            // Leave alone
+            return IRCanonicalizer::LoweredExpression(std::move(node)); 
+        },
 
         // TEMPORARILY HERE WHILE WIP
         [&](auto &node) { return IRCanonicalizer::LoweredExpression(std::move(node)); }
@@ -45,9 +54,16 @@ IRCanonicalizer::LoweredExpression IRCanonicalizer::convert(ExpressionIR &ir) {
 IRCanonicalizer::LoweredStatement IRCanonicalizer::convert(StatementIR &ir) {
     return std::visit(util::overload {
         // [&](CJumpIR &node) {return {};},
-        // [&](ExpIR &node) {return {};},
+        [&](ExpIR &node) {
+            // Throw away the expression
+            IRCanonicalizer::LoweredExpression lowered_expression = convert(node.getExpr());
+            return IRCanonicalizer::LoweredStatement(std::move(lowered_expression.statements));
+        },
         // [&](JumpIR &node) {return {};},
-        [&](LabelIR &node) { return IRCanonicalizer::LoweredStatement(std::move(node)); },
+        [&](LabelIR &node) {
+            // Leave alone 
+            return IRCanonicalizer::LoweredStatement(std::move(node)); 
+        },
         // [&](MoveIR &node) {return {};},
         // [&](ReturnIR &node) {return {};},
         // [&](SeqIR &node) {return {};},
