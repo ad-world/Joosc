@@ -3,9 +3,12 @@
 #include "IR/ir.h"
 #include <vector>
 #include <memory>
+#include <string>
 
 // Convert IR to Canonical IR form
 class IRCanonicalizer {
+    // Internally used classes to handle the intermediate result of lowering a statement/expression
+    
     struct LoweredStatement {
         std::vector<StatementIR> statements;
 
@@ -30,6 +33,9 @@ class IRCanonicalizer {
             (statements.emplace_back(std::forward<StatementIRs>(args)), ...);
         }
     };
+
+    static inline std::string ARG_TEMPORARY_PREFIX = "CANON_ARG";
+    static inline std::string RETURN_TEMPORARY_NAME = "RET";
 
   public:
     void operator()(IR&);
