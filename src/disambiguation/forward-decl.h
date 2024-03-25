@@ -35,6 +35,7 @@ public:
     void operator()(MethodInvocation &node) override;
     void operator()(LocalVariableDeclaration &node) override;
     void operator()(Block &node) override;
+    void operator()(ForStatement &node) override;
 
     void visit(AstNodeVariant &node) override {
         std::visit(*this, node);

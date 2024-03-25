@@ -134,6 +134,13 @@ void EnvironmentBuilder::operator()(Block &node) {
     current_method->scope_manager.closeScope(node.scope_id);
 }
 
+void EnvironmentBuilder::operator()(ForStatement &node) {
+    node.scope_id = current_method->scope_manager.createNewScope();
+    current_method->scope_manager.openScope(node.scope_id);
+    visit_children(node);
+    current_method->scope_manager.closeScope(node.scope_id);
+}
+
 void EnvironmentBuilder::operator()(FormalParameter &node) {
     std::string parameter_name = node.parameter_name->name;
 

@@ -36,7 +36,7 @@ class TypeChecker: public DefaultSkipVisitor<void> {
 
     // Finds applicable and accessible method_name within type_to_search with matching arguments
     // Throws if no method is applicable and accessible
-    MethodDeclarationObject* determineMethodSignature(LinkedType& type_to_search, std::string& method_name, std::vector<Expression>& arguments);
+    MethodDeclarationObject* determineMethodSignature(LinkedType& type_to_search, std::string& method_name, std::vector<Expression>& arguments, bool is_constructor);
 
   public:
     using DefaultSkipVisitor<void>::operator();
@@ -52,6 +52,8 @@ class TypeChecker: public DefaultSkipVisitor<void> {
     void operator()(FieldDeclaration &node) override;
 
     void operator()(Block &node) override;
+
+    void operator()(ForStatement &node) override;
 
     void operator()(LocalVariableDeclaration &node) override;
 

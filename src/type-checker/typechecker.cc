@@ -114,6 +114,12 @@ void TypeChecker::operator()(Block &node) {
     current_method->scope_manager.closeScope(node.scope_id);
 }
 
+void TypeChecker::operator()(ForStatement &node) {
+    current_method->scope_manager.openScope(node.scope_id);
+    visit_children(node);
+    current_method->scope_manager.closeScope(node.scope_id);
+}
+
 void TypeChecker::operator()(LocalVariableDeclaration &node) {
     current_method->scope_manager.declareVariable(node.variable_declarator->variable_name->name);
     visit_children(node);
@@ -454,12 +460,17 @@ void TypeChecker::operator()(InfixExpression &node) {
 
 // Finds applicable and accessible method_name within type_to_search with matching arguments
 // Throws if no method is applicable and accessible
-MethodDeclarationObject* TypeChecker::determineMethodSignature(LinkedType& type_to_search, std::string& method_name, std::vector<Expression>& arguments) {
+MethodDeclarationObject* TypeChecker::determineMethodSignature(LinkedType& type_to_search, std::string& method_name, std::vector<Expression>& arguments, bool is_constructor) {
     std::list<MethodDeclarationObject*> invoked_method_candidates = type_to_search.getAllMethods(method_name);
 
     // Find all applicable & accessible methods
     std::vector<MethodDeclarationObject*> found_methods;
     for (auto candidate : invoked_method_candidates) {
+
+        if (candidate->is_constructor != is_constructor) {
+            continue;
+        }
+
         auto parameters = candidate->getParameters();
 
         if (parameters.size() != arguments.size()) {
@@ -534,7 +545,7 @@ void TypeChecker::operator()(MethodInvocation &node) {
     }
 
     // JLS 15.12.2: Compile Time Step 2 - Determine Method Signature
-    MethodDeclarationObject* determined_method = determineMethodSignature(type_to_search, method_name, node.arguments);
+    MethodDeclarationObject* determined_method = determineMethodSignature(type_to_search, method_name, node.arguments, false);
 
     // JLS 15.12.3 Compile-Time Step 3 - Is the Chosen Method Appropriate?
     if (type_to_search.not_expression) {
@@ -633,7 +644,7 @@ void TypeChecker::operator()(ClassInstanceCreationExpression &node) {
     }
 
     // Check constructor call is valid
-    MethodDeclarationObject* correct_constructor = determineMethodSignature(class_constructed, constructor_name, node.arguments);
+    MethodDeclarationObject* correct_constructor = determineMethodSignature(class_constructed, constructor_name, node.arguments, true);
 }
 
 void TypeChecker::operator()(FieldAccess &node) {

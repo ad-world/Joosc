@@ -159,6 +159,20 @@ void DisambiguationVisitor::operator()(Block &node) {
     }
 }
 
+void DisambiguationVisitor::operator()(ForStatement &node) {
+    size_t scope_id = node.scope_id;
+
+    if (current_method != nullptr) {
+        current_method->scope_manager.openScope(scope_id);
+    }
+
+    this->visit_children(node);
+
+    if (current_method != nullptr) {
+        current_method->scope_manager.closeScope(scope_id);
+    }
+}
+
 void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_pos) {
     // if qi is a simple name, then we can disambiguate it
     auto &current_ns = compilation_unit->cu_namespace;

@@ -61,6 +61,19 @@ void ForwardDeclarationVisitor::operator()(Block &node) {
     }
 }
 
+void ForwardDeclarationVisitor::operator()(ForStatement &node) {
+    size_t scope_id = node.scope_id;
+
+    if (current_method != nullptr) {
+        current_method->scope_manager.openScope(scope_id);
+    }
+
+    this->visit_children(node);
+
+    if (current_method != nullptr) {
+        current_method->scope_manager.closeScope(scope_id);
+    }
+}
 
 void ForwardDeclarationVisitor::operator()(QualifiedIdentifier &node) {
     auto current_ns = compilation_unit->cu_namespace;
