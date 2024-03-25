@@ -2,6 +2,7 @@ project(joosc)
 cmake_minimum_required(VERSION 3.16)
 
 add_compile_options("-g")
+add_compile_options("-fdiagnostics-color=always")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
