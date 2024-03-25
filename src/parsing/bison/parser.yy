@@ -552,8 +552,10 @@ UnaryExpression:
                 holds_alternative<int64_t>(get<Literal>(*$2))
             ) {
                 get<int64_t>(get<Literal>(*$2)) *= -1;
+                MAKE_EXPRESSION_OBJ($$, Literal, move(get<Literal>(*$2)));
+            } else {
+                MAKE_PREFIX_OBJ($$, PrefixOperator::MINUS, move($2));
             }
-            MAKE_PREFIX_OBJ($$, PrefixOperator::MINUS, move($2));
             SET_LOCATION($$, @$); 
         }
     | UnaryExpressionNotPlusMinus { COPY_OBJ($$, $1); SET_LOCATION($$, @$); }
