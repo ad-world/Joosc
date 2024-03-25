@@ -188,78 +188,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
         }
         case PrefixOperator::NEGATE: {
             #warning This can be handled by embedding booleans into the jump code (L16)
-
-            // Generate unique labels
-            auto true_name = LabelIR::generateName("true");
-            auto false_name = LabelIR::generateName("false");
-
-            // Generate unique result temp
-            auto result_name = TempIR::generateName("result");
-
-            // Cond jump
-            auto cjump_ir = make_unique<StatementIR>(
-                in_place_type<CJumpIR>,
-                std::move(expression),
-                true_name,
-                false_name
-            );
-
-            // True label obj
-            auto true_label = make_unique<StatementIR>(
-                in_place_type<LabelIR>,
-                true_name
-            );
-            // False label obj
-            auto false_label = make_unique<StatementIR>(
-                in_place_type<LabelIR>,
-                false_name
-            );
-
-            // Move ZERO on true
-            auto true_move = make_unique<StatementIR>(
-                in_place_type<MoveIR>,
-                std::move(make_unique<ExpressionIR>(in_place_type<TempIR>, result_name)),
-                ConstIR::makeZero()
-            );
-            // Move ONE on false
-            auto false_move = make_unique<StatementIR>(
-                in_place_type<MoveIR>,
-                std::move(make_unique<ExpressionIR>(in_place_type<TempIR>, result_name)),
-                ConstIR::makeOne()
-            );
-
-            // Create vector for sequence
-            std::vector<unique_ptr<StatementIR>> seq_vec;
-            seq_vec.push_back(std::move(true_move));    // Move(t, 0)
-            seq_vec.push_back(std::move(cjump_ir));     // Cjump(e, true, false)
-            seq_vec.push_back(std::move(false_label));  // false:
-            seq_vec.push_back(std::move(false_move));   // Move(t, 1)
-            seq_vec.push_back(std::move(true_label));   // true:
-
-            // Sequence
-            auto seq_ir = make_unique<StatementIR>(
-                in_place_type<SeqIR>,
-                std::move(seq_vec)
-            );
-
-            // Result expression
-            auto expr_ir = make_unique<ExpressionIR>(
-                in_place_type<TempIR>,
-                result_name
-            );
-
-            // ESEQ
-            auto eseq_ir = make_unique<ExpressionIR>(
-                in_place_type<ESeqIR>,
-                std::move(seq_ir),
-                std::move(expr_ir)
-            );
-
-            assert(!true_name.empty());
-            assert(!false_name.empty());
-            assert(!result_name.empty());
-
-            return eseq_ir;
+            return BinOpIR::makeNegate(std::move(expression));
         }
     }
 
