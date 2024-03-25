@@ -5,7 +5,6 @@
 #include <vector>
 #include <stack>
 #include "IR-interpreter/expr-stack/expr-stack.h"
-#include "IR-interpreter/execution-frame/execution-frame.h"
 
 struct Trap : public std::runtime_error {
     using std::runtime_error::runtime_error;
@@ -26,13 +25,29 @@ class Simulator {
     std::unordered_set<std::string> libraryFunctions;
 
     int findLabel(std::string label);
+
+    class ExecutionFrame {
+        Simulator& parent;
+        std::unordered_map<std::string, int> regs;
+    protected:  
+        int ip;
+        int ret;
+
+    public:
+        ExecutionFrame(int ip, Simulator& parent);
+        int get(std::string tempName);
+        void put(std::string tempName, int value);
+        bool advance();
+        void setIP(int ip);
+        IR* getCurrentNode();    
+    };
 protected:
     std::unordered_map<int, IR*> indexToNode;
     static const int debugLevel = 0;
 
     int getMemoryIndex(int addr);
     int libraryCall(std::string name, std::vector<int> args);
-    void leave(ExecutionFrame& frame);
+    void leave(ExecutionFrame *frame);
 
 public:
     static const int DEFAULT_HEAP_SIZE = 2048;
