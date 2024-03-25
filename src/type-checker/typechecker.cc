@@ -4,6 +4,7 @@
 #include "environment-builder/symboltable.h"
 
 bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, PackageDeclarationObject* default_package);
+bool checkCastability(LinkedType& type, LinkedType& expression, PackageDeclarationObject* default_package);
 
 LinkedType TypeChecker::getLink(Expression &node) {
     return std::visit(util::overload {
@@ -44,6 +45,16 @@ ClassDeclarationObject* TypeChecker::getStringClass(LinkedType &link) {
         return link.getIfNonArrayIsClass();
     }
     return nullptr;
+}
+
+bool isFinal(LinkedType type) {
+    if(type.isReferenceType()) {
+        ClassDeclarationObject* class_decl = type.getIfNonArrayIsClass();
+        if(class_decl != nullptr) {
+            return class_decl->ast_reference->hasModifier(Modifier::FINAL);
+        }
+    }
+    return false;
 }
 
 void TypeChecker::operator()(CompilationUnit &node) {
@@ -320,14 +331,16 @@ bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, Packag
             }
         }
     }
+    else if(linkedType1.is_array && !linkedType2.is_array && !linkedType2.isNull()) {
+        return false;
+    }
     else if (linkedType1.getIfNonArrayIsClass() == default_package->getJavaLangObject()) {
         return true;
     }
-    else {
-        if(linkedType2.isNull() || linkedType2.isSubType(linkedType1, default_package)) {
+    else if(linkedType2.isNull() || linkedType2.isSubType(linkedType1, default_package)) {
             return true;
-        }
     }
+
     return false;
 }
 
@@ -392,12 +405,13 @@ void TypeChecker::operator()(InfixExpression &node) {
             break;
         case InfixOperator::BOOLEAN_EQUAL:
         case InfixOperator::BOOLEAN_NOT_EQUAL:
-            if(linkedType1.isSubType(linkedType2, default_package) || linkedType2.isSubType(linkedType1, default_package) ||
+            if(!linkedType1.isVoid() && !linkedType2.isVoid() &&
+                (checkCastability(linkedType1, linkedType2, default_package) ||
                 (linkedType1.isNull() && (linkedType2.isReferenceType() || linkedType2.is_array))  
                 || (linkedType2.isNull() && (linkedType1.isReferenceType() || linkedType1.is_array))
                 || (linkedType1.isNumeric() && linkedType2.isNumeric()) 
                 || (linkedType1.isBoolean() && linkedType2.isBoolean())
-                || (linkedType1.isNull() && linkedType2.isNull())) {
+                || (linkedType1.isNull() && linkedType2.isNull()))) {
                 node.link = LinkedType(PrimitiveType::BOOLEAN);
             }
             else {
@@ -422,7 +436,7 @@ void TypeChecker::operator()(InfixExpression &node) {
 
 // Finds applicable and accessible method_name within type_to_search with matching arguments
 // Throws if no method is applicable and accessible
-MethodDeclarationObject* TypeChecker::determineMethodSignature(LinkedType& type_to_search, std::string& method_name, std::vector<Expression>& arguments) {
+MethodDeclarationObject* TypeChecker::determineMethodSignature(LinkedType& type_to_search, std::string& method_name, std::vector<Expression>& arguments, bool is_constructor) {
     std::list<MethodDeclarationObject*> invoked_method_candidates = type_to_search.getAllMethods(method_name);
 
     // Find all applicable & accessible methods
@@ -432,6 +446,11 @@ MethodDeclarationObject* TypeChecker::determineMethodSignature(LinkedType& type_
 
         if (parameters.size() != arguments.size()) {
             // Method is not applicable; mismatched number of arguments
+            continue;
+        }
+
+        if(candidate->is_constructor != is_constructor) {
+            // Check if constructor is/isnt requested
             continue;
         }
 
@@ -493,7 +512,7 @@ void TypeChecker::operator()(MethodInvocation &node) {
     }
 
     // JLS 15.12.2: Compile Time Step 2 - Determine Method Signature
-    MethodDeclarationObject* determined_method = determineMethodSignature(type_to_search, method_name, node.arguments);
+    MethodDeclarationObject* determined_method = determineMethodSignature(type_to_search, method_name, node.arguments, false);
 
     // JLS 15.12.3 Compile-Time Step 3 - Is the Chosen Method Appropriate?
     if (type_to_search.not_expression) {
@@ -589,7 +608,7 @@ void TypeChecker::operator()(ClassInstanceCreationExpression &node) {
     }
 
     // Check constructor call is valid
-    MethodDeclarationObject* correct_constructor = determineMethodSignature(class_constructed, constructor_name, node.arguments);
+    MethodDeclarationObject* correct_constructor = determineMethodSignature(class_constructed, constructor_name, node.arguments, true);
 }
 
 void TypeChecker::operator()(FieldAccess &node) {
@@ -634,16 +653,6 @@ void TypeChecker::operator()(ArrayAccess &node) {
     else {
         THROW_TypeCheckerError("Invalid type for ArrayAccess");
     }
-}
-
-bool isFinal(LinkedType type) {
-    if(type.isReferenceType()) {
-        ClassDeclarationObject* class_decl = type.getIfNonArrayIsClass();
-        if(class_decl != nullptr) {
-            return class_decl->ast_reference->hasModifier(Modifier::FINAL);
-        }
-    }
-    return false;
 }
 
 // Checking (type)expression castability
@@ -694,6 +703,60 @@ void TypeChecker::operator()(InstanceOfExpression &node) {
     }
     else {
         THROW_TypeCheckerError("Invalid type for InstanceOfExpression");
+    }
+}
+
+void TypeChecker::operator()(WhileStatement &node) {
+    visit_children(node);
+    LinkedType expression = getLink(node.condition_expression);
+    if(!expression.isBoolean()) {
+        THROW_TypeCheckerError("Condition for while loop is not boolean");
+    }
+}
+
+void TypeChecker::operator()(IfThenStatement &node) {
+    visit_children(node);
+    LinkedType expression = getLink(node.if_clause);
+    if(!expression.isBoolean()) {
+        THROW_TypeCheckerError("If statement expression type is not boolean");
+    }
+}
+
+void TypeChecker::operator()(IfThenElseStatement &node) {
+    visit_children(node);
+    LinkedType expression = getLink(node.if_clause);
+    if(!expression.isBoolean()) {
+        THROW_TypeCheckerError("If statement expression type is not boolean");
+    }
+}
+
+void TypeChecker::operator()(ForStatement &node) {
+    visit_children(node);
+    if(!node.condition_expression) {
+        return;
+    }
+    LinkedType expression = getLink(node.condition_expression);
+    if(!expression.isBoolean()) {
+        THROW_TypeCheckerError("Condition for For loop is not boolean");
+    }
+}
+
+void TypeChecker::operator()(ReturnStatement &node) {
+    visit_children(node);
+
+    if(!node.return_expression && (!current_method->ast_reference->type || current_method->ast_reference->type->link.isVoid())) {
+        return; 
+    }
+    LinkedType returnExpression = getLink(node.return_expression);
+    if(current_method->is_constructor && !returnExpression.isVoid()) {
+        THROW_TypeCheckerError("Constructors cannot return.");
+    }
+    LinkedType returnType = current_method->ast_reference->type->link;
+    if(returnType.isVoid()) {
+        THROW_TypeCheckerError("Void methods cannot return.");
+    }
+    if(!checkAssignability(returnType, returnExpression, default_package)) {
+        THROW_TypeCheckerError("Return expression type does not match method return type.");
     }
 }
 
