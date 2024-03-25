@@ -9,7 +9,7 @@ class ConstIR {
 public:
     ConstIR(int64_t value) : value(value) {}
     int getValue() { return value; }
-    std::string label() { return "CONST"; }
+    std::string label() { return "CONST (" + std::to_string(value) + ")"; }
     bool isConstant() { return true; }
 
     static std::unique_ptr<ExpressionIR> makeZero();
