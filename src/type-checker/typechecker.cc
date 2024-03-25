@@ -158,6 +158,15 @@ void TypeChecker::operator()(FieldDeclaration &node) {
     current_field = node.environment;
     visit_children(node);
     current_field = nullptr;
+
+    LinkedType type = node.type.get()->link;
+    if (node.variable_declarator->expression) {
+        LinkedType expression = getLink(node.variable_declarator->expression);
+        bool assignable = checkAssignability(type, expression, default_package);
+        if(!assignable) {
+            THROW_TypeCheckerError("Invalid type for FieldDeclaration");
+        }
+    }
 }
 
 // TODO : It's probably nicer to refactor checkIfFieldIsAccessible and checkIfMethodIsAccessible
