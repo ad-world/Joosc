@@ -57,3 +57,56 @@ IR* Simulator::ExecutionFrame::getCurrentNode() {
     return parent.indexToNode[ip];
 }
 
+Simulator::Simulator(CompUnitIR compUnit, int heapSizeMax) : compUnit(compUnit), heapSizeMax(heapSizeMax), exprStack(debugLevel) {
+
+}
+
+Simulator::Simulator(Simulator& other) : compUnit(other.compUnit), heapSizeMax(other.heapSizeMax), exprStack(debugLevel) {
+
+}
+
+int Simulator::malloc(int size) {
+    return 1;
+}
+
+int Simulator::calloc(int size) {
+    return 1;
+
+}
+
+int Simulator::read(int addr) {
+    return 1;
+
+}
+
+void Simulator::store(int addr, int value) {
+
+}
+
+int Simulator::findLabel(std::string label) {
+    return 1;
+
+}
+
+int Simulator::call(std::string name, std::vector<int> args) {
+    return 1;
+
+}
+
+int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> args) {
+    return 1;
+
+}
+
+int Simulator::getMemoryIndex(int addr) {
+    return 1;
+
+}
+
+int Simulator::libraryCall(std::string name, std::vector<int> args) {
+
+}
+
+void Simulator::leave(ExecutionFrame *frame) {
+
+}
