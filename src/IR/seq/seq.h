@@ -25,5 +25,6 @@ public:
 
     std::string label() { return "SEQ"; }
 
+    static std::unique_ptr<StatementIR> makeEmpty();
     static std::unique_ptr<StatementIR> makeStmt(std::vector<std::unique_ptr<StatementIR>> stmts, bool replaceParent = false);
 };

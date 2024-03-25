@@ -814,8 +814,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(Block &stmt) {
     }
 
     if ( seq_vec.empty() ) {
-        #warning How should we handle empty Block?
-        return SeqIR::makeStmt({});
+        return SeqIR::makeEmpty();
     } else if ( seq_vec.size() == 1 ) {
         return std::move(seq_vec.back());
     } else {
@@ -824,8 +823,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(Block &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(EmptyStatement &stmt) {
-    #warning How should we handle empty statement?
-    return SeqIR::makeStmt({});
+    return SeqIR::makeEmpty();
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ExpressionStatement &stmt) {
