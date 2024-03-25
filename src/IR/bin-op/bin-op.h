@@ -23,5 +23,6 @@ public:
     std::string label();
     
     bool isConstant();
+    static std::unique_ptr<ExpressionIR> makeNegate(std::unique_ptr<ExpressionIR> negated);
     static std::unique_ptr<ExpressionIR> makeExpr(OpType op, std::unique_ptr<ExpressionIR> left, std::unique_ptr<ExpressionIR> right);
 };

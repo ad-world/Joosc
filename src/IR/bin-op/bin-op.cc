@@ -1,5 +1,6 @@
 #include "bin-op.h"
 #include "IR/ir.h"
+#include "exceptions/exceptions.h"
 #include <memory>
 #include <utility>
 
@@ -7,6 +8,14 @@ bool BinOpIR::isConstant() {
     bool first = std::visit([&](auto &x) { return x.isConstant(); }, *left);
     bool second = std::visit([&](auto &x){ return x.isConstant(); }, *right);
     return first && second;
+}
+
+std::unique_ptr<ExpressionIR> BinOpIR::makeNegate(std::unique_ptr<ExpressionIR> negated) {
+    return BinOpIR::makeExpr(
+        BinOpIR::EQ,
+        std::move(negated),
+        ConstIR::makeZero()
+    );
 }
 
 std::unique_ptr<ExpressionIR> BinOpIR::makeExpr(OpType op, std::unique_ptr<ExpressionIR> left, std::unique_ptr<ExpressionIR> right) {
@@ -38,4 +47,5 @@ std::string BinOpIR::label() {
         case LEQ: return "LEQ";
         case GEQ: return "GEQ";
     }
+    THROW_ASTtoIRError("Unhandled BinOp");
 }

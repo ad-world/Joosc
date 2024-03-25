@@ -38,59 +38,140 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
     return eseq;
 }
 
+std::unique_ptr<ExpressionIR> handleShortCircuit(BinOpIR::OpType op, std::unique_ptr<ExpressionIR> e1, std::unique_ptr<ExpressionIR> e2) {
+    switch (op) {
+        case BinOpIR::AND: {
+            auto temp_name = TempIR::generateName("t_and");
+            vector<unique_ptr<StatementIR>> seq_vec;
+            // Move(t_and, e1)
+            seq_vec.push_back(
+                MoveIR::makeStmt(
+                    TempIR::makeExpr(temp_name),
+                    std::move(e1)
+                )
+            );
+            // CJump(e1 == 0, false, true)
+            auto true_name = LabelIR::generateName("sc_true");
+            auto false_name = LabelIR::generateName("sc_false");
+            seq_vec.push_back(
+                CJumpIR::makeStmt(
+                    BinOpIR::makeNegate(TempIR::makeExpr(temp_name)),
+                    false_name,
+                    true_name
+                )
+            );
+            // sc_true:
+            seq_vec.push_back(
+                LabelIR::makeStmt(true_name)
+            );
+            // Evaluate e2
+            // Move(t_and, e2)
+            seq_vec.push_back(
+                MoveIR::makeStmt(
+                    TempIR::makeExpr(temp_name),
+                    std::move(e2)
+                )
+            );
+            // sc_false:
+            seq_vec.push_back(
+                LabelIR::makeStmt(false_name)
+            );
+            // ESEQ({...}, t_and)
+            return ESeqIR::makeExpr(
+                SeqIR::makeStmt(std::move(seq_vec)),
+                TempIR::makeExpr(temp_name)
+            );
+        }
+        case BinOpIR::OR: {
+            auto temp_name = TempIR::generateName("t_or");
+            vector<unique_ptr<StatementIR>> seq_vec;
+            // Move(t_or, e1)
+            seq_vec.push_back(
+                MoveIR::makeStmt(
+                    TempIR::makeExpr(temp_name),
+                    std::move(e1)
+                )
+            );
+            // CJump(t_or, false, true)
+            auto true_name = LabelIR::generateName("sc_true");
+            auto false_name = LabelIR::generateName("sc_false");
+            seq_vec.push_back(
+                CJumpIR::makeStmt(
+                    TempIR::makeExpr(temp_name),
+                    true_name,
+                    false_name
+                )
+            );
+            // sc_false:
+            seq_vec.push_back(
+                LabelIR::makeStmt(false_name)
+            );
+            // Evaluate e2
+            // Move(t_or, e2)
+            seq_vec.push_back(
+                MoveIR::makeStmt(
+                    TempIR::makeExpr(temp_name),
+                    std::move(e2)
+                )
+            );
+            // sc_true:
+            seq_vec.push_back(
+                LabelIR::makeStmt(true_name)
+            );
+            // ESEQ({...}, t_and)
+            return ESeqIR::makeExpr(
+                SeqIR::makeStmt(std::move(seq_vec)),
+                TempIR::makeExpr(temp_name)
+            );
+        }
+        default: break;
+    }
+    THROW_ASTtoIRError("Invalid operator for short circuiting");
+}
+
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(InfixExpression &expr) {
     auto left = convert(*expr.expression1);
     auto right = convert(*expr.expression2);
     BinOpIR::OpType bin_op;
 
+    auto make_expr = [&](BinOpIR::OpType op) {
+        return BinOpIR::makeExpr(op, std::move(left), std::move(right));
+    };
+
     switch ( expr.op ) {
         case InfixOperator::BOOLEAN_OR:
-        #warning Should handle short-circuiting
+            return handleShortCircuit(BinOpIR::OR, std::move(left), std::move(right));
         case InfixOperator::EAGER_OR:
-            bin_op = BinOpIR::OR;
-            break;
+            return make_expr(BinOpIR::OR);
         case InfixOperator::BOOLEAN_AND:
-        #warning Should handle short-circuiting
+            return handleShortCircuit(BinOpIR::AND, std::move(left), std::move(right));
         case InfixOperator::EAGER_AND:
-            bin_op = BinOpIR::AND;
-            break;
+            return make_expr(BinOpIR::AND);
         case InfixOperator::BOOLEAN_EQUAL:
-            bin_op = BinOpIR::EQ;
-            break;
+            return make_expr(BinOpIR::EQ);
         case InfixOperator::BOOLEAN_NOT_EQUAL:
-            bin_op = BinOpIR::NEQ;
-            break;
+            return make_expr(BinOpIR::NEQ);
         case InfixOperator::PLUS:
-            bin_op = BinOpIR::ADD;
-            break;
+            return make_expr(BinOpIR::ADD);
         case InfixOperator::MINUS:
-            bin_op = BinOpIR::SUB;
-            break;
+            return make_expr(BinOpIR::SUB);
         case InfixOperator::DIVIDE:
-            bin_op = BinOpIR::DIV;
-            break;
+            return make_expr(BinOpIR::DIV);
         case InfixOperator::MULTIPLY:
-            bin_op = BinOpIR::MUL;
-            break;
+            return make_expr(BinOpIR::MUL);
         case InfixOperator::MODULO:
-            bin_op = BinOpIR::MOD;
-            break;
+            return make_expr(BinOpIR::MOD);
         case InfixOperator::LESS_THAN:
-            bin_op = BinOpIR::LT;
-            break;
+            return make_expr(BinOpIR::LT);
         case InfixOperator::GREATER_THAN:
-            bin_op = BinOpIR::GT;
-            break;
+            return make_expr(BinOpIR::GT);
         case InfixOperator::LESS_THAN_EQUAL:
-            bin_op = BinOpIR::LEQ;
-            break;
+            return make_expr(BinOpIR::LEQ);
         case InfixOperator::GREATER_THAN_EQUAL:
-            bin_op = BinOpIR::GEQ;
-            break;
+            return make_expr(BinOpIR::GEQ);
     }
 
-    auto expression_ir = std::make_unique<ExpressionIR>(std::in_place_type<BinOpIR>, bin_op, std::move(left), std::move(right));
-    return expression_ir;
+    THROW_ASTtoIRError("Unhanlded InfixOperator");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) {
@@ -181,6 +262,8 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
             return eseq_ir;
         }
     }
+
+    THROW_ASTtoIRError("Unhanled PrefixOperator");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(CastExpression &expr) {
@@ -321,11 +404,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
     string non_null_name = LabelIR::generateName("nonnull");
     auto non_null_check = CJumpIR::makeStmt(
         // NEQ(t_a, 0)
-        BinOpIR::makeExpr(
-            BinOpIR::NEQ,
-            TempIR::makeExpr(array_name),
-            ConstIR::makeZero()
-        ),
+        TempIR::makeExpr(array_name),
         non_null_name,
         error_name
     );
@@ -602,10 +681,8 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenStatement &stmt) {
     // CJump(expr == 0, exit, true)
     seq_vec.push_back(
         CJumpIR::makeStmt(
-            BinOpIR::makeExpr(
-                BinOpIR::EQ,
-                convert(*stmt.if_clause),
-                ConstIR::makeZero()
+            BinOpIR::makeNegate(
+                convert(*stmt.if_clause)
             ),
             if_exit,
             if_true
@@ -643,10 +720,8 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenElseStatement &stmt
     // CJump(expr == 0, false, true)
     seq_vec.push_back(
         CJumpIR::makeStmt(
-            BinOpIR::makeExpr(
-                BinOpIR::EQ,
-                convert(*stmt.if_clause),
-                ConstIR::makeZero()
+            BinOpIR::makeNegate(
+                convert(*stmt.if_clause)
             ),
             if_false,
             if_true
@@ -705,10 +780,8 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(WhileStatement &stmt) {
     // CJump(expr == 0, exit, true)
     seq_vec.push_back(
         CJumpIR::makeStmt(
-            BinOpIR::makeExpr(
-                BinOpIR::EQ,
-                convert(*stmt.condition_expression),
-                ConstIR::makeZero()
+            BinOpIR::makeNegate(
+                convert(*stmt.condition_expression)
             ),
             while_exit,
             while_true
@@ -764,10 +837,8 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
     // CJump(cond == 0, exit, true)
     seq_vec.push_back(
         CJumpIR::makeStmt(
-            BinOpIR::makeExpr(
-                BinOpIR::EQ,
-                convert(*stmt.condition_expression),
-                ConstIR::makeZero()
+            BinOpIR::makeNegate(
+                convert(*stmt.condition_expression)
             ),
             for_exit,
             for_true
