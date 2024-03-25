@@ -19,7 +19,8 @@ using StatementIR = std::variant<
     struct LabelIR,
     struct MoveIR,
     struct ReturnIR,
-    struct SeqIR
+    struct SeqIR,
+    struct CallIR
 >;
 
 using IR = std::variant<ExpressionIR, StatementIR, struct FuncDeclIR, struct CompUnitIR>;
