@@ -21,10 +21,12 @@ IRCanonicalizer::LoweredStatement IRCanonicalizer::operator()(StatementIR &ir) {
 
 void IRCanonicalizer::convert(IR &ir) {
     std::visit(util::overload {
-        [&](CompUnitIR &node) {},
-        [&](FuncDeclIR &node) {},
-        [&](ExpressionIR &node) { convert(node); },
-        [&](StatementIR &node) { convert(node); }
+        [&](CompUnitIR &node) {
+            for (auto& func : node.getFunctionList()) {
+                func->getBody() = SeqIR(convert(func->getBody()).statements);
+            }
+        },
+        [&](auto &node) { THROW_CompilerError("This should not happen"); }
     }, ir);
 }
 
@@ -118,7 +120,14 @@ IRCanonicalizer::LoweredExpression IRCanonicalizer::convert(ExpressionIR &ir) {
 
 IRCanonicalizer::LoweredStatement IRCanonicalizer::convert(StatementIR &ir) {
     return std::visit(util::overload {
-        // [&](CJumpIR &node) {return {};},
+        [&](CJumpIR &node) {
+            LoweredExpression lowered_target = convert(node.getCondition());
+
+            return LoweredStatement(concatenate(
+                lowered_target.statements,
+                CJumpIR(std::move(lowered_target.expression), node.trueLabel(), node.falseLabel())
+            ));
+        },
 
         [&](ExpIR &node) {
             // Throw away the pure expression, keep the extracted side effect statements
@@ -181,9 +190,6 @@ IRCanonicalizer::LoweredStatement IRCanonicalizer::convert(StatementIR &ir) {
 
         [&](CallIR &node) -> LoweredStatement {
              THROW_CompilerError("Call IR should not be considered a statement before conversion"); 
-        },
-
-        // TEMPORARILY HERE WHILE WIP
-        [&](auto &node) { return LoweredStatement(std::move(node)); }
+        }
     }, ir);
 }

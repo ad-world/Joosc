@@ -27,4 +27,5 @@ public:
     std::string label() { return "COMPUNIT (" + class_name + ")"; }
 
     void setClassName(std::string name) { class_name = name; }
+    std::vector<std::unique_ptr<FuncDeclIR>>& getFunctionList() { return child_functions; }
 };

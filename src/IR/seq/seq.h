@@ -20,6 +20,8 @@ public:
         this->stmts = std::move(stmts);
         this->replaceParent = replaceParent;
     }
+    
+    explicit SeqIR(std::vector<StatementIR> stmts);
 
     std::vector<std::unique_ptr<StatementIR>> &getStmts() { return stmts; }
 
