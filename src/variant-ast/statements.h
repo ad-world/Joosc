@@ -80,6 +80,8 @@ struct ForStatement: public AstNodeCommon {
     std::unique_ptr<Statement> update_statement;
     std::unique_ptr<Statement> body_statement;
 
+    size_t scope_id;
+
     ForStatement(
         std::unique_ptr<Statement>& init_statement,
         std::unique_ptr<Expression>& condition_expression,
