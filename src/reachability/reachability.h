@@ -1,3 +1,4 @@
+#pragma once
 #include "cfg-builder/cfg-visitor.h"
 #include <unordered_set>
 

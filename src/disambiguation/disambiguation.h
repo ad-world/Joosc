@@ -52,6 +52,7 @@ public:
     void operator()(ParenthesizedExpression &node) override;
     void operator()(QualifiedIdentifier &node) override;
     void operator()(Block &node) override;
+    void operator()(ForStatement &node) override;
 
     // Rest of unclassified names
     void operator()(VariableDeclarator &node) override;
