@@ -46,11 +46,11 @@ def valid_invalid_prog_test():
     Runs joosc on all programs in valid and invalid directories.
     Tests that joosc correctly validates valid and invalidates invalid programs.
     """
+    pre_a5_args = ["-a"]
+
     integration_dir = os.path.dirname(__file__)
     programs_dir = os.path.join(integration_dir, "../../programs")
     stdlib_dir = os.path.join(integration_dir, "../../stdlib")
-    valid_programs = os.path.join(programs_dir, "valid")
-    invalid_programs = os.path.join(programs_dir, "invalid")
 
     stdlib_files = get_all_files(stdlib_dir)
 
@@ -101,7 +101,7 @@ def valid_invalid_prog_test():
                                 files = get_all_files(program_path)
 
                             with open(integration_log_file, "w") as outfile:
-                                result = subprocess.run([joosc_executable, *files, *stdlib_files], stderr=outfile)
+                                result = subprocess.run([joosc_executable, *pre_a5_args, *files, *stdlib_files], stderr=outfile)
 
                             if result.returncode == expected_code:
                                 if print_pass_cases: # Test passed, display output if -f is not set

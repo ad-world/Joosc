@@ -37,27 +37,39 @@ enum return_codes {
     COMPILER_DEVELOPMENT_ERROR = 1
 };
 
+enum class CommandLineArg {
+    OUTPUT_RETURN = 'r',
+    TRACE_PARSING = 'p',
+    TRACE_SCANNING = 's',
+    STATIC_ANALYSIS_ONLY = 'a', // Don't emit IR/assembly; used for pre-A5 tests
+};
+
 struct cmd_error {};
 
 int main(int argc, char *argv[]) {
     vector<string> infiles;
-    bool trace_parsing = false,
-        trace_scanning = false,
-        output_rc = false;
+
+    bool trace_parsing = false;
+    bool trace_scanning = false;
+    bool output_rc = false;
+    bool emit_code = true;
 
     try {
         // Handle optional arguments (eg. enable parse debugging)
-        int opt;
-        while ((opt = getopt(argc, argv, "psr")) != -1) {
+        char opt;
+        while ((opt = getopt(argc, argv, "psra")) != -1) {
             switch (opt) {
-                case 'r':
+                case static_cast<char>(CommandLineArg::OUTPUT_RETURN):
                     output_rc = true;
                     break;
-                case 'p':
+                case static_cast<char>(CommandLineArg::TRACE_PARSING):
                     trace_parsing = true;
                     break;
-                case 's':
+                case static_cast<char>(CommandLineArg::TRACE_SCANNING):
                     trace_scanning = true;
+                    break;
+                case static_cast<char>(CommandLineArg::STATIC_ANALYSIS_ONLY):
+                    emit_code = false;
                     break;
                 default:
                     throw cmd_error();
@@ -82,7 +94,7 @@ int main(int argc, char *argv[]) {
         cerr << "Usage:\n\t"
             << argv[0]
             << " <filename>"
-            << " [ -p -s ]"
+            << " [ -p -s -r -a ]"
             << endl;
         return EXIT_FAILURE;
     } catch ( ... ) {
@@ -194,9 +206,11 @@ int main(int argc, char *argv[]) {
             LocalVariableVisitor().visit(ast);
         }
 
-        // Convert to IR
-        auto &main_ast = asts.front();
-        IR main_ir = IRBuilderVisitor().visit(main_ast);
+        if (emit_code) {
+            // Convert to IR
+            auto &main_ast = asts.front();
+            IR main_ir = IRBuilderVisitor().visit(main_ast);
+        }
 
         // Interpret the IR
         Simulator sim(&main_ir);
