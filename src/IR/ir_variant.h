@@ -24,3 +24,4 @@ using StatementIR = std::variant<
 
 using IR = std::variant<ExpressionIR, StatementIR, struct FuncDeclIR, struct CompUnitIR>;
 
+using IR_PTR = std::variant<BinOpIR*, CallIR*, ConstIR*, ESeqIR*, MemIR*, NameIR*, TempIR*, CJumpIR*, ExpIR*, JumpIR*, LabelIR*, MoveIR*, ReturnIR*, SeqIR*, CompUnitIR*, FuncDeclIR*>;

@@ -9,7 +9,6 @@ std::string ABSTRACT_ARG_PREFIX = "_ARG";
 std::string ABSTRACT_RET_PREFIX = "_RET";
 int WORD_SIZE = 4;
 
-struct ExpIR; // TODO: remove after merging with IR visitor
 
 Simulator::ExecutionFrame::ExecutionFrame(int ip, Simulator& parent) : ip(ip), parent(parent) {
     ret = rand();
@@ -34,7 +33,6 @@ bool Simulator::ExecutionFrame::advance() {
     }
 
     int backupIp = ip;
-    // TODO: uncomment the leave
     parent.leave(this); 
 
     if (ip == -1) return false;
@@ -56,7 +54,7 @@ void Simulator::ExecutionFrame::setIP(int ip) {
     }
 }
 
-IR* Simulator::ExecutionFrame::getCurrentNode() {
+IR_PTR Simulator::ExecutionFrame::getCurrentNode() {
     if (parent.indexToNode.find(ip) == parent.indexToNode.end()) {
         throw new Trap("No next instruction. Forgot RETURN?");
     }
@@ -64,18 +62,24 @@ IR* Simulator::ExecutionFrame::getCurrentNode() {
     return parent.indexToNode[ip];
 }
 
-Simulator::Simulator(CompUnitIR *compUnit, int heapSizeMax) : compUnit(compUnit), heapSizeMax(heapSizeMax), exprStack(debugLevel) {
+Simulator::Simulator(IR *compUnit, int heapSizeMax) : heapSizeMax(heapSizeMax), exprStack(debugLevel) {
+    if (std::holds_alternative<CompUnitIR>(*compUnit)) {
+        this->compUnit = &std::get<CompUnitIR>(*compUnit);
+    } else {
+        throw InternalCompilerError("Expected CompUnitIR when creating Simulator");
+    }
+
     libraryFunctions.insert("__malloc");
     libraryFunctions.insert("__debexit");
     libraryFunctions.insert("__exception");
     libraryFunctions.insert("NATIVEjava.io.OutputStream.nativeWrite");
 
-    // TODO: finish writing this constructor once the IR visitor is merged in
-}
+    MapsBuilder mapBuilder;
+    mapBuilder.visit(*compUnit);
+    indexToNode = mapBuilder.getIndexToNode();
+    nameToIndex = mapBuilder.getNameToIndex();
+};
 
-Simulator::Simulator(Simulator& other) : compUnit(other.compUnit), heapSizeMax(other.heapSizeMax), exprStack(debugLevel) {
-    Simulator(other.compUnit, DEFAULT_HEAP_SIZE);
-}
 
 int Simulator::malloc(int size) {
     if (size < 0) throw new Trap("Invalid malloc size");
@@ -180,7 +184,7 @@ int Simulator::libraryCall(std::string name, std::vector<int> args) {
 }
 
 void Simulator::leave(ExecutionFrame *frame) {
-    IR* node = frame->getCurrentNode();
+    IR_PTR node = frame->getCurrentNode();
 
     std::visit(util::overload{
         [&](ConstIR &cons) {
@@ -273,9 +277,9 @@ void Simulator::leave(ExecutionFrame *frame) {
             if (target.type == StackItem::Kind::NAME) {
                 targetName = target.name;
             } else if (Simulator::indexToNode.find(target.addr) != Simulator::indexToNode.end()) {
-                auto node = Simulator::indexToNode[target.addr];
-                if (std::holds_alternative<FuncDeclIR>(*node)) {
-                    targetName = std::get<FuncDeclIR>(*node).getName();
+                auto ir_ptr = Simulator::indexToNode[target.addr];
+                if (std::holds_alternative<FuncDeclIR*>(ir_ptr)) {
+                    targetName = std::get<FuncDeclIR*>(ir_ptr)->getName();
                 } else {
                     throw InternalCompilerError("Call to a non-function instruction");
                 }
@@ -341,5 +345,5 @@ void Simulator::leave(ExecutionFrame *frame) {
             frame->setIP(-1);
         },
         [&](auto &node) {}
-    }, *node);
+    }, node);
 }

@@ -5,18 +5,13 @@
 #include <vector>
 #include <stack>
 #include "IR-interpreter/expr-stack/expr-stack.h"
+#include "IR-interpreter/util/errors.h"
+#include "IR-interpreter/maps-builder/maps-builder.h"
 
 extern std::string ABSTRACT_ARG_PREFIX;
 extern std::string ABSTRACT_RET_PREFIX;
 extern int WORD_SIZE;
 
-struct Trap : public std::runtime_error {
-    using std::runtime_error::runtime_error;
-};
-
-struct InternalCompilerError : public std::runtime_error {
-    using std::runtime_error::runtime_error;
-};
 
 /**
  * A simple IR interpreter
@@ -44,6 +39,12 @@ class Simulator {
      */
     int findLabel(std::string label);
 
+    /**
+     * Get the IR node at the given address
+     * @param ptr the I
+     * @return the IR node at the given address
+     */
+    IR* getIRFromPtr(IR_PTR ptr);
     /**
      * Holds the instruction pointer and temporary registers
      * within an execution frame.
@@ -88,11 +89,11 @@ class Simulator {
          * @param ip the new instruction pointer
         */
         void setIP(int ip);
-        IR* getCurrentNode();    
+        IR_PTR getCurrentNode();    
     };
 protected:
     /** map from address to instruction */
-    std::unordered_map<int, IR*> indexToNode;
+    std::unordered_map<int, IR_PTR> indexToNode;
     static const int debugLevel = 0;
 
     int getMemoryIndex(int addr);
@@ -114,13 +115,13 @@ public:
      * @param compUnit the compilation unit to be interpreted
      * @param heapSize the heap size
      */
-    Simulator(CompUnitIR *compUnit, int heapSizeMax = DEFAULT_HEAP_SIZE);
+    Simulator(IR *compUnit, int heapSizeMax = DEFAULT_HEAP_SIZE);
 
      /**
      * Construct an IR interpreter with a default heap size
      * @param compUnit the compilation unit to be interpreted
      */
-    Simulator(Simulator& other);
+    // Simulator(Simulator& other); not needed for now?
 
     /**
      * Allocate a specified amount of bytes on the heap
