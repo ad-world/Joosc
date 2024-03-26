@@ -18,4 +18,8 @@ public:
     int getNumArgs() { return args.size(); };
     std::string label() { return "CALL"; }
     bool isConstant() { return false; };
+
+    static std::unique_ptr<ExpressionIR> makeMalloc(std::unique_ptr<ExpressionIR> arg);
+    static std::unique_ptr<ExpressionIR> makeException();
+    static std::unique_ptr<ExpressionIR> makeExpr(std::unique_ptr<ExpressionIR> target, std::vector<std::unique_ptr<ExpressionIR> > args);
 };

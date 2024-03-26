@@ -1,5 +1,7 @@
 #pragma once
 
+#include "IR/ir_variant.h"
+#include <memory>
 #include <string>
 
 class NameIR {
@@ -10,4 +12,9 @@ public:
     std::string &getName() { return name; }
     std::string label() { return "NAME(" + name + ")"; }
     bool isConstant() { return false; }
+
+    static std::unique_ptr<ExpressionIR> makeMalloc();
+    static std::unique_ptr<ExpressionIR> makeException();
+
+    static std::unique_ptr<ExpressionIR> makeExpr(std::string name);
 };

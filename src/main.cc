@@ -1,18 +1,13 @@
 #include <unistd.h>
-#include <cstring>
 #include <iostream>
 #include <exception>
 #include "disambiguation/disambiguation.h"
 #include "exceptions/exceptions.h"
 #include "exceptions/exceptions.h"
-#include "parsing/bison/location.hh"
 #include "parsing/bison/driver.h"
 #include "parsing/bison/parser.hh"
 #include "weeder/astweeder.h"
 #include "environment-builder/environmentbuilder.h"
-#include "environment-builder/symboltable.h"
-#include "exceptions/compilerdevelopmenterror.h"
-#include "exceptions/semanticerror.h"
 #include "type-linking/typelinker.h"
 #include "hierarchy-checking/hierarchy-checking.h"
 #include "exceptions/exceptions.h"
@@ -25,9 +20,11 @@
 #include "utillities/util.h"
 #include "local-variables/local-variable-visitor.h"
 #include "IR/ir.h"
+#include "IR-builder/ast-to-ir.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
+#include "graph/ir_graph.h"
 #endif
 
 using namespace std;
@@ -191,9 +188,19 @@ int main(int argc, char *argv[]) {
             StatementVisitor().visit(ast);
         }
 
+        // Local variable checking
         for (auto &ast: asts) {
             LocalVariableVisitor().visit(ast);
         }
+
+        // Convert to IR
+        auto &main_ast = asts.front();
+        IR main_ir = IRBuilderVisitor().visit(main_ast);
+
+#ifdef GRAPHVIZ
+        // Graph IR
+        IRGraphVisitor().visit(main_ir);
+#endif
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";
         return COMPILER_DEVELOPMENT_ERROR;

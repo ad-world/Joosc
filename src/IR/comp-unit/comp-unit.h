@@ -12,6 +12,8 @@ class CompUnitIR {
     std::unordered_map<std::string, FuncDeclIR*> functions;     // These point to functions inside of child_functions
     std::vector<std::unique_ptr<FuncDeclIR>> child_functions;
 
+    std::string class_name; // Used for graphing
+
 public:
     // PROBABLY NOT NEEDED (causes errors)
     // CompUnitIR(std::string name, std::unordered_map<std::string, std::unique_ptr<FuncDeclIR>> functions) : name(name), functions(functions) {}
@@ -22,5 +24,7 @@ public:
     }
     std::string getName() { return name; }
     std::unordered_map<std::string, FuncDeclIR*> getFunctions() { return functions; }
-    std::string label() { return "COMPUNIT"; }
+    std::string label() { return "COMPUNIT (" + class_name + ")"; }
+
+    void setClassName(std::string name) { class_name = name; }
 };
