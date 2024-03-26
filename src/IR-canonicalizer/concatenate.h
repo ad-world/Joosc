@@ -8,7 +8,7 @@ std::vector<StatementIR> concatenate(std::vector<StatementIR>& first) {
 }
 
 template<typename ItemType>
-std::vector<StatementIR> concatenate(ItemType& first) {
+std::vector<StatementIR> concatenate(ItemType&& first) {
     auto vec = std::vector<StatementIR>();
     vec.emplace_back(std::move(first));
 
@@ -16,7 +16,7 @@ std::vector<StatementIR> concatenate(ItemType& first) {
 }
 
 template<typename ItemType, typename... Ts>
-std::vector<StatementIR> concatenate(ItemType& first, Ts&&... args) {
+std::vector<StatementIR> concatenate(ItemType&& first, Ts&&... args) {
     auto vec = std::vector<StatementIR>();
     vec.emplace_back(std::move(first));
 

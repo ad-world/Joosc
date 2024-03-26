@@ -169,21 +169,26 @@ IRCanonicalizer::LoweredStatement IRCanonicalizer::convert(StatementIR &ir) {
         },
 
         [&](ReturnIR &node) {
+            // Empty return left alone
+            if (!node.getRet()) {
+                return LoweredStatement(concatenate(ReturnIR(nullptr)));
+            }
+
             // Put statements in front of return expression after lowering
-            LoweredExpression lowered_expression = convert(node.getRet());
-            auto result = LoweredStatement(std::move(lowered_expression.statements));
-            result.statements.emplace_back(ReturnIR(std::move(lowered_expression.expression)));
-            return result;
+            LoweredExpression lowered_expression = convert(*node.getRet());
+            return LoweredStatement(
+                concatenate(
+                    lowered_expression.statements,
+                    ReturnIR(std::move(lowered_expression.expression))
+                )
+            );
         },
 
         [&](SeqIR &node) {
             // Lower all contained statements and concatenate them
             LoweredStatement result;
             for (auto& stmt : node.getStmts()) {
-                LoweredStatement lowered_statement = convert(*stmt);
-                for (auto& lowered_stmt : lowered_statement.statements) {
-                    result.statements.emplace_back(std::move(lowered_stmt));
-                }
+                result.statements = concatenate(result.statements, convert(*stmt).statements);
             }
             return result;
         },
