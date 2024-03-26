@@ -5,14 +5,14 @@ def run_test(test_path):
     # test path may be directory, or may be file
     integration_dir = os.path.dirname(__file__)
     stdlib_dir = os.path.join(integration_dir, "../../stdlib")
-    stdlib_files = get_all_files(stdlib_dir)
+    stdlib_files = get_all_files(stdlib_dir, ".java")
 
     joosc_executable = resolve_path(integration_dir, '../../../joosc')
 
     if not os.path.exists(test_path):
         sys.exit("Test path doesn't exist")
     
-    test_files = get_all_files(test_path) if os.path.isdir(test_path) else [test_path]
+    test_files = get_all_files(test_path, ".java") if os.path.isdir(test_path) else [test_path]
     
     result = subprocess.run([joosc_executable, *test_files, *stdlib_files])
     

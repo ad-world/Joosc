@@ -12,7 +12,7 @@ def valid_invalid_prog_test():
     programs_dir = os.path.join(integration_dir, "../../programs")
 
     stdlib_dir = os.path.join(integration_dir, "../../stdlib")
-    stdlib_files = get_all_files(stdlib_dir)
+    stdlib_files = get_all_files(stdlib_dir, ".java")
 
     joosc_executable = resolve_path(programs_dir, "../../joosc")
 
@@ -50,7 +50,7 @@ def valid_invalid_prog_test():
                             # if program is a directory, get all files from the direcory and add to a list
                             files = [program_path]
                             if os.path.isdir(program_path):
-                                files = get_all_files(program_path)
+                                files = get_all_files(program_path, ".java")
 
                             with open(integration_log_file, "w") as outfile:
                                 result = subprocess.run([joosc_executable, *pre_a5_args, *files, *stdlib_files], stderr=outfile)

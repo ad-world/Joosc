@@ -26,14 +26,14 @@ def load_env_file(filename=".env"):
 def resolve_path(path1, path2):
     return str(Path(os.path.join(path1, path2)).resolve())
 
-def get_all_files(directory):
+def get_all_files(directory, ext):
     """
-    Get all .java files from a directory
+    Get all files from a directory with extension ext
     """
     file_list = []
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.endswith('.java'):
+            if file.endswith(ext):
                 file_list.append(os.path.join(root, file))
     return file_list
 
