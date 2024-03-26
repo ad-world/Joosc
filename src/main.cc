@@ -21,6 +21,7 @@
 #include "local-variables/local-variable-visitor.h"
 #include "IR/ir.h"
 #include "IR-builder/ast-to-ir.h"
+#include "IR-interpreter/simulation/simulation.h"
 
 #ifdef GRAPHVIZ
 #include "graph/graph.h"
@@ -196,6 +197,10 @@ int main(int argc, char *argv[]) {
         // Convert to IR
         auto &main_ast = asts.front();
         IR main_ir = IRBuilderVisitor().visit(main_ast);
+
+        // Interpret the IR
+        Simulator sim(&main_ir);
+
 
 #ifdef GRAPHVIZ
         // Graph IR
