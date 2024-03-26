@@ -12,6 +12,7 @@ class colors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+    HEADER_BOLD_UNDERLINE = HEADER + BOLD + UNDERLINE
 
 # Function to load environment variables from .env file
 def load_env_file(filename=".env"):
