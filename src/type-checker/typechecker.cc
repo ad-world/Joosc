@@ -3,6 +3,9 @@
 #include "exceptions/exceptions.h"
 #include "environment-builder/symboltable.h"
 
+bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, PackageDeclarationObject* default_package);
+bool checkCastability(LinkedType& type, LinkedType& expression, PackageDeclarationObject* default_package);
+
 LinkedType TypeChecker::getLink(Expression &node) {
     return std::visit(util::overload {
         // Literal handled seperately as it is not a class
@@ -65,6 +68,16 @@ bool TypeChecker::isThisAccessAllowed() {
     THROW_CompilerError("All code is supposed to be within a field or method declaration");
 }
 
+bool isFinal(LinkedType type) {
+    if(type.isReferenceType()) {
+        ClassDeclarationObject* class_decl = type.getIfNonArrayIsClass();
+        if(class_decl != nullptr) {
+            return class_decl->ast_reference->hasModifier(Modifier::FINAL);
+        }
+    }
+    return false;
+}
+
 void TypeChecker::operator()(CompilationUnit &node) {
     this->compilation_unit_namespace = node.cu_namespace;
     // Skip package declaration and imports
@@ -118,17 +131,42 @@ void TypeChecker::operator()(ForStatement &node) {
     current_method->scope_manager.openScope(node.scope_id);
     visit_children(node);
     current_method->scope_manager.closeScope(node.scope_id);
+
+    if(!node.condition_expression) {
+        return;
+    }
+    LinkedType expression = getLink(node.condition_expression);
+    if(!expression.isBoolean()) {
+        THROW_TypeCheckerError("Condition for For loop is not boolean");
+    }
 }
 
 void TypeChecker::operator()(LocalVariableDeclaration &node) {
     current_method->scope_manager.declareVariable(node.variable_declarator->variable_name->name);
     visit_children(node);
+    LinkedType type = node.type.get()->link;
+    if (node.variable_declarator->expression) {
+        LinkedType expression = getLink(node.variable_declarator->expression);
+        bool assignable = checkAssignability(type, expression, default_package);
+        if(!assignable) {
+            THROW_TypeCheckerError("Invalid type for LocalVariableDeclaration");
+        }
+    }
 }
 
 void TypeChecker::operator()(FieldDeclaration &node) {
     current_field = node.environment;
     visit_children(node);
     current_field = nullptr;
+
+    LinkedType type = node.type.get()->link;
+    if (node.variable_declarator->expression) {
+        LinkedType expression = getLink(node.variable_declarator->expression);
+        bool assignable = checkAssignability(type, expression, default_package);
+        if(!assignable) {
+            THROW_TypeCheckerError("Invalid type for FieldDeclaration");
+        }
+    }
 }
 
 // TODO : It's probably nicer to refactor checkIfFieldIsAccessible and checkIfMethodIsAccessible
@@ -354,14 +392,16 @@ bool checkAssignability(LinkedType& linkedType1, LinkedType& linkedType2, Packag
             }
         }
     }
+    else if(linkedType1.is_array && !linkedType2.is_array && !linkedType2.isNull()) {
+        return false;
+    }
     else if (linkedType1.getIfNonArrayIsClass() == default_package->getJavaLangObject()) {
         return true;
     }
-    else {
-        if(linkedType2.isNull() || linkedType2.isSubType(linkedType1, default_package)) {
-            return true;
-        }
+    else if(linkedType2.isNull() || linkedType2.isSubType(linkedType1, default_package)) {
+        return true;
     }
+
     return false;
 }
 
@@ -392,7 +432,7 @@ void TypeChecker::operator()(InfixExpression &node) {
     this->visit_children(node);
 
     LinkedType linkedType1 = getLink(node.expression1);
-    LinkedType linkedType2 = getLink(node.expression1);
+    LinkedType linkedType2 = getLink(node.expression2);
 
     switch (node.op) {
         case InfixOperator::PLUS:
@@ -430,12 +470,13 @@ void TypeChecker::operator()(InfixExpression &node) {
             break;
         case InfixOperator::BOOLEAN_EQUAL:
         case InfixOperator::BOOLEAN_NOT_EQUAL:
-            if(linkedType1.isSubType(linkedType2, default_package) || linkedType2.isSubType(linkedType1, default_package) ||
+            if(!linkedType1.isVoid() && !linkedType2.isVoid() &&
+                (checkCastability(linkedType1, linkedType2, default_package) ||
                 (linkedType1.isNull() && (linkedType2.isReferenceType() || linkedType2.is_array))  
                 || (linkedType2.isNull() && (linkedType1.isReferenceType() || linkedType1.is_array))
                 || (linkedType1.isNumeric() && linkedType2.isNumeric()) 
                 || (linkedType1.isBoolean() && linkedType2.isBoolean())
-                || (linkedType1.isNull() && linkedType2.isNull())) {
+                || (linkedType1.isNull() && linkedType2.isNull()))) {
                 node.link = LinkedType(PrimitiveType::BOOLEAN);
             }
             else {
@@ -475,6 +516,11 @@ MethodDeclarationObject* TypeChecker::determineMethodSignature(LinkedType& type_
 
         if (parameters.size() != arguments.size()) {
             // Method is not applicable; mismatched number of arguments
+            continue;
+        }
+
+        if(candidate->is_constructor != is_constructor) {
+            // Check if constructor is/isnt requested
             continue;
         }
 
@@ -694,16 +740,6 @@ void TypeChecker::operator()(ArrayAccess &node) {
     }
 }
 
-bool isFinal(LinkedType type) {
-    if(type.isReferenceType()) {
-        ClassDeclarationObject* class_decl = type.getIfNonArrayIsClass();
-        if(class_decl != nullptr) {
-            return class_decl->ast_reference->hasModifier(Modifier::FINAL);
-        }
-    }
-    return false;
-}
-
 // Checking (type)expression castability
 bool checkCastability(LinkedType& type, LinkedType& expression, PackageDeclarationObject* default_package) {
     if(type.isNumeric() && expression.isNumeric() && !type.is_array && !expression.is_array) {
@@ -752,6 +788,49 @@ void TypeChecker::operator()(InstanceOfExpression &node) {
     }
     else {
         THROW_TypeCheckerError("Invalid type for InstanceOfExpression");
+    }
+}
+
+void TypeChecker::operator()(WhileStatement &node) {
+    visit_children(node);
+    LinkedType expression = getLink(node.condition_expression);
+    if(!expression.isBoolean()) {
+        THROW_TypeCheckerError("Condition for while loop is not boolean");
+    }
+}
+
+void TypeChecker::operator()(IfThenStatement &node) {
+    visit_children(node);
+    LinkedType expression = getLink(node.if_clause);
+    if(!expression.isBoolean()) {
+        THROW_TypeCheckerError("If statement expression type is not boolean");
+    }
+}
+
+void TypeChecker::operator()(IfThenElseStatement &node) {
+    visit_children(node);
+    LinkedType expression = getLink(node.if_clause);
+    if(!expression.isBoolean()) {
+        THROW_TypeCheckerError("If statement expression type is not boolean");
+    }
+}
+
+void TypeChecker::operator()(ReturnStatement &node) {
+    visit_children(node);
+
+    if(!node.return_expression && (!current_method->ast_reference->type || current_method->ast_reference->type->link.isVoid())) {
+        return; 
+    }
+    LinkedType returnExpression = getLink(node.return_expression);
+    if(current_method->is_constructor && !returnExpression.isVoid()) {
+        THROW_TypeCheckerError("Constructors cannot return.");
+    }
+    LinkedType returnType = current_method->ast_reference->type->link;
+    if(returnType.isVoid()) {
+        THROW_TypeCheckerError("Void methods cannot return.");
+    }
+    if(!checkAssignability(returnType, returnExpression, default_package)) {
+        THROW_TypeCheckerError("Return expression type does not match method return type.");
     }
 }
 

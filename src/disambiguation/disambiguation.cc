@@ -327,10 +327,16 @@ void DisambiguationVisitor::disambiguate(QualifiedIdentifier &ref, int current_p
                 if (std::holds_alternative<ClassDeclarationObject*>(type)) {
                     auto class_decl = std::get<ClassDeclarationObject*>(type);
                     
-                    if (class_decl->fields->lookupUniqueSymbol(cur_ident.name) || class_decl->methods->lookupUniqueSymbol(cur_ident.name) || (class_decl->all_methods.find(cur_ident.name) != class_decl->all_methods.end())) {
+                    if (
+                        class_decl->fields->lookupUniqueSymbol(cur_ident.name) || 
+                        class_decl->methods->lookupUniqueSymbol(cur_ident.name) || 
+                        class_decl->all_methods.find(cur_ident.name) != class_decl->all_methods.end() || 
+                        class_decl->accessible_fields.find(cur_ident.name) != class_decl->accessible_fields.end()
+                    ){
                         ref.identifiers[current_pos].classification = Classification::EXPRESSION_NAME;
                         return;
                     }
+                    
                 // Check if the current identifier is a method of the interface
                 } else if (std::holds_alternative<InterfaceDeclarationObject*>(type)) {
                     auto interface_decl = std::get<InterfaceDeclarationObject*>(type);

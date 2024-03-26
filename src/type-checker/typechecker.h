@@ -53,11 +53,20 @@ class TypeChecker: public DefaultSkipVisitor<void> {
 
     void operator()(Block &node) override;
 
-    void operator()(ForStatement &node) override;
-
     void operator()(LocalVariableDeclaration &node) override;
 
     void operator()(QualifiedIdentifier &node) override;
+
+    // Statement
+    void operator()(ReturnStatement &node) override;
+
+    void operator()(WhileStatement &node) override;
+
+    void operator()(IfThenStatement &node) override;
+
+    void operator()(IfThenElseStatement &node) override;
+
+    void operator()(ForStatement &node) override;
 
     // All subexpression types
     void operator()(Assignment &node) override;
