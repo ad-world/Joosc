@@ -176,12 +176,10 @@ IRCanonicalizer::LoweredStatement IRCanonicalizer::convert(StatementIR &ir) {
 
             // Put statements in front of return expression after lowering
             LoweredExpression lowered_expression = convert(*node.getRet());
-            return LoweredStatement(
-                concatenate(
-                    lowered_expression.statements,
-                    ReturnIR(std::move(lowered_expression.expression))
-                )
-            );
+            return LoweredStatement(concatenate(
+                lowered_expression.statements,
+                ReturnIR(std::move(lowered_expression.expression))
+            ));
         },
 
         [&](SeqIR &node) {
