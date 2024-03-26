@@ -2,6 +2,14 @@
 #include <random>
 #include <iostream>
 #include <variant>
+#include <cstdint> 
+#include "utillities/overload.h"
+
+std::string ABSTRACT_ARG_PREFIX = "_ARG";
+std::string ABSTRACT_RET_PREFIX = "_RET";
+int WORD_SIZE = 4;
+
+struct ExpIR; // TODO: remove after merging with IR visitor
 
 Simulator::ExecutionFrame::ExecutionFrame(int ip, Simulator& parent) : ip(ip), parent(parent) {
     ret = rand();
@@ -30,7 +38,6 @@ bool Simulator::ExecutionFrame::advance() {
     parent.leave(this); 
 
     if (ip == -1) return false;
-
     if (ip != backupIp) return true;
 
     ip++;
@@ -57,56 +64,282 @@ IR* Simulator::ExecutionFrame::getCurrentNode() {
     return parent.indexToNode[ip];
 }
 
-Simulator::Simulator(CompUnitIR compUnit, int heapSizeMax) : compUnit(compUnit), heapSizeMax(heapSizeMax), exprStack(debugLevel) {
+Simulator::Simulator(CompUnitIR *compUnit, int heapSizeMax) : compUnit(compUnit), heapSizeMax(heapSizeMax), exprStack(debugLevel) {
+    libraryFunctions.insert("__malloc");
+    libraryFunctions.insert("__debexit");
+    libraryFunctions.insert("__exception");
+    libraryFunctions.insert("NATIVEjava.io.OutputStream.nativeWrite");
 
+    // TODO: finish writing this constructor once the IR visitor is merged in
 }
 
 Simulator::Simulator(Simulator& other) : compUnit(other.compUnit), heapSizeMax(other.heapSizeMax), exprStack(debugLevel) {
-
+    Simulator(other.compUnit, DEFAULT_HEAP_SIZE);
 }
 
 int Simulator::malloc(int size) {
-    return 1;
+    if (size < 0) throw new Trap("Invalid malloc size");
+
+    if (size % WORD_SIZE != 0) {
+        throw new Trap("Can only allocate in chunks of " + std::to_string(WORD_SIZE) + " bytes");
+    }
+
+    int retval = memory.size();
+    if (retval + size > heapSizeMax) throw new Trap("Out of memory in the heap");
+
+    for (int i = 0; i < size; i++) {
+        memory.push_back(rand());
+    }
+
+    return retval;
 }
 
 int Simulator::calloc(int size) {
-    return 1;
+    int retval = malloc(size);
+    for (int i = retval; i < retval + size; i++) {
+        memory[i] = 0;
+    }
 
+    return retval;
 }
 
 int Simulator::read(int addr) {
-    return 1;
+    int i = getMemoryIndex(addr);
+    if (i >= memory.size()) throw new Trap("Attempting to read past end of heap");
 
+    return memory[i];
 }
 
 void Simulator::store(int addr, int value) {
-
+    int i = getMemoryIndex(addr);
+    if (i >= memory.size()) throw new Trap("Attempting to store past end of heap");
+    
+    memory[i] = value;
 }
 
 int Simulator::findLabel(std::string label) {
     return 1;
-
 }
 
 int Simulator::call(std::string name, std::vector<int> args) {
-    return 1;
-
+    auto frame = ExecutionFrame(-1, *this);
+    return this->call(frame, name, args);
 }
 
 int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> args) {
-    return 1;
+    int return_value;
 
+    if (libraryFunctions.find(name) != libraryFunctions.end()) {
+        return_value = libraryCall(name, args);
+    } else {
+        FuncDeclIR* func = compUnit->getFunc(name);
+        if (func == nullptr) {
+            throw new Trap("Function " + name + " not found");
+        }
+
+        int ip = findLabel(name);
+        auto frame = new ExecutionFrame(ip, *this);
+
+        for (int i = 0; i < args.size(); i++) {
+            frame->put(ABSTRACT_ARG_PREFIX + std::to_string(i), args[i]);
+        }
+
+        while (frame->advance());
+
+        return_value = frame->ret;
+    }
+
+    return return_value;
 }
 
 int Simulator::getMemoryIndex(int addr) {
-    return 1;
+    if (addr % WORD_SIZE != 0) {
+        throw new Trap("Unaligned memory access: " + std::to_string(addr) + " is not a multiple of " + std::to_string(WORD_SIZE));
+    }
 
+    return addr / WORD_SIZE;
 }
 
 int Simulator::libraryCall(std::string name, std::vector<int> args) {
+    int return_value;
 
+    if (name == "NATIVEjava.io.OutputStream.nativeWrite") {
+        std::cout.put(static_cast<char>(static_cast<std::int8_t>(args[0]))); 
+        return_value = 0;
+    } else if (name == "__malloc") {
+        return_value = malloc(args[0]);
+    } else if (name == "__debexit") {
+        std::exit(args[0]);
+    } else if (name == "__exception") {
+        std::exit(13);
+    } else {
+        throw InternalCompilerError("Unsupported library function: " + name);
+    }
+
+    return return_value;
 }
 
 void Simulator::leave(ExecutionFrame *frame) {
+    IR* node = frame->getCurrentNode();
 
+    std::visit(util::overload{
+        [&](ConstIR &cons) {
+            Simulator::exprStack.pushValue(cons.getValue());
+        },
+        [&](TempIR &temp) {
+            std::string tempName = temp.getName();
+            Simulator::exprStack.pushValue(frame->get(tempName));
+        },
+        [&](BinOpIR &binop) {
+            int r = Simulator::exprStack.popValue();
+            int l = Simulator::exprStack.popValue();
+
+            int result;
+            switch (binop.op) {
+                case BinOpIR::OpType::ADD:
+                    result = l + r;
+                    break;
+                case BinOpIR::OpType::SUB:
+                    result = l - r;
+                    break;
+                case BinOpIR::OpType::MUL:
+                    result = l * r;
+                    break;
+                case BinOpIR::OpType::DIV:
+                    if (r == 0) throw Trap("Division by zero");
+                    result = l / r;
+                    break;
+                case BinOpIR::OpType::MOD:
+                    if (r == 0) throw Trap("Division by zero");
+                    result = l % r;
+                    break;
+                case BinOpIR::OpType::AND:
+                    result = l & r;
+                    break;
+                case BinOpIR::OpType::OR:
+                    result = l | r;
+                    break;
+                case BinOpIR::OpType::XOR:
+                    result = l ^ r;
+                    break;
+                case BinOpIR::OpType::LSHIFT:
+                    result = l << r;
+                    break;
+                case BinOpIR::OpType::RSHIFT:
+                    result = static_cast<unsigned int>(l) >> r;
+                    break;
+                case BinOpIR::OpType::ARSHIFT:
+                    result = l >> r;
+                    break;
+                case BinOpIR::OpType::EQ:
+                    result = l == r ? 1 : 0;
+                    break;
+                case BinOpIR::OpType::NEQ:
+                    result = l != r ? 1 : 0;
+                    break;
+                case BinOpIR::OpType::LT:
+                    result = l < r ? 1 : 0;
+                    break;
+                case BinOpIR::OpType::GT:
+                    result = l > r ? 1 : 0;
+                    break;
+                case BinOpIR::OpType::LEQ:
+                    result = l <= r ? 1 : 0;
+                    break;
+                case BinOpIR::OpType::GEQ:
+                    result = l >= r ? 1 : 0;
+                    break;
+                default:
+                    throw InternalCompilerError("Unsupported binary operation");
+            }
+
+            Simulator::exprStack.pushValue(result);
+        },
+        [&](MemIR &mem){
+            int addr = Simulator::exprStack.popValue();
+            Simulator::exprStack.pushAddr(read(addr), addr);
+        },
+        [&](CallIR &call){
+            int argCount = call.getArgs().size();
+            std::vector<int> args;
+
+            for (int i = 0; i < argCount; i++) {
+                args.push_back(Simulator::exprStack.popValue());
+            }
+
+            auto target = Simulator::exprStack.pop();
+            std::string targetName;
+
+            if (target.type == StackItem::Kind::NAME) {
+                targetName = target.name;
+            } else if (Simulator::indexToNode.find(target.addr) != Simulator::indexToNode.end()) {
+                auto node = Simulator::indexToNode[target.addr];
+                if (std::holds_alternative<FuncDeclIR>(*node)) {
+                    targetName = std::get<FuncDeclIR>(*node).getName();
+                } else {
+                    throw InternalCompilerError("Call to a non-function instruction");
+                }
+            } else {
+                throw InternalCompilerError("Invalid function call " + call.label() + " (target " + std::to_string(target.value) + " is unknown)!");
+            }
+            
+            int return_value = Simulator::call(*frame, targetName, args);
+            Simulator::exprStack.pushValue(return_value);
+        },
+        [&](NameIR &name) {
+            std::string str = name.getName();
+
+            if (Simulator::libraryFunctions.find(str) != Simulator::libraryFunctions.end()) {
+                Simulator::exprStack.pushName(-1, str);
+            } else {
+                int addr = findLabel(str);
+                Simulator::exprStack.pushName(addr, str);
+            }
+        },
+        [&](MoveIR &move) {
+            int r = Simulator::exprStack.popValue();
+            auto stackItem = Simulator::exprStack.pop();
+
+            switch (stackItem.type) {
+                case StackItem::Kind::MEM:
+                    if (Simulator::debugLevel > 0) {
+                        std::cout << "mem[" << stackItem.addr << "] = " << r << std::endl;
+                    }
+                    store(stackItem.addr, r);
+                    break;
+                case StackItem::Kind::TEMP:
+                    if (Simulator::debugLevel > 0) {
+                        std::cout << "temp[" << stackItem.name << "] = " << r << std::endl;
+                    }
+                    frame->put(stackItem.temp, r);
+                default:
+                    throw InternalCompilerError("Invalid MODE!");
+            }
+        },
+        [&](ExpIR &exp) {
+            Simulator::exprStack.pop();
+        },
+        [&](JumpIR &jump) {
+            frame->setIP(Simulator::exprStack.popValue());
+        },
+        [&](CJumpIR &cjump) {
+            int top = Simulator::exprStack.popValue();
+            std::string label;
+
+            if (top == 0) {
+                label = cjump.falseLabel();
+            } else if (top == 1) {
+                label = cjump.trueLabel();
+            } else {
+                throw InternalCompilerError("Invalid condition for CJump, expected 0/1 and got " + top);
+            }
+
+            if (label != "") frame->setIP(findLabel(label));
+        },
+        [&](ReturnIR &ret) {
+            frame->ret = Simulator::exprStack.popValue();
+            frame->setIP(-1);
+        },
+        [&](auto &node) {}
+    }, *node);
 }

@@ -22,6 +22,7 @@ public:
         child_functions.emplace_back(std::move(func));
         functions[name] = child_functions.back().get();
     }
+    FuncDeclIR* getFunc(std::string name) { return functions[name]; }
     std::string getName() { return name; }
     std::unordered_map<std::string, FuncDeclIR*> getFunctions() { return functions; }
     std::string label() { return "COMPUNIT (" + class_name + ")"; }
