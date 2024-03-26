@@ -23,3 +23,5 @@ graphs/*.gv
 graphs/*.png
 .gdb_history
 output
+__pycache__
+

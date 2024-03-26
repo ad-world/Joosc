@@ -1,45 +1,8 @@
 import os, subprocess, sys
-from pathlib import Path
-
-# Imported from Blender
-class colors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-
-# Function to load environment variables from .env file
-def load_env_file(filename=".env"):
-    with open(filename, "r") as f:
-        for line in f:
-            # Skip comments and empty lines
-            if line.strip() and not line.strip().startswith("#"):
-                key, value = line.strip().split("=")
-                os.environ[key] = value
+from helpers.helpers import *
 
 # Load variables from .env file
 load_env_file()
-
-
-def resolve_path(path1, path2):
-    return str(Path(os.path.join(path1, path2)).resolve())
-
-def print_file_contents(file):
-    with open(file, "r") as outfile: 
-        print(outfile.read())
-
-def get_all_files(directory):
-    file_list = []
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith('.java'):
-                file_list.append(os.path.join(root, file))
-    return file_list
 
 def valid_invalid_prog_test():
     """
@@ -65,54 +28,49 @@ def valid_invalid_prog_test():
         failures = False
 
     # get current assignments from env
-    currently_testing = os.getenv('TESTING_COVERAGE', '') # todo: replace with environment variable
+    currently_testing = os.getenv('TESTING_COVERAGE', '')
     split_assignments = currently_testing.split(',')
 
     test_numbers = {}
 
-    for assignment in os.listdir(programs_dir):
+    for assignment in sorted(os.listdir(programs_dir)):
         if assignment in split_assignments:
             pass_count = 0
             fail_count = 0
 
             assignment_path = os.path.join(programs_dir, assignment)
-            local_valid_tests = os.path.join(assignment_path, "local/valid")
-            local_invalid_tests = os.path.join(assignment_path, "local/invalid")
 
-            marmo_valid_tests = os.path.join(assignment_path, "marmoset/valid")
-            marmo_invalid_tests = os.path.join(assignment_path, "marmoset/invalid")
+            for source in ("local", "marmoset"):
+                for test_type, expected_code in (("valid", 0), ("invalid", 42), ("warning", 43)):
 
-            local_warning_tests = os.path.join(assignment_path, "local/warning")
-            marmo_warning_tests = os.path.join(assignment_path, "marmoset/warning")
+                    directory = os.path.join(assignment_path, f"{source}/{test_type}")
+                    
+                    header_bold_underline = colors.HEADER + colors.BOLD + colors.UNDERLINE
 
-            for directory, expected_code in ((local_valid_tests, 0), (local_invalid_tests, 42), (marmo_valid_tests, 0), (marmo_invalid_tests, 42), (local_warning_tests, 43), (marmo_warning_tests, 43)):
-                header_bold_underline = colors.HEADER + colors.BOLD + colors.UNDERLINE
+                    if os.path.exists(directory):
+                        print(f"\n{header_bold_underline}Testing all programs in {resolve_path(directory, '')}:{colors.ENDC}")
+                        for program in os.listdir(directory):
+                            program_path = resolve_path(directory, program)
 
-                if os.path.exists(directory):
-                    print(f"\n{header_bold_underline}Testing all programs in {resolve_path(directory, '')}:{colors.ENDC}")
-                    for program in os.listdir(directory):
-                        program_path = resolve_path(directory, program)
+                            if os.path.exists(program_path):
+                                # if program is a directory, get all files from the direcory and add to a list
+                                files = [program_path]
+                                if os.path.isdir(program_path):
+                                    files = get_all_files(program_path)
 
-                      
-                        if os.path.exists(program_path):
-                            # if program is a directory, get all files from the direcory and add to a list
-                            files = [program_path]
-                            if os.path.isdir(program_path):
-                                files = get_all_files(program_path)
+                                with open(integration_log_file, "w") as outfile:
+                                    result = subprocess.run([joosc_executable, *pre_a5_args, *files, *stdlib_files], stderr=outfile)
 
-                            with open(integration_log_file, "w") as outfile:
-                                result = subprocess.run([joosc_executable, *pre_a5_args, *files, *stdlib_files], stderr=outfile)
-
-                            if result.returncode == expected_code:
-                                if print_pass_cases: # Test passed, display output if -f is not set
-                                    print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
+                                if result.returncode == expected_code:
+                                    if print_pass_cases: # Test passed, display output if -f is not set
+                                        print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
+                                        print_file_contents(integration_log_file)
+                                    pass_count += 1
+                                else:
+                                    print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
                                     print_file_contents(integration_log_file)
-                                pass_count += 1
-                            else:
-                                print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
-                                print_file_contents(integration_log_file)
-                                failures = True
-                                fail_count += 1
+                                    failures = True
+                                    fail_count += 1
     
             test_numbers[assignment] = { 'pass_count': pass_count, 'fail_count': fail_count, 'total_count': pass_count + fail_count }
 
