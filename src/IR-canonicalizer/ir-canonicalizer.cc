@@ -171,7 +171,7 @@ IRCanonicalizer::LoweredStatement IRCanonicalizer::convert(StatementIR &ir) {
         [&](ReturnIR &node) {
             // Empty return left alone
             if (!node.getRet()) {
-                return LoweredStatement(concatenate(ReturnIR(nullptr)));
+                return LoweredStatement(ReturnIR(nullptr));
             }
 
             // Put statements in front of return expression after lowering
