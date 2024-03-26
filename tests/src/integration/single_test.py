@@ -12,11 +12,7 @@ def run_test(test_path):
     if not os.path.exists(test_path):
         sys.exit("Test path doesn't exist")
     
-    test_files = []
-    if os.path.isdir(test_path):
-        test_files = get_all_files(test_path)
-    else:
-        test_files = [test_path]
+    test_files = get_all_files(test_path) if os.path.isdir(test_path) else [test_path]
     
     result = subprocess.run([joosc_executable, *test_files, *stdlib_files])
     

@@ -1,9 +1,6 @@
 import os, subprocess, sys
 from helpers.helpers import *
 
-# Load variables from .env file
-load_env_file()
-
 def valid_invalid_prog_test():
     """
     Runs joosc on all programs in valid and invalid directories.
@@ -13,8 +10,8 @@ def valid_invalid_prog_test():
 
     integration_dir = os.path.dirname(__file__)
     programs_dir = os.path.join(integration_dir, "../../programs")
-    stdlib_dir = os.path.join(integration_dir, "../../stdlib")
 
+    stdlib_dir = os.path.join(integration_dir, "../../stdlib")
     stdlib_files = get_all_files(stdlib_dir)
 
     joosc_executable = resolve_path(programs_dir, "../../joosc")
@@ -25,16 +22,14 @@ def valid_invalid_prog_test():
     print_pass_cases = True
     if len(sys.argv) > 1 and sys.argv[1] == "-f":
         print_pass_cases = False
-        failures = False
 
-    # get current assignments from env
-    currently_testing = os.getenv('TESTING_COVERAGE', '')
-    split_assignments = currently_testing.split(',')
-
-    test_numbers = {}
+    # Get configured testable assignments from environment
+    assignments_to_test = os.getenv('TESTING_COVERAGE', '').split(',')
+    test_results = {}
+    failures = False
 
     for assignment in sorted(os.listdir(programs_dir)):
-        if assignment in split_assignments:
+        if assignment in assignments_to_test:
             pass_count = 0
             fail_count = 0
 
@@ -44,7 +39,6 @@ def valid_invalid_prog_test():
                 for test_type, expected_code in (("valid", 0), ("invalid", 42), ("warning", 43)):
 
                     directory = os.path.join(assignment_path, f"{source}/{test_type}")
-
                     if not os.path.exists(directory): continue
 
                     print(f"\n{colors.HEADER_BOLD_UNDERLINE}Testing all programs in {resolve_path(directory, '')}:{colors.ENDC}")
@@ -74,11 +68,11 @@ def valid_invalid_prog_test():
                                 failures = True
                                 fail_count += 1
     
-            test_numbers[assignment] = { 'pass_count': pass_count, 'fail_count': fail_count, 'total_count': pass_count + fail_count }
+            test_results[assignment] = { 'pass_count': pass_count, 'fail_count': fail_count, 'total_count': pass_count + fail_count }
 
     if failures:
         print(f"{colors.FAIL}\nERROR: Tests had failures")
-        for assignment, results in test_numbers.items():
+        for assignment, results in test_results.items():
             pass_count, fail_count, total_count = results['pass_count'], results['fail_count'], results['total_count']
             print(f"{colors.HEADER}\nTest suite for assignment {assignment}")
             print(f"{colors.OKGREEN}Passing tests: {pass_count}/{total_count}")
@@ -90,4 +84,7 @@ def valid_invalid_prog_test():
         return 0
 
 if __name__ == "__main__":
+    # Load variables from .env file
+    load_env_file()
+
     sys.exit(valid_invalid_prog_test())
