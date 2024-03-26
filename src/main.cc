@@ -30,7 +30,7 @@
 
 using namespace std;
 
-enum return_codes {
+enum ReturnCode {
     VALID_PROGRAM = 0,
     INVALID_PROGRAM = 42,
     WARN_PROGRAM = 43,
@@ -42,6 +42,7 @@ enum class CommandLineArg {
     TRACE_PARSING = 'p',
     TRACE_SCANNING = 's',
     STATIC_ANALYSIS_ONLY = 'a', // Don't emit IR/assembly; used for pre-A5 tests
+    RUN_AND_TEST_IR = 'i'
 };
 
 struct cmd_error {};
@@ -53,11 +54,12 @@ int main(int argc, char *argv[]) {
     bool trace_scanning = false;
     bool output_rc = false;
     bool emit_code = true;
+    bool run_ir = false;
 
     try {
         // Handle optional arguments (eg. enable parse debugging)
         char opt;
-        while ((opt = getopt(argc, argv, "psra")) != -1) {
+        while ((opt = getopt(argc, argv, "psrai")) != -1) {
             switch (opt) {
                 case static_cast<char>(CommandLineArg::OUTPUT_RETURN):
                     output_rc = true;
@@ -71,6 +73,9 @@ int main(int argc, char *argv[]) {
                 case static_cast<char>(CommandLineArg::STATIC_ANALYSIS_ONLY):
                     emit_code = false;
                     break;
+                case static_cast<char>(CommandLineArg::RUN_AND_TEST_IR):
+                    run_ir = true;
+                    break;
                 default:
                     throw cmd_error();
             }
@@ -81,7 +86,7 @@ int main(int argc, char *argv[]) {
             // Check that the file exists
             if (access(argv[i], F_OK) == -1) {
                 cerr << "File " << argv[i] << " does not exist" << endl;
-                return INVALID_PROGRAM;
+                return ReturnCode::INVALID_PROGRAM;
             }
 
             infiles.push_back(argv[i]);
@@ -94,7 +99,7 @@ int main(int argc, char *argv[]) {
         cerr << "Usage:\n\t"
             << argv[0]
             << " <filename>"
-            << " [ -p -s -r -a ]"
+            << " [ -p -s -r -a -i ]"
             << endl;
         return EXIT_FAILURE;
     } catch ( ... ) {
@@ -102,7 +107,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    int rc = 0;
+    int rc = ReturnCode::VALID_PROGRAM;
     Driver drv;
     AstWeeder weeder;
     vector<AstNodeVariant> asts;
@@ -123,7 +128,7 @@ int main(int argc, char *argv[]) {
                 cerr << "Parsing failed" << endl;
                 if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 
-                return INVALID_PROGRAM;
+                return ReturnCode::INVALID_PROGRAM;
             }
 
             AstNodeVariant ast = std::move(*drv.root);            
@@ -134,7 +139,7 @@ int main(int argc, char *argv[]) {
                 cerr << "Parsing failed" << endl;
                 if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
 
-                return INVALID_PROGRAM;
+                return ReturnCode::INVALID_PROGRAM;
             }
 
             asts.emplace_back(std::move(ast));
@@ -142,7 +147,7 @@ int main(int argc, char *argv[]) {
 
     } catch ( ... ) {
         cerr << "Exception occured" << endl;
-        return INVALID_PROGRAM;
+        return ReturnCode::INVALID_PROGRAM;
     }
 
     // Environment building
@@ -206,29 +211,41 @@ int main(int argc, char *argv[]) {
             LocalVariableVisitor().visit(ast);
         }
 
+        // Code generation
         if (emit_code) {
             // Convert to IR
             auto &main_ast = asts.front();
             IR main_ir = IRBuilderVisitor().visit(main_ast);
+
+            #ifdef GRAPHVIZ
+                // Graph IR
+                IRGraphVisitor().visit(main_ir);
+            #endif
+
+            if (run_ir) {
+                // TODO : run interpreter on IR and get value somehow
+                Simulator sim(&main_ir);
+            }
+
+            // Canonicalize IR
+
+            if (run_ir) {
+                // TODO : run interpreter on Canonical IR and get value somehow
+            }
+
+            // Emit assembly (TODO)
+
         }
 
-        // Interpret the IR
-        Simulator sim(&main_ir);
-
-
-#ifdef GRAPHVIZ
-        // Graph IR
-        IRGraphVisitor().visit(main_ir);
-#endif
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";
-        return COMPILER_DEVELOPMENT_ERROR;
+        return ReturnCode::COMPILER_DEVELOPMENT_ERROR;
     } catch (const std::exception &e) {
         cerr << e.what() << "\n";
-        return INVALID_PROGRAM;
+        return ReturnCode::INVALID_PROGRAM;
     } catch (...) {
         cerr << "Unknown error occurred\n";
-        return COMPILER_DEVELOPMENT_ERROR;
+        return ReturnCode::COMPILER_DEVELOPMENT_ERROR;
     }
 
     if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
