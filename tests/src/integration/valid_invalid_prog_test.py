@@ -6,7 +6,7 @@ def valid_invalid_prog_test():
     Runs joosc on all programs in valid and invalid directories.
     Tests that joosc correctly validates valid and invalidates invalid programs.
     """
-    pre_a5_args = ["-a"]
+    compiler_args = ["-a"]
 
     integration_dir = os.path.dirname(__file__)
     programs_dir = os.path.join(integration_dir, "../../programs")
@@ -24,7 +24,7 @@ def valid_invalid_prog_test():
         print_pass_cases = False
 
     # Get configured testable assignments from environment
-    assignments_to_test = os.getenv('TESTING_COVERAGE', '').split(',')
+    assignments_to_test = os.getenv('VALID_INVALID_TEST', '').split(',')
     test_results = {}
     failures = False
 
@@ -53,7 +53,7 @@ def valid_invalid_prog_test():
                                 files = get_all_files(program_path, ".java")
 
                             with open(integration_log_file, "w") as outfile:
-                                result = subprocess.run([joosc_executable, *pre_a5_args, *files, *stdlib_files], stderr=outfile)
+                                result = subprocess.run([joosc_executable, *compiler_args, *files, *stdlib_files], stderr=outfile)
 
                             if result.returncode == expected_code:
                                 # Test passed, display output if -f is not set
@@ -70,18 +70,7 @@ def valid_invalid_prog_test():
     
             test_results[assignment] = { 'pass_count': pass_count, 'fail_count': fail_count, 'total_count': pass_count + fail_count }
 
-    if failures:
-        print(f"{colors.FAIL}\nERROR: Tests had failures")
-        for assignment, results in test_results.items():
-            pass_count, fail_count, total_count = results['pass_count'], results['fail_count'], results['total_count']
-            print(f"{colors.HEADER}\nTest suite for assignment {assignment}")
-            print(f"{colors.OKGREEN}Passing tests: {pass_count}/{total_count}")
-            print(f"{colors.FAIL}Failing tests: {fail_count}/{total_count}")
-            print(f"{colors.ENDC}")
-        return 1
-    else:
-        print(f"{colors.OKGREEN}All tests succeeded!{colors.ENDC}")
-        return 0
+    return print_test_results(failures, test_results)
 
 if __name__ == "__main__":
     # Load variables from .env file

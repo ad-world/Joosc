@@ -25,3 +25,4 @@ graphs/*.png
 output
 __pycache__
 *.tmp
+main

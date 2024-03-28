@@ -40,3 +40,18 @@ def get_all_files(directory, ext):
 def print_file_contents(file):
     with open(file, "r") as outfile: 
         print(outfile.read())
+
+
+def print_test_results(failures, test_results):
+    if failures:
+        print(f"{colors.FAIL}\nERROR: Tests had failures")
+        for assignment, results in test_results.items():
+            pass_count, fail_count, total_count = results['pass_count'], results['fail_count'], results['total_count']
+            print(f"{colors.HEADER}\nTest suite for assignment {assignment}")
+            print(f"{colors.OKGREEN}Passing tests: {pass_count}/{total_count}")
+            print(f"{colors.FAIL}Failing tests: {fail_count}/{total_count}")
+            print(f"{colors.ENDC}")
+        return 1
+    else:
+        print(f"{colors.OKGREEN}All tests succeeded!{colors.ENDC}")
+        return 0
