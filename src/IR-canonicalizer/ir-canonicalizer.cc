@@ -45,7 +45,7 @@ IRCanonicalizer::LoweredExpression IRCanonicalizer::convert(ExpressionIR &ir) {
                 lowered2.statements
             );
 
-            auto expression = BinOpIR(node.opType(), std::make_unique<ExpressionIR>(TempIR(temp_name)), std::move(lowered2.expression));
+            auto expression = BinOpIR(node.op, std::make_unique<ExpressionIR>(TempIR(temp_name)), std::move(lowered2.expression));
 
             return LoweredExpression(std::move(statements), std::move(expression));
         },
