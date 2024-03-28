@@ -14,7 +14,7 @@ def run_test(test_path):
     
     test_files = get_all_files(test_path, ".java") if os.path.isdir(test_path) else [test_path]
     
-    result = subprocess.run([joosc_executable, "-i", *test_files, *stdlib_files])
+    result = subprocess.run([joosc_executable, *test_files, *stdlib_files])
     
     expected_returncode = 42 if "invalid" in test_path else 0
 

@@ -251,6 +251,9 @@ int main(int argc, char *argv[]) {
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";
         return finishWith(ReturnCode::COMPILER_DEVELOPMENT_ERROR, output_rc);
+    } catch (const SimulatorError &e ) {
+        cerr << e.what() << "\n";
+        return finishWith(ReturnCode::COMPILER_DEVELOPMENT_ERROR, output_rc);
     } catch (const std::exception &e) {
         cerr << e.what() << "\n";
         return finishWith(ReturnCode::INVALID_PROGRAM, output_rc);

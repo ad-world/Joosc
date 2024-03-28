@@ -1,9 +1,11 @@
-#include <stdexcept>
+#pragma once
 
-struct Trap : public std::runtime_error {
-    using std::runtime_error::runtime_error;
+#include "exceptions/exceptions.h"
+
+struct Trap : public SimulatorError {
+    using SimulatorError::SimulatorError;
 };
 
-struct InternalCompilerError : public std::runtime_error {
-    using std::runtime_error::runtime_error;
+struct InternalCompilerError : public SimulatorError {
+    using SimulatorError::SimulatorError;
 };
