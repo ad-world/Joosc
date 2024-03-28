@@ -39,58 +39,12 @@ enum return_codes {
 
 struct cmd_error {};
 
-int main(int argc, char *argv[]) {
-    vector<string> infiles;
-    bool trace_parsing = false,
-        trace_scanning = false,
-        output_rc = false;
+// Flags
+bool trace_parsing = false,
+     trace_scanning = false,
+     output_rc = false;
 
-    try {
-        // Handle optional arguments (eg. enable parse debugging)
-        int opt;
-        while ((opt = getopt(argc, argv, "psr")) != -1) {
-            switch (opt) {
-                case 'r':
-                    output_rc = true;
-                    break;
-                case 'p':
-                    trace_parsing = true;
-                    break;
-                case 's':
-                    trace_scanning = true;
-                    break;
-                default:
-                    throw cmd_error();
-            }
-        }
-
-        // For each non-option argument, add to infiles
-        for (int i = optind; i < argc; i++) {
-            // Check that the file exists
-            if (access(argv[i], F_OK) == -1) {
-                cerr << "File " << argv[i] << " does not exist" << endl;
-                return INVALID_PROGRAM;
-            }
-
-            infiles.push_back(argv[i]);
-        }
-
-        if (infiles.size() == 0) {
-            throw cmd_error();
-        }
-    } catch ( cmd_error & e ) {
-        cerr << "Usage:\n\t"
-            << argv[0]
-            << " <filename>"
-            << " [ -p -s ]"
-            << endl;
-        return EXIT_FAILURE;
-    } catch ( ... ) {
-        cerr << "Error occured on input" << endl;
-        return EXIT_FAILURE;
-    }
-
-    int rc = 0;
+return_codes compile(vector<string> infiles, std::string strfile = "") {
     Driver drv;
     AstWeeder weeder;
     vector<AstNodeVariant> asts;
@@ -101,6 +55,7 @@ int main(int argc, char *argv[]) {
 
     // Lexing and parsing
     try {
+        int rc = 0;
         drv.trace_scanning = trace_scanning;
         drv.trace_parsing = trace_parsing;
 
@@ -217,7 +172,56 @@ int main(int argc, char *argv[]) {
         return COMPILER_DEVELOPMENT_ERROR;
     }
 
-    if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
+    return VALID_PROGRAM;
+}
 
-    return rc;
+int main(int argc, char *argv[]) {
+    vector<string> infiles;
+
+    try {
+        // Handle optional arguments (eg. enable parse debugging)
+        int opt;
+        while ((opt = getopt(argc, argv, "psr")) != -1) {
+            switch (opt) {
+                case 'r':
+                    output_rc = true;
+                    break;
+                case 'p':
+                    trace_parsing = true;
+                    break;
+                case 's':
+                    trace_scanning = true;
+                    break;
+                default:
+                    throw cmd_error();
+            }
+        }
+
+        // For each non-option argument, add to infiles
+        for (int i = optind; i < argc; i++) {
+            // Check that the file exists
+            if (access(argv[i], F_OK) == -1) {
+                cerr << "File " << argv[i] << " does not exist" << endl;
+                return INVALID_PROGRAM;
+            }
+
+            infiles.push_back(argv[i]);
+        }
+
+        if (infiles.size() == 0) {
+            throw cmd_error();
+        }
+    } catch ( cmd_error & e ) {
+        cerr << "Usage:\n\t"
+            << argv[0]
+            << " <filename>"
+            << " [ -p -s ]"
+            << endl;
+        return EXIT_FAILURE;
+    } catch ( ... ) {
+        cerr << "Error occured on input" << endl;
+        return EXIT_FAILURE;
+    }
+
+    return compile(infiles);
 }
