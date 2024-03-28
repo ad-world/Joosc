@@ -24,7 +24,7 @@ public:
   // The name of the file being parsed
   std::string file;
   // String buffer of a file to parse
-  std::string strfile;
+  std::list<std::string> strfiles;
   // Whether to generate parser debug traces
   bool trace_parsing;
   // Whether to generate scanner debug traces

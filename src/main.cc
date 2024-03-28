@@ -46,7 +46,7 @@ bool trace_parsing = false,
      trace_scanning = false,
      output_rc = false;
 
-return_codes compile(list<string> infiles, std::string strfile = "") {
+return_codes compile(list<string> infiles, list<string> strfiles = {}) {
     Driver drv;
     AstWeeder weeder;
     vector<AstNodeVariant> asts;
@@ -61,14 +61,18 @@ return_codes compile(list<string> infiles, std::string strfile = "") {
         drv.trace_scanning = trace_scanning;
         drv.trace_parsing = trace_parsing;
 
-        if ( strfile != "" ) {
+        // Reverse iterate
+        for ( auto it = strfiles.rbegin(); it != strfiles.rend(); it++ ) {
+            std::string &strfile = *it;
             std::string infile = "Foo.java";
-            drv.strfile = strfile;
+            drv.strfiles.push_front(strfile);
             infiles.push_front(infile);
         }
 
         for (auto infile : infiles) {
-            bool is_strfile = drv.strfile != "";
+            bool is_strfile = !drv.strfiles.empty();
+            std::string strfile = is_strfile ? drv.strfiles.front() : "";
+
             rc = drv.parse(infile);
 
             if(rc != 0) {
@@ -80,7 +84,7 @@ return_codes compile(list<string> infiles, std::string strfile = "") {
 
             AstNodeVariant ast = std::move(*drv.root);            
 
-            rc = weeder.weed(ast, infile, is_strfile ? strfile : "");
+            rc = weeder.weed(ast, infile, strfile);
 
             if(rc != 0) {
                 cerr << "Parsing failed" << endl;
@@ -232,5 +236,11 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    return compile(infiles);
+    ostringstream oss;
+    oss << "public class Foo {\n"
+            << "public Foo() {}\n"
+            << "public static void test() {}\n"
+        << "}\n";
+
+    return compile(infiles, {oss.str()});
 }
