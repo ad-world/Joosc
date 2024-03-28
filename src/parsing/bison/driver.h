@@ -23,6 +23,8 @@ public:
   int parse(const std::string& f);
   // The name of the file being parsed
   std::string file;
+  // String buffer of a file to parse
+  std::string strfile;
   // Whether to generate parser debug traces
   bool trace_parsing;
   // Whether to generate scanner debug traces
