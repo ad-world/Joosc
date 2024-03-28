@@ -62,7 +62,7 @@ void AstWeeder::printViolations() {
     }
 }
 
-int AstWeeder::weed(AstNodeVariant& root, string fileName) {
+int AstWeeder::weed(AstNodeVariant& root, string fileName, string strfile) {
     if(holds_alternative<CompilationUnit>(root)) {
         auto &cu = get<CompilationUnit>(root);
         string file = getFileName(fileName);
@@ -71,7 +71,7 @@ int AstWeeder::weed(AstNodeVariant& root, string fileName) {
         checkOneTypePerFile(cu);
         
         // check program ascii range
-        checkAsciiRange(readFileToString(fileName));
+        checkAsciiRange(strfile == "" ? readFileToString(fileName) : strfile);
 
         // check programm interfaces
         checkInterfaces(cu.interface_declarations, file);

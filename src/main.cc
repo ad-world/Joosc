@@ -1,3 +1,5 @@
+#include <fstream>
+#include <sstream>
 #include <unistd.h>
 #include <iostream>
 #include <exception>
@@ -44,7 +46,7 @@ bool trace_parsing = false,
      trace_scanning = false,
      output_rc = false;
 
-return_codes compile(vector<string> infiles, std::string strfile = "") {
+return_codes compile(list<string> infiles, std::string strfile = "") {
     Driver drv;
     AstWeeder weeder;
     vector<AstNodeVariant> asts;
@@ -59,7 +61,14 @@ return_codes compile(vector<string> infiles, std::string strfile = "") {
         drv.trace_scanning = trace_scanning;
         drv.trace_parsing = trace_parsing;
 
+        if ( strfile != "" ) {
+            std::string infile = "Foo.java";
+            drv.strfile = strfile;
+            infiles.push_front(infile);
+        }
+
         for (auto infile : infiles) {
+            bool is_strfile = drv.strfile != "";
             rc = drv.parse(infile);
 
             if(rc != 0) {
@@ -71,7 +80,7 @@ return_codes compile(vector<string> infiles, std::string strfile = "") {
 
             AstNodeVariant ast = std::move(*drv.root);            
 
-            rc = weeder.weed(ast, infile);
+            rc = weeder.weed(ast, infile, is_strfile ? strfile : "");
 
             if(rc != 0) {
                 cerr << "Parsing failed" << endl;
@@ -83,8 +92,8 @@ return_codes compile(vector<string> infiles, std::string strfile = "") {
             asts.emplace_back(std::move(ast));
         }
 
-    } catch ( ... ) {
-        cerr << "Exception occured" << endl;
+    } catch ( std::exception &e ) {
+        cerr << "Exception occured when parsing: " << e.what() << endl;
         return INVALID_PROGRAM;
     }
 
@@ -176,7 +185,7 @@ return_codes compile(vector<string> infiles, std::string strfile = "") {
 }
 
 int main(int argc, char *argv[]) {
-    vector<string> infiles;
+    list<string> infiles;
 
     try {
         // Handle optional arguments (eg. enable parse debugging)
