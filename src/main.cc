@@ -1,24 +1,27 @@
 #include <unistd.h>
 #include <iostream>
 #include <exception>
-#include "disambiguation/disambiguation.h"
+#include <ostream>
+
 #include "exceptions/exceptions.h"
-#include "exceptions/exceptions.h"
+#include "utillities/util.h"
+
 #include "parsing/bison/driver.h"
 #include "parsing/bison/parser.hh"
 #include "weeder/astweeder.h"
+
 #include "environment-builder/environmentbuilder.h"
 #include "type-linking/typelinker.h"
 #include "hierarchy-checking/hierarchy-checking.h"
-#include "exceptions/exceptions.h"
 #include "disambiguation/forward-decl.h"
 #include "disambiguation/search-unclassified.h"
+#include "disambiguation/disambiguation.h"
 #include "type-checker/typechecker.h"
 #include "cfg-builder/cfg-builder.h"
 #include "reachability/reachability.h"
 #include "reachability/reached-statement.h"
-#include "utillities/util.h"
 #include "local-variables/local-variable-visitor.h"
+
 #include "IR/ir.h"
 #include "IR-builder/ast-to-ir.h"
 #include "IR-interpreter/simulation/simulation.h"
@@ -225,17 +228,21 @@ int main(int argc, char *argv[]) {
             #endif
 
             if (run_ir) {
-                // TODO : run interpreter on IR and get value somehow
-                int ir_result = Simulator(&main_ir).call("test", {});
+                // Run interpreter on IR and get value
+                std::ofstream result_file {"ir_result.tmp"};
+                int result = Simulator(&main_ir).call("test", {});
+                result_file << result;
             }
 
             // Canonicalize IR
-            IRCanonicalizer().convert(main_ir);
+            // IRCanonicalizer().convert(main_ir);
 
-            if (run_ir) {
-                // TODO : run interpreter on Canonical IR and get value somehow
-                int canon_ir_result = Simulator(&main_ir).call("test", {});
-            }
+            // if (run_ir) {
+            //     // Run interpreter on Canonical IR and get value
+            //     int result = Simulator(&main_ir).call("test", {});
+            //     std::ofstream result_file {"ir_result.tmp"};
+            //     result_file << result;
+            // }
 
             // Emit assembly (TODO)
 

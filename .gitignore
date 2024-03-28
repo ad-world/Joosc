@@ -24,4 +24,4 @@ graphs/*.png
 .gdb_history
 output
 __pycache__
-
+*.tmp
