@@ -22,10 +22,11 @@
 #include "IR/ir.h"
 #include "IR-builder/ast-to-ir.h"
 #include "IR-interpreter/simulation/simulation.h"
+#include "IR-canonicalizer/ir-canonicalizer.h"
 
 #ifdef GRAPHVIZ
-#include "graph/graph.h"
-#include "graph/ir_graph.h"
+    #include "graph/graph.h"
+    #include "graph/ir_graph.h"
 #endif
 
 using namespace std;
@@ -34,8 +35,14 @@ enum ReturnCode {
     VALID_PROGRAM = 0,
     INVALID_PROGRAM = 42,
     WARN_PROGRAM = 43,
-    COMPILER_DEVELOPMENT_ERROR = 1
+    COMPILER_DEVELOPMENT_ERROR = 1,
+    USAGE_ERROR = 2,
 };
+
+int finishWith(ReturnCode code, bool output_rc) {
+    if ( output_rc ) { cerr << "RETURN CODE " << code << endl; }
+    return code;
+}
 
 enum class CommandLineArg {
     OUTPUT_RETURN = 'r',
@@ -86,7 +93,7 @@ int main(int argc, char *argv[]) {
             // Check that the file exists
             if (access(argv[i], F_OK) == -1) {
                 cerr << "File " << argv[i] << " does not exist" << endl;
-                return ReturnCode::INVALID_PROGRAM;
+                return finishWith(ReturnCode::USAGE_ERROR, output_rc);
             }
 
             infiles.push_back(argv[i]);
@@ -96,25 +103,26 @@ int main(int argc, char *argv[]) {
             throw cmd_error();
         }
     } catch ( cmd_error & e ) {
-        cerr << "Usage:\n\t"
+        cerr 
+            << "Usage:\n\t"
             << argv[0]
             << " <filename>"
             << " [ -p -s -r -a -i ]"
-            << endl;
-        return EXIT_FAILURE;
+            << "\n";
+        return finishWith(ReturnCode::USAGE_ERROR, output_rc);
     } catch ( ... ) {
-        cerr << "Error occured on input" << endl;
-        return EXIT_FAILURE;
+        cerr << "Error occured on input\n";
+        return finishWith(ReturnCode::USAGE_ERROR, output_rc);
     }
 
-    int rc = ReturnCode::VALID_PROGRAM;
     Driver drv;
     AstWeeder weeder;
     vector<AstNodeVariant> asts;
     Util::linked_asts = &asts;
-#ifdef GRAPHVIZ
+    
+    #ifdef GRAPHVIZ
     GraphVisitor gv(asts); // runs on return/destruct
-#endif
+    #endif
 
     // Lexing and parsing
     try {
@@ -122,35 +130,30 @@ int main(int argc, char *argv[]) {
         drv.trace_parsing = trace_parsing;
 
         for (auto infile : infiles) {
-            rc = drv.parse(infile);
+            int rc = drv.parse(infile);
 
-            if(rc != 0) {
+            if (rc != 0) {
                 cerr << "Parsing failed" << endl;
-                if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
-
-                return ReturnCode::INVALID_PROGRAM;
+                return finishWith(ReturnCode::INVALID_PROGRAM, output_rc);
             }
 
             AstNodeVariant ast = std::move(*drv.root);            
 
             rc = weeder.weed(ast, infile);
 
-            if(rc != 0) {
-                cerr << "Parsing failed" << endl;
-                if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
-
-                return ReturnCode::INVALID_PROGRAM;
+            if (rc != 0) {
+                cerr << "Weeding failed" << endl;
+                return finishWith(ReturnCode::INVALID_PROGRAM, output_rc);
             }
 
             asts.emplace_back(std::move(ast));
         }
 
     } catch ( ... ) {
-        cerr << "Exception occured" << endl;
-        return ReturnCode::INVALID_PROGRAM;
+        cerr << "Unknown exception occured in syntactic analysis" << endl;
+        return finishWith(ReturnCode::INVALID_PROGRAM, output_rc);
     }
 
-    // Environment building
     PackageDeclarationObject default_package;
     Util::root_package = &default_package;
 
@@ -162,7 +165,6 @@ int main(int argc, char *argv[]) {
 
         // Type linking
         for (auto& ast : asts) {
-            CompilationUnit &current_ast = std::get<CompilationUnit>(ast);
             TypeLinker(default_package).visit(ast);
         } 
 
@@ -224,13 +226,15 @@ int main(int argc, char *argv[]) {
 
             if (run_ir) {
                 // TODO : run interpreter on IR and get value somehow
-                Simulator sim(&main_ir);
+                int ir_result = Simulator(&main_ir).call("test", {});
             }
 
             // Canonicalize IR
+            IRCanonicalizer().convert(main_ir);
 
             if (run_ir) {
                 // TODO : run interpreter on Canonical IR and get value somehow
+                int canon_ir_result = Simulator(&main_ir).call("test", {});
             }
 
             // Emit assembly (TODO)
@@ -239,16 +243,14 @@ int main(int argc, char *argv[]) {
 
     } catch (const CompilerError &e ) {
         cerr << e.what() << "\n";
-        return ReturnCode::COMPILER_DEVELOPMENT_ERROR;
+        return finishWith(ReturnCode::COMPILER_DEVELOPMENT_ERROR, output_rc);
     } catch (const std::exception &e) {
         cerr << e.what() << "\n";
-        return ReturnCode::INVALID_PROGRAM;
+        return finishWith(ReturnCode::INVALID_PROGRAM, output_rc);
     } catch (...) {
         cerr << "Unknown error occurred\n";
-        return ReturnCode::COMPILER_DEVELOPMENT_ERROR;
+        return finishWith(ReturnCode::COMPILER_DEVELOPMENT_ERROR, output_rc);
     }
 
-    if ( output_rc ) { cerr << "RETURN CODE " << rc << endl; }
-
-    return rc;
+    return finishWith(ReturnCode::VALID_PROGRAM, output_rc);
 }
