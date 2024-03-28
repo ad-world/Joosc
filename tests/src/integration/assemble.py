@@ -1,4 +1,4 @@
-import os, subprocess
+import os, subprocess, shutil
 from helpers.helpers import *
 
 def assemble_all_files(binary_name="main", output_path="../../output"):
@@ -7,6 +7,11 @@ def assemble_all_files(binary_name="main", output_path="../../output"):
     """
     output_dir = resolve_path(os.path.dirname(__file__), output_path)
     root_dir = resolve_path(output_path, "../")
+
+    # Place runtime.s in the output directory
+    runtime_source_path = resolve_path(root_dir, "./stdlib/runtime.s")
+    runtime_dest_path = resolve_path(output_dir, "./runtime.s")
+    shutil.copyfile(runtime_source_path, runtime_dest_path)
 
     # Assemble
     for assembly_file in get_all_files(output_dir, ".s"):
