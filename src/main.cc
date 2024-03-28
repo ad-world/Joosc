@@ -236,11 +236,5 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    ostringstream oss;
-    oss << "public class Foo {\n"
-            << "public Foo() {}\n"
-            << "public static void test() {}\n"
-        << "}\n";
-
-    return compile(infiles, {oss.str()});
+    return compile(infiles);
 }
