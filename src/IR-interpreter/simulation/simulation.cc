@@ -142,7 +142,7 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
         }
 
         int ip = findLabel(name);
-        auto frame = new ExecutionFrame(ip, *this);
+        auto frame = std::make_unique<ExecutionFrame>(ip, *this);
 
         for (int i = 0; i < args.size(); i++) {
             frame->put(ABSTRACT_ARG_PREFIX + std::to_string(i), args[i]);
