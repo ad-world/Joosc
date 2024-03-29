@@ -71,12 +71,5 @@ int main(int argc, char *argv[]) {
         return compiler.finishWith(Compiler::USAGE_ERROR);
     }
 
-    ostringstream oss;
-    oss << "public class Foo {\n"
-            << "public Foo() {}\n"
-            << "public static void test() {}\n"
-        << "}\n";
-    compiler.addStringFile(oss.str());
-
     return compiler.run();
 }
