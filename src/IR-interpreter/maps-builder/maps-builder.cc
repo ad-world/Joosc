@@ -1,6 +1,8 @@
 #include "maps-builder.h"
 #include "IR-interpreter/util/errors.h"
 #include "utillities/overload.h"
+#include <iostream>
+
 MapsBuilder::MapsBuilder() : index(0) {}
 
 void MapsBuilder::addNameToCurrentIndex(std::string name) {
@@ -21,6 +23,7 @@ std::unordered_map<int, IR_PTR> &MapsBuilder::getIndexToNode() {
 
 void MapsBuilder::addNode(IR_PTR node) {
     indexToNode[index] = node;
+    std::cout << "Creating new node with IP " << index << std::endl; 
     index++;
 }
 

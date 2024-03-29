@@ -56,7 +56,7 @@ void Simulator::ExecutionFrame::setIP(int ip) {
 
 IR_PTR Simulator::ExecutionFrame::getCurrentNode() {
     if (parent.indexToNode.find(ip) == parent.indexToNode.end()) {
-        THROW_SimulatorError("No next instruction. Forgot RETURN?");
+        THROW_SimulatorError("Looking for ip and could not find it.");
     }
 
     return parent.indexToNode[ip];
