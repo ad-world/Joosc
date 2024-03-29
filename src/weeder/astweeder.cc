@@ -62,7 +62,7 @@ void AstWeeder::printViolations() {
     }
 }
 
-int AstWeeder::weed(AstNodeVariant& root, string fileName, string strfile) {
+int AstWeeder::weed(AstNodeVariant& root, string fileName, string &strfile) {
     if(holds_alternative<CompilationUnit>(root)) {
         auto &cu = get<CompilationUnit>(root);
         string file = getFileName(fileName);

@@ -23,3 +23,7 @@ graphs/*.gv
 graphs/*.png
 .gdb_history
 crash*
+output
+__pycache__
+*.tmp
+main

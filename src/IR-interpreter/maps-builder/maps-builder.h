@@ -1,3 +1,5 @@
+#pragma once
+
 #include "IR/ir_visitor.h"
 #include <unordered_map>
 #include "IR/ir.h"

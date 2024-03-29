@@ -56,7 +56,7 @@ void Simulator::ExecutionFrame::setIP(int ip) {
 
 IR_PTR Simulator::ExecutionFrame::getCurrentNode() {
     if (parent.indexToNode.find(ip) == parent.indexToNode.end()) {
-        throw new Trap("No next instruction. Forgot RETURN?");
+        throw Trap("No next instruction. Forgot RETURN?");
     }
 
     return parent.indexToNode[ip];
@@ -82,14 +82,14 @@ Simulator::Simulator(IR *compUnit, int heapSizeMax) : heapSizeMax(heapSizeMax), 
 
 
 int Simulator::malloc(int size) {
-    if (size < 0) throw new Trap("Invalid malloc size");
+    if (size < 0) throw Trap("Invalid malloc size");
 
     if (size % WORD_SIZE != 0) {
-        throw new Trap("Can only allocate in chunks of " + std::to_string(WORD_SIZE) + " bytes");
+        throw Trap("Can only allocate in chunks of " + std::to_string(WORD_SIZE) + " bytes");
     }
 
     int retval = memory.size();
-    if (retval + size > heapSizeMax) throw new Trap("Out of memory in the heap");
+    if (retval + size > heapSizeMax) throw Trap("Out of memory in the heap");
 
     for (int i = 0; i < size; i++) {
         memory.push_back(rand());
@@ -109,14 +109,14 @@ int Simulator::calloc(int size) {
 
 int Simulator::read(int addr) {
     int i = getMemoryIndex(addr);
-    if (i >= memory.size()) throw new Trap("Attempting to read past end of heap");
+    if (i >= memory.size()) throw Trap("Attempting to read past end of heap");
 
     return memory[i];
 }
 
 void Simulator::store(int addr, int value) {
     int i = getMemoryIndex(addr);
-    if (i >= memory.size()) throw new Trap("Attempting to store past end of heap");
+    if (i >= memory.size()) throw Trap("Attempting to store past end of heap");
     
     memory[i] = value;
 }
@@ -138,11 +138,11 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
     } else {
         FuncDeclIR* func = compUnit->getFunc(name);
         if (func == nullptr) {
-            throw new Trap("Function " + name + " not found");
+            throw Trap("Function " + name + " not found");
         }
 
         int ip = findLabel(name);
-        auto frame = new ExecutionFrame(ip, *this);
+        auto frame = std::make_unique<ExecutionFrame>(ip, *this);
 
         for (int i = 0; i < args.size(); i++) {
             frame->put(ABSTRACT_ARG_PREFIX + std::to_string(i), args[i]);
@@ -158,7 +158,7 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
 
 int Simulator::getMemoryIndex(int addr) {
     if (addr % WORD_SIZE != 0) {
-        throw new Trap("Unaligned memory access: " + std::to_string(addr) + " is not a multiple of " + std::to_string(WORD_SIZE));
+        throw Trap("Unaligned memory access: " + std::to_string(addr) + " is not a multiple of " + std::to_string(WORD_SIZE));
     }
 
     return addr / WORD_SIZE;
