@@ -19,7 +19,16 @@ public:
         : runtime_error(make_message("Compiler error", message, file, line)) {}
 };
 
-
+/************************************************
+ *  ERRORS within the simulator
+ ************************************************/
+class SimulatorError : public std::runtime_error {
+   public:
+    std::string message;
+    SimulatorError(std::string message) : runtime_error("Simulator error: " + message) {}
+    SimulatorError(std::string message, std::string file, int line)
+        : runtime_error(make_message("Simulator error", message, file, line)) {} 
+};
 
 /************************************************
  *  ERRORS within the supplied java program
