@@ -13,7 +13,7 @@
 using namespace std;
 class AstWeeder {
 public: 
-    int weed(AstNodeVariant& root, string fileName, string strfile);
+    int weed(AstNodeVariant& root, string fileName, string &strfile);
 
     AstWeeder() {}
 
