@@ -57,7 +57,7 @@ def correct_output_test():
                                     ir_result = ir_result if ir_result else "NOTHING"
                                     print(f"{colors.OKCYAN}program {program} returned {ir_result} after interpreting IR{colors.ENDC}")
                                 
-                                with open(resolve_path(root_dir, "ir_result_canon.tmp"), "w+") as file:
+                                with open(resolve_path(root_dir, "ir_canon_result.tmp"), "w+") as file:
                                     ir_canon_result = file.read()
                                     ir_canon_result = ir_canon_result if ir_canon_result else "NOTHING"
                                     print(f"{colors.OKCYAN}program {program} returned {ir_canon_result} after interpreting Canonical IR{colors.ENDC}")
