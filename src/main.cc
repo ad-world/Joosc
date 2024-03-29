@@ -39,12 +39,6 @@ int main(int argc, char *argv[]) {
                 case static_cast<char>(CommandLineArg::RUN_AND_TEST_IR):
                     compiler.setRunIR(true);
                     break;
-                case static_cast<char>(CommandLineArg::STATIC_ANALYSIS_ONLY):
-                    emit_code = false;
-                    break;
-                case static_cast<char>(CommandLineArg::RUN_AND_TEST_IR):
-                    run_ir = true;
-                    break;
                 default:
                     throw cmd_error();
             }
