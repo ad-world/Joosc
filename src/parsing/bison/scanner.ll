@@ -190,17 +190,27 @@ instanceof      return yy::parser::make_INSTANCEOF(loc);
 %%
 
 void Driver::scan_begin() {
-  yy_flex_debug = trace_scanning;
-  if (file.empty()|| file == "-")
-    yyin = stdin;
-  else if (!(yyin = fopen (file.c_str (), "r")))
-    {
-      std::cerr << "cannot open " << file << ": " << strerror(errno) << '\n';
-      exit (EXIT_FAILURE);
+    yy_flex_debug = trace_scanning;
+    if ( strfiles.empty() ) {
+        if (file.empty()|| file == "-")
+        yyin = stdin;
+        else if (!(yyin = fopen (file.c_str (), "r")))
+        {
+            std::cerr << "cannot open " << file << ": " << strerror(errno) << '\n';
+            exit (EXIT_FAILURE);
+        }
+        yy_switch_to_buffer( yy_create_buffer(yyin, YY_BUF_SIZE) );
+    } else {
+        yy_switch_to_buffer( yy_scan_string(strfiles.front().c_str()) );
     }
 }
 
 void Driver::scan_end() {
-  fclose(yyin);
+    if ( strfiles.empty() ) {
+        fclose(yyin);
+    } else {
+        strfiles.pop_front();
+    }
+    yy_delete_buffer( YY_CURRENT_BUFFER );
 }
 
