@@ -1,0 +1,127 @@
+// Modified from https://github.com/llvm-mirror/clang/blob/master/tools/clang-fuzzer/cxx_proto.proto
+// Supports
+//  - Function calls
+//  - Local variables
+//  - Assignments
+//  - IfThen
+//  - IfThenElse
+//  - While
+//  - For
+
+syntax = "proto2";
+package joosc_fuzzer;
+
+message VarRef {
+    required int32 varnum = 1;
+}
+
+message FunctionRef {
+    required int32 funcnum = 1;
+}
+
+message Lvalue {
+    required VarRef varref = 1;
+}
+
+message Rvalue {
+    oneof rvalue_oneof {
+        VarRef varref = 1;
+        Const cons = 2;
+        BinaryOp binop = 3;
+        MethodInvocation method_invoc = 4;
+    }
+}
+
+message Const {
+    required int32 val = 1;
+}
+
+message BinaryOp {
+    enum Op {
+        ADD     = 0;
+        SUB     = 1;
+        MUL     = 2;
+        DIV     = 3;
+        MOD     = 4;
+        AND     = 5;
+        OR      = 6;
+        EAND    = 7;
+        EOR     = 8;
+        EQ      = 9;
+        NEQ     = 10;
+        LT      = 11;
+        GT      = 12;
+        LEQ     = 13;
+        GEQ     = 14;
+    };
+    required Op op = 1;
+    required Rvalue left = 2;
+    required Rvalue right = 3;
+}
+
+///////////////////////////////////////
+//              Statements
+///////////////////////////////////////
+message AssignmentStatement {
+    required Lvalue lvalue = 1;
+    required Rvalue rvalue = 2;
+}
+
+message MethodInvocation {
+    required FunctionRef funcref = 1;
+}
+
+message MethodInvocationStatement {
+    required MethodInvocation method_invocation = 1;
+}
+
+message VarDecl {
+    required Lvalue lvalue = 1;
+    optional Rvalue rvalue = 2;
+}
+
+message IfThen {
+    required Rvalue cond = 1;
+    required StatementSeq if_body = 2;
+}
+
+message IfElse {
+    required Rvalue cond = 1;
+    required StatementSeq if_body = 2;
+    required StatementSeq else_body = 3;
+}
+
+message While {
+    required Rvalue cond = 1;
+    required StatementSeq body = 2;
+}
+
+message Statement {
+    oneof stmt_oneof {
+        AssignmentStatement         assignment  = 1;
+        IfThen                      ifthen      = 2;
+        IfElse                      ifelse      = 3;
+        While                       while_loop  = 4;
+        MethodInvocationStatement   method_call = 5;
+        VarDecl                     declaration = 6;
+    }
+}
+///////////////////////////////////////
+
+message StatementSeq {
+    repeated Statement statements = 1;
+}
+
+message StaticField {
+    required Lvalue lvalue = 1;
+    required Const cons = 2;
+}
+
+message Class {
+    required StatementSeq main_body = 1;
+    repeated StaticField fields = 2;
+    optional StatementSeq method0_body = 3;
+    optional StatementSeq method1_body = 4;
+    optional StatementSeq method2_body = 5;
+    optional StatementSeq method3_body = 6;
+}
