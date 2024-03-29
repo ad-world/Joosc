@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stack>
 #include <string>
 #include "IR-interpreter/stack-item/stack-item.h"

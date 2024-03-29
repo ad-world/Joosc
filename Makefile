@@ -26,6 +26,9 @@ scanner-test: build
 integration-test: build
 	python3 tests/src/integration/valid_invalid_prog_test.py -f
 
+compiled-output-test: build
+	python3 tests/src/integration/correct_output_test.py
+
 integration-test-full: build
 	python3 tests/src/integration/valid_invalid_prog_test.py
 
