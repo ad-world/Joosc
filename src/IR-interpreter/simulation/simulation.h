@@ -96,7 +96,7 @@ class Simulator {
 protected:
     /** map from address to instruction */
     std::unordered_map<int, IR_PTR> indexToNode;
-    static const int debugLevel = 0;
+    int debugLevel = 0;
 
     int getMemoryIndex(int addr);
 
@@ -177,4 +177,11 @@ public:
      *          {@link Configuration#ABSTRACT_RET}
      */
     int call(ExecutionFrame& parent, std::string name, std::vector<int> args);
+
+    /**
+     * Set the Debug Level object
+     * 
+     * @param debugLevel 
+     */
+    void setDebugLevel(int debugLevel);
 };

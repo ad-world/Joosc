@@ -27,12 +27,15 @@ void Simulator::ExecutionFrame::put(std::string tempName, int value) {
 }
 
 bool Simulator::ExecutionFrame::advance() {
-    if (debugLevel > 1) {
+    if (parent.debugLevel > 1) {
         // TODO: evaluate getCurrentNode() 
         std::cout << "Evaluating " << ip << std::endl;
     }
 
     int backupIp = ip;
+
+    if (ip >= parent.indexToNode.size()) return false;
+
     parent.leave(this); 
 
     if (ip == -1) return false;
@@ -45,7 +48,7 @@ bool Simulator::ExecutionFrame::advance() {
 void Simulator::ExecutionFrame::setIP(int ip) {
     this->ip = ip;
 
-    if (debugLevel > 1) {
+    if (parent.debugLevel > 1) {
         if (ip == -1) {
             std::cout << "Returning" << std::endl;
         } else {
@@ -334,4 +337,8 @@ void Simulator::leave(ExecutionFrame *frame) {
         },
         [&](auto &node) {}
     }, node);
+}
+
+void Simulator::setDebugLevel(int level) {
+    Simulator::debugLevel = level;
 }
