@@ -29,7 +29,7 @@ valid-invalid-test: build
 valid-invalid-test-full: build
 	python3 tests/src/integration/valid_invalid_prog_test.py
 
-valid-invalid-test-single:
+valid-invalid-test-single: build
 	python3 tests/src/integration/valid_invalid_prog_test.py -s ${path}
 
 compiled-output-test: build
