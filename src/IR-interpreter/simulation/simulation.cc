@@ -56,7 +56,7 @@ void Simulator::ExecutionFrame::setIP(int ip) {
 
 IR_PTR Simulator::ExecutionFrame::getCurrentNode() {
     if (parent.indexToNode.find(ip) == parent.indexToNode.end()) {
-        throw Trap("No next instruction. Forgot RETURN?");
+        THROW_SimulatorError("No next instruction. Forgot RETURN?");
     }
 
     return parent.indexToNode[ip];
@@ -66,7 +66,7 @@ Simulator::Simulator(IR *compUnit, int heapSizeMax) : heapSizeMax(heapSizeMax), 
     if (std::holds_alternative<CompUnitIR>(*compUnit)) {
         this->compUnit = &std::get<CompUnitIR>(*compUnit);
     } else {
-        throw InternalCompilerError("Expected CompUnitIR when creating Simulator");
+        THROW_SimulatorError("Expected CompUnitIR when creating Simulator");
     }
 
     libraryFunctions.insert("__malloc");
@@ -82,14 +82,14 @@ Simulator::Simulator(IR *compUnit, int heapSizeMax) : heapSizeMax(heapSizeMax), 
 
 
 int Simulator::malloc(int size) {
-    if (size < 0) throw Trap("Invalid malloc size");
+    if (size < 0) THROW_SimulatorError("Invalid malloc size");
 
     if (size % WORD_SIZE != 0) {
-        throw Trap("Can only allocate in chunks of " + std::to_string(WORD_SIZE) + " bytes");
+        THROW_SimulatorError("Can only allocate in chunks of " + std::to_string(WORD_SIZE) + " bytes");
     }
 
     int retval = memory.size();
-    if (retval + size > heapSizeMax) throw Trap("Out of memory in the heap");
+    if (retval + size > heapSizeMax) THROW_SimulatorError("Out of memory in the heap");
 
     for (int i = 0; i < size; i++) {
         memory.push_back(rand());
@@ -109,14 +109,14 @@ int Simulator::calloc(int size) {
 
 int Simulator::read(int addr) {
     int i = getMemoryIndex(addr);
-    if (i >= memory.size()) throw Trap("Attempting to read past end of heap");
+    if (i >= memory.size()) THROW_SimulatorError("Attempting to read past end of heap");
 
     return memory[i];
 }
 
 void Simulator::store(int addr, int value) {
     int i = getMemoryIndex(addr);
-    if (i >= memory.size()) throw Trap("Attempting to store past end of heap");
+    if (i >= memory.size()) THROW_SimulatorError("Attempting to store past end of heap");
     
     memory[i] = value;
 }
@@ -138,7 +138,7 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
     } else {
         FuncDeclIR* func = compUnit->getFunc(name);
         if (func == nullptr) {
-            throw Trap("Function " + name + " not found");
+            THROW_SimulatorError("Function " + name + " not found");
         }
 
         int ip = findLabel(name);
@@ -158,7 +158,7 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
 
 int Simulator::getMemoryIndex(int addr) {
     if (addr % WORD_SIZE != 0) {
-        throw Trap("Unaligned memory access: " + std::to_string(addr) + " is not a multiple of " + std::to_string(WORD_SIZE));
+        THROW_SimulatorError("Unaligned memory access: " + std::to_string(addr) + " is not a multiple of " + std::to_string(WORD_SIZE));
     }
 
     return addr / WORD_SIZE;
@@ -177,7 +177,7 @@ int Simulator::libraryCall(std::string name, std::vector<int> args) {
     } else if (name == "__exception") {
         std::exit(13);
     } else {
-        throw InternalCompilerError("Unsupported library function: " + name);
+        THROW_SimulatorError("Unsupported library function: " + name);
     }
 
     return return_value;
@@ -210,11 +210,11 @@ void Simulator::leave(ExecutionFrame *frame) {
                     result = l * r;
                     break;
                 case BinOpIR::OpType::DIV:
-                    if (r == 0) throw Trap("Division by zero");
+                    if (r == 0) THROW_SimulatorError("Division by zero");
                     result = l / r;
                     break;
                 case BinOpIR::OpType::MOD:
-                    if (r == 0) throw Trap("Division by zero");
+                    if (r == 0) THROW_SimulatorError("Division by zero");
                     result = l % r;
                     break;
                 case BinOpIR::OpType::AND:
@@ -254,7 +254,7 @@ void Simulator::leave(ExecutionFrame *frame) {
                     result = l >= r ? 1 : 0;
                     break;
                 default:
-                    throw InternalCompilerError("Unsupported binary operation");
+                    THROW_SimulatorError("Unsupported binary operation");
             }
 
             Simulator::exprStack.pushValue(result);
@@ -281,10 +281,10 @@ void Simulator::leave(ExecutionFrame *frame) {
                 if (std::holds_alternative<FuncDeclIR*>(ir_ptr)) {
                     targetName = std::get<FuncDeclIR*>(ir_ptr)->getName();
                 } else {
-                    throw InternalCompilerError("Call to a non-function instruction");
+                    THROW_SimulatorError("Call to a non-function instruction");
                 }
             } else {
-                throw InternalCompilerError("Invalid function call " + call.label() + " (target " + std::to_string(target.value) + " is unknown)!");
+                THROW_SimulatorError("Invalid function call " + call.label() + " (target " + std::to_string(target.value) + " is unknown)!");
             }
             
             int return_value = Simulator::call(*frame, targetName, args);
@@ -317,7 +317,7 @@ void Simulator::leave(ExecutionFrame *frame) {
                     }
                     frame->put(stackItem.temp, r);
                 default:
-                    throw InternalCompilerError("Invalid MODE!");
+                    THROW_SimulatorError("Invalid MODE!");
             }
         },
         [&](ExpIR &exp) {
@@ -335,7 +335,7 @@ void Simulator::leave(ExecutionFrame *frame) {
             } else if (top == 1) {
                 label = cjump.trueLabel();
             } else {
-                throw InternalCompilerError("Invalid condition for CJump, expected 0/1 and got " + top);
+                THROW_SimulatorError("Invalid condition for CJump, expected 0/1 and got " + top);
             }
 
             if (label != "") frame->setIP(findLabel(label));

@@ -1,26 +1,60 @@
 import os, subprocess, sys
 from helpers.helpers import *
 
-def valid_invalid_prog_test():
+def single_valid_invalid_prog_test(program_path, print_pass_cases=True, expected_code=None) -> bool:
     """
-    Runs joosc on all programs in valid and invalid directories.
-    Tests that joosc correctly validates valid and invalidates invalid programs.
+    Run single valid invalid test on path. Returns true if test passed, otherwise returns false.
     """
+    if expected_code is None:
+        # Determine expected code to the best of our ability
+        if "invalid/" in program_path:
+            expected_code = 42
+        elif "warning/" in program_path:
+            expected_code = 43
+        else:
+            expected_code = 0
+
     compiler_args = ["-a"]
+    program = os.path.basename(program_path)
+    integration_log_file = "integration.log"
 
     integration_dir = os.path.dirname(__file__)
     programs_dir = os.path.join(integration_dir, "../../programs")
-
     stdlib_dir = os.path.join(integration_dir, "../../stdlib")
     stdlib_files = get_all_files(stdlib_dir, ".java")
 
     joosc_executable = resolve_path(programs_dir, "../../joosc")
 
-    integration_log_file = "integration.log"
+    files = [program_path]
+    if os.path.isdir(program_path):
+        files = get_all_files(program_path, ".java")
+
+    with open(integration_log_file, "w") as outfile:
+        result = subprocess.run([joosc_executable, *compiler_args, *files, *stdlib_files], stderr=outfile)
+
+    if result.returncode == expected_code:
+        # Test passed, display output if -f is not set
+        if print_pass_cases:
+            print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
+            print_file_contents(integration_log_file)
+        return True
+    else:
+        # Test failed, display output always
+        print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
+        print_file_contents(integration_log_file)
+        return False
+
+def valid_invalid_prog_test():
+    """
+    Runs joosc on all programs in valid and invalid directories.
+    Tests that joosc correctly validates valid and invalidates invalid programs.
+    """
+    integration_dir = os.path.dirname(__file__)
+    programs_dir = os.path.join(integration_dir, "../../programs")
 
     # Optional argument: -f indicates we should only print failed cases
     print_pass_cases = True
-    if len(sys.argv) > 1 and sys.argv[1] == "-f":
+    if "-f" in sys.argv:
         print_pass_cases = False
 
     # Get configured testable assignments from environment
@@ -47,26 +81,12 @@ def valid_invalid_prog_test():
                         program_path = resolve_path(directory, program)
 
                         if os.path.exists(program_path):
-                            # if program is a directory, get all files from the direcory and add to a list
-                            files = [program_path]
-                            if os.path.isdir(program_path):
-                                files = get_all_files(program_path, ".java")
-
-                            with open(integration_log_file, "w") as outfile:
-                                result = subprocess.run([joosc_executable, *compiler_args, *files, *stdlib_files], stderr=outfile)
-
-                            if result.returncode == expected_code:
-                                # Test passed, display output if -f is not set
-                                if print_pass_cases:
-                                    print(f"{colors.OKGREEN}SUCCESS: Running joosc on {program} successfully returned {expected_code}{colors.ENDC}")
-                                    print_file_contents(integration_log_file)
+                            passed = single_valid_invalid_prog_test(program_path, print_pass_cases, expected_code)
+                            if passed:
                                 pass_count += 1
                             else:
-                                # Test failed, display output always
-                                print(f"{colors.FAIL}FAIL: Running joosc on {program} returned {result.returncode}. Expected: {expected_code}{colors.ENDC}")
-                                print_file_contents(integration_log_file)
-                                failures = True
                                 fail_count += 1
+                                failures = True
     
             test_results[assignment] = { 'pass_count': pass_count, 'fail_count': fail_count, 'total_count': pass_count + fail_count }
 
@@ -76,4 +96,10 @@ if __name__ == "__main__":
     # Load variables from .env file
     load_env_file()
 
-    sys.exit(valid_invalid_prog_test())
+    if "-s" in sys.argv:
+        if len(sys.argv) < 3:
+            print("Must pass test file / test directory.")
+            sys.exit(1)
+        sys.exit(int(not single_valid_invalid_prog_test(sys.argv[2])))
+    else:
+        sys.exit(valid_invalid_prog_test())

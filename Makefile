@@ -23,17 +23,24 @@ unit-test: build
 scanner-test: build
 	(./tests/lexing/run_tests.sh)
 	
-integration-test: build
+valid-invalid-test: build
 	python3 tests/src/integration/valid_invalid_prog_test.py -f
+
+valid-invalid-test-full: build
+	python3 tests/src/integration/valid_invalid_prog_test.py
+
+valid-invalid-test-single:
+	python3 tests/src/integration/valid_invalid_prog_test.py -s ${path}
 
 compiled-output-test: build
 	python3 tests/src/integration/correct_output_test.py
 
-integration-test-full: build
-	python3 tests/src/integration/valid_invalid_prog_test.py
+compiled-output-test-single: build
+	python3 tests/src/integration/correct_output_test.py -s ${path}
 
-single-test:
-	python3 tests/src/integration/single_test.py ${path}
+integration-test: 
+	-make valid-invalid-test 
+	-make compiled-output-test
 
 clean:
 	rm -f joosc && rm -f *.log && rm -f *.zip

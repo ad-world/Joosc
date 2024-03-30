@@ -2,21 +2,61 @@ import os, subprocess, sys
 from helpers.helpers import *
 from assemble import assemble_all_files
 
+def single_correct_output_test(program_path) -> bool:
+    """
+    Run single correct output test on path. Returns true if test passed, otherwise returns false.
+    """
+    compiler_args = ["-i"]
+    program = os.path.basename(program_path)
+
+    root_dir = resolve_path(os.path.dirname(__file__), "../../../")
+    integration_dir = os.path.dirname(__file__)
+    stdlib_dir = os.path.join(integration_dir, "../../stdlib")
+    stdlib_files = get_all_files(stdlib_dir, ".java")
+
+    joosc_executable = resolve_path(root_dir, "./joosc")
+
+    # if program is a directory, get all files from the direcory and add to a list
+    files = get_all_files(program_path, ".java") if os.path.isdir(program_path) else [program_path]
+
+    result = subprocess.run([joosc_executable, *compiler_args, *files, *stdlib_files])
+
+    if result.returncode in (0, 43):
+        # Program compiled, check output is correct
+        assemble_all_files()
+        program_result = subprocess.run(["./main"], cwd=root_dir)
+
+        with open(resolve_path(root_dir, "ir_result.tmp"), "r") as file:
+            ir_result = file.read()
+            ir_result = ir_result if ir_result else "NOTHING"
+            print(f"{colors.OKCYAN}program {program} returned {ir_result} after interpreting IR{colors.ENDC}")
+        
+        with open(resolve_path(root_dir, "ir_canon_result.tmp"), "r") as file:
+            ir_canon_result = file.read()
+            ir_canon_result = ir_canon_result if ir_canon_result else "NOTHING"
+            print(f"{colors.OKCYAN}program {program} returned {ir_canon_result} after interpreting Canonical IR{colors.ENDC}")
+
+        print(f"{colors.OKCYAN}program {program} returned {program_result.returncode} after compiling and executing{colors.ENDC}")
+
+        if not (str(program_result.returncode) == ir_canon_result and ir_canon_result == ir_result):
+            print(f"{colors.FAIL}FAIL: IR, Canonical IR, and binary results are not the same!{colors.ENDC}\n")
+            return False
+        else:
+            print("")
+            return True
+    else:
+        # Test failed due to compile failing
+        print(f"{colors.FAIL}FAIL: joosc failed to compile {program}, so it couldn't be ran.{colors.ENDC}\n")
+        return False
+    
+
 def correct_output_test():
     """
     Runs joosc on all programs in valid and invalid directories.
     Tests that compiled programs produce the correct output by compiling and running them.
     """
-    compiler_args = ["-i"]
-
-    root_dir = resolve_path(os.path.dirname(__file__), "../../../")
     integration_dir = os.path.dirname(__file__)
     programs_dir = os.path.join(integration_dir, "../../programs")
-
-    stdlib_dir = os.path.join(integration_dir, "../../stdlib")
-    stdlib_files = get_all_files(stdlib_dir, ".java")
-
-    joosc_executable = resolve_path(programs_dir, "../../joosc")
 
     # Get configured testable assignments from environment
     assignments_to_test = os.getenv('COMPILED_OUTPUT_TEST', '').split(',')
@@ -42,41 +82,12 @@ def correct_output_test():
                         program_path = resolve_path(directory, program)
 
                         if os.path.exists(program_path):
-                            # if program is a directory, get all files from the direcory and add to a list
-                            files = get_all_files(program_path, ".java") if os.path.isdir(program_path) else [program_path]
-
-                            result = subprocess.run([joosc_executable, *compiler_args, *files, *stdlib_files])
-
-                            if result.returncode in (0, 43):
-                                # Program compiled, check output is correct
-                                assemble_all_files()
-                                program_result = subprocess.run(["./main"], cwd=root_dir)
-
-                                with open(resolve_path(root_dir, "ir_result.tmp"), "w+") as file:
-                                    ir_result = file.read()
-                                    ir_result = ir_result if ir_result else "NOTHING"
-                                    print(f"{colors.OKCYAN}program {program} returned {ir_result} after interpreting IR{colors.ENDC}")
-                                
-                                with open(resolve_path(root_dir, "ir_canon_result.tmp"), "w+") as file:
-                                    ir_canon_result = file.read()
-                                    ir_canon_result = ir_canon_result if ir_canon_result else "NOTHING"
-                                    print(f"{colors.OKCYAN}program {program} returned {ir_canon_result} after interpreting Canonical IR{colors.ENDC}")
-
-                                print(f"{colors.OKCYAN}program {program} returned {program_result.returncode} after compiling and executing{colors.ENDC}")
-
-                                if not (str(program_result.returncode) == ir_canon_result and ir_canon_result == ir_result):
-                                    print(f"{colors.FAIL}FAIL: IR, Canonical IR, and binary results are not the same!{colors.ENDC}\n")
-                                    failures = True
-                                    fail_count += 1
-                                else:
-                                    print("")
-                                    pass_count += 1
-                                
+                            passed = single_correct_output_test(program_path)
+                            if passed:
+                                pass_count += 1
                             else:
-                                # Test failed due to compile failing
-                                print(f"{colors.FAIL}FAIL: joosc failed to compile {program}, so it couldn't be ran.{colors.ENDC}\n")
-                                failures = True
                                 fail_count += 1
+                                failures = True
     
             test_results[assignment] = { 'pass_count': pass_count, 'fail_count': fail_count, 'total_count': pass_count + fail_count }
 
@@ -86,4 +97,10 @@ if __name__ == "__main__":
     # Load variables from .env file
     load_env_file()
 
-    sys.exit(correct_output_test())
+    if "-s" in sys.argv:
+        if len(sys.argv) < 3:
+            print("Must pass test file / test directory.")
+            sys.exit(1)
+        sys.exit(int(not single_correct_output_test(sys.argv[2])))
+    else:
+        sys.exit(correct_output_test())
