@@ -22,6 +22,7 @@ public:
 /************************************************
  *  ERRORS within the simulator
  ************************************************/
+#define THROW_SimulatorError(message) throw SimulatorError(message, __FILE__, __LINE__)
 class SimulatorError : public std::runtime_error {
    public:
     std::string message;
