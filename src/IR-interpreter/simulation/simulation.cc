@@ -28,8 +28,7 @@ void Simulator::ExecutionFrame::put(std::string tempName, int value) {
 
 bool Simulator::ExecutionFrame::advance() {
     if (parent.debugLevel > 1) {
-        // TODO: evaluate getCurrentNode() 
-        std::cout << "Evaluating " << ip << std::endl;
+        std::cout << "Evaluating " << parent.getNodeType(getCurrentNode()) << " with ip: " << ip << std::endl;
     }
 
     int backupIp = ip;
@@ -52,7 +51,7 @@ void Simulator::ExecutionFrame::setIP(int ip) {
         if (ip == -1) {
             std::cout << "Returning" << std::endl;
         } else {
-            std::cout << "Jumping to " << ip << std::endl; // TODO: evaluate getCurrentNode()
+            std::cout << "Jumping to " << parent.getNodeType(getCurrentNode()) << " with ip: " << ip << std::endl; 
         }
     }
 }
@@ -65,12 +64,14 @@ IR_PTR Simulator::ExecutionFrame::getCurrentNode() {
     return parent.indexToNode[ip];
 }
 
-Simulator::Simulator(IR *compUnit, int heapSizeMax) : heapSizeMax(heapSizeMax), exprStack(debugLevel) {
+Simulator::Simulator(IR *compUnit, int heapSizeMax) : heapSizeMax(heapSizeMax), exprStack(2) {
     if (std::holds_alternative<CompUnitIR>(*compUnit)) {
         this->compUnit = &std::get<CompUnitIR>(*compUnit);
     } else {
         THROW_SimulatorError("Expected CompUnitIR when creating Simulator");
     }
+    
+    setDebugLevel(2);
 
     libraryFunctions.insert("__malloc");
     libraryFunctions.insert("__debexit");
@@ -125,12 +126,30 @@ void Simulator::store(int addr, int value) {
 }
 
 int Simulator::findLabel(std::string label) {
-    return 1;
+    if (nameToIndex.find(label) == nameToIndex.end()) {
+        int last_dot = label.find_last_of('.');
+        if (last_dot != std::string::npos) {
+            std::string short_label = label.substr(last_dot + 1);
+            if (nameToIndex.find(short_label) == nameToIndex.end()) {
+                THROW_SimulatorError("Could not find label '" + label + "'!");
+            } else {
+                return nameToIndex[short_label];
+            }
+        } else {
+            THROW_SimulatorError("Could not find label '" + label + "'!");
+
+        }
+    }
+    return nameToIndex[label];
+}
+
+std::string Simulator::getNodeType(IR_PTR node) {
+    return std::visit([&](auto *x) { return x->label(); }, node);
 }
 
 int Simulator::call(std::string name, std::vector<int> args) {
     auto frame = ExecutionFrame(-1, *this);
-    return this->call(frame, name, args);
+    return call(frame, name, args);
 }
 
 int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> args) {
@@ -154,8 +173,13 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
         while (frame->advance());
 
         return_value = frame->ret;
+
+        std::cout << "Frame return value is " << return_value << std::endl;
     }
 
+    parent.put(ABSTRACT_RET_PREFIX, return_value);
+    std::cout << "Calling " << name << " returned " << return_value << std::endl;
+ 
     return return_value;
 }
 
@@ -190,19 +214,24 @@ void Simulator::leave(ExecutionFrame *frame) {
     IR_PTR node = frame->getCurrentNode();
 
     std::visit(util::overload{
-        [&](ConstIR &cons) {
-            Simulator::exprStack.pushValue(cons.getValue());
+        [&](ConstIR *cons) {
+            // std::cout << "CONST" << std::endl;
+            Simulator::exprStack.pushValue(cons->getValue());
         },
-        [&](TempIR &temp) {
-            std::string tempName = temp.getName();
+        [&](TempIR *temp) {
+            // std::cout << "TEMP" << std::endl;
+
+            std::string tempName = temp->getName();
             Simulator::exprStack.pushValue(frame->get(tempName));
         },
-        [&](BinOpIR &binop) {
+        [&](BinOpIR *binop) {
+            // std::cout << "BINOP" << std::endl;
+
             int r = Simulator::exprStack.popValue();
             int l = Simulator::exprStack.popValue();
 
             int result;
-            switch (binop.op) {
+            switch (binop->op) {
                 case BinOpIR::OpType::ADD:
                     result = l + r;
                     break;
@@ -250,12 +279,16 @@ void Simulator::leave(ExecutionFrame *frame) {
 
             Simulator::exprStack.pushValue(result);
         },
-        [&](MemIR &mem){
+        [&](MemIR *mem){
+            // std::cout << "MEM" << std::endl;
+
             int addr = Simulator::exprStack.popValue();
             Simulator::exprStack.pushAddr(read(addr), addr);
         },
-        [&](CallIR &call){
-            int argCount = call.getArgs().size();
+        [&](CallIR *call){
+            // std::cout << "CALL" << std::endl;
+
+            int argCount = call->getArgs().size();
             std::vector<int> args;
 
             for (int i = 0; i < argCount; i++) {
@@ -271,18 +304,27 @@ void Simulator::leave(ExecutionFrame *frame) {
                 auto ir_ptr = Simulator::indexToNode[target.addr];
                 if (std::holds_alternative<FuncDeclIR*>(ir_ptr)) {
                     targetName = std::get<FuncDeclIR*>(ir_ptr)->getName();
+                    int last_dot = targetName.find_last_of('.');
+
+                    if (last_dot != std::string::npos) {
+                        targetName = targetName.substr(last_dot + 1);
+                    }
+
                 } else {
                     THROW_SimulatorError("Call to a non-function instruction");
                 }
             } else {
-                THROW_SimulatorError("Invalid function call " + call.label() + " (target " + std::to_string(target.value) + " is unknown)!");
+                std::string message = "Invalid function call " + call->label() + " (target " + std::to_string(target.value) + " is unknown)!";
+                THROW_SimulatorError(message);
             }
             
             int return_value = Simulator::call(*frame, targetName, args);
             Simulator::exprStack.pushValue(return_value);
         },
-        [&](NameIR &name) {
-            std::string str = name.getName();
+        [&](NameIR *name) {
+            // std::cout << "NAME" << std::endl;
+
+            std::string str = name->getName();
 
             if (Simulator::libraryFunctions.find(str) != Simulator::libraryFunctions.end()) {
                 Simulator::exprStack.pushName(-1, str);
@@ -291,7 +333,9 @@ void Simulator::leave(ExecutionFrame *frame) {
                 Simulator::exprStack.pushName(addr, str);
             }
         },
-        [&](MoveIR &move) {
+        [&](MoveIR *move) {
+            // std::cout << "MOVE" << std::endl;
+
             int r = Simulator::exprStack.popValue();
             auto stackItem = Simulator::exprStack.pop();
 
@@ -307,38 +351,49 @@ void Simulator::leave(ExecutionFrame *frame) {
                         std::cout << "temp[" << stackItem.name << "] = " << r << std::endl;
                     }
                     frame->put(stackItem.temp, r);
+                    break;
                 default:
-                    THROW_SimulatorError("Invalid MODE!");
+                    THROW_SimulatorError("Invalid MOVE - " + stackItem.getKindString());
             }
         },
-        [&](ExpIR &exp) {
+        [&](ExpIR *exp) {
+            // std::cout << "EXPR" << std::endl;
+
             Simulator::exprStack.pop();
         },
-        [&](JumpIR &jump) {
+        [&](JumpIR *jump) {
+            // std::cout << "JUMP" << std::endl;
+
             frame->setIP(Simulator::exprStack.popValue());
         },
-        [&](CJumpIR &cjump) {
+        [&](CJumpIR *cjump) {
+            // std::cout << "CJUMP" << std::endl;
+
             int top = Simulator::exprStack.popValue();
             std::string label;
 
             if (top == 0) {
-                label = cjump.falseLabel();
+                label = cjump->falseLabel();
             } else if (top == 1) {
-                label = cjump.trueLabel();
+                label = cjump->trueLabel();
             } else {
                 THROW_SimulatorError("Invalid condition for CJump, expected 0/1 and got " + top);
             }
 
             if (label != "") frame->setIP(findLabel(label));
         },
-        [&](ReturnIR &ret) {
+        [&](ReturnIR *ret) {
             frame->ret = Simulator::exprStack.popValue();
+            std::cout << "Encountered return, returning " << frame->ret << std::endl;
             frame->setIP(-1);
         },
-        [&](auto &node) {}
+        [&](auto &node) {
+            std::cout << "Leaving: " << node->label() << std::endl;
+        }
     }, node);
 }
 
 void Simulator::setDebugLevel(int level) {
     Simulator::debugLevel = level;
 }
+

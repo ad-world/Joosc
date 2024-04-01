@@ -22,7 +22,16 @@ public:
         child_functions.emplace_back(std::move(func));
         functions[name] = child_functions.back().get();
     }
-    FuncDeclIR* getFunc(std::string name) { return functions[name]; }
+    FuncDeclIR* getFunc(std::string name) { 
+        if (functions.find(name) == functions.end()) {
+            int last_dot = name.find_last_of('.');
+            if (last_dot != std::string::npos) {
+                name = name.substr(last_dot + 1);
+            }
+        }
+    
+        return functions[name];
+    }
     std::string getName() { return name; }
     std::unordered_map<std::string, FuncDeclIR*> getFunctions() { return functions; }
     std::string label() { return "COMPUNIT (" + class_name + ")"; }

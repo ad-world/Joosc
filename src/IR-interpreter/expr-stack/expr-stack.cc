@@ -3,6 +3,9 @@
 
 int ExprStack::popValue() {
     int value = stack.top().value;
+    if (debugLevel > 1) {
+        std::cout << "Popping value " << value << std::endl;
+    }
     stack.pop();
     return value;
 }
