@@ -12,10 +12,10 @@ using Instruction = std::variant<std::string, Tile*>;
 class Tile {
     std::vector<Instruction> instructions; // The instructions that implement this tile
 
-    int cost; // The cost of the tile
+    int cost = 0; // The cost of the tile
     bool cost_calculated = false; // Whether the cost has already been calculated, and doesn't need to be recalculated
 
-    int calculateCost();
+    void calculateCost(); // The cost function for calculating cost of a tile
   public:
     std::string abstract_register; // If this is an expression tile, the abstract register results are stored into
 

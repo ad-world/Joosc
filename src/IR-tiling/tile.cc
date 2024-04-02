@@ -3,9 +3,7 @@
 #include "exceptions/exceptions.h"
 #include "utillities/overload.h"
 
-int Tile::calculateCost() {
-    if (cost_calculated) THROW_CompilerError("Cost already calculated");
-
+void Tile::calculateCost() {
     cost = 0;
     for (auto& instr : instructions) {
         std::visit(util::overload {
@@ -17,13 +15,14 @@ int Tile::calculateCost() {
             }
         }, instr);
     }
-
-    cost_calculated = true;
-    return cost;
 }
 
 int Tile::getCost() {
-    if (!cost_calculated) return calculateCost();
+    if (!cost_calculated) {
+        cost = 0;
+        calculateCost();
+        cost_calculated = true;
+    };
 
     return cost;
 }
