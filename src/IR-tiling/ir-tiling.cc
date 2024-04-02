@@ -2,13 +2,15 @@
 #include "utillities/util.h"
 #include "exceptions/exceptions.h"
 
+#include "assembly.h"
+
 std::list<std::string> IRToTilesConverter::tile(IR &ir) {
     return std::visit(util::overload {
         // For each function, tile each statement in the function body, and make a label for the function call
         [&](CompUnitIR &node) {
             std::list<std::string> output;
             for (auto& func : node.getFunctionList()) {
-                output.push_back(func.name + ":"); // Label
+                output.push_back(Assembly::Label(func.name));
 
                 auto& body_tile = tile(*func.body);
                 for (auto& body_instruction : stmt_tile.getFullInstructions()) {
