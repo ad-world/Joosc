@@ -9,9 +9,6 @@ class Tile;
 using Instruction = std::variant<std::string, Tile*>;
 
 class Tile {
-    std::vector<Tile*> preceding_tiles;
-    std::list<std::string> instructions; // The assembly instructions that implement this tile, after all preceding tiles
-
     std::vector<Instruction> instructions; // The instructions that implement this tile
 
     int cost; // The cost of the tile
@@ -25,17 +22,5 @@ class Tile {
 
     int getCost(); // Get cost of the tile
 
-    std::list<std::string> getFullInstructions(); // Get the full instructions for this tile, expanding other tiles it uses
+    std::list<std::string> getFullInstructions(); // Get the full assembly instructions for this tile, expanding other tiles it uses
 }
-
-struct ExpressionTile {
-    std::string reg; // Abstract register the result is stored in
-    
-    std::list<std::string> instructions; // The assembly instructions that implement this tile
-    int cost; // The cost of the tile, under our cost model
-};
-
-struct StatementTile {
-    std::list<std::string> instructions; // The assembly instructions that implement this tile
-    int cost; // The cost of the tile, under our cost model
-};

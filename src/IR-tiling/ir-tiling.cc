@@ -2,31 +2,30 @@
 #include "utillities/util.h"
 #include "exceptions/exceptions.h"
 
-std::list<StatementTile> IRToTilesConverter::tile(IR &ir) {
-    std::visit(util::overload {
+std::list<std::string> IRToTilesConverter::tile(IR &ir) {
+    return std::visit(util::overload {
         // For each function, tile each statement in the function body, and make a label for the function call
         [&](CompUnitIR &node) {
+            std::list<std::string> output;
             for (auto& func : node.getFunctionList()) {
-                
+                output.push_back(func.name + ":"); // Label
+
+                auto& body_tile = tile(*func.body);
+                for (auto& body_instruction : stmt_tile.getFullInstructions()) {
+                    output.push_back(body_instruction);
+                }
             }
+            return output;
         },
         [&](auto &node) { THROW_CompilerError("This should not happen"); }
     }, ir);
 }
 
-ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
-    ExpressionTile optimal_tile;
+Tile& IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
+    Tile& optimal_tile;
 
     std::visit(util::overload {
-        [&](BinOpIR &node) {
-            
-            if (node.left.isTemporary() && node.right.isTemporary()) {
-                // This tile is applicable
-            }
-
-
-
-        },
+        [&](BinOpIR &node) {},
 
         [&](ConstIR &node) {},
 
@@ -48,8 +47,8 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
     return optimal_tile;
 }
 
-StatementTile IRToTilesConverter::tile(StatementIR &ir) {
-    StatementTile optimal_tile;
+Tile& IRToTilesConverter::tile(StatementIR &ir) {
+    Tile& optimal_tile;
     
     std::visit(util::overload {
         [&](CJumpIR &node) {},
