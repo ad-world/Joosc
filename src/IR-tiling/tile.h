@@ -3,6 +3,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <variant>
 
 class Tile;
 
@@ -23,4 +24,4 @@ class Tile {
     int getCost(); // Get cost of the tile
 
     std::list<std::string> getFullInstructions(); // Get the full assembly instructions for this tile, expanding other tiles it uses
-}
+};

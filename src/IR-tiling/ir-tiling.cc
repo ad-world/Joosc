@@ -10,68 +10,72 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
         [&](CompUnitIR &node) {
             std::list<std::string> output;
             for (auto& func : node.getFunctionList()) {
-                output.push_back(Assembly::Label(func.name));
+                output.push_back(Assembly::Label(func->getName()));
 
-                auto& body_tile = tile(*func.body);
-                for (auto& body_instruction : stmt_tile.getFullInstructions()) {
+                auto& body_tile = tile(func->getBody());
+                for (auto& body_instruction : body_tile.getFullInstructions()) {
                     output.push_back(body_instruction);
                 }
             }
             return output;
         },
-        [&](auto &node) { THROW_CompilerError("This should not happen"); }
+        [&](auto &node) -> std::list<std::string> { THROW_CompilerError("This should not happen"); }
     }, ir);
 }
 
 Tile& IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
-    Tile& optimal_tile;
+    Tile& optimal_tile = uninitialized_tile;
 
     std::visit(util::overload {
-        [&](BinOpIR &node) {},
+        // [&](BinOpIR &node) {},
 
-        [&](ConstIR &node) {},
+        // [&](ConstIR &node) {},
 
-        [&](MemIR &node) {},
+        // [&](MemIR &node) {},
 
-        [&](NameIR &node) {},
+        // [&](NameIR &node) {},
 
-        [&](TempIR &node) {},
+        // [&](TempIR &node) {},
 
-        [&](ESeqIR &node) {
-            THROW_CompilerError("ESeqIR should not exist after canonicalization"); 
-        },
+        // [&](ESeqIR &node) {
+        //     THROW_CompilerError("ESeqIR should not exist after canonicalization"); 
+        // },
 
-        [&](CallIR &node) {
-            THROW_CompilerError("CallIR should not be considered an expression after canonicalization"); 
-        }
+        // [&](CallIR &node) {
+        //     THROW_CompilerError("CallIR should not be considered an expression after canonicalization"); 
+        // }
+
+        [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
 
     return optimal_tile;
 }
 
 Tile& IRToTilesConverter::tile(StatementIR &ir) {
-    Tile& optimal_tile;
+    Tile& optimal_tile = uninitialized_tile;
     
     std::visit(util::overload {
-        [&](CJumpIR &node) {},
+        // [&](CJumpIR &node) {},
 
-        [&](JumpIR &node) {},
+        // [&](JumpIR &node) {},
 
-        [&](LabelIR &node) {},
+        // [&](LabelIR &node) {},
 
-        [&](MoveIR &node) {},
+        // [&](MoveIR &node) {},
 
-        [&](ReturnIR &node) {},
+        // [&](ReturnIR &node) {},
 
-        [&](CallIR &node) {},
+        // [&](CallIR &node) {},
 
-        [&](ExpIR &node) {
-            THROW_CompilerError("ExpIR should not exist after canonicalization"); 
-        },
+        // [&](ExpIR &node) {
+        //     THROW_CompilerError("ExpIR should not exist after canonicalization"); 
+        // },
 
-        [&](SeqIR &node) {
-            THROW_CompilerError("Nested SeqIR should not exist after canonicalization"); 
-        }
+        // [&](SeqIR &node) {
+        //     THROW_CompilerError("Nested SeqIR should not exist after canonicalization"); 
+        // }
+
+        [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
 
     return optimal_tile;
