@@ -45,13 +45,31 @@ Tile* IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
     std::visit(util::overload {
         // [&](BinOpIR &node) {},
 
-        // [&](ConstIR &node) {},
+        [&](ConstIR &node) {
+            Tile const_tile = Tile({
+                Assembly::Mov(abstract_reg, std::to_string(node.getValue()))
+            }, abstract_reg);
+
+            decideIsCandidate(ir, const_tile);
+        },
 
         // [&](MemIR &node) {},
 
-        // [&](NameIR &node) {},
+        [&](NameIR &node) {
+            Tile name_tile = Tile({
+                Assembly::Mov(abstract_reg, node.getName())
+            }, abstract_reg);
 
-        // [&](TempIR &node) {},
+            decideIsCandidate(ir, name_tile);
+        },
+
+        [&](TempIR &node) {
+            Tile temp_tile = Tile({
+                Assembly::Mov(abstract_reg, node.getName())
+            }, abstract_reg);
+
+            decideIsCandidate(ir, temp_tile);
+        },
 
         [&](ESeqIR &node) {
             THROW_CompilerError("ESeqIR should not exist after canonicalization"); 

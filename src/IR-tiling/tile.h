@@ -41,6 +41,7 @@ class Tile {
 
     // Construct tile with instructions
     Tile(std::vector<Instruction>);
+    Tile(std::vector<Instruction>, std::string abstract_reg);
 
     // Default construct max cost tile
     Tile();

@@ -62,5 +62,8 @@ void Tile::add_instruction(Instruction instr) {
 Tile::Tile(std::vector<Instruction> instructions) 
     : instructions{std::move(instructions)}, cost{0}, cost_calculated{false} {}
 
+Tile::Tile(std::vector<Instruction> instructions, std::string abstract_reg) 
+    : instructions{std::move(instructions)}, abstract_register{abstract_reg}, cost{0}, cost_calculated{false} {}
+
 Tile::Tile() 
     : instructions{}, cost{std::numeric_limits<int>::max()}, cost_calculated{true} {}
