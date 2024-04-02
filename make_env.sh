@@ -53,9 +53,9 @@ function runtest {
 complete -F _test_completions runtest
 
 function runvalgrind {
-    INPUT=$(getinput $1)
+    INPUT=$(getinput $1); shift
     if [[ -n $INPUT ]]; then
-        valgrind ./joosc ${INPUT} ${STDLIB}
+        valgrind $@ ./joosc ${INPUT} ${STDLIB}
     fi
 }
 complete -F _test_completions runvalgrind
