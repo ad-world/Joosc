@@ -55,13 +55,12 @@ std::list<std::string> Tile::getFullInstructions() {
 }
 
 void Tile::add_instruction(Instruction instr) {
+    cost_calculated = false; // Cost must be recalculated
     instructions.push_back(instr);
 }
 
-Tile Tile::maxCostTile() {
-    Tile tile = Tile();
-    tile.cost = std::numeric_limits<int>::max();
-    return tile;
-}
+Tile::Tile(std::vector<Instruction> instructions) 
+    : instructions{std::move(instructions)}, cost{0}, cost_calculated{false} {}
 
-Tile::Tile(std::vector<Instruction> instructions) : instructions{std::move(instructions)} {}
+Tile::Tile() 
+    : instructions{}, cost{std::numeric_limits<int>::max()}, cost_calculated{true} {}

@@ -9,26 +9,39 @@ class Tile;
 
 using Instruction = std::variant<std::string, Tile*>;
 
+// A sequence of instructions that implements a subtree of the IR AST.
+//
+// Specified in terms of assembly instructions and other tiles.
 class Tile {
-    std::vector<Instruction> instructions; // The instructions that implement this tile
+    // The instructions that implement this tile
+    std::vector<Instruction> instructions;
 
-    int cost = 0; // The cost of the tile
-    bool cost_calculated = false; // Whether the cost has already been calculated, and doesn't need to be recalculated
+    // The cost of the tile
+    int cost;
+    // Whether the cost has already been calculated, and doesn't need to be recalculated
+    bool cost_calculated;
 
-    void calculateCost(); // The cost function for calculating cost of a tile
+    // The cost function for calculating cost of a tile
+    void calculateCost();
   public:
-    std::string abstract_register; // If this is an expression tile, the abstract register results are stored into
+    // If this is an expression tile, the abstract register results are stored into
+    std::string abstract_register = "";
 
-    Tile& withAbstractRegister(std::string& reg); // Replace the abstract register in this tile's instructions with reg
+    // Replace the abstract register in this tile's instructions with reg
+    Tile& withAbstractRegister(std::string& reg);
 
-    int getCost(); // Get cost of the tile
+    // Get cost of the tile
+    int getCost();
 
+    // Add an instruction to the tile, which sets the cost to uncalculated
     void add_instruction(Instruction);
 
-    std::list<std::string> getFullInstructions(); // Get the full assembly instructions for this tile, expanding other tiles it uses
+    // Get the full assembly instructions for this tile, expanding other tiles it uses
+    std::list<std::string> getFullInstructions();
 
-    static Tile maxCostTile(); // Get a tile that has the max possible cost
-
+    // Construct tile with instructions
     Tile(std::vector<Instruction>);
-    Tile() = default;
+
+    // Default construct max cost tile
+    Tile();
 };

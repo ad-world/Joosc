@@ -4,6 +4,20 @@
 
 #include "assembly.h"
 
+void IRToTilesConverter::decideIsCandidate(ExpressionIR& ir, Tile candidate) {
+    Tile& optimal_tile = expression_memo[&ir];
+    if (candidate.getCost() < optimal_tile.getCost()) {
+        optimal_tile = candidate;
+    }
+};
+
+void IRToTilesConverter::decideIsCandidate(StatementIR& ir, Tile candidate) {
+    Tile& optimal_tile = statement_memo[&ir];
+    if (candidate.getCost() < optimal_tile.getCost()) {
+        optimal_tile = candidate;
+    }
+};
+
 std::list<std::string> IRToTilesConverter::tile(IR &ir) {
     return std::visit(util::overload {
         // For each function, tile each statement in the function body, and make a label for the function call
@@ -24,13 +38,9 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
 }
 
 Tile& IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
-    Tile* optimal_tile = &uninitialized_tile;
-
-    auto decideIsCandidate = [&](Tile& candidate){
-        if (candidate.getCost() < optimal_tile->getCost()) {
-            optimal_tile = &candidate;
-        }
-    };
+    if (expression_memo.count(&ir)) {
+        return expression_memo[&ir].withAbstractRegister(abstract_reg);
+    }
 
     std::visit(util::overload {
         // [&](BinOpIR &node) {},
@@ -54,26 +64,23 @@ Tile& IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
         [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
 
-    if (optimal_tile == &uninitialized_tile) { THROW_CompilerError("No matching tile found."); }
-
-    return *optimal_tile;
+    return expression_memo[&ir];
 }
 
 Tile& IRToTilesConverter::tile(StatementIR &ir) {
-    Tile* optimal_tile = &uninitialized_tile;
-
-    auto decideIsCandidate = [&](Tile& candidate){
-        if (candidate.getCost() < optimal_tile->getCost()) {
-            optimal_tile = &candidate;
-        }
-    };
+    if (statement_memo.count(&ir)) {
+        return statement_memo[&ir];
+    }
     
     std::visit(util::overload {
         // [&](CJumpIR &node) {},
 
         // [&](JumpIR &node) {},
 
-        // [&](LabelIR &node) {},
+        [&](LabelIR &node) {
+            Tile label_tile = Tile({Assembly::Label(node.getName())});
+            decideIsCandidate(ir, label_tile);
+        },
 
         // [&](MoveIR &node) {},
 
@@ -88,7 +95,7 @@ Tile& IRToTilesConverter::tile(StatementIR &ir) {
                 seq_tile.add_instruction(&tile(*stmt));
             }
 
-            decideIsCandidate(seq_tile);
+            decideIsCandidate(ir, seq_tile);
         },
 
         [&](ExpIR &node) {
@@ -98,7 +105,5 @@ Tile& IRToTilesConverter::tile(StatementIR &ir) {
         [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
 
-    if (optimal_tile == &uninitialized_tile) { THROW_CompilerError("No matching tile found."); }
-
-    return *optimal_tile;
+    return statement_memo[&ir];
 }
