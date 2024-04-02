@@ -3,8 +3,25 @@
 
 #include <ostream>
 #include <sstream>
+#include <string>
 
 namespace joosc_fuzzer {
+
+// Constants / Settings
+#define NUM_FIELDS 100
+#define NUM_METHODS 4
+const std::string class_name = "Foo";
+
+
+// Tab printing
+int num_tabs = 0;
+void printTabs(std::ostream &os) {
+    for ( int t = 0; t < num_tabs; t++ ) { os << "\t"; }
+}
+void printLessTabs(std::ostream &os) {
+    num_tabs--;
+    printTabs(os);
+}
 
 // Forward decl
 std::ostream &operator<<(std::ostream &os, const Const &x);
@@ -14,11 +31,11 @@ std::ostream &operator<<(std::ostream &os, const StatementSeq &x);
 
 // Proto to joos
 std::ostream &operator<<(std::ostream &os, const VarRef &x) {
-    return os << "t" << (static_cast<uint32_t>(x.varnum()) % 25);
+    return os << class_name << ".t[" << (static_cast<uint32_t>(x.varnum()) % NUM_FIELDS) << "]";
 }
 
 std::ostream &operator<<(std::ostream &os, const FunctionRef &x) {
-    return os << "m" << (static_cast<uint32_t>(x.funcnum()) % 4);
+    return os << class_name << ".m" << (static_cast<uint32_t>(x.funcnum()) % NUM_METHODS);
 }
 
 std::ostream &operator<<(std::ostream &os, const Lvalue &x) {
@@ -29,7 +46,7 @@ std::ostream &operator<<(std::ostream &os, const Rvalue &x) {
     if ( x.has_varref() ) return os << x.varref();
     if ( x.has_cons() ) return os << x.cons();
     if ( x.has_binop() ) return os << x.binop();
-    if ( x.has_method_invoc() ) return os << x.method_invoc();
+    // if ( x.has_method_invoc() ) return os << x.method_invoc();
     return os << "1";
 }
 
@@ -67,31 +84,41 @@ std::ostream &operator<<(std::ostream &os, const MethodInvocation &x) {
 //              Statements
 ///////////////////////////////////////
 std::ostream &operator<<(std::ostream &os, const AssignmentStatement &x) {
+    printTabs(os);
     return os << x.lvalue() << "=" << x.rvalue() << ";\n";
 }
 
 std::ostream &operator<<(std::ostream &os, const MethodInvocationStatement &x) {
+    printTabs(os);
     return os << x.method_invocation() << ";\n";
 }
 
-std::ostream &operator<<(std::ostream &os, const VarDecl &x) {
-    return os << "int " << x.lvalue() << "=" << x.rvalue() << ";\n";
-}
+// std::ostream &operator<<(std::ostream &os, const VarDecl &x) {
+//     printTabs(os);
+//     return os << "int " << x.lvalue() << "=" << x.rvalue() << ";\n";
+// }
 
 std::ostream &operator<<(std::ostream &os, const IfThen &x) {
-    return os << "if (" << x.cond() << "){\n"
-              << x.if_body() << "}\n";
+    printTabs(os); os << "if (" << x.cond() << "){\n"; num_tabs++;
+    os << x.if_body();
+    printLessTabs(os); os << "}\n";
+    return os;
 }
 
 std::ostream &operator<<(std::ostream &os, const IfElse &x) {
-    return os << "if (" << x.cond() << "){\n"
-              << x.if_body() << "} else { \n"
-              << x.else_body() << "}\n";
+    printTabs(os); os << "if (" << x.cond() << "){\n"; num_tabs++;
+    os << x.if_body();
+    printLessTabs(os); os << "} else { \n"; num_tabs++;
+    os << x.else_body();
+    printLessTabs(os); os << "}\n";
+    return os;
 }
 
 std::ostream &operator<<(std::ostream &os, const While &x) {
-    return os << "while (" << x.cond() << "){\n"
-              << x.body() << "}\n";
+    printTabs(os); os << "while (" << x.cond() << "){\n"; num_tabs++;
+    os << x.body();
+    printLessTabs(os); os << "}\n";
+    return (os);
 }
 
 std::ostream &operator<<(std::ostream &os, const Statement &x) {
@@ -100,7 +127,7 @@ std::ostream &operator<<(std::ostream &os, const Statement &x) {
     if ( x.has_ifelse() ) return os << x.ifelse();
     if ( x.has_while_loop() ) return os << x.while_loop();
     if ( x.has_method_call() ) return os << x.method_call();
-    if ( x.has_declaration() ) return os << x.declaration();
+    // if ( x.has_declaration() ) return os << x.declaration();
     return os << ";\n";
 }
 ///////////////////////////////////////
@@ -111,38 +138,53 @@ std::ostream &operator<<(std::ostream &os, const StatementSeq &x) {
 }
 
 std::ostream &operator<<(std::ostream &os, const StaticField &x) {
-    return os << "public static int " << x.lvalue() << "=" << x.cons() << ";\n";
+    printTabs(os);
+    return os << x.lvalue() << "=" << x.cons() << ";\n";
 }
 
 std::ostream &operator<<(std::ostream &os, const Class &x) {
-    os  << "public class Foo {\n"
-            << "public Foo() {}\n"
-            << "public static void test() {\n"
-                << x.main_body()
-            << "}\n";
-    for ( auto &field : x.fields() ) {
+    os  << "public class " << class_name << " {\n"; num_tabs++;
+
+    // Static fields
+    printTabs(os);
+    os << "public static int[] t = new int[" << NUM_FIELDS << "];\n";
+
+    // Constructor
+    printTabs(os);
+    os << "public Foo() {\n"; num_tabs++;
+    for ( auto field : x.fields() ) {
+        // Initialize static fields
         os << field;
     }
-    if ( x.has_method0_body() ) {
-        os  << "public static void m0() {\n"
-                << x.method0_body()
-            << "}\n";
+    printLessTabs(os);
+    os << "}\n";
+
+    // Main function
+    printTabs(os);
+    os << "public static void test() {\n"; num_tabs++;
+    os << x.main_body();
+    printLessTabs(os);
+    os << "}\n";
+
+    // Static methods
+    auto method_it = x.methods().begin();
+    for ( int m = 0; m < NUM_METHODS; m++ ) {
+        std::string method_name = "m" + std::to_string(m);
+        printTabs(os);
+        os << "public static void " << method_name << "() {\n"; num_tabs++;
+
+        // Print body if exists
+        if ( method_it != x.methods().end() ) {
+            os << *method_it;
+            method_it++;
+        }
+
+        printLessTabs(os);
+        os << "}\n";
     }
-    if ( x.has_method1_body() ) {
-        os  << "public static void m1() {\n"
-                << x.method1_body()
-            << "}\n";
-    }
-    if ( x.has_method2_body() ) {
-        os  << "public static void m2() {\n"
-                << x.method2_body()
-            << "}\n";
-    }
-    if ( x.has_method3_body() ) {
-        os  << "public static void m3() {\n"
-                << x.method3_body()
-            << "}\n";
-    }
+
+    // End of class
+    printLessTabs(os);
     return os << "}\n";
 }
 

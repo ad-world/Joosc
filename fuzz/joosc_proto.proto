@@ -28,7 +28,7 @@ message Rvalue {
         VarRef varref = 1;
         Const cons = 2;
         BinaryOp binop = 3;
-        MethodInvocation method_invoc = 4;
+        // MethodInvocation method_invoc = 4;
     }
 }
 
@@ -75,24 +75,24 @@ message MethodInvocationStatement {
     required MethodInvocation method_invocation = 1;
 }
 
-message VarDecl {
-    required Lvalue lvalue = 1;
-    required Rvalue rvalue = 2;
-}
+// message VarDecl {
+//     required Lvalue lvalue = 1;
+//     required Rvalue rvalue = 2;
+// }
 
 message IfThen {
-    required Rvalue cond = 1;
+    required BinaryOp cond = 1;
     required StatementSeq if_body = 2;
 }
 
 message IfElse {
-    required Rvalue cond = 1;
+    required BinaryOp cond = 1;
     required StatementSeq if_body = 2;
     required StatementSeq else_body = 3;
 }
 
 message While {
-    required Rvalue cond = 1;
+    required BinaryOp cond = 1;
     required StatementSeq body = 2;
 }
 
@@ -103,7 +103,7 @@ message Statement {
         IfElse                      ifelse      = 3;
         While                       while_loop  = 4;
         MethodInvocationStatement   method_call = 5;
-        VarDecl                     declaration = 6;
+        // VarDecl                     declaration = 6;
     }
 }
 ///////////////////////////////////////
@@ -120,8 +120,5 @@ message StaticField {
 message Class {
     required StatementSeq main_body = 1;
     repeated StaticField fields = 2;
-    optional StatementSeq method0_body = 3;
-    optional StatementSeq method1_body = 4;
-    optional StatementSeq method2_body = 5;
-    optional StatementSeq method3_body = 6;
+    repeated StatementSeq methods = 3;
 }
