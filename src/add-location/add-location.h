@@ -56,6 +56,13 @@ public:
 
     static std::string getString(yy::location &loc);
 
+    static void deleteFileNames() {
+        for ( auto filename : filenames ) {
+            delete filename;
+        }
+        filenames.clear();
+    }
+
     AddLocation(yy::location &location) {
         if ( location.begin.filename ) {
             filenames.push_back(new std::string(*location.begin.filename));
