@@ -18,7 +18,9 @@ link_libraries(
 add_library(joosc_proto
     src/joosc_proto.pb.cc
     src/proto_to_joos.cc
+    ${Protobuf_LIBRARIES}
     )
+add_dependencies(joosc_proto ${PBM_PREFIX})
 
 macro(fuzzer name)
     include_directories(${Protobuf_INCLUDE_DIRS})
