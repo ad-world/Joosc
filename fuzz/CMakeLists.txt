@@ -1,43 +1,31 @@
-######################
-# Libprotobuf Mutator
-######################
-include(ExternalProject)
+cmake_minimum_required(VERSION 3.24)
+set(CMAKE_CXX_STANDARD 17)
 
-if (NOT PBM_PREFIX)
-  set (PBM_PREFIX protobuf_mutator)
-endif()
+### Set compiler to clang
+set(CMAKE_C_COMPILER clang)
+set(CMAKE_CXX_COMPILER clang++)
 
-set(PBM_PATH ${CMAKE_CURRENT_BINARY_DIR}/${PBM_PREFIX}/src/${PBM_PREFIX})
-set(PBM_LIB_PATH ${PBM_PATH}-build/src/libprotobuf-mutator.a)
-set(PBM_FUZZ_LIB_PATH ${PBM_PATH}-build/src/libfuzzer/libprotobuf-mutator-libfuzzer.a)
+### Include LPM
+include (cmake/protobuf.cmake)
 
-ExternalProject_Add(${PBM_PREFIX}
-  PREFIX ${PBM_PREFIX}
-  GIT_REPOSITORY https://github.com/google/libprotobuf-mutator.git
-  GIT_TAG master
-  CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release -DLIB_PROTO_MUTATOR_DOWNLOAD_PROTOBUF=ON
-  CMAKE_CACHE_ARGS -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-  BUILD_BYPRODUCTS ${PBM_LIB_PATH} ${PBM_FUZZ_LIB_PATH}
-  UPDATE_COMMAND ""
-  INSTALL_COMMAND ""
-  )
+### Link LPM
+link_libraries(
+    ${Protobuf_LIBRARIES}
+    ${ProtobufMutator_LIBRARIES}
+    )
 
-set(ProtobufMutator_INCLUDE_DIRS ${PBM_PATH})
-set(ProtobufMutator_LIBRARIES ${PBM_FUZZ_LIB_PATH} ${PBM_LIB_PATH})
-######################
-
-
-# Protobuf library
-include(FindProtobuf)
-find_package(Protobuf REQUIRED)
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS joosc_proto.proto)
+### Create joosc_proto lib
 add_library(joosc_proto
-    ${PROTO_SRCS}
-    ${PROTO_HDRS}
+    src/joosc_proto.pb.cc
+    src/proto_to_joos.cc
     )
 
 macro(fuzzer name)
+    include_directories(${Protobuf_INCLUDE_DIRS})
+    include_directories(${ProtobufMutator_INCLUDE_DIRS})
+    include_directories(${CMAKE_CURRENT_BINARY_DIR})
+    include_directories(../src)
+
     add_executable(${name} ${name}.cc)
     set_target_properties(${name}
             PROPERTIES
@@ -50,14 +38,6 @@ macro(fuzzer name)
             ${Protobuf_LIBRARIES}
             ${ProtobufMutator_LIBRARIES}
             )
-    target_include_directories(${name}
-            PRIVATE
-            ../src
-            ${PROTO_HDRS}
-            ${Protobuf_INCLUDE_DIRS}
-            ${ProtobufMutator_INCLUDE_DIRS}
-            ${CMAKE_CURRENT_BINARY_DIR}
-            )
 endmacro()
 
-fuzzer( fuzz_simple )
+fuzzer( fuzz_joosc )

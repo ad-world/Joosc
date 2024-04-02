@@ -23,6 +23,8 @@ graphs/*.gv
 graphs/*.png
 .gdb_history
 crash*
+leak*
+fuzz_joosc
 output
 __pycache__
 *.tmp

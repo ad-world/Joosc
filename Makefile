@@ -8,8 +8,7 @@ graph: | generate-parser
 	(mkdir -p build && cd build && cmake -DGRAPHVIZ=ON .. && make && cp joosc ../joosc)
 
 fuzzer: | generate-parser
-	which clang
-	(ninja --version && (mkdir -p build && cd build && cmake -DFUZZER=ON .. -G Ninja  && ninja && cp joosc ../joosc))
+	(ninja --version && (mkdir -p build && cd build && cmake -DFUZZER=ON .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzz_joosc))
 
 build: | generate-parser
 	(ninja --version && (mkdir -p build && cd build && cmake .. -G Ninja && ninja && cp joosc ../joosc)) || \
