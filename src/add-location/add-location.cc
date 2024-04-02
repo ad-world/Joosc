@@ -4,6 +4,8 @@
 #include <sstream>
 #include <variant>
 
+std::vector<const std::string *> AddLocation::filenames;
+
 void AddLocation::operator()(CompilationUnit &node) {
     node.location = loc;
 }

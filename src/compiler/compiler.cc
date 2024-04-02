@@ -30,6 +30,9 @@
 #endif
 
 int Compiler::finishWith(ReturnCode code) {
+    for ( auto str : AddLocation::filenames ) {
+        delete str;
+    }
     if ( output_rc ) { cerr << "RETURN CODE " << code << endl; }
     return code;
 }
