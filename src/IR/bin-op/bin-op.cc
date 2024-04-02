@@ -36,10 +36,6 @@ std::string BinOpIR::label() {
         case MOD: return "MOD";
         case AND: return "AND";
         case OR: return "OR";
-        case XOR: return "XOR";
-        case LSHIFT: return "LSHIFT";
-        case RSHIFT: return "RSHIFT";
-        case ARSHIFT: return "ARSHIFT";
         case EQ: return "EQ";
         case NEQ: return "NEQ";
         case LT: return "LT";

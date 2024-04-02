@@ -43,7 +43,52 @@ Tile* IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
     }
 
     std::visit(util::overload {
-        // [&](BinOpIR &node) {},
+        [&](BinOpIR &node) {
+            switch (node.op) {
+                case BinOpIR::OpType::ADD: {
+
+                } 
+                case BinOpIR::OpType::SUB: {
+
+                }
+                case BinOpIR::OpType::MUL: {
+
+                }
+                case BinOpIR::OpType::DIV: {
+
+                }
+                case BinOpIR::OpType::MOD: {
+
+                }
+                case BinOpIR::OpType::AND: {
+
+                }
+                case BinOpIR::OpType::OR: {
+
+                }
+                case BinOpIR::OpType::EQ: {
+
+                }
+                case BinOpIR::OpType::NEQ: {
+
+                }
+                case BinOpIR::OpType::LT: {
+
+                }
+                case BinOpIR::OpType::GT: {
+
+                }
+                case BinOpIR::OpType::LEQ: {
+
+                }
+                case BinOpIR::OpType::GEQ: {
+
+                }
+                default: {
+                    THROW_CompilerError("Operation is not supported in Joosc"); 
+                }
+            }
+        },
 
         [&](ConstIR &node) {
             Tile const_tile = Tile({

@@ -223,18 +223,6 @@ void Simulator::leave(ExecutionFrame *frame) {
                 case BinOpIR::OpType::OR:
                     result = l | r;
                     break;
-                case BinOpIR::OpType::XOR:
-                    result = l ^ r;
-                    break;
-                case BinOpIR::OpType::LSHIFT:
-                    result = l << r;
-                    break;
-                case BinOpIR::OpType::RSHIFT:
-                    result = static_cast<unsigned int>(l) >> r;
-                    break;
-                case BinOpIR::OpType::ARSHIFT:
-                    result = l >> r;
-                    break;
                 case BinOpIR::OpType::EQ:
                     result = l == r ? 1 : 0;
                     break;
