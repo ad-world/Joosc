@@ -46,10 +46,28 @@ Tile* IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
         [&](BinOpIR &node) {
             switch (node.op) {
                 case BinOpIR::OpType::ADD: {
+                    std::string operand1_reg = Assembly::newAbstractRegister();
+                    std::string operand2_reg = Assembly::newAbstractRegister();
 
+                    Tile generic_add_tile = Tile({
+                        tile(node.getLeft(), operand1_reg),
+                        tile(node.getRight(), operand2_reg),
+                        Assembly::Lea(abstract_reg, Assembly::MakeAddress(operand1_reg, operand2_reg))
+                    }, abstract_reg);
+
+                    decideIsCandidate(ir, generic_add_tile);
                 } 
                 case BinOpIR::OpType::SUB: {
+                    std::string operand1_reg = Assembly::newAbstractRegister();
+                    std::string operand2_reg = Assembly::newAbstractRegister();
 
+                    Tile generic_sub_tile = Tile({
+                        tile(node.getLeft(), operand1_reg),
+                        tile(node.getRight(), operand2_reg),
+                        Assembly::Lea(abstract_reg, Assembly::MakeAddress(operand1_reg, operand2_reg, -1))
+                    }, abstract_reg);
+
+                    decideIsCandidate(ir, generic_sub_tile);
                 }
                 case BinOpIR::OpType::MUL: {
 
@@ -91,6 +109,7 @@ Tile* IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
         },
 
         [&](ConstIR &node) {
+            // 32-bit immediate
             Tile const_tile = Tile({
                 Assembly::Mov(abstract_reg, std::to_string(node.getValue()))
             }, abstract_reg);

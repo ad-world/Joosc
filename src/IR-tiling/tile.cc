@@ -6,6 +6,7 @@
 #include <limits>
 
 void Tile::calculateCost() {
+    // Cost is defined as the number of assembly instructions used to implement tile
     cost = 0;
     for (auto& instr : instructions) {
         std::visit(util::overload {
