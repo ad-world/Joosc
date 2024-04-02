@@ -279,7 +279,7 @@
 
 /******************** END NONTERMINALS ********************/
 
-%parse-param {CompilationUnit **root}
+%parse-param {std::unique_ptr<CompilationUnit> *root}
 
 %{
 #define SET_LOCATION(me, loc) \
@@ -370,9 +370,7 @@
 
 Start:
     CompilationUnit {
-        auto test = new CompilationUnit(nullptr, vector<QualifiedIdentifier>(), vector<QualifiedIdentifier>(), vector<ClassDeclaration>(), vector<InterfaceDeclaration>());
-        *test = (move(*$1));
-        *root = test;
+        *root = std::move($1);
         // *root = (AstNodeVariant*) test;
     }
 

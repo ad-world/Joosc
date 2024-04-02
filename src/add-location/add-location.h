@@ -60,6 +60,7 @@ public:
             yy::position begin{filename, location.begin.line, location.begin.column};
             yy::position end{filename, location.end.line, location.end.column};
             loc = {begin, end};
+            delete filename;
         } else {
             loc = location;
         }
