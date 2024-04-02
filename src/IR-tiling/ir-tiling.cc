@@ -14,13 +14,13 @@ std::list<StatementTile> IRToTilesConverter::tile(IR &ir) {
     }, ir);
 }
 
-ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir) {
+ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
     ExpressionTile optimal_tile;
 
     std::visit(util::overload {
         [&](BinOpIR &node) {
             
-            if (node.left.isTemporary() && node.right isTemporary()) {
+            if (node.left.isTemporary() && node.right.isTemporary()) {
                 // This tile is applicable
             }
 

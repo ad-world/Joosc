@@ -1,33 +1,27 @@
 #pragma once
 
 #include "IR/ir.h"
-#include <vector>
-#include <list>
-#include <memory>
+#include "tile.h"
 #include <string>
-
-struct ExpressionTile {
-    std::string reg; // Abstract register the result is stored in
-    
-    std::list<std::string> instructions; // The assembly instructions that implement this tile
-    int cost; // The cost of the tile, under our cost model
-};
-
-struct StatementTile {
-    std::list<std::string> instructions; // The assembly instructions that implement this tile
-    int cost; // The cost of the tile, under our cost model
-};
+#include <unordered_map>
 
 // Convert Canonical IR to x86 assembly
+//
+// Uses the Optimal Tiling Algorithm, with memoization.
 class IRToTilesConverter {
+
+    // Holds the computed best tile for the subtree rooted at every IR in the IR AST.
+    // The best tile for each subtree is computed at most once.
+    std::unordered_map<ExpressionIR*, ExpressionTile> expression_memo;
+    std::unordered_map<StatementIR*, StatementTile> statement_memo;
+
+    // Tile the expression, producing the lowest cost tile
+    ExpressionTile& tile(ExpressionIR&, std::string&);
+
+    // Tile the statement, producing the lowest cost tile
+    StatementTile& tile(StatementIR&);
 
   public:
     // Tile the whole compilation unit
     std::list<StatementTile> tile(IR&);
-
-    // Tile the expression
-    ExpressionTile tile(ExpressionIR&);
-
-    // Tile the statement
-    StatementTile tile(StatementIR&);
 };
