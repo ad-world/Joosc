@@ -23,5 +23,12 @@ class Tile {
 
     int getCost(); // Get cost of the tile
 
+    void add_instruction(Instruction);
+
     std::list<std::string> getFullInstructions(); // Get the full assembly instructions for this tile, expanding other tiles it uses
+
+    static Tile maxCostTile(); // Get a tile that has the max possible cost
+
+    Tile(std::vector<Instruction>);
+    Tile() = default;
 };

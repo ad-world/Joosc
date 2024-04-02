@@ -11,7 +11,7 @@
 // Uses the Optimal Tiling Algorithm, with memoization.
 class IRToTilesConverter {
 
-    Tile uninitialized_tile = Tile();
+    Tile uninitialized_tile = Tile::maxCostTile();
 
     // Holds the computed best tile for the subtree rooted at every IR in the IR AST.
     // The best tile for each subtree is computed at most once.

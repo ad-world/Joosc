@@ -24,7 +24,13 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
 }
 
 Tile& IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
-    Tile& optimal_tile = uninitialized_tile;
+    Tile* optimal_tile = &uninitialized_tile;
+
+    auto decideIsCandidate = [&](Tile& candidate){
+        if (candidate.getCost() < optimal_tile->getCost()) {
+            optimal_tile = &candidate;
+        }
+    };
 
     std::visit(util::overload {
         // [&](BinOpIR &node) {},
@@ -37,22 +43,30 @@ Tile& IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
 
         // [&](TempIR &node) {},
 
-        // [&](ESeqIR &node) {
-        //     THROW_CompilerError("ESeqIR should not exist after canonicalization"); 
-        // },
+        [&](ESeqIR &node) {
+            THROW_CompilerError("ESeqIR should not exist after canonicalization"); 
+        },
 
-        // [&](CallIR &node) {
-        //     THROW_CompilerError("CallIR should not be considered an expression after canonicalization"); 
-        // }
+        [&](CallIR &node) {
+            THROW_CompilerError("CallIR should not be considered an expression after canonicalization"); 
+        },
 
         [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
 
-    return optimal_tile;
+    if (optimal_tile == &uninitialized_tile) { THROW_CompilerError("No matching tile found."); }
+
+    return *optimal_tile;
 }
 
 Tile& IRToTilesConverter::tile(StatementIR &ir) {
-    Tile& optimal_tile = uninitialized_tile;
+    Tile* optimal_tile = &uninitialized_tile;
+
+    auto decideIsCandidate = [&](Tile& candidate){
+        if (candidate.getCost() < optimal_tile->getCost()) {
+            optimal_tile = &candidate;
+        }
+    };
     
     std::visit(util::overload {
         // [&](CJumpIR &node) {},
@@ -67,16 +81,24 @@ Tile& IRToTilesConverter::tile(StatementIR &ir) {
 
         // [&](CallIR &node) {},
 
-        // [&](ExpIR &node) {
-        //     THROW_CompilerError("ExpIR should not exist after canonicalization"); 
-        // },
+        [&](SeqIR &node) {
+            Tile seq_tile;
 
-        // [&](SeqIR &node) {
-        //     THROW_CompilerError("Nested SeqIR should not exist after canonicalization"); 
-        // }
+            for (auto& stmt : node.getStmts()) {
+                seq_tile.add_instruction(&tile(*stmt));
+            }
+
+            decideIsCandidate(seq_tile);
+        },
+
+        [&](ExpIR &node) {
+            THROW_CompilerError("ExpIR should not exist after canonicalization"); 
+        },
 
         [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
 
-    return optimal_tile;
+    if (optimal_tile == &uninitialized_tile) { THROW_CompilerError("No matching tile found."); }
+
+    return *optimal_tile;
 }

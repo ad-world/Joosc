@@ -3,6 +3,8 @@
 #include "exceptions/exceptions.h"
 #include "utillities/overload.h"
 
+#include <limits>
+
 void Tile::calculateCost() {
     cost = 0;
     for (auto& instr : instructions) {
@@ -51,3 +53,15 @@ std::list<std::string> Tile::getFullInstructions() {
 
     return output;
 }
+
+void Tile::add_instruction(Instruction instr) {
+    instructions.push_back(instr);
+}
+
+Tile Tile::maxCostTile() {
+    Tile tile = Tile();
+    tile.cost = std::numeric_limits<int>::max();
+    return tile;
+}
+
+Tile::Tile(std::vector<Instruction> instructions) : instructions{std::move(instructions)} {}
