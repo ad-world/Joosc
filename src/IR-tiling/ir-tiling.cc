@@ -26,8 +26,8 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
             for (auto& func : node.getFunctionList()) {
                 output.push_back(Assembly::Label(func->getName()));
 
-                auto& body_tile = tile(func->getBody());
-                for (auto& body_instruction : body_tile.getFullInstructions()) {
+                auto body_tile = tile(func->getBody());
+                for (auto& body_instruction : body_tile->getFullInstructions()) {
                     output.push_back(body_instruction);
                 }
             }
@@ -37,9 +37,9 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
     }, ir);
 }
 
-Tile& IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
+Tile* IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
     if (expression_memo.count(&ir)) {
-        return expression_memo[&ir].withAbstractRegister(abstract_reg);
+        return &expression_memo[&ir].withAbstractRegister(abstract_reg);
     }
 
     std::visit(util::overload {
@@ -64,12 +64,12 @@ Tile& IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
         [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
 
-    return expression_memo[&ir];
+    return &expression_memo[&ir];
 }
 
-Tile& IRToTilesConverter::tile(StatementIR &ir) {
+Tile* IRToTilesConverter::tile(StatementIR &ir) {
     if (statement_memo.count(&ir)) {
-        return statement_memo[&ir];
+        return &statement_memo[&ir];
     }
     
     std::visit(util::overload {
@@ -79,7 +79,7 @@ Tile& IRToTilesConverter::tile(StatementIR &ir) {
             std::string target_reg = Assembly::newAbstractRegister();
 
             Tile jump_tile = Tile({
-                &tile(node.getTarget(), target_reg),
+                tile(node.getTarget(), target_reg),
                 Assembly::Jump(target_reg)
             });
 
@@ -96,8 +96,8 @@ Tile& IRToTilesConverter::tile(StatementIR &ir) {
             std::string source_reg = Assembly::newAbstractRegister();
 
             Tile move_tile = Tile({
-                &tile(node.getTarget(), target_reg),
-                &tile(node.getSource(), source_reg),
+                tile(node.getTarget(), target_reg),
+                tile(node.getSource(), source_reg),
                 Assembly::Mov(target_reg, source_reg)
             });
 
@@ -112,7 +112,7 @@ Tile& IRToTilesConverter::tile(StatementIR &ir) {
             Tile seq_tile;
 
             for (auto& stmt : node.getStmts()) {
-                seq_tile.add_instruction(&tile(*stmt));
+                seq_tile.add_instruction(tile(*stmt));
             }
 
             decideIsCandidate(ir, seq_tile);
@@ -125,5 +125,5 @@ Tile& IRToTilesConverter::tile(StatementIR &ir) {
         [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
 
-    return statement_memo[&ir];
+    return &statement_memo[&ir];
 }

@@ -24,11 +24,11 @@ class IRToTilesConverter {
 
     // Tile the expression, producing the lowest cost tile
     // Generates instructions that store the result in abstract_reg
-    Tile& tile(ExpressionIR& node, std::string& abstract_reg);
+    Tile* tile(ExpressionIR& node, std::string& abstract_reg);
 
     // Tile the statement, producing the lowest cost tile
     // Generates instructions that implement the statement
-    Tile& tile(StatementIR& node);
+    Tile* tile(StatementIR& node);
 
   public:
     // Tile the whole compilation unit, producing a list of assembly instructions
