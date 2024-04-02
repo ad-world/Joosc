@@ -77,7 +77,7 @@ message MethodInvocationStatement {
 
 message VarDecl {
     required Lvalue lvalue = 1;
-    optional Rvalue rvalue = 2;
+    required Rvalue rvalue = 2;
 }
 
 message IfThen {

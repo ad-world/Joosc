@@ -18,7 +18,7 @@ std::ostream &operator<<(std::ostream &os, const VarRef &x) {
 }
 
 std::ostream &operator<<(std::ostream &os, const FunctionRef &x) {
-    return os << "f" << (static_cast<uint32_t>(x.funcnum()) % 4);
+    return os << "m" << (static_cast<uint32_t>(x.funcnum()) % 4);
 }
 
 std::ostream &operator<<(std::ostream &os, const Lvalue &x) {
@@ -75,9 +75,7 @@ std::ostream &operator<<(std::ostream &os, const MethodInvocationStatement &x) {
 }
 
 std::ostream &operator<<(std::ostream &os, const VarDecl &x) {
-    os << "int " << x.lvalue();
-    if ( x.has_rvalue() ) os << "=" << x.rvalue();
-    return os << ";\n";
+    return os << "int " << x.lvalue() << "=" << x.rvalue() << ";\n";
 }
 
 std::ostream &operator<<(std::ostream &os, const IfThen &x) {
@@ -113,7 +111,7 @@ std::ostream &operator<<(std::ostream &os, const StatementSeq &x) {
 }
 
 std::ostream &operator<<(std::ostream &os, const StaticField &x) {
-    return os << "static int " << x.lvalue() << "=" << x.cons() << ";\n";
+    return os << "public static int " << x.lvalue() << "=" << x.cons() << ";\n";
 }
 
 std::ostream &operator<<(std::ostream &os, const Class &x) {

@@ -1975,7 +1975,7 @@ class VarDecl final :
       ::joosc_fuzzer::Lvalue* lvalue);
   ::joosc_fuzzer::Lvalue* unsafe_arena_release_lvalue();
 
-  // optional .joosc_fuzzer.Rvalue rvalue = 2;
+  // required .joosc_fuzzer.Rvalue rvalue = 2;
   bool has_rvalue() const;
   private:
   bool _internal_has_rvalue() const;
@@ -1996,6 +1996,9 @@ class VarDecl final :
   // @@protoc_insertion_point(class_scope:joosc_fuzzer.VarDecl)
  private:
   class _Internal;
+
+  // helper for ByteSizeLong()
+  size_t RequiredFieldsByteSizeFallback() const;
 
   template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
   typedef void InternalArenaConstructable_;
@@ -4686,7 +4689,7 @@ inline void VarDecl::set_allocated_lvalue(::joosc_fuzzer::Lvalue* lvalue) {
   // @@protoc_insertion_point(field_set_allocated:joosc_fuzzer.VarDecl.lvalue)
 }
 
-// optional .joosc_fuzzer.Rvalue rvalue = 2;
+// required .joosc_fuzzer.Rvalue rvalue = 2;
 inline bool VarDecl::_internal_has_rvalue() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.rvalue_ != nullptr);

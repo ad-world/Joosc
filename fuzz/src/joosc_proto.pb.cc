@@ -514,7 +514,7 @@ const char descriptor_table_protodef_joosc_5fproto_2eproto[] PROTOBUF_SECTION_VA
   "nvocationStatement\0229\n\021method_invocation\030"
   "\001 \002(\0132\036.joosc_fuzzer.MethodInvocation\"U\n"
   "\007VarDecl\022$\n\006lvalue\030\001 \002(\0132\024.joosc_fuzzer."
-  "Lvalue\022$\n\006rvalue\030\002 \001(\0132\024.joosc_fuzzer.Rv"
+  "Lvalue\022$\n\006rvalue\030\002 \002(\0132\024.joosc_fuzzer.Rv"
   "alue\"Y\n\006IfThen\022\"\n\004cond\030\001 \002(\0132\024.joosc_fuz"
   "zer.Rvalue\022+\n\007if_body\030\002 \002(\0132\032.joosc_fuzz"
   "er.StatementSeq\"\210\001\n\006IfElse\022\"\n\004cond\030\001 \002(\013"
@@ -2902,7 +2902,7 @@ class VarDecl::_Internal {
     (*has_bits)[0] |= 2u;
   }
   static bool MissingRequiredFields(const HasBits& has_bits) {
-    return ((has_bits[0] & 0x00000001) ^ 0x00000001) != 0;
+    return ((has_bits[0] & 0x00000003) ^ 0x00000003) != 0;
   }
 };
 
@@ -3006,7 +3006,7 @@ const char* VarDecl::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) 
         } else
           goto handle_unusual;
         continue;
-      // optional .joosc_fuzzer.Rvalue rvalue = 2;
+      // required .joosc_fuzzer.Rvalue rvalue = 2;
       case 2:
         if (PROTOBUF_PREDICT_TRUE(static_cast<uint8_t>(tag) == 18)) {
           ptr = ctx->ParseMessage(_internal_mutable_rvalue(), ptr);
@@ -3052,7 +3052,7 @@ uint8_t* VarDecl::_InternalSerialize(
         _Internal::lvalue(this).GetCachedSize(), target, stream);
   }
 
-  // optional .joosc_fuzzer.Rvalue rvalue = 2;
+  // required .joosc_fuzzer.Rvalue rvalue = 2;
   if (cached_has_bits & 0x00000002u) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
       InternalWriteMessage(2, _Internal::rvalue(this),
@@ -3067,27 +3067,47 @@ uint8_t* VarDecl::_InternalSerialize(
   return target;
 }
 
-size_t VarDecl::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:joosc_fuzzer.VarDecl)
+size_t VarDecl::RequiredFieldsByteSizeFallback() const {
+// @@protoc_insertion_point(required_fields_byte_size_fallback_start:joosc_fuzzer.VarDecl)
   size_t total_size = 0;
 
-  // required .joosc_fuzzer.Lvalue lvalue = 1;
   if (_internal_has_lvalue()) {
+    // required .joosc_fuzzer.Lvalue lvalue = 1;
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
         *_impl_.lvalue_);
   }
-  uint32_t cached_has_bits = 0;
-  // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
 
-  // optional .joosc_fuzzer.Rvalue rvalue = 2;
-  cached_has_bits = _impl_._has_bits_[0];
-  if (cached_has_bits & 0x00000002u) {
+  if (_internal_has_rvalue()) {
+    // required .joosc_fuzzer.Rvalue rvalue = 2;
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
         *_impl_.rvalue_);
   }
+
+  return total_size;
+}
+size_t VarDecl::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:joosc_fuzzer.VarDecl)
+  size_t total_size = 0;
+
+  if (((_impl_._has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+    // required .joosc_fuzzer.Lvalue lvalue = 1;
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *_impl_.lvalue_);
+
+    // required .joosc_fuzzer.Rvalue rvalue = 2;
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+        *_impl_.rvalue_);
+
+  } else {
+    total_size += RequiredFieldsByteSizeFallback();
+  }
+  uint32_t cached_has_bits = 0;
+  // Prevent compiler warnings about cached_has_bits being unused
+  (void) cached_has_bits;
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
