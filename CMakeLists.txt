@@ -53,8 +53,6 @@ target_sources(lex_tester PRIVATE $<TARGET_OBJECTS:CommonLib> "tests/lexing/lex_
 target_include_directories(lex_tester PRIVATE src)
 
 option(FUZZER "Generate a graph of the parse tree" OFF)
-set(CMAKE_C_COMPILER clang)
-set(CMAKE_CXX_COMPILER clang++)
 if (FUZZER)
     add_subdirectory(fuzz)
 endif (FUZZER)

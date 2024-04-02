@@ -8,7 +8,7 @@ graph: | generate-parser
 	(mkdir -p build && cd build && cmake -DGRAPHVIZ=ON .. && make && cp joosc ../joosc)
 
 fuzzer: | generate-parser
-	(ninja --version && (mkdir -p build && cd build && cmake -DFUZZER=ON -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzz_joosc))
+	(ninja --version && (mkdir -p build && cd build && cmake -DFUZZER=ON -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer))
 
 build: | generate-parser
 	(ninja --version && (mkdir -p build && cd build && cmake .. -G Ninja && ninja && cp joosc ../joosc)) || \
@@ -48,4 +48,4 @@ submission: build test
 	git log > a${anum}.log && zip a${anum}.zip -r src/ tests/ CMakeLists.txt Makefile a${anum}.log -x src/parsing/bison/location.hh src/parsing/bison/parser.cc src/parsing/bison/parser.hh src/parsing/bison/parser.output src/parsing/bison/scanner.cc 'tests/programs/*/marmoset/*'
 	rm a${anum}.log 
 
-.PHONY: all build test clean submission generate-parser integration-test integration-test-full
+.PHONY: all build fuzzer test clean submission generate-parser integration-test integration-test-full
