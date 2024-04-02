@@ -24,7 +24,7 @@ graphs/*.png
 .gdb_history
 crash*
 leak*
-fuzz_joosc
+fuzzer
 output
 __pycache__
 *.tmp
