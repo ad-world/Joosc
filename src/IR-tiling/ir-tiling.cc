@@ -75,14 +75,34 @@ Tile& IRToTilesConverter::tile(StatementIR &ir) {
     std::visit(util::overload {
         // [&](CJumpIR &node) {},
 
-        // [&](JumpIR &node) {},
+        [&](JumpIR &node) {
+            std::string target_reg = Assembly::newAbstractRegister();
+
+            Tile jump_tile = Tile({
+                &tile(node.getTarget(), target_reg),
+                Assembly::Jump(target_reg)
+            });
+
+            decideIsCandidate(ir, jump_tile);
+        },
 
         [&](LabelIR &node) {
             Tile label_tile = Tile({Assembly::Label(node.getName())});
             decideIsCandidate(ir, label_tile);
         },
 
-        // [&](MoveIR &node) {},
+        [&](MoveIR &node) {
+            std::string target_reg = Assembly::newAbstractRegister();
+            std::string source_reg = Assembly::newAbstractRegister();
+
+            Tile move_tile = Tile({
+                &tile(node.getTarget(), target_reg),
+                &tile(node.getSource(), source_reg),
+                Assembly::Mov(target_reg, source_reg)
+            });
+
+            decideIsCandidate(ir, move_tile);
+        },
 
         // [&](ReturnIR &node) {},
 
