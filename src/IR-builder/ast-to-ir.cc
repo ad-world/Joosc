@@ -1,14 +1,14 @@
 #include "ast-to-ir.h"
-#include "IR/ir.h"
 #include "IR/ir_variant.h"
 #include "type-checker/typechecker.h"
 #include "utillities/overload.h"
-#include "utillities/util.h"
 #include "variant-ast/expressions.h"
 #include <memory>
+#include <string>
 #include <utility>
 #include <variant>
 #include "exceptions/exceptions.h"
+#include "IR-interpreter/simulation/simulation.h"
 using namespace std;
 
 /***************************************************************
@@ -815,8 +815,8 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(Block &stmt) {
 
     if ( seq_vec.empty() ) {
         return SeqIR::makeEmpty();
-    } else if ( seq_vec.size() == 1 ) {
-        return std::move(seq_vec.back());
+    // } else if ( seq_vec.size() == 1 ) {
+    //     return std::move(seq_vec.back());
     } else {
         return SeqIR::makeStmt(std::move(seq_vec));
     }
@@ -870,12 +870,50 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
 void IRBuilderVisitor::operator()(MethodDeclaration &node) {
     if ( node.body.get() ) {
         // CREATE FuncDecl
+
+        // Add load arguments to body statement
+        auto body_stmt = convert(*node.body);
+        std::visit(util::overload{
+            [&](SeqIR &seq) {
+                vector<unique_ptr<StatementIR>> load_args;
+
+                // Add parameter moves
+                int arg_num = 0;
+                for ( auto &param : node.parameters ) {
+                    auto param_name = param.parameter_name->name;
+                    auto abstract_arg_name = ABSTRACT_ARG_PREFIX + to_string(arg_num++);
+                    auto arg_temp = TempIR::makeExpr(abstract_arg_name);
+                    auto param_temp = TempIR::makeExpr(param_name);
+                    load_args.push_back(
+                        MoveIR::makeStmt(
+                            std::move(param_temp),
+                            std::move(arg_temp)
+                        )
+                    );
+                }
+
+                // Move body statements
+                for ( auto &body_stmt : seq.getStmts() ) {
+                    load_args.push_back(
+                        std::move(body_stmt)
+                    );
+                }
+
+                body_stmt = SeqIR::makeStmt(std::move(load_args));
+            },
+            [&](auto &node) {
+                THROW_CompilerError("Method body should always return a SeqIR");
+            }
+        }, *body_stmt);
+
+        // Create func_decl
         auto func_decl = make_unique<FuncDeclIR>(
             node.environment->identifier,
-            convert(*node.body),
+            std::move(body_stmt),
             (int) node.parameters.size()
         );
 
+        // Add func_decl to comp_unit
         comp_unit.appendFunc(node.environment->identifier, std::move(func_decl));
     }
 }
