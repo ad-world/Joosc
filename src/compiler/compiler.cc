@@ -127,7 +127,6 @@ int Compiler::run() {
         }
 
         // CfgBuilder
-        // TODO: cleanup memleaks
         for (auto &ast: asts) {
             CfgBuilderVisitor().visit(ast);
         } 

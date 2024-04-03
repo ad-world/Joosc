@@ -153,6 +153,7 @@ std::ostream &operator<<(std::ostream &os, const Statement &x) {
     if ( x.has_while_loop() ) return os << x.while_loop();
     if ( x.has_method_call() ) return os << x.method_call();
     // if ( x.has_declaration() ) return os << x.declaration();
+    printTabs(os);
     return os << ";\n";
 }
 ///////////////////////////////////////
