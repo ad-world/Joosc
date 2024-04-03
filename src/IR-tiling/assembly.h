@@ -37,12 +37,26 @@ class Assembly {
         return "jmp " + target;
     }
 
+    static std::string JumpIfNZ(std::string target) {
+        return "jnz " + target;
+    }
+
     static std::string Mov(std::string target, std::string source) {
         return "mov " + target + ", " + source;
+    }
+    static std::string Mov(std::string target, int source) {
+        return Mov(target, std::to_string(source));
     }
 
     static std::string Lea(std::string target, std::string source) {
         return "lea " + target + ", " + source;
+    }
+
+    static std::string Add(std::string target, std::string arg2) {
+        return "add " + target + ", " + arg2;
+    }
+    static std::string Add(std::string target, int arg2) {
+        return Add(target, std::to_string(arg2));
     }
 
     static std::string IMul(std::string multiplicand) {
@@ -101,12 +115,28 @@ class Assembly {
         return "test " + arg1 + ", " + arg2;
     }
 
+    static std::string Ret(unsigned int bytes = 0) {
+        return bytes > 0 ? "ret " + std::to_string(bytes) : "ret";
+    }
+
+    static std::string Push(std::string arg) {
+        return "push " + arg;
+    }
+
+    static std::string Pop(std::string arg) {
+        return "pop " + arg;
+    }
+
+    static std::string Call(std::string arg) {
+        return "call " + arg;
+    }
+
     // Other helpers
 
     // Create [base + (index * scale) + displacement] effective address
     static std::string MakeAddress(
         std::string base_register, 
-        std::string index_register,
+        std::string index_register = "",
         int scale = 1,
         int displacement = 0
     );

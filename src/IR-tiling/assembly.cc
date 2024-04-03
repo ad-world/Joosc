@@ -16,11 +16,13 @@ std::string Assembly::MakeAddress(
     std::string result = base_register;
 
     // index * scale
-    result += (scale < 0 ? " - " : " + ");
-    if (abs_scale != 1) {
-        result += "(" + index_register + " * " + std::to_string(abs_scale) + ")";
-    } else {
-        result += index_register;
+    if (index_register != "") {
+        result += (scale < 0 ? " - " : " + ");
+        if (abs_scale != 1) {
+            result += "(" + index_register + " * " + std::to_string(abs_scale) + ")";
+        } else {
+            result += index_register;
+        }
     }
 
     // displacement
