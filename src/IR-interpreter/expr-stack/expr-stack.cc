@@ -25,11 +25,11 @@ void ExprStack::pushAddr(int value, int addr) {
     stack.push(StackItem(value, addr));
 }
 
-void ExprStack::pushTemp(int value, int addr) {
+void ExprStack::pushTemp(int value, std::string temp) {
     if(debugLevel > 1) {
-        std::cout << "Pushing TEMP " << value << " (" << addr << ")" << std::endl;
+        std::cout << "Pushing TEMP " << value << " (" << temp << ")" << std::endl;
     }
-    stack.push(StackItem(StackItem::Kind::TEMP, value, std::to_string(addr)));
+    stack.push(StackItem(StackItem::Kind::TEMP, value, temp));
 }
 
 void ExprStack::pushName(int value, std::string name) {

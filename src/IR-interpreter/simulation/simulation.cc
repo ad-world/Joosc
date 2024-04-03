@@ -64,13 +64,14 @@ IR_PTR Simulator::ExecutionFrame::getCurrentNode() {
     return parent.indexToNode[ip];
 }
 
-Simulator::Simulator(IR *compUnit, int heapSizeMax) : heapSizeMax(heapSizeMax), exprStack(2) {
+Simulator::Simulator(IR *compUnit, int heapSizeMax) : heapSizeMax(heapSizeMax) {
     if (std::holds_alternative<CompUnitIR>(*compUnit)) {
         this->compUnit = &std::get<CompUnitIR>(*compUnit);
     } else {
         THROW_SimulatorError("Expected CompUnitIR when creating Simulator");
     }
-    
+
+    exprStack = ExprStack(2);
     setDebugLevel(2);
 
     libraryFunctions.insert("__malloc");
@@ -167,6 +168,7 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
         auto frame = std::make_unique<ExecutionFrame>(ip, *this);
 
         for (int i = 0; i < args.size(); i++) {
+            std::cout << "Adding " << ABSTRACT_ARG_PREFIX + std::to_string(i) << " = " << args[i] << " to args" << std::endl;
             frame->put(ABSTRACT_ARG_PREFIX + std::to_string(i), args[i]);
         }
 
@@ -222,7 +224,7 @@ void Simulator::leave(ExecutionFrame *frame) {
             // std::cout << "TEMP" << std::endl;
 
             std::string tempName = temp->getName();
-            Simulator::exprStack.pushValue(frame->get(tempName));
+            Simulator::exprStack.pushTemp(frame->get(tempName), tempName);
         },
         [&](BinOpIR *binop) {
             // std::cout << "BINOP" << std::endl;
@@ -348,7 +350,7 @@ void Simulator::leave(ExecutionFrame *frame) {
                     break;
                 case StackItem::Kind::TEMP:
                     if (Simulator::debugLevel > 0) {
-                        std::cout << "temp[" << stackItem.name << "] = " << r << std::endl;
+                        std::cout << "temp[" << stackItem.temp << "] = " << r << std::endl;
                     }
                     frame->put(stackItem.temp, r);
                     break;
