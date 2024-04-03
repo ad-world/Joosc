@@ -26,26 +26,41 @@ unit-test: build
 scanner-test: build
 	(./tests/lexing/run_tests.sh)
 	
-integration-test: build
+valid-invalid-test: build
 	python3 tests/src/integration/valid_invalid_prog_test.py -f
+
+valid-invalid-test-full: build
+	python3 tests/src/integration/valid_invalid_prog_test.py
+
+valid-invalid-test-single: build
+	python3 tests/src/integration/valid_invalid_prog_test.py -s ${path}
 
 compiled-output-test: build
 	python3 tests/src/integration/correct_output_test.py
 
-integration-test-full: build
-	python3 tests/src/integration/valid_invalid_prog_test.py
+compiled-output-test-single: build
+	python3 tests/src/integration/correct_output_test.py -s ${path}
 
-single-test:
-	python3 tests/src/integration/single_test.py ${path}
+# Used to exit with non-zero if any test fails, but run them all anyway (no short-circuiting)
+_integration-test-helper: valid-invalid-test compiled-output-test
+integration-test:
+	make --keep-going _integration-test-helper
 
 clean:
 	rm -f joosc && rm -f *.log && rm -f *.zip
 	make clean -C src/parsing/bison
 	rm -r -f ./build
 	rm -f integration.log
+	rm -f *.tmp
 
-submission: build test
+submission: build
+	@[ "${anum}" ] || ( echo "Must pass assignment number; e.g. make submission anum=1"; exit 1 )
 	git log > a${anum}.log && zip a${anum}.zip -r src/ tests/ CMakeLists.txt Makefile a${anum}.log -x src/parsing/bison/location.hh src/parsing/bison/parser.cc src/parsing/bison/parser.hh src/parsing/bison/parser.output src/parsing/bison/scanner.cc 'tests/programs/*/marmoset/*'
 	rm a${anum}.log 
 
-.PHONY: all build fuzzer test clean submission generate-parser integration-test integration-test-full
+.PHONY: clean submission generate-parser graph fuzzer
+.PHONY: build fast-build slow-build
+.PHONY: scanner-test
+.PHONY: integration-test _integration-test-helper
+.PHONY: valid-invalid-test valid-invalid-test-full valid-invalid-test-single
+.PHONY: compiled-output-test compiled-output-test-single
