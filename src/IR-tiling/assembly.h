@@ -12,18 +12,18 @@ class Assembly {
     // Registers
     static std::string newAbstractRegister() { return "ABSTRACT_REG" + (abstract_reg_count++); }
 
-    static inline std::string REG_EAX = "eax";
-    static inline std::string REG_EBX = "ebx";
-    static inline std::string REG_ECX = "ecx";
-    static inline std::string REG_EDX = "edx";
+    static const inline std::string REG32_ACCUM = "eax";
+    static const inline std::string REG32_BASE = "ebx";
+    static const inline std::string REG32_COUNTER = "ecx";
+    static const inline std::string REG32_DATA = "edx";
 
-    static inline std::string REG_ESP = "esp"; // Stack pointer
-    static inline std::string REG_EBP = "ebp"; // Stack frame pointer
+    static const inline std::string REG32_SP = "esp"; // Stack pointer
+    static const inline std::string REG32_BP = "ebp"; // Stack frame pointer
 
-    static inline std::string REG_ESI = "esi";
-    static inline std::string REG_EDI = "edi";
+    static const inline std::string REG32_SOURCE = "esi";
+    static const inline std::string REG32_DEST = "edi";
 
-    static inline std::string REG_EIP = "eip"; // Instruction pointer
+    static const inline std::string REG32_IP = "eip"; // Instruction pointer
 
     // Instructions
     static std::string Label(std::string name) {
