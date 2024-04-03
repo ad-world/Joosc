@@ -217,18 +217,13 @@ void Simulator::leave(ExecutionFrame *frame) {
 
     std::visit(util::overload{
         [&](ConstIR *cons) {
-            // std::cout << "CONST" << std::endl;
             Simulator::exprStack.pushValue(cons->getValue());
         },
         [&](TempIR *temp) {
-            // std::cout << "TEMP" << std::endl;
-
             std::string tempName = temp->getName();
             Simulator::exprStack.pushTemp(frame->get(tempName), tempName);
         },
         [&](BinOpIR *binop) {
-            // std::cout << "BINOP" << std::endl;
-
             int r = Simulator::exprStack.popValue();
             int l = Simulator::exprStack.popValue();
 
@@ -282,14 +277,10 @@ void Simulator::leave(ExecutionFrame *frame) {
             Simulator::exprStack.pushValue(result);
         },
         [&](MemIR *mem){
-            // std::cout << "MEM" << std::endl;
-
             int addr = Simulator::exprStack.popValue();
             Simulator::exprStack.pushAddr(read(addr), addr);
         },
         [&](CallIR *call){
-            // std::cout << "CALL" << std::endl;
-
             int argCount = call->getArgs().size();
             std::vector<int> args;
 
@@ -302,8 +293,8 @@ void Simulator::leave(ExecutionFrame *frame) {
 
             if (target.type == StackItem::Kind::NAME) {
                 targetName = target.name;
-            } else if (Simulator::indexToNode.find(target.addr) != Simulator::indexToNode.end()) {
-                auto ir_ptr = Simulator::indexToNode[target.addr];
+            } else if (Simulator::indexToNode.find(target.value) == Simulator::indexToNode.end()) {
+                auto ir_ptr = Simulator::indexToNode[target.value];
                 if (std::holds_alternative<FuncDeclIR*>(ir_ptr)) {
                     targetName = std::get<FuncDeclIR*>(ir_ptr)->getName();
                     int last_dot = targetName.find_last_of('.');
@@ -324,8 +315,6 @@ void Simulator::leave(ExecutionFrame *frame) {
             Simulator::exprStack.pushValue(return_value);
         },
         [&](NameIR *name) {
-            // std::cout << "NAME" << std::endl;
-
             std::string str = name->getName();
 
             if (Simulator::libraryFunctions.find(str) != Simulator::libraryFunctions.end()) {
@@ -336,8 +325,6 @@ void Simulator::leave(ExecutionFrame *frame) {
             }
         },
         [&](MoveIR *move) {
-            // std::cout << "MOVE" << std::endl;
-
             int r = Simulator::exprStack.popValue();
             auto stackItem = Simulator::exprStack.pop();
 
@@ -359,18 +346,12 @@ void Simulator::leave(ExecutionFrame *frame) {
             }
         },
         [&](ExpIR *exp) {
-            // std::cout << "EXPR" << std::endl;
-
             Simulator::exprStack.pop();
         },
         [&](JumpIR *jump) {
-            // std::cout << "JUMP" << std::endl;
-
             frame->setIP(Simulator::exprStack.popValue());
         },
         [&](CJumpIR *cjump) {
-            // std::cout << "CJUMP" << std::endl;
-
             int top = Simulator::exprStack.popValue();
             std::string label;
 
