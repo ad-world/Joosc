@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <cmath>
+
 #include "exceptions/exceptions.h"
 
 // Helper methods for creating x86 assembly instructions
@@ -23,33 +25,6 @@ class Assembly {
 
     static inline std::string REG_EIP = "eip"; // Instruction pointer
 
-    // Other helpers
-    // Create [base + (index * scale) + displacement] addressing mode access
-    static std::string MakeAddress(
-        std::string base_register, 
-        std::string index_register,
-        int scale = 1,
-        int displacement = 0
-    ) {
-        if (!(scale == 1 || scale == 2 || scale == 4 || scale == 8)) {
-            THROW_CompilerError("Invalid parameter for scale");
-        }
-
-        std::string result = base_register + " + ";
-
-        if (scale != 1) {
-            result += "(" + index_register + " * " + std::to_string(scale) + ")";
-        } else {
-            result += index_register;
-        }
-
-        if (displacement != 0) {
-            result += " + " + std::to_string(displacement);
-        }
-
-        return "[" + result + "]";
-    }
-
     // Instructions
     static std::string Label(std::string name) {
         return name + ":";
@@ -66,4 +41,14 @@ class Assembly {
     static std::string Lea(std::string target, std::string source) {
         return "lea " + target + ", " + source;
     }
+
+    // Other helpers
+
+    // Create [base + (index * scale) + displacement] effective address
+    static std::string MakeAddress(
+        std::string base_register, 
+        std::string index_register,
+        int scale = 1,
+        int displacement = 0
+    );
 };
