@@ -43,17 +43,43 @@ message BinaryOp {
         MUL     = 2;
         DIV     = 3;
         MOD     = 4;
-        AND     = 5;
-        OR      = 6;
-        EAND    = 7;
-        EOR     = 8;
-        EQ      = 9;
-        NEQ     = 10;
-        LT      = 11;
-        GT      = 12;
-        LEQ     = 13;
-        GEQ     = 14;
     };
+    required Op op = 1;
+    required Rvalue left = 2;
+    required Rvalue right = 3;
+}
+
+message BoolRvalue {
+    oneof bool_binop_oneof {
+        BoolToBoolOp boolop = 1;
+        IntToBoolOp intop = 2;
+        bool cons = 3;
+    }
+}
+
+message BoolToBoolOp {
+    enum Op {
+        AND     = 0;
+        OR      = 1;
+        EAND    = 2;
+        EOR     = 3;
+        EQ      = 4;
+        NEQ     = 5;
+    }
+    required Op op = 1;
+    required BoolRvalue left = 2;
+    required BoolRvalue right = 3;
+}
+
+message IntToBoolOp {
+    enum Op {
+        LT      = 0;
+        GT      = 1;
+        LEQ     = 2;
+        GEQ     = 3;
+        EQ      = 4;
+        NEQ     = 5;
+    }
     required Op op = 1;
     required Rvalue left = 2;
     required Rvalue right = 3;
@@ -81,18 +107,18 @@ message MethodInvocationStatement {
 // }
 
 message IfThen {
-    required BinaryOp cond = 1;
+    required BoolRvalue cond = 1;
     required StatementSeq if_body = 2;
 }
 
 message IfElse {
-    required BinaryOp cond = 1;
+    required BoolRvalue cond = 1;
     required StatementSeq if_body = 2;
     required StatementSeq else_body = 3;
 }
 
 message While {
-    required BinaryOp cond = 1;
+    required BoolRvalue cond = 1;
     required StatementSeq body = 2;
 }
 

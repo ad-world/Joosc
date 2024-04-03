@@ -28,6 +28,8 @@ std::ostream &operator<<(std::ostream &os, const Const &x);
 std::ostream &operator<<(std::ostream &os, const BinaryOp &x);
 std::ostream &operator<<(std::ostream &os, const MethodInvocation &x);
 std::ostream &operator<<(std::ostream &os, const StatementSeq &x);
+std::ostream &operator<<(std::ostream &os, const BoolToBoolOp &x);
+std::ostream &operator<<(std::ostream &os, const IntToBoolOp &x);
 
 // Proto to joos
 std::ostream &operator<<(std::ostream &os, const VarRef &x) {
@@ -62,16 +64,39 @@ std::ostream &operator<<(std::ostream &os, const BinaryOp &x) {
         case BinaryOp::MUL: os << "*"; break;
         case BinaryOp::DIV: os << "/"; break;
         case BinaryOp::MOD: os << "%"; break;
-        case BinaryOp::AND: os << "&&"; break;
-        case BinaryOp::OR: os << "||"; break;
-        case BinaryOp::EAND: os << "&"; break;
-        case BinaryOp::EOR: os << "|"; break;
-        case BinaryOp::EQ: os << "=="; break;
-        case BinaryOp::NEQ: os << "!="; break;
-        case BinaryOp::LT: os << "<"; break;
-        case BinaryOp::GT: os << ">"; break;
-        case BinaryOp::LEQ: os << "<="; break;
-        case BinaryOp::GEQ: os << ">="; break;
+    }
+    return os << x.right() << ")";
+}
+
+std::ostream &operator<<(std::ostream &os, const BoolRvalue &x) {
+    if ( x.has_intop() ) return os << x.intop();
+    if ( x.has_boolop() ) return os << x.boolop();
+    if ( x.has_cons() ) return os << (x.cons() ? "(true)" : "(false)");
+    return os << "(true)";
+}
+
+std::ostream &operator<<(std::ostream &os, const BoolToBoolOp &x) {
+    os << "(" << x.left();
+    switch ( x.op() ) {
+        case BoolToBoolOp::AND: os << "&&"; break;
+        case BoolToBoolOp::OR: os << "||"; break;
+        case BoolToBoolOp::EAND: os << "&"; break;
+        case BoolToBoolOp::EOR: os << "|"; break;
+        case BoolToBoolOp::EQ: os << "=="; break;
+        case BoolToBoolOp::NEQ: os << "!="; break;
+    }
+    return os << x.right() << ")";
+}
+
+std::ostream &operator<<(std::ostream &os, const IntToBoolOp &x) {
+    os << "(" << x.left();
+    switch ( x.op() ) {
+        case IntToBoolOp::LT: os << "<"; break;
+        case IntToBoolOp::GT: os << ">"; break;
+        case IntToBoolOp::LEQ: os << "<="; break;
+        case IntToBoolOp::GEQ: os << ">="; break;
+        case IntToBoolOp::EQ: os << "=="; break;
+        case IntToBoolOp::NEQ: os << "!="; break;
     }
     return os << x.right() << ")";
 }

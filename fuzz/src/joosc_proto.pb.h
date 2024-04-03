@@ -52,6 +52,12 @@ extern AssignmentStatementDefaultTypeInternal _AssignmentStatement_default_insta
 class BinaryOp;
 struct BinaryOpDefaultTypeInternal;
 extern BinaryOpDefaultTypeInternal _BinaryOp_default_instance_;
+class BoolRvalue;
+struct BoolRvalueDefaultTypeInternal;
+extern BoolRvalueDefaultTypeInternal _BoolRvalue_default_instance_;
+class BoolToBoolOp;
+struct BoolToBoolOpDefaultTypeInternal;
+extern BoolToBoolOpDefaultTypeInternal _BoolToBoolOp_default_instance_;
 class Class;
 struct ClassDefaultTypeInternal;
 extern ClassDefaultTypeInternal _Class_default_instance_;
@@ -67,6 +73,9 @@ extern IfElseDefaultTypeInternal _IfElse_default_instance_;
 class IfThen;
 struct IfThenDefaultTypeInternal;
 extern IfThenDefaultTypeInternal _IfThen_default_instance_;
+class IntToBoolOp;
+struct IntToBoolOpDefaultTypeInternal;
+extern IntToBoolOpDefaultTypeInternal _IntToBoolOp_default_instance_;
 class Lvalue;
 struct LvalueDefaultTypeInternal;
 extern LvalueDefaultTypeInternal _Lvalue_default_instance_;
@@ -98,11 +107,14 @@ extern WhileDefaultTypeInternal _While_default_instance_;
 PROTOBUF_NAMESPACE_OPEN
 template<> ::joosc_fuzzer::AssignmentStatement* Arena::CreateMaybeMessage<::joosc_fuzzer::AssignmentStatement>(Arena*);
 template<> ::joosc_fuzzer::BinaryOp* Arena::CreateMaybeMessage<::joosc_fuzzer::BinaryOp>(Arena*);
+template<> ::joosc_fuzzer::BoolRvalue* Arena::CreateMaybeMessage<::joosc_fuzzer::BoolRvalue>(Arena*);
+template<> ::joosc_fuzzer::BoolToBoolOp* Arena::CreateMaybeMessage<::joosc_fuzzer::BoolToBoolOp>(Arena*);
 template<> ::joosc_fuzzer::Class* Arena::CreateMaybeMessage<::joosc_fuzzer::Class>(Arena*);
 template<> ::joosc_fuzzer::Const* Arena::CreateMaybeMessage<::joosc_fuzzer::Const>(Arena*);
 template<> ::joosc_fuzzer::FunctionRef* Arena::CreateMaybeMessage<::joosc_fuzzer::FunctionRef>(Arena*);
 template<> ::joosc_fuzzer::IfElse* Arena::CreateMaybeMessage<::joosc_fuzzer::IfElse>(Arena*);
 template<> ::joosc_fuzzer::IfThen* Arena::CreateMaybeMessage<::joosc_fuzzer::IfThen>(Arena*);
+template<> ::joosc_fuzzer::IntToBoolOp* Arena::CreateMaybeMessage<::joosc_fuzzer::IntToBoolOp>(Arena*);
 template<> ::joosc_fuzzer::Lvalue* Arena::CreateMaybeMessage<::joosc_fuzzer::Lvalue>(Arena*);
 template<> ::joosc_fuzzer::MethodInvocation* Arena::CreateMaybeMessage<::joosc_fuzzer::MethodInvocation>(Arena*);
 template<> ::joosc_fuzzer::MethodInvocationStatement* Arena::CreateMaybeMessage<::joosc_fuzzer::MethodInvocationStatement>(Arena*);
@@ -120,21 +132,11 @@ enum BinaryOp_Op : int {
   BinaryOp_Op_SUB = 1,
   BinaryOp_Op_MUL = 2,
   BinaryOp_Op_DIV = 3,
-  BinaryOp_Op_MOD = 4,
-  BinaryOp_Op_AND = 5,
-  BinaryOp_Op_OR = 6,
-  BinaryOp_Op_EAND = 7,
-  BinaryOp_Op_EOR = 8,
-  BinaryOp_Op_EQ = 9,
-  BinaryOp_Op_NEQ = 10,
-  BinaryOp_Op_LT = 11,
-  BinaryOp_Op_GT = 12,
-  BinaryOp_Op_LEQ = 13,
-  BinaryOp_Op_GEQ = 14
+  BinaryOp_Op_MOD = 4
 };
 bool BinaryOp_Op_IsValid(int value);
 constexpr BinaryOp_Op BinaryOp_Op_Op_MIN = BinaryOp_Op_ADD;
-constexpr BinaryOp_Op BinaryOp_Op_Op_MAX = BinaryOp_Op_GEQ;
+constexpr BinaryOp_Op BinaryOp_Op_Op_MAX = BinaryOp_Op_MOD;
 constexpr int BinaryOp_Op_Op_ARRAYSIZE = BinaryOp_Op_Op_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* BinaryOp_Op_descriptor();
@@ -150,6 +152,60 @@ inline bool BinaryOp_Op_Parse(
     ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, BinaryOp_Op* value) {
   return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<BinaryOp_Op>(
     BinaryOp_Op_descriptor(), name, value);
+}
+enum BoolToBoolOp_Op : int {
+  BoolToBoolOp_Op_AND = 0,
+  BoolToBoolOp_Op_OR = 1,
+  BoolToBoolOp_Op_EAND = 2,
+  BoolToBoolOp_Op_EOR = 3,
+  BoolToBoolOp_Op_EQ = 4,
+  BoolToBoolOp_Op_NEQ = 5
+};
+bool BoolToBoolOp_Op_IsValid(int value);
+constexpr BoolToBoolOp_Op BoolToBoolOp_Op_Op_MIN = BoolToBoolOp_Op_AND;
+constexpr BoolToBoolOp_Op BoolToBoolOp_Op_Op_MAX = BoolToBoolOp_Op_NEQ;
+constexpr int BoolToBoolOp_Op_Op_ARRAYSIZE = BoolToBoolOp_Op_Op_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* BoolToBoolOp_Op_descriptor();
+template<typename T>
+inline const std::string& BoolToBoolOp_Op_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, BoolToBoolOp_Op>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function BoolToBoolOp_Op_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    BoolToBoolOp_Op_descriptor(), enum_t_value);
+}
+inline bool BoolToBoolOp_Op_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, BoolToBoolOp_Op* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<BoolToBoolOp_Op>(
+    BoolToBoolOp_Op_descriptor(), name, value);
+}
+enum IntToBoolOp_Op : int {
+  IntToBoolOp_Op_LT = 0,
+  IntToBoolOp_Op_GT = 1,
+  IntToBoolOp_Op_LEQ = 2,
+  IntToBoolOp_Op_GEQ = 3,
+  IntToBoolOp_Op_EQ = 4,
+  IntToBoolOp_Op_NEQ = 5
+};
+bool IntToBoolOp_Op_IsValid(int value);
+constexpr IntToBoolOp_Op IntToBoolOp_Op_Op_MIN = IntToBoolOp_Op_LT;
+constexpr IntToBoolOp_Op IntToBoolOp_Op_Op_MAX = IntToBoolOp_Op_NEQ;
+constexpr int IntToBoolOp_Op_Op_ARRAYSIZE = IntToBoolOp_Op_Op_MAX + 1;
+
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* IntToBoolOp_Op_descriptor();
+template<typename T>
+inline const std::string& IntToBoolOp_Op_Name(T enum_t_value) {
+  static_assert(::std::is_same<T, IntToBoolOp_Op>::value ||
+    ::std::is_integral<T>::value,
+    "Incorrect type passed to function IntToBoolOp_Op_Name.");
+  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
+    IntToBoolOp_Op_descriptor(), enum_t_value);
+}
+inline bool IntToBoolOp_Op_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, IntToBoolOp_Op* value) {
+  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<IntToBoolOp_Op>(
+    IntToBoolOp_Op_descriptor(), name, value);
 }
 // ===================================================================
 
@@ -1159,26 +1215,6 @@ class BinaryOp final :
     BinaryOp_Op_DIV;
   static constexpr Op MOD =
     BinaryOp_Op_MOD;
-  static constexpr Op AND =
-    BinaryOp_Op_AND;
-  static constexpr Op OR =
-    BinaryOp_Op_OR;
-  static constexpr Op EAND =
-    BinaryOp_Op_EAND;
-  static constexpr Op EOR =
-    BinaryOp_Op_EOR;
-  static constexpr Op EQ =
-    BinaryOp_Op_EQ;
-  static constexpr Op NEQ =
-    BinaryOp_Op_NEQ;
-  static constexpr Op LT =
-    BinaryOp_Op_LT;
-  static constexpr Op GT =
-    BinaryOp_Op_GT;
-  static constexpr Op LEQ =
-    BinaryOp_Op_LEQ;
-  static constexpr Op GEQ =
-    BinaryOp_Op_GEQ;
   static inline bool Op_IsValid(int value) {
     return BinaryOp_Op_IsValid(value);
   }
@@ -1282,6 +1318,708 @@ class BinaryOp final :
 };
 // -------------------------------------------------------------------
 
+class BoolRvalue final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:joosc_fuzzer.BoolRvalue) */ {
+ public:
+  inline BoolRvalue() : BoolRvalue(nullptr) {}
+  ~BoolRvalue() override;
+  explicit PROTOBUF_CONSTEXPR BoolRvalue(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  BoolRvalue(const BoolRvalue& from);
+  BoolRvalue(BoolRvalue&& from) noexcept
+    : BoolRvalue() {
+    *this = ::std::move(from);
+  }
+
+  inline BoolRvalue& operator=(const BoolRvalue& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline BoolRvalue& operator=(BoolRvalue&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const BoolRvalue& default_instance() {
+    return *internal_default_instance();
+  }
+  enum BoolBinopOneofCase {
+    kBoolop = 1,
+    kIntop = 2,
+    kCons = 3,
+    BOOL_BINOP_ONEOF_NOT_SET = 0,
+  };
+
+  static inline const BoolRvalue* internal_default_instance() {
+    return reinterpret_cast<const BoolRvalue*>(
+               &_BoolRvalue_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    6;
+
+  friend void swap(BoolRvalue& a, BoolRvalue& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(BoolRvalue* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(BoolRvalue* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  BoolRvalue* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<BoolRvalue>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const BoolRvalue& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom( const BoolRvalue& from) {
+    BoolRvalue::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(BoolRvalue* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "joosc_fuzzer.BoolRvalue";
+  }
+  protected:
+  explicit BoolRvalue(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kBoolopFieldNumber = 1,
+    kIntopFieldNumber = 2,
+    kConsFieldNumber = 3,
+  };
+  // .joosc_fuzzer.BoolToBoolOp boolop = 1;
+  bool has_boolop() const;
+  private:
+  bool _internal_has_boolop() const;
+  public:
+  void clear_boolop();
+  const ::joosc_fuzzer::BoolToBoolOp& boolop() const;
+  PROTOBUF_NODISCARD ::joosc_fuzzer::BoolToBoolOp* release_boolop();
+  ::joosc_fuzzer::BoolToBoolOp* mutable_boolop();
+  void set_allocated_boolop(::joosc_fuzzer::BoolToBoolOp* boolop);
+  private:
+  const ::joosc_fuzzer::BoolToBoolOp& _internal_boolop() const;
+  ::joosc_fuzzer::BoolToBoolOp* _internal_mutable_boolop();
+  public:
+  void unsafe_arena_set_allocated_boolop(
+      ::joosc_fuzzer::BoolToBoolOp* boolop);
+  ::joosc_fuzzer::BoolToBoolOp* unsafe_arena_release_boolop();
+
+  // .joosc_fuzzer.IntToBoolOp intop = 2;
+  bool has_intop() const;
+  private:
+  bool _internal_has_intop() const;
+  public:
+  void clear_intop();
+  const ::joosc_fuzzer::IntToBoolOp& intop() const;
+  PROTOBUF_NODISCARD ::joosc_fuzzer::IntToBoolOp* release_intop();
+  ::joosc_fuzzer::IntToBoolOp* mutable_intop();
+  void set_allocated_intop(::joosc_fuzzer::IntToBoolOp* intop);
+  private:
+  const ::joosc_fuzzer::IntToBoolOp& _internal_intop() const;
+  ::joosc_fuzzer::IntToBoolOp* _internal_mutable_intop();
+  public:
+  void unsafe_arena_set_allocated_intop(
+      ::joosc_fuzzer::IntToBoolOp* intop);
+  ::joosc_fuzzer::IntToBoolOp* unsafe_arena_release_intop();
+
+  // bool cons = 3;
+  bool has_cons() const;
+  private:
+  bool _internal_has_cons() const;
+  public:
+  void clear_cons();
+  bool cons() const;
+  void set_cons(bool value);
+  private:
+  bool _internal_cons() const;
+  void _internal_set_cons(bool value);
+  public:
+
+  void clear_bool_binop_oneof();
+  BoolBinopOneofCase bool_binop_oneof_case() const;
+  // @@protoc_insertion_point(class_scope:joosc_fuzzer.BoolRvalue)
+ private:
+  class _Internal;
+  void set_has_boolop();
+  void set_has_intop();
+  void set_has_cons();
+
+  inline bool has_bool_binop_oneof() const;
+  inline void clear_has_bool_binop_oneof();
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    union BoolBinopOneofUnion {
+      constexpr BoolBinopOneofUnion() : _constinit_{} {}
+        ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
+      ::joosc_fuzzer::BoolToBoolOp* boolop_;
+      ::joosc_fuzzer::IntToBoolOp* intop_;
+      bool cons_;
+    } bool_binop_oneof_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+    uint32_t _oneof_case_[1];
+
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_joosc_5fproto_2eproto;
+};
+// -------------------------------------------------------------------
+
+class BoolToBoolOp final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:joosc_fuzzer.BoolToBoolOp) */ {
+ public:
+  inline BoolToBoolOp() : BoolToBoolOp(nullptr) {}
+  ~BoolToBoolOp() override;
+  explicit PROTOBUF_CONSTEXPR BoolToBoolOp(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  BoolToBoolOp(const BoolToBoolOp& from);
+  BoolToBoolOp(BoolToBoolOp&& from) noexcept
+    : BoolToBoolOp() {
+    *this = ::std::move(from);
+  }
+
+  inline BoolToBoolOp& operator=(const BoolToBoolOp& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline BoolToBoolOp& operator=(BoolToBoolOp&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const BoolToBoolOp& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const BoolToBoolOp* internal_default_instance() {
+    return reinterpret_cast<const BoolToBoolOp*>(
+               &_BoolToBoolOp_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    7;
+
+  friend void swap(BoolToBoolOp& a, BoolToBoolOp& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(BoolToBoolOp* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(BoolToBoolOp* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  BoolToBoolOp* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<BoolToBoolOp>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const BoolToBoolOp& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom( const BoolToBoolOp& from) {
+    BoolToBoolOp::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(BoolToBoolOp* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "joosc_fuzzer.BoolToBoolOp";
+  }
+  protected:
+  explicit BoolToBoolOp(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  typedef BoolToBoolOp_Op Op;
+  static constexpr Op AND =
+    BoolToBoolOp_Op_AND;
+  static constexpr Op OR =
+    BoolToBoolOp_Op_OR;
+  static constexpr Op EAND =
+    BoolToBoolOp_Op_EAND;
+  static constexpr Op EOR =
+    BoolToBoolOp_Op_EOR;
+  static constexpr Op EQ =
+    BoolToBoolOp_Op_EQ;
+  static constexpr Op NEQ =
+    BoolToBoolOp_Op_NEQ;
+  static inline bool Op_IsValid(int value) {
+    return BoolToBoolOp_Op_IsValid(value);
+  }
+  static constexpr Op Op_MIN =
+    BoolToBoolOp_Op_Op_MIN;
+  static constexpr Op Op_MAX =
+    BoolToBoolOp_Op_Op_MAX;
+  static constexpr int Op_ARRAYSIZE =
+    BoolToBoolOp_Op_Op_ARRAYSIZE;
+  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+  Op_descriptor() {
+    return BoolToBoolOp_Op_descriptor();
+  }
+  template<typename T>
+  static inline const std::string& Op_Name(T enum_t_value) {
+    static_assert(::std::is_same<T, Op>::value ||
+      ::std::is_integral<T>::value,
+      "Incorrect type passed to function Op_Name.");
+    return BoolToBoolOp_Op_Name(enum_t_value);
+  }
+  static inline bool Op_Parse(::PROTOBUF_NAMESPACE_ID::ConstStringParam name,
+      Op* value) {
+    return BoolToBoolOp_Op_Parse(name, value);
+  }
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kLeftFieldNumber = 2,
+    kRightFieldNumber = 3,
+    kOpFieldNumber = 1,
+  };
+  // required .joosc_fuzzer.BoolRvalue left = 2;
+  bool has_left() const;
+  private:
+  bool _internal_has_left() const;
+  public:
+  void clear_left();
+  const ::joosc_fuzzer::BoolRvalue& left() const;
+  PROTOBUF_NODISCARD ::joosc_fuzzer::BoolRvalue* release_left();
+  ::joosc_fuzzer::BoolRvalue* mutable_left();
+  void set_allocated_left(::joosc_fuzzer::BoolRvalue* left);
+  private:
+  const ::joosc_fuzzer::BoolRvalue& _internal_left() const;
+  ::joosc_fuzzer::BoolRvalue* _internal_mutable_left();
+  public:
+  void unsafe_arena_set_allocated_left(
+      ::joosc_fuzzer::BoolRvalue* left);
+  ::joosc_fuzzer::BoolRvalue* unsafe_arena_release_left();
+
+  // required .joosc_fuzzer.BoolRvalue right = 3;
+  bool has_right() const;
+  private:
+  bool _internal_has_right() const;
+  public:
+  void clear_right();
+  const ::joosc_fuzzer::BoolRvalue& right() const;
+  PROTOBUF_NODISCARD ::joosc_fuzzer::BoolRvalue* release_right();
+  ::joosc_fuzzer::BoolRvalue* mutable_right();
+  void set_allocated_right(::joosc_fuzzer::BoolRvalue* right);
+  private:
+  const ::joosc_fuzzer::BoolRvalue& _internal_right() const;
+  ::joosc_fuzzer::BoolRvalue* _internal_mutable_right();
+  public:
+  void unsafe_arena_set_allocated_right(
+      ::joosc_fuzzer::BoolRvalue* right);
+  ::joosc_fuzzer::BoolRvalue* unsafe_arena_release_right();
+
+  // required .joosc_fuzzer.BoolToBoolOp.Op op = 1;
+  bool has_op() const;
+  private:
+  bool _internal_has_op() const;
+  public:
+  void clear_op();
+  ::joosc_fuzzer::BoolToBoolOp_Op op() const;
+  void set_op(::joosc_fuzzer::BoolToBoolOp_Op value);
+  private:
+  ::joosc_fuzzer::BoolToBoolOp_Op _internal_op() const;
+  void _internal_set_op(::joosc_fuzzer::BoolToBoolOp_Op value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:joosc_fuzzer.BoolToBoolOp)
+ private:
+  class _Internal;
+
+  // helper for ByteSizeLong()
+  size_t RequiredFieldsByteSizeFallback() const;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+    ::joosc_fuzzer::BoolRvalue* left_;
+    ::joosc_fuzzer::BoolRvalue* right_;
+    int op_;
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_joosc_5fproto_2eproto;
+};
+// -------------------------------------------------------------------
+
+class IntToBoolOp final :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:joosc_fuzzer.IntToBoolOp) */ {
+ public:
+  inline IntToBoolOp() : IntToBoolOp(nullptr) {}
+  ~IntToBoolOp() override;
+  explicit PROTOBUF_CONSTEXPR IntToBoolOp(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized);
+
+  IntToBoolOp(const IntToBoolOp& from);
+  IntToBoolOp(IntToBoolOp&& from) noexcept
+    : IntToBoolOp() {
+    *this = ::std::move(from);
+  }
+
+  inline IntToBoolOp& operator=(const IntToBoolOp& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline IntToBoolOp& operator=(IntToBoolOp&& from) noexcept {
+    if (this == &from) return *this;
+    if (GetOwningArena() == from.GetOwningArena()
+  #ifdef PROTOBUF_FORCE_COPY_IN_MOVE
+        && GetOwningArena() != nullptr
+  #endif  // !PROTOBUF_FORCE_COPY_IN_MOVE
+    ) {
+      InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return default_instance().GetMetadata().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return default_instance().GetMetadata().reflection;
+  }
+  static const IntToBoolOp& default_instance() {
+    return *internal_default_instance();
+  }
+  static inline const IntToBoolOp* internal_default_instance() {
+    return reinterpret_cast<const IntToBoolOp*>(
+               &_IntToBoolOp_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    8;
+
+  friend void swap(IntToBoolOp& a, IntToBoolOp& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(IntToBoolOp* other) {
+    if (other == this) return;
+  #ifdef PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() != nullptr &&
+        GetOwningArena() == other->GetOwningArena()) {
+   #else  // PROTOBUF_FORCE_COPY_IN_SWAP
+    if (GetOwningArena() == other->GetOwningArena()) {
+  #endif  // !PROTOBUF_FORCE_COPY_IN_SWAP
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(IntToBoolOp* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetOwningArena() == other->GetOwningArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  IntToBoolOp* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
+    return CreateMaybeMessage<IntToBoolOp>(arena);
+  }
+  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CopyFrom(const IntToBoolOp& from);
+  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
+  void MergeFrom( const IntToBoolOp& from) {
+    IntToBoolOp::MergeImpl(*this, from);
+  }
+  private:
+  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
+  public:
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  uint8_t* _InternalSerialize(
+      uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _impl_._cached_size_.Get(); }
+
+  private:
+  void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
+  void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(IntToBoolOp* other);
+
+  private:
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "joosc_fuzzer.IntToBoolOp";
+  }
+  protected:
+  explicit IntToBoolOp(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+                       bool is_message_owned = false);
+  public:
+
+  static const ClassData _class_data_;
+  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+
+  // nested types ----------------------------------------------------
+
+  typedef IntToBoolOp_Op Op;
+  static constexpr Op LT =
+    IntToBoolOp_Op_LT;
+  static constexpr Op GT =
+    IntToBoolOp_Op_GT;
+  static constexpr Op LEQ =
+    IntToBoolOp_Op_LEQ;
+  static constexpr Op GEQ =
+    IntToBoolOp_Op_GEQ;
+  static constexpr Op EQ =
+    IntToBoolOp_Op_EQ;
+  static constexpr Op NEQ =
+    IntToBoolOp_Op_NEQ;
+  static inline bool Op_IsValid(int value) {
+    return IntToBoolOp_Op_IsValid(value);
+  }
+  static constexpr Op Op_MIN =
+    IntToBoolOp_Op_Op_MIN;
+  static constexpr Op Op_MAX =
+    IntToBoolOp_Op_Op_MAX;
+  static constexpr int Op_ARRAYSIZE =
+    IntToBoolOp_Op_Op_ARRAYSIZE;
+  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+  Op_descriptor() {
+    return IntToBoolOp_Op_descriptor();
+  }
+  template<typename T>
+  static inline const std::string& Op_Name(T enum_t_value) {
+    static_assert(::std::is_same<T, Op>::value ||
+      ::std::is_integral<T>::value,
+      "Incorrect type passed to function Op_Name.");
+    return IntToBoolOp_Op_Name(enum_t_value);
+  }
+  static inline bool Op_Parse(::PROTOBUF_NAMESPACE_ID::ConstStringParam name,
+      Op* value) {
+    return IntToBoolOp_Op_Parse(name, value);
+  }
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kLeftFieldNumber = 2,
+    kRightFieldNumber = 3,
+    kOpFieldNumber = 1,
+  };
+  // required .joosc_fuzzer.Rvalue left = 2;
+  bool has_left() const;
+  private:
+  bool _internal_has_left() const;
+  public:
+  void clear_left();
+  const ::joosc_fuzzer::Rvalue& left() const;
+  PROTOBUF_NODISCARD ::joosc_fuzzer::Rvalue* release_left();
+  ::joosc_fuzzer::Rvalue* mutable_left();
+  void set_allocated_left(::joosc_fuzzer::Rvalue* left);
+  private:
+  const ::joosc_fuzzer::Rvalue& _internal_left() const;
+  ::joosc_fuzzer::Rvalue* _internal_mutable_left();
+  public:
+  void unsafe_arena_set_allocated_left(
+      ::joosc_fuzzer::Rvalue* left);
+  ::joosc_fuzzer::Rvalue* unsafe_arena_release_left();
+
+  // required .joosc_fuzzer.Rvalue right = 3;
+  bool has_right() const;
+  private:
+  bool _internal_has_right() const;
+  public:
+  void clear_right();
+  const ::joosc_fuzzer::Rvalue& right() const;
+  PROTOBUF_NODISCARD ::joosc_fuzzer::Rvalue* release_right();
+  ::joosc_fuzzer::Rvalue* mutable_right();
+  void set_allocated_right(::joosc_fuzzer::Rvalue* right);
+  private:
+  const ::joosc_fuzzer::Rvalue& _internal_right() const;
+  ::joosc_fuzzer::Rvalue* _internal_mutable_right();
+  public:
+  void unsafe_arena_set_allocated_right(
+      ::joosc_fuzzer::Rvalue* right);
+  ::joosc_fuzzer::Rvalue* unsafe_arena_release_right();
+
+  // required .joosc_fuzzer.IntToBoolOp.Op op = 1;
+  bool has_op() const;
+  private:
+  bool _internal_has_op() const;
+  public:
+  void clear_op();
+  ::joosc_fuzzer::IntToBoolOp_Op op() const;
+  void set_op(::joosc_fuzzer::IntToBoolOp_Op value);
+  private:
+  ::joosc_fuzzer::IntToBoolOp_Op _internal_op() const;
+  void _internal_set_op(::joosc_fuzzer::IntToBoolOp_Op value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:joosc_fuzzer.IntToBoolOp)
+ private:
+  class _Internal;
+
+  // helper for ByteSizeLong()
+  size_t RequiredFieldsByteSizeFallback() const;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  struct Impl_ {
+    ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+    ::joosc_fuzzer::Rvalue* left_;
+    ::joosc_fuzzer::Rvalue* right_;
+    int op_;
+  };
+  union { Impl_ _impl_; };
+  friend struct ::TableStruct_joosc_5fproto_2eproto;
+};
+// -------------------------------------------------------------------
+
 class AssignmentStatement final :
     public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:joosc_fuzzer.AssignmentStatement) */ {
  public:
@@ -1337,7 +2075,7 @@ class AssignmentStatement final :
                &_AssignmentStatement_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    6;
+    9;
 
   friend void swap(AssignmentStatement& a, AssignmentStatement& b) {
     a.Swap(&b);
@@ -1525,7 +2263,7 @@ class MethodInvocation final :
                &_MethodInvocation_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    7;
+    10;
 
   friend void swap(MethodInvocation& a, MethodInvocation& b) {
     a.Swap(&b);
@@ -1690,7 +2428,7 @@ class MethodInvocationStatement final :
                &_MethodInvocationStatement_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    8;
+    11;
 
   friend void swap(MethodInvocationStatement& a, MethodInvocationStatement& b) {
     a.Swap(&b);
@@ -1855,7 +2593,7 @@ class IfThen final :
                &_IfThen_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    9;
+    12;
 
   friend void swap(IfThen& a, IfThen& b) {
     a.Swap(&b);
@@ -1931,23 +2669,23 @@ class IfThen final :
     kCondFieldNumber = 1,
     kIfBodyFieldNumber = 2,
   };
-  // required .joosc_fuzzer.BinaryOp cond = 1;
+  // required .joosc_fuzzer.BoolRvalue cond = 1;
   bool has_cond() const;
   private:
   bool _internal_has_cond() const;
   public:
   void clear_cond();
-  const ::joosc_fuzzer::BinaryOp& cond() const;
-  PROTOBUF_NODISCARD ::joosc_fuzzer::BinaryOp* release_cond();
-  ::joosc_fuzzer::BinaryOp* mutable_cond();
-  void set_allocated_cond(::joosc_fuzzer::BinaryOp* cond);
+  const ::joosc_fuzzer::BoolRvalue& cond() const;
+  PROTOBUF_NODISCARD ::joosc_fuzzer::BoolRvalue* release_cond();
+  ::joosc_fuzzer::BoolRvalue* mutable_cond();
+  void set_allocated_cond(::joosc_fuzzer::BoolRvalue* cond);
   private:
-  const ::joosc_fuzzer::BinaryOp& _internal_cond() const;
-  ::joosc_fuzzer::BinaryOp* _internal_mutable_cond();
+  const ::joosc_fuzzer::BoolRvalue& _internal_cond() const;
+  ::joosc_fuzzer::BoolRvalue* _internal_mutable_cond();
   public:
   void unsafe_arena_set_allocated_cond(
-      ::joosc_fuzzer::BinaryOp* cond);
-  ::joosc_fuzzer::BinaryOp* unsafe_arena_release_cond();
+      ::joosc_fuzzer::BoolRvalue* cond);
+  ::joosc_fuzzer::BoolRvalue* unsafe_arena_release_cond();
 
   // required .joosc_fuzzer.StatementSeq if_body = 2;
   bool has_if_body() const;
@@ -1980,7 +2718,7 @@ class IfThen final :
   struct Impl_ {
     ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
-    ::joosc_fuzzer::BinaryOp* cond_;
+    ::joosc_fuzzer::BoolRvalue* cond_;
     ::joosc_fuzzer::StatementSeq* if_body_;
   };
   union { Impl_ _impl_; };
@@ -2043,7 +2781,7 @@ class IfElse final :
                &_IfElse_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    10;
+    13;
 
   friend void swap(IfElse& a, IfElse& b) {
     a.Swap(&b);
@@ -2120,23 +2858,23 @@ class IfElse final :
     kIfBodyFieldNumber = 2,
     kElseBodyFieldNumber = 3,
   };
-  // required .joosc_fuzzer.BinaryOp cond = 1;
+  // required .joosc_fuzzer.BoolRvalue cond = 1;
   bool has_cond() const;
   private:
   bool _internal_has_cond() const;
   public:
   void clear_cond();
-  const ::joosc_fuzzer::BinaryOp& cond() const;
-  PROTOBUF_NODISCARD ::joosc_fuzzer::BinaryOp* release_cond();
-  ::joosc_fuzzer::BinaryOp* mutable_cond();
-  void set_allocated_cond(::joosc_fuzzer::BinaryOp* cond);
+  const ::joosc_fuzzer::BoolRvalue& cond() const;
+  PROTOBUF_NODISCARD ::joosc_fuzzer::BoolRvalue* release_cond();
+  ::joosc_fuzzer::BoolRvalue* mutable_cond();
+  void set_allocated_cond(::joosc_fuzzer::BoolRvalue* cond);
   private:
-  const ::joosc_fuzzer::BinaryOp& _internal_cond() const;
-  ::joosc_fuzzer::BinaryOp* _internal_mutable_cond();
+  const ::joosc_fuzzer::BoolRvalue& _internal_cond() const;
+  ::joosc_fuzzer::BoolRvalue* _internal_mutable_cond();
   public:
   void unsafe_arena_set_allocated_cond(
-      ::joosc_fuzzer::BinaryOp* cond);
-  ::joosc_fuzzer::BinaryOp* unsafe_arena_release_cond();
+      ::joosc_fuzzer::BoolRvalue* cond);
+  ::joosc_fuzzer::BoolRvalue* unsafe_arena_release_cond();
 
   // required .joosc_fuzzer.StatementSeq if_body = 2;
   bool has_if_body() const;
@@ -2187,7 +2925,7 @@ class IfElse final :
   struct Impl_ {
     ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
-    ::joosc_fuzzer::BinaryOp* cond_;
+    ::joosc_fuzzer::BoolRvalue* cond_;
     ::joosc_fuzzer::StatementSeq* if_body_;
     ::joosc_fuzzer::StatementSeq* else_body_;
   };
@@ -2251,7 +2989,7 @@ class While final :
                &_While_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    11;
+    14;
 
   friend void swap(While& a, While& b) {
     a.Swap(&b);
@@ -2327,23 +3065,23 @@ class While final :
     kCondFieldNumber = 1,
     kBodyFieldNumber = 2,
   };
-  // required .joosc_fuzzer.BinaryOp cond = 1;
+  // required .joosc_fuzzer.BoolRvalue cond = 1;
   bool has_cond() const;
   private:
   bool _internal_has_cond() const;
   public:
   void clear_cond();
-  const ::joosc_fuzzer::BinaryOp& cond() const;
-  PROTOBUF_NODISCARD ::joosc_fuzzer::BinaryOp* release_cond();
-  ::joosc_fuzzer::BinaryOp* mutable_cond();
-  void set_allocated_cond(::joosc_fuzzer::BinaryOp* cond);
+  const ::joosc_fuzzer::BoolRvalue& cond() const;
+  PROTOBUF_NODISCARD ::joosc_fuzzer::BoolRvalue* release_cond();
+  ::joosc_fuzzer::BoolRvalue* mutable_cond();
+  void set_allocated_cond(::joosc_fuzzer::BoolRvalue* cond);
   private:
-  const ::joosc_fuzzer::BinaryOp& _internal_cond() const;
-  ::joosc_fuzzer::BinaryOp* _internal_mutable_cond();
+  const ::joosc_fuzzer::BoolRvalue& _internal_cond() const;
+  ::joosc_fuzzer::BoolRvalue* _internal_mutable_cond();
   public:
   void unsafe_arena_set_allocated_cond(
-      ::joosc_fuzzer::BinaryOp* cond);
-  ::joosc_fuzzer::BinaryOp* unsafe_arena_release_cond();
+      ::joosc_fuzzer::BoolRvalue* cond);
+  ::joosc_fuzzer::BoolRvalue* unsafe_arena_release_cond();
 
   // required .joosc_fuzzer.StatementSeq body = 2;
   bool has_body() const;
@@ -2376,7 +3114,7 @@ class While final :
   struct Impl_ {
     ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
-    ::joosc_fuzzer::BinaryOp* cond_;
+    ::joosc_fuzzer::BoolRvalue* cond_;
     ::joosc_fuzzer::StatementSeq* body_;
   };
   union { Impl_ _impl_; };
@@ -2448,7 +3186,7 @@ class Statement final :
                &_Statement_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    12;
+    15;
 
   friend void swap(Statement& a, Statement& b) {
     a.Swap(&b);
@@ -2708,7 +3446,7 @@ class StatementSeq final :
                &_StatementSeq_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    13;
+    16;
 
   friend void swap(StatementSeq& a, StatementSeq& b) {
     a.Swap(&b);
@@ -2872,7 +3610,7 @@ class StaticField final :
                &_StaticField_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    14;
+    17;
 
   friend void swap(StaticField& a, StaticField& b) {
     a.Swap(&b);
@@ -3060,7 +3798,7 @@ class Class final :
                &_Class_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    15;
+    18;
 
   friend void swap(Class& a, Class& b) {
     a.Swap(&b);
@@ -3855,6 +4593,631 @@ inline void BinaryOp::set_allocated_right(::joosc_fuzzer::Rvalue* right) {
 
 // -------------------------------------------------------------------
 
+// BoolRvalue
+
+// .joosc_fuzzer.BoolToBoolOp boolop = 1;
+inline bool BoolRvalue::_internal_has_boolop() const {
+  return bool_binop_oneof_case() == kBoolop;
+}
+inline bool BoolRvalue::has_boolop() const {
+  return _internal_has_boolop();
+}
+inline void BoolRvalue::set_has_boolop() {
+  _impl_._oneof_case_[0] = kBoolop;
+}
+inline void BoolRvalue::clear_boolop() {
+  if (_internal_has_boolop()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete _impl_.bool_binop_oneof_.boolop_;
+    }
+    clear_has_bool_binop_oneof();
+  }
+}
+inline ::joosc_fuzzer::BoolToBoolOp* BoolRvalue::release_boolop() {
+  // @@protoc_insertion_point(field_release:joosc_fuzzer.BoolRvalue.boolop)
+  if (_internal_has_boolop()) {
+    clear_has_bool_binop_oneof();
+    ::joosc_fuzzer::BoolToBoolOp* temp = _impl_.bool_binop_oneof_.boolop_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    _impl_.bool_binop_oneof_.boolop_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::joosc_fuzzer::BoolToBoolOp& BoolRvalue::_internal_boolop() const {
+  return _internal_has_boolop()
+      ? *_impl_.bool_binop_oneof_.boolop_
+      : reinterpret_cast< ::joosc_fuzzer::BoolToBoolOp&>(::joosc_fuzzer::_BoolToBoolOp_default_instance_);
+}
+inline const ::joosc_fuzzer::BoolToBoolOp& BoolRvalue::boolop() const {
+  // @@protoc_insertion_point(field_get:joosc_fuzzer.BoolRvalue.boolop)
+  return _internal_boolop();
+}
+inline ::joosc_fuzzer::BoolToBoolOp* BoolRvalue::unsafe_arena_release_boolop() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:joosc_fuzzer.BoolRvalue.boolop)
+  if (_internal_has_boolop()) {
+    clear_has_bool_binop_oneof();
+    ::joosc_fuzzer::BoolToBoolOp* temp = _impl_.bool_binop_oneof_.boolop_;
+    _impl_.bool_binop_oneof_.boolop_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void BoolRvalue::unsafe_arena_set_allocated_boolop(::joosc_fuzzer::BoolToBoolOp* boolop) {
+  clear_bool_binop_oneof();
+  if (boolop) {
+    set_has_boolop();
+    _impl_.bool_binop_oneof_.boolop_ = boolop;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.BoolRvalue.boolop)
+}
+inline ::joosc_fuzzer::BoolToBoolOp* BoolRvalue::_internal_mutable_boolop() {
+  if (!_internal_has_boolop()) {
+    clear_bool_binop_oneof();
+    set_has_boolop();
+    _impl_.bool_binop_oneof_.boolop_ = CreateMaybeMessage< ::joosc_fuzzer::BoolToBoolOp >(GetArenaForAllocation());
+  }
+  return _impl_.bool_binop_oneof_.boolop_;
+}
+inline ::joosc_fuzzer::BoolToBoolOp* BoolRvalue::mutable_boolop() {
+  ::joosc_fuzzer::BoolToBoolOp* _msg = _internal_mutable_boolop();
+  // @@protoc_insertion_point(field_mutable:joosc_fuzzer.BoolRvalue.boolop)
+  return _msg;
+}
+
+// .joosc_fuzzer.IntToBoolOp intop = 2;
+inline bool BoolRvalue::_internal_has_intop() const {
+  return bool_binop_oneof_case() == kIntop;
+}
+inline bool BoolRvalue::has_intop() const {
+  return _internal_has_intop();
+}
+inline void BoolRvalue::set_has_intop() {
+  _impl_._oneof_case_[0] = kIntop;
+}
+inline void BoolRvalue::clear_intop() {
+  if (_internal_has_intop()) {
+    if (GetArenaForAllocation() == nullptr) {
+      delete _impl_.bool_binop_oneof_.intop_;
+    }
+    clear_has_bool_binop_oneof();
+  }
+}
+inline ::joosc_fuzzer::IntToBoolOp* BoolRvalue::release_intop() {
+  // @@protoc_insertion_point(field_release:joosc_fuzzer.BoolRvalue.intop)
+  if (_internal_has_intop()) {
+    clear_has_bool_binop_oneof();
+    ::joosc_fuzzer::IntToBoolOp* temp = _impl_.bool_binop_oneof_.intop_;
+    if (GetArenaForAllocation() != nullptr) {
+      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+    }
+    _impl_.bool_binop_oneof_.intop_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline const ::joosc_fuzzer::IntToBoolOp& BoolRvalue::_internal_intop() const {
+  return _internal_has_intop()
+      ? *_impl_.bool_binop_oneof_.intop_
+      : reinterpret_cast< ::joosc_fuzzer::IntToBoolOp&>(::joosc_fuzzer::_IntToBoolOp_default_instance_);
+}
+inline const ::joosc_fuzzer::IntToBoolOp& BoolRvalue::intop() const {
+  // @@protoc_insertion_point(field_get:joosc_fuzzer.BoolRvalue.intop)
+  return _internal_intop();
+}
+inline ::joosc_fuzzer::IntToBoolOp* BoolRvalue::unsafe_arena_release_intop() {
+  // @@protoc_insertion_point(field_unsafe_arena_release:joosc_fuzzer.BoolRvalue.intop)
+  if (_internal_has_intop()) {
+    clear_has_bool_binop_oneof();
+    ::joosc_fuzzer::IntToBoolOp* temp = _impl_.bool_binop_oneof_.intop_;
+    _impl_.bool_binop_oneof_.intop_ = nullptr;
+    return temp;
+  } else {
+    return nullptr;
+  }
+}
+inline void BoolRvalue::unsafe_arena_set_allocated_intop(::joosc_fuzzer::IntToBoolOp* intop) {
+  clear_bool_binop_oneof();
+  if (intop) {
+    set_has_intop();
+    _impl_.bool_binop_oneof_.intop_ = intop;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.BoolRvalue.intop)
+}
+inline ::joosc_fuzzer::IntToBoolOp* BoolRvalue::_internal_mutable_intop() {
+  if (!_internal_has_intop()) {
+    clear_bool_binop_oneof();
+    set_has_intop();
+    _impl_.bool_binop_oneof_.intop_ = CreateMaybeMessage< ::joosc_fuzzer::IntToBoolOp >(GetArenaForAllocation());
+  }
+  return _impl_.bool_binop_oneof_.intop_;
+}
+inline ::joosc_fuzzer::IntToBoolOp* BoolRvalue::mutable_intop() {
+  ::joosc_fuzzer::IntToBoolOp* _msg = _internal_mutable_intop();
+  // @@protoc_insertion_point(field_mutable:joosc_fuzzer.BoolRvalue.intop)
+  return _msg;
+}
+
+// bool cons = 3;
+inline bool BoolRvalue::_internal_has_cons() const {
+  return bool_binop_oneof_case() == kCons;
+}
+inline bool BoolRvalue::has_cons() const {
+  return _internal_has_cons();
+}
+inline void BoolRvalue::set_has_cons() {
+  _impl_._oneof_case_[0] = kCons;
+}
+inline void BoolRvalue::clear_cons() {
+  if (_internal_has_cons()) {
+    _impl_.bool_binop_oneof_.cons_ = false;
+    clear_has_bool_binop_oneof();
+  }
+}
+inline bool BoolRvalue::_internal_cons() const {
+  if (_internal_has_cons()) {
+    return _impl_.bool_binop_oneof_.cons_;
+  }
+  return false;
+}
+inline void BoolRvalue::_internal_set_cons(bool value) {
+  if (!_internal_has_cons()) {
+    clear_bool_binop_oneof();
+    set_has_cons();
+  }
+  _impl_.bool_binop_oneof_.cons_ = value;
+}
+inline bool BoolRvalue::cons() const {
+  // @@protoc_insertion_point(field_get:joosc_fuzzer.BoolRvalue.cons)
+  return _internal_cons();
+}
+inline void BoolRvalue::set_cons(bool value) {
+  _internal_set_cons(value);
+  // @@protoc_insertion_point(field_set:joosc_fuzzer.BoolRvalue.cons)
+}
+
+inline bool BoolRvalue::has_bool_binop_oneof() const {
+  return bool_binop_oneof_case() != BOOL_BINOP_ONEOF_NOT_SET;
+}
+inline void BoolRvalue::clear_has_bool_binop_oneof() {
+  _impl_._oneof_case_[0] = BOOL_BINOP_ONEOF_NOT_SET;
+}
+inline BoolRvalue::BoolBinopOneofCase BoolRvalue::bool_binop_oneof_case() const {
+  return BoolRvalue::BoolBinopOneofCase(_impl_._oneof_case_[0]);
+}
+// -------------------------------------------------------------------
+
+// BoolToBoolOp
+
+// required .joosc_fuzzer.BoolToBoolOp.Op op = 1;
+inline bool BoolToBoolOp::_internal_has_op() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
+  return value;
+}
+inline bool BoolToBoolOp::has_op() const {
+  return _internal_has_op();
+}
+inline void BoolToBoolOp::clear_op() {
+  _impl_.op_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::joosc_fuzzer::BoolToBoolOp_Op BoolToBoolOp::_internal_op() const {
+  return static_cast< ::joosc_fuzzer::BoolToBoolOp_Op >(_impl_.op_);
+}
+inline ::joosc_fuzzer::BoolToBoolOp_Op BoolToBoolOp::op() const {
+  // @@protoc_insertion_point(field_get:joosc_fuzzer.BoolToBoolOp.op)
+  return _internal_op();
+}
+inline void BoolToBoolOp::_internal_set_op(::joosc_fuzzer::BoolToBoolOp_Op value) {
+  assert(::joosc_fuzzer::BoolToBoolOp_Op_IsValid(value));
+  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_.op_ = value;
+}
+inline void BoolToBoolOp::set_op(::joosc_fuzzer::BoolToBoolOp_Op value) {
+  _internal_set_op(value);
+  // @@protoc_insertion_point(field_set:joosc_fuzzer.BoolToBoolOp.op)
+}
+
+// required .joosc_fuzzer.BoolRvalue left = 2;
+inline bool BoolToBoolOp::_internal_has_left() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.left_ != nullptr);
+  return value;
+}
+inline bool BoolToBoolOp::has_left() const {
+  return _internal_has_left();
+}
+inline void BoolToBoolOp::clear_left() {
+  if (_impl_.left_ != nullptr) _impl_.left_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::joosc_fuzzer::BoolRvalue& BoolToBoolOp::_internal_left() const {
+  const ::joosc_fuzzer::BoolRvalue* p = _impl_.left_;
+  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::BoolRvalue&>(
+      ::joosc_fuzzer::_BoolRvalue_default_instance_);
+}
+inline const ::joosc_fuzzer::BoolRvalue& BoolToBoolOp::left() const {
+  // @@protoc_insertion_point(field_get:joosc_fuzzer.BoolToBoolOp.left)
+  return _internal_left();
+}
+inline void BoolToBoolOp::unsafe_arena_set_allocated_left(
+    ::joosc_fuzzer::BoolRvalue* left) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(_impl_.left_);
+  }
+  _impl_.left_ = left;
+  if (left) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.BoolToBoolOp.left)
+}
+inline ::joosc_fuzzer::BoolRvalue* BoolToBoolOp::release_left() {
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::joosc_fuzzer::BoolRvalue* temp = _impl_.left_;
+  _impl_.left_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::joosc_fuzzer::BoolRvalue* BoolToBoolOp::unsafe_arena_release_left() {
+  // @@protoc_insertion_point(field_release:joosc_fuzzer.BoolToBoolOp.left)
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::joosc_fuzzer::BoolRvalue* temp = _impl_.left_;
+  _impl_.left_ = nullptr;
+  return temp;
+}
+inline ::joosc_fuzzer::BoolRvalue* BoolToBoolOp::_internal_mutable_left() {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  if (_impl_.left_ == nullptr) {
+    auto* p = CreateMaybeMessage<::joosc_fuzzer::BoolRvalue>(GetArenaForAllocation());
+    _impl_.left_ = p;
+  }
+  return _impl_.left_;
+}
+inline ::joosc_fuzzer::BoolRvalue* BoolToBoolOp::mutable_left() {
+  ::joosc_fuzzer::BoolRvalue* _msg = _internal_mutable_left();
+  // @@protoc_insertion_point(field_mutable:joosc_fuzzer.BoolToBoolOp.left)
+  return _msg;
+}
+inline void BoolToBoolOp::set_allocated_left(::joosc_fuzzer::BoolRvalue* left) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete _impl_.left_;
+  }
+  if (left) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(left);
+    if (message_arena != submessage_arena) {
+      left = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, left, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.left_ = left;
+  // @@protoc_insertion_point(field_set_allocated:joosc_fuzzer.BoolToBoolOp.left)
+}
+
+// required .joosc_fuzzer.BoolRvalue right = 3;
+inline bool BoolToBoolOp::_internal_has_right() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.right_ != nullptr);
+  return value;
+}
+inline bool BoolToBoolOp::has_right() const {
+  return _internal_has_right();
+}
+inline void BoolToBoolOp::clear_right() {
+  if (_impl_.right_ != nullptr) _impl_.right_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline const ::joosc_fuzzer::BoolRvalue& BoolToBoolOp::_internal_right() const {
+  const ::joosc_fuzzer::BoolRvalue* p = _impl_.right_;
+  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::BoolRvalue&>(
+      ::joosc_fuzzer::_BoolRvalue_default_instance_);
+}
+inline const ::joosc_fuzzer::BoolRvalue& BoolToBoolOp::right() const {
+  // @@protoc_insertion_point(field_get:joosc_fuzzer.BoolToBoolOp.right)
+  return _internal_right();
+}
+inline void BoolToBoolOp::unsafe_arena_set_allocated_right(
+    ::joosc_fuzzer::BoolRvalue* right) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(_impl_.right_);
+  }
+  _impl_.right_ = right;
+  if (right) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.BoolToBoolOp.right)
+}
+inline ::joosc_fuzzer::BoolRvalue* BoolToBoolOp::release_right() {
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::joosc_fuzzer::BoolRvalue* temp = _impl_.right_;
+  _impl_.right_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::joosc_fuzzer::BoolRvalue* BoolToBoolOp::unsafe_arena_release_right() {
+  // @@protoc_insertion_point(field_release:joosc_fuzzer.BoolToBoolOp.right)
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::joosc_fuzzer::BoolRvalue* temp = _impl_.right_;
+  _impl_.right_ = nullptr;
+  return temp;
+}
+inline ::joosc_fuzzer::BoolRvalue* BoolToBoolOp::_internal_mutable_right() {
+  _impl_._has_bits_[0] |= 0x00000002u;
+  if (_impl_.right_ == nullptr) {
+    auto* p = CreateMaybeMessage<::joosc_fuzzer::BoolRvalue>(GetArenaForAllocation());
+    _impl_.right_ = p;
+  }
+  return _impl_.right_;
+}
+inline ::joosc_fuzzer::BoolRvalue* BoolToBoolOp::mutable_right() {
+  ::joosc_fuzzer::BoolRvalue* _msg = _internal_mutable_right();
+  // @@protoc_insertion_point(field_mutable:joosc_fuzzer.BoolToBoolOp.right)
+  return _msg;
+}
+inline void BoolToBoolOp::set_allocated_right(::joosc_fuzzer::BoolRvalue* right) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete _impl_.right_;
+  }
+  if (right) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(right);
+    if (message_arena != submessage_arena) {
+      right = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, right, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  _impl_.right_ = right;
+  // @@protoc_insertion_point(field_set_allocated:joosc_fuzzer.BoolToBoolOp.right)
+}
+
+// -------------------------------------------------------------------
+
+// IntToBoolOp
+
+// required .joosc_fuzzer.IntToBoolOp.Op op = 1;
+inline bool IntToBoolOp::_internal_has_op() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000004u) != 0;
+  return value;
+}
+inline bool IntToBoolOp::has_op() const {
+  return _internal_has_op();
+}
+inline void IntToBoolOp::clear_op() {
+  _impl_.op_ = 0;
+  _impl_._has_bits_[0] &= ~0x00000004u;
+}
+inline ::joosc_fuzzer::IntToBoolOp_Op IntToBoolOp::_internal_op() const {
+  return static_cast< ::joosc_fuzzer::IntToBoolOp_Op >(_impl_.op_);
+}
+inline ::joosc_fuzzer::IntToBoolOp_Op IntToBoolOp::op() const {
+  // @@protoc_insertion_point(field_get:joosc_fuzzer.IntToBoolOp.op)
+  return _internal_op();
+}
+inline void IntToBoolOp::_internal_set_op(::joosc_fuzzer::IntToBoolOp_Op value) {
+  assert(::joosc_fuzzer::IntToBoolOp_Op_IsValid(value));
+  _impl_._has_bits_[0] |= 0x00000004u;
+  _impl_.op_ = value;
+}
+inline void IntToBoolOp::set_op(::joosc_fuzzer::IntToBoolOp_Op value) {
+  _internal_set_op(value);
+  // @@protoc_insertion_point(field_set:joosc_fuzzer.IntToBoolOp.op)
+}
+
+// required .joosc_fuzzer.Rvalue left = 2;
+inline bool IntToBoolOp::_internal_has_left() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.left_ != nullptr);
+  return value;
+}
+inline bool IntToBoolOp::has_left() const {
+  return _internal_has_left();
+}
+inline void IntToBoolOp::clear_left() {
+  if (_impl_.left_ != nullptr) _impl_.left_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::joosc_fuzzer::Rvalue& IntToBoolOp::_internal_left() const {
+  const ::joosc_fuzzer::Rvalue* p = _impl_.left_;
+  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::Rvalue&>(
+      ::joosc_fuzzer::_Rvalue_default_instance_);
+}
+inline const ::joosc_fuzzer::Rvalue& IntToBoolOp::left() const {
+  // @@protoc_insertion_point(field_get:joosc_fuzzer.IntToBoolOp.left)
+  return _internal_left();
+}
+inline void IntToBoolOp::unsafe_arena_set_allocated_left(
+    ::joosc_fuzzer::Rvalue* left) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(_impl_.left_);
+  }
+  _impl_.left_ = left;
+  if (left) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.IntToBoolOp.left)
+}
+inline ::joosc_fuzzer::Rvalue* IntToBoolOp::release_left() {
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::joosc_fuzzer::Rvalue* temp = _impl_.left_;
+  _impl_.left_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::joosc_fuzzer::Rvalue* IntToBoolOp::unsafe_arena_release_left() {
+  // @@protoc_insertion_point(field_release:joosc_fuzzer.IntToBoolOp.left)
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::joosc_fuzzer::Rvalue* temp = _impl_.left_;
+  _impl_.left_ = nullptr;
+  return temp;
+}
+inline ::joosc_fuzzer::Rvalue* IntToBoolOp::_internal_mutable_left() {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  if (_impl_.left_ == nullptr) {
+    auto* p = CreateMaybeMessage<::joosc_fuzzer::Rvalue>(GetArenaForAllocation());
+    _impl_.left_ = p;
+  }
+  return _impl_.left_;
+}
+inline ::joosc_fuzzer::Rvalue* IntToBoolOp::mutable_left() {
+  ::joosc_fuzzer::Rvalue* _msg = _internal_mutable_left();
+  // @@protoc_insertion_point(field_mutable:joosc_fuzzer.IntToBoolOp.left)
+  return _msg;
+}
+inline void IntToBoolOp::set_allocated_left(::joosc_fuzzer::Rvalue* left) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete _impl_.left_;
+  }
+  if (left) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(left);
+    if (message_arena != submessage_arena) {
+      left = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, left, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.left_ = left;
+  // @@protoc_insertion_point(field_set_allocated:joosc_fuzzer.IntToBoolOp.left)
+}
+
+// required .joosc_fuzzer.Rvalue right = 3;
+inline bool IntToBoolOp::_internal_has_right() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000002u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.right_ != nullptr);
+  return value;
+}
+inline bool IntToBoolOp::has_right() const {
+  return _internal_has_right();
+}
+inline void IntToBoolOp::clear_right() {
+  if (_impl_.right_ != nullptr) _impl_.right_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000002u;
+}
+inline const ::joosc_fuzzer::Rvalue& IntToBoolOp::_internal_right() const {
+  const ::joosc_fuzzer::Rvalue* p = _impl_.right_;
+  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::Rvalue&>(
+      ::joosc_fuzzer::_Rvalue_default_instance_);
+}
+inline const ::joosc_fuzzer::Rvalue& IntToBoolOp::right() const {
+  // @@protoc_insertion_point(field_get:joosc_fuzzer.IntToBoolOp.right)
+  return _internal_right();
+}
+inline void IntToBoolOp::unsafe_arena_set_allocated_right(
+    ::joosc_fuzzer::Rvalue* right) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(_impl_.right_);
+  }
+  _impl_.right_ = right;
+  if (right) {
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.IntToBoolOp.right)
+}
+inline ::joosc_fuzzer::Rvalue* IntToBoolOp::release_right() {
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::joosc_fuzzer::Rvalue* temp = _impl_.right_;
+  _impl_.right_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::joosc_fuzzer::Rvalue* IntToBoolOp::unsafe_arena_release_right() {
+  // @@protoc_insertion_point(field_release:joosc_fuzzer.IntToBoolOp.right)
+  _impl_._has_bits_[0] &= ~0x00000002u;
+  ::joosc_fuzzer::Rvalue* temp = _impl_.right_;
+  _impl_.right_ = nullptr;
+  return temp;
+}
+inline ::joosc_fuzzer::Rvalue* IntToBoolOp::_internal_mutable_right() {
+  _impl_._has_bits_[0] |= 0x00000002u;
+  if (_impl_.right_ == nullptr) {
+    auto* p = CreateMaybeMessage<::joosc_fuzzer::Rvalue>(GetArenaForAllocation());
+    _impl_.right_ = p;
+  }
+  return _impl_.right_;
+}
+inline ::joosc_fuzzer::Rvalue* IntToBoolOp::mutable_right() {
+  ::joosc_fuzzer::Rvalue* _msg = _internal_mutable_right();
+  // @@protoc_insertion_point(field_mutable:joosc_fuzzer.IntToBoolOp.right)
+  return _msg;
+}
+inline void IntToBoolOp::set_allocated_right(::joosc_fuzzer::Rvalue* right) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete _impl_.right_;
+  }
+  if (right) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(right);
+    if (message_arena != submessage_arena) {
+      right = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, right, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000002u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000002u;
+  }
+  _impl_.right_ = right;
+  // @@protoc_insertion_point(field_set_allocated:joosc_fuzzer.IntToBoolOp.right)
+}
+
+// -------------------------------------------------------------------
+
 // AssignmentStatement
 
 // required .joosc_fuzzer.Lvalue lvalue = 1;
@@ -4229,7 +5592,7 @@ inline void MethodInvocationStatement::set_allocated_method_invocation(::joosc_f
 
 // IfThen
 
-// required .joosc_fuzzer.BinaryOp cond = 1;
+// required .joosc_fuzzer.BoolRvalue cond = 1;
 inline bool IfThen::_internal_has_cond() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.cond_ != nullptr);
@@ -4242,17 +5605,17 @@ inline void IfThen::clear_cond() {
   if (_impl_.cond_ != nullptr) _impl_.cond_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::joosc_fuzzer::BinaryOp& IfThen::_internal_cond() const {
-  const ::joosc_fuzzer::BinaryOp* p = _impl_.cond_;
-  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::BinaryOp&>(
-      ::joosc_fuzzer::_BinaryOp_default_instance_);
+inline const ::joosc_fuzzer::BoolRvalue& IfThen::_internal_cond() const {
+  const ::joosc_fuzzer::BoolRvalue* p = _impl_.cond_;
+  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::BoolRvalue&>(
+      ::joosc_fuzzer::_BoolRvalue_default_instance_);
 }
-inline const ::joosc_fuzzer::BinaryOp& IfThen::cond() const {
+inline const ::joosc_fuzzer::BoolRvalue& IfThen::cond() const {
   // @@protoc_insertion_point(field_get:joosc_fuzzer.IfThen.cond)
   return _internal_cond();
 }
 inline void IfThen::unsafe_arena_set_allocated_cond(
-    ::joosc_fuzzer::BinaryOp* cond) {
+    ::joosc_fuzzer::BoolRvalue* cond) {
   if (GetArenaForAllocation() == nullptr) {
     delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(_impl_.cond_);
   }
@@ -4264,9 +5627,9 @@ inline void IfThen::unsafe_arena_set_allocated_cond(
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.IfThen.cond)
 }
-inline ::joosc_fuzzer::BinaryOp* IfThen::release_cond() {
+inline ::joosc_fuzzer::BoolRvalue* IfThen::release_cond() {
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::joosc_fuzzer::BinaryOp* temp = _impl_.cond_;
+  ::joosc_fuzzer::BoolRvalue* temp = _impl_.cond_;
   _impl_.cond_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
@@ -4279,27 +5642,27 @@ inline ::joosc_fuzzer::BinaryOp* IfThen::release_cond() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return temp;
 }
-inline ::joosc_fuzzer::BinaryOp* IfThen::unsafe_arena_release_cond() {
+inline ::joosc_fuzzer::BoolRvalue* IfThen::unsafe_arena_release_cond() {
   // @@protoc_insertion_point(field_release:joosc_fuzzer.IfThen.cond)
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::joosc_fuzzer::BinaryOp* temp = _impl_.cond_;
+  ::joosc_fuzzer::BoolRvalue* temp = _impl_.cond_;
   _impl_.cond_ = nullptr;
   return temp;
 }
-inline ::joosc_fuzzer::BinaryOp* IfThen::_internal_mutable_cond() {
+inline ::joosc_fuzzer::BoolRvalue* IfThen::_internal_mutable_cond() {
   _impl_._has_bits_[0] |= 0x00000001u;
   if (_impl_.cond_ == nullptr) {
-    auto* p = CreateMaybeMessage<::joosc_fuzzer::BinaryOp>(GetArenaForAllocation());
+    auto* p = CreateMaybeMessage<::joosc_fuzzer::BoolRvalue>(GetArenaForAllocation());
     _impl_.cond_ = p;
   }
   return _impl_.cond_;
 }
-inline ::joosc_fuzzer::BinaryOp* IfThen::mutable_cond() {
-  ::joosc_fuzzer::BinaryOp* _msg = _internal_mutable_cond();
+inline ::joosc_fuzzer::BoolRvalue* IfThen::mutable_cond() {
+  ::joosc_fuzzer::BoolRvalue* _msg = _internal_mutable_cond();
   // @@protoc_insertion_point(field_mutable:joosc_fuzzer.IfThen.cond)
   return _msg;
 }
-inline void IfThen::set_allocated_cond(::joosc_fuzzer::BinaryOp* cond) {
+inline void IfThen::set_allocated_cond(::joosc_fuzzer::BoolRvalue* cond) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
   if (message_arena == nullptr) {
     delete _impl_.cond_;
@@ -4413,7 +5776,7 @@ inline void IfThen::set_allocated_if_body(::joosc_fuzzer::StatementSeq* if_body)
 
 // IfElse
 
-// required .joosc_fuzzer.BinaryOp cond = 1;
+// required .joosc_fuzzer.BoolRvalue cond = 1;
 inline bool IfElse::_internal_has_cond() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.cond_ != nullptr);
@@ -4426,17 +5789,17 @@ inline void IfElse::clear_cond() {
   if (_impl_.cond_ != nullptr) _impl_.cond_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::joosc_fuzzer::BinaryOp& IfElse::_internal_cond() const {
-  const ::joosc_fuzzer::BinaryOp* p = _impl_.cond_;
-  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::BinaryOp&>(
-      ::joosc_fuzzer::_BinaryOp_default_instance_);
+inline const ::joosc_fuzzer::BoolRvalue& IfElse::_internal_cond() const {
+  const ::joosc_fuzzer::BoolRvalue* p = _impl_.cond_;
+  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::BoolRvalue&>(
+      ::joosc_fuzzer::_BoolRvalue_default_instance_);
 }
-inline const ::joosc_fuzzer::BinaryOp& IfElse::cond() const {
+inline const ::joosc_fuzzer::BoolRvalue& IfElse::cond() const {
   // @@protoc_insertion_point(field_get:joosc_fuzzer.IfElse.cond)
   return _internal_cond();
 }
 inline void IfElse::unsafe_arena_set_allocated_cond(
-    ::joosc_fuzzer::BinaryOp* cond) {
+    ::joosc_fuzzer::BoolRvalue* cond) {
   if (GetArenaForAllocation() == nullptr) {
     delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(_impl_.cond_);
   }
@@ -4448,9 +5811,9 @@ inline void IfElse::unsafe_arena_set_allocated_cond(
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.IfElse.cond)
 }
-inline ::joosc_fuzzer::BinaryOp* IfElse::release_cond() {
+inline ::joosc_fuzzer::BoolRvalue* IfElse::release_cond() {
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::joosc_fuzzer::BinaryOp* temp = _impl_.cond_;
+  ::joosc_fuzzer::BoolRvalue* temp = _impl_.cond_;
   _impl_.cond_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
@@ -4463,27 +5826,27 @@ inline ::joosc_fuzzer::BinaryOp* IfElse::release_cond() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return temp;
 }
-inline ::joosc_fuzzer::BinaryOp* IfElse::unsafe_arena_release_cond() {
+inline ::joosc_fuzzer::BoolRvalue* IfElse::unsafe_arena_release_cond() {
   // @@protoc_insertion_point(field_release:joosc_fuzzer.IfElse.cond)
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::joosc_fuzzer::BinaryOp* temp = _impl_.cond_;
+  ::joosc_fuzzer::BoolRvalue* temp = _impl_.cond_;
   _impl_.cond_ = nullptr;
   return temp;
 }
-inline ::joosc_fuzzer::BinaryOp* IfElse::_internal_mutable_cond() {
+inline ::joosc_fuzzer::BoolRvalue* IfElse::_internal_mutable_cond() {
   _impl_._has_bits_[0] |= 0x00000001u;
   if (_impl_.cond_ == nullptr) {
-    auto* p = CreateMaybeMessage<::joosc_fuzzer::BinaryOp>(GetArenaForAllocation());
+    auto* p = CreateMaybeMessage<::joosc_fuzzer::BoolRvalue>(GetArenaForAllocation());
     _impl_.cond_ = p;
   }
   return _impl_.cond_;
 }
-inline ::joosc_fuzzer::BinaryOp* IfElse::mutable_cond() {
-  ::joosc_fuzzer::BinaryOp* _msg = _internal_mutable_cond();
+inline ::joosc_fuzzer::BoolRvalue* IfElse::mutable_cond() {
+  ::joosc_fuzzer::BoolRvalue* _msg = _internal_mutable_cond();
   // @@protoc_insertion_point(field_mutable:joosc_fuzzer.IfElse.cond)
   return _msg;
 }
-inline void IfElse::set_allocated_cond(::joosc_fuzzer::BinaryOp* cond) {
+inline void IfElse::set_allocated_cond(::joosc_fuzzer::BoolRvalue* cond) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
   if (message_arena == nullptr) {
     delete _impl_.cond_;
@@ -4687,7 +6050,7 @@ inline void IfElse::set_allocated_else_body(::joosc_fuzzer::StatementSeq* else_b
 
 // While
 
-// required .joosc_fuzzer.BinaryOp cond = 1;
+// required .joosc_fuzzer.BoolRvalue cond = 1;
 inline bool While::_internal_has_cond() const {
   bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
   PROTOBUF_ASSUME(!value || _impl_.cond_ != nullptr);
@@ -4700,17 +6063,17 @@ inline void While::clear_cond() {
   if (_impl_.cond_ != nullptr) _impl_.cond_->Clear();
   _impl_._has_bits_[0] &= ~0x00000001u;
 }
-inline const ::joosc_fuzzer::BinaryOp& While::_internal_cond() const {
-  const ::joosc_fuzzer::BinaryOp* p = _impl_.cond_;
-  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::BinaryOp&>(
-      ::joosc_fuzzer::_BinaryOp_default_instance_);
+inline const ::joosc_fuzzer::BoolRvalue& While::_internal_cond() const {
+  const ::joosc_fuzzer::BoolRvalue* p = _impl_.cond_;
+  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::BoolRvalue&>(
+      ::joosc_fuzzer::_BoolRvalue_default_instance_);
 }
-inline const ::joosc_fuzzer::BinaryOp& While::cond() const {
+inline const ::joosc_fuzzer::BoolRvalue& While::cond() const {
   // @@protoc_insertion_point(field_get:joosc_fuzzer.While.cond)
   return _internal_cond();
 }
 inline void While::unsafe_arena_set_allocated_cond(
-    ::joosc_fuzzer::BinaryOp* cond) {
+    ::joosc_fuzzer::BoolRvalue* cond) {
   if (GetArenaForAllocation() == nullptr) {
     delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(_impl_.cond_);
   }
@@ -4722,9 +6085,9 @@ inline void While::unsafe_arena_set_allocated_cond(
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.While.cond)
 }
-inline ::joosc_fuzzer::BinaryOp* While::release_cond() {
+inline ::joosc_fuzzer::BoolRvalue* While::release_cond() {
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::joosc_fuzzer::BinaryOp* temp = _impl_.cond_;
+  ::joosc_fuzzer::BoolRvalue* temp = _impl_.cond_;
   _impl_.cond_ = nullptr;
 #ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
   auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
@@ -4737,27 +6100,27 @@ inline ::joosc_fuzzer::BinaryOp* While::release_cond() {
 #endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
   return temp;
 }
-inline ::joosc_fuzzer::BinaryOp* While::unsafe_arena_release_cond() {
+inline ::joosc_fuzzer::BoolRvalue* While::unsafe_arena_release_cond() {
   // @@protoc_insertion_point(field_release:joosc_fuzzer.While.cond)
   _impl_._has_bits_[0] &= ~0x00000001u;
-  ::joosc_fuzzer::BinaryOp* temp = _impl_.cond_;
+  ::joosc_fuzzer::BoolRvalue* temp = _impl_.cond_;
   _impl_.cond_ = nullptr;
   return temp;
 }
-inline ::joosc_fuzzer::BinaryOp* While::_internal_mutable_cond() {
+inline ::joosc_fuzzer::BoolRvalue* While::_internal_mutable_cond() {
   _impl_._has_bits_[0] |= 0x00000001u;
   if (_impl_.cond_ == nullptr) {
-    auto* p = CreateMaybeMessage<::joosc_fuzzer::BinaryOp>(GetArenaForAllocation());
+    auto* p = CreateMaybeMessage<::joosc_fuzzer::BoolRvalue>(GetArenaForAllocation());
     _impl_.cond_ = p;
   }
   return _impl_.cond_;
 }
-inline ::joosc_fuzzer::BinaryOp* While::mutable_cond() {
-  ::joosc_fuzzer::BinaryOp* _msg = _internal_mutable_cond();
+inline ::joosc_fuzzer::BoolRvalue* While::mutable_cond() {
+  ::joosc_fuzzer::BoolRvalue* _msg = _internal_mutable_cond();
   // @@protoc_insertion_point(field_mutable:joosc_fuzzer.While.cond)
   return _msg;
 }
-inline void While::set_allocated_cond(::joosc_fuzzer::BinaryOp* cond) {
+inline void While::set_allocated_cond(::joosc_fuzzer::BoolRvalue* cond) {
   ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
   if (message_arena == nullptr) {
     delete _impl_.cond_;
@@ -5685,6 +7048,12 @@ Class::methods() const {
 
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 
@@ -5696,6 +7065,16 @@ template <> struct is_proto_enum< ::joosc_fuzzer::BinaryOp_Op> : ::std::true_typ
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::joosc_fuzzer::BinaryOp_Op>() {
   return ::joosc_fuzzer::BinaryOp_Op_descriptor();
+}
+template <> struct is_proto_enum< ::joosc_fuzzer::BoolToBoolOp_Op> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::joosc_fuzzer::BoolToBoolOp_Op>() {
+  return ::joosc_fuzzer::BoolToBoolOp_Op_descriptor();
+}
+template <> struct is_proto_enum< ::joosc_fuzzer::IntToBoolOp_Op> : ::std::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::joosc_fuzzer::IntToBoolOp_Op>() {
+  return ::joosc_fuzzer::IntToBoolOp_Op_descriptor();
 }
 
 PROTOBUF_NAMESPACE_CLOSE
