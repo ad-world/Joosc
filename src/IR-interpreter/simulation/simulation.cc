@@ -320,8 +320,8 @@ void Simulator::leave(ExecutionFrame *frame) {
             if (Simulator::libraryFunctions.find(str) != Simulator::libraryFunctions.end()) {
                 Simulator::exprStack.pushName(-1, str);
             } else {
-                int addr = findLabel(str);
-                Simulator::exprStack.pushName(addr, str);
+                int label = findLabel(str);
+                Simulator::exprStack.pushName(label, str);
             }
         },
         [&](MoveIR *move) {
