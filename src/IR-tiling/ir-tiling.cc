@@ -42,6 +42,9 @@ Tile* IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
         return &expression_memo[&ir].withAbstractRegister(abstract_reg);
     }
 
+    // Generic tile that must be applicable, if no specialized tiles are applicable
+    Tile generic_tile;
+
     std::visit(util::overload {
         [&](BinOpIR &node) {
             
@@ -49,7 +52,7 @@ Tile* IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
             std::string operand1_reg = Assembly::newAbstractRegister();
             std::string operand2_reg = Assembly::newAbstractRegister();
 
-            Tile generic_tile = Tile({
+            generic_tile = Tile({
                 tile(node.getLeft(), operand1_reg),
                 tile(node.getRight(), operand2_reg)
             }, abstract_reg);
@@ -145,36 +148,28 @@ Tile* IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
                 default: {
                     THROW_CompilerError("Operation is not supported in Joosc"); 
                 }
-
-                decideIsCandidate(ir, generic_tile);
             }
         },
 
         [&](ConstIR &node) {
             // 32-bit immediate
-            Tile const_tile = Tile({
+            generic_tile = Tile({
                 Assembly::Mov(abstract_reg, std::to_string(node.getValue()))
             }, abstract_reg);
-
-            decideIsCandidate(ir, const_tile);
         },
 
         // [&](MemIR &node) {},
 
         [&](NameIR &node) {
-            Tile name_tile = Tile({
+            generic_tile = Tile({
                 Assembly::Mov(abstract_reg, node.getName())
             }, abstract_reg);
-
-            decideIsCandidate(ir, name_tile);
         },
 
         [&](TempIR &node) {
-            Tile temp_tile = Tile({
+            generic_tile = Tile({
                 Assembly::Mov(abstract_reg, node.getName())
             }, abstract_reg);
-
-            decideIsCandidate(ir, temp_tile);
         },
 
         [&](ESeqIR &node) {
@@ -188,6 +183,8 @@ Tile* IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
         [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
 
+    decideIsCandidate(ir, generic_tile);
+
     return &expression_memo[&ir];
 }
 
@@ -195,6 +192,9 @@ Tile* IRToTilesConverter::tile(StatementIR &ir) {
     if (statement_memo.count(&ir)) {
         return &statement_memo[&ir];
     }
+
+    // Generic tile that must be applicable, if no specialized tiles are applicable
+    Tile generic_tile;
     
     std::visit(util::overload {
         // [&](CJumpIR &node) {},
@@ -202,30 +202,25 @@ Tile* IRToTilesConverter::tile(StatementIR &ir) {
         [&](JumpIR &node) {
             std::string target_reg = Assembly::newAbstractRegister();
 
-            Tile jump_tile = Tile({
+            generic_tile = Tile({
                 tile(node.getTarget(), target_reg),
                 Assembly::Jump(target_reg)
             });
-
-            decideIsCandidate(ir, jump_tile);
         },
 
         [&](LabelIR &node) {
-            Tile label_tile = Tile({Assembly::Label(node.getName())});
-            decideIsCandidate(ir, label_tile);
+            generic_tile = Tile({Assembly::Label(node.getName())});
         },
 
         [&](MoveIR &node) {
             std::string target_reg = Assembly::newAbstractRegister();
             std::string source_reg = Assembly::newAbstractRegister();
 
-            Tile move_tile = Tile({
+            generic_tile = Tile({
                 tile(node.getTarget(), target_reg),
                 tile(node.getSource(), source_reg),
                 Assembly::Mov(target_reg, source_reg)
             });
-
-            decideIsCandidate(ir, move_tile);
         },
 
         // [&](ReturnIR &node) {},
@@ -233,13 +228,9 @@ Tile* IRToTilesConverter::tile(StatementIR &ir) {
         // [&](CallIR &node) {},
 
         [&](SeqIR &node) {
-            Tile seq_tile;
-
             for (auto& stmt : node.getStmts()) {
-                seq_tile.add_instruction(tile(*stmt));
+                generic_tile.add_instruction(tile(*stmt));
             }
-
-            decideIsCandidate(ir, seq_tile);
         },
 
         [&](ExpIR &node) {
@@ -248,6 +239,8 @@ Tile* IRToTilesConverter::tile(StatementIR &ir) {
 
         [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
+
+    decideIsCandidate(ir, generic_tile);
 
     return &statement_memo[&ir];
 }
