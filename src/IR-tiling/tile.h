@@ -33,8 +33,10 @@ class Tile {
     // Get cost of the tile
     int getCost();
 
-    // Add an instruction to the tile, which sets the cost to uncalculated
+    // Add instructions to the tile, which sets the cost to uncalculated
     void add_instruction(Instruction);
+    void add_instructions_after(std::vector<Instruction>);
+    void add_instructions_before(std::vector<Instruction>);
 
     // Get the full assembly instructions for this tile, expanding other tiles it uses
     std::list<std::string> getFullInstructions();

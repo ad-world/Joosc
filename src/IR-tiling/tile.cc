@@ -60,6 +60,21 @@ void Tile::add_instruction(Instruction instr) {
     instructions.push_back(instr);
 }
 
+void Tile::add_instructions_after(std::vector<Instruction> instructions) {
+    cost_calculated = false; // Cost must be recalculated
+    for (auto &instr : instructions) {
+        this->instructions.push_back(instr);
+    }
+}
+
+void Tile::add_instructions_before(std::vector<Instruction> instructions) {
+    cost_calculated = false; // Cost must be recalculated
+    for (auto &instr : this->instructions) {
+        instructions.push_back(instr);
+    }
+    this->instructions = instructions;
+}
+
 Tile::Tile(std::vector<Instruction> instructions) 
     : instructions{std::move(instructions)}, cost{0}, cost_calculated{false} {}
 

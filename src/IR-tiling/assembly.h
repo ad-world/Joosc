@@ -12,6 +12,9 @@ class Assembly {
     // Registers
     static std::string newAbstractRegister() { return "ABSTRACT_REG" + (abstract_reg_count++); }
 
+    static const inline std::string REG8L_ACCUM = "al";
+    static const inline std::string REG8H_ACCUM = "ah";
+
     static const inline std::string REG32_ACCUM = "eax";
     static const inline std::string REG32_BASE = "ebx";
     static const inline std::string REG32_COUNTER = "ecx";
@@ -40,6 +43,62 @@ class Assembly {
 
     static std::string Lea(std::string target, std::string source) {
         return "lea " + target + ", " + source;
+    }
+
+    static std::string IMul(std::string multiplicand) {
+        return "imul " + multiplicand;
+    }
+
+    static std::string IDiv(std::string divisor) {
+        return "idiv " + divisor;
+    }
+
+    static std::string Xor(std::string destination, std::string other) {
+        return "xor " + destination + ", " + other;
+    }
+
+    static std::string And(std::string destination, std::string mask) {
+        return "and " + destination + ", " + mask;
+    }
+
+    static std::string Or(std::string destination, std::string addend) {
+        return "or " + destination + ", " + addend;
+    }
+
+    static std::string SetZ(std::string destination) {
+        return "setz " + destination;
+    }
+
+    static std::string SetNZ(std::string destination) {
+        return "setnz " + destination;
+    }
+
+    static std::string SetL(std::string destination) {
+        return "setl " + destination;
+    }
+
+    static std::string SetG(std::string destination) {
+        return "setg " + destination;
+    }
+
+    static std::string SetLE(std::string destination) {
+        return "setle " + destination;
+    }
+
+    static std::string SetGE(std::string destination) {
+        return "setge " + destination;
+    }
+
+    static std::string MovZX(std::string destination, std::string arg) {
+        return "movzx " + destination + ", " + arg;
+    }
+
+    static std::string Cmp(std::string arg1, std::string arg2) {
+        return "cmp " + arg1 + ", " + arg2;
+    }
+
+    static std::string Test(std::string arg1, std::string arg2) {
+        return "test " + arg1 + ", " + arg2;
     }
 
     // Other helpers

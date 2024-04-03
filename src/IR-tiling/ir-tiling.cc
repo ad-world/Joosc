@@ -44,67 +44,109 @@ Tile* IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
 
     std::visit(util::overload {
         [&](BinOpIR &node) {
+            
+            // Generic tile that is always applicable : store operands in abstract registers, then do something
+            std::string operand1_reg = Assembly::newAbstractRegister();
+            std::string operand2_reg = Assembly::newAbstractRegister();
+
+            Tile generic_tile = Tile({
+                tile(node.getLeft(), operand1_reg),
+                tile(node.getRight(), operand2_reg)
+            }, abstract_reg);
+
             switch (node.op) {
                 case BinOpIR::OpType::ADD: {
-                    std::string operand1_reg = Assembly::newAbstractRegister();
-                    std::string operand2_reg = Assembly::newAbstractRegister();
-
-                    Tile generic_add_tile = Tile({
-                        tile(node.getLeft(), operand1_reg),
-                        tile(node.getRight(), operand2_reg),
+                    generic_tile.add_instructions_after({
                         Assembly::Lea(abstract_reg, Assembly::MakeAddress(operand1_reg, operand2_reg))
-                    }, abstract_reg);
-
-                    decideIsCandidate(ir, generic_add_tile);
+                    });
                 } 
                 case BinOpIR::OpType::SUB: {
-                    std::string operand1_reg = Assembly::newAbstractRegister();
-                    std::string operand2_reg = Assembly::newAbstractRegister();
-
-                    Tile generic_sub_tile = Tile({
-                        tile(node.getLeft(), operand1_reg),
-                        tile(node.getRight(), operand2_reg),
+                    generic_tile.add_instructions_after({
                         Assembly::Lea(abstract_reg, Assembly::MakeAddress(operand1_reg, operand2_reg, -1))
-                    }, abstract_reg);
-
-                    decideIsCandidate(ir, generic_sub_tile);
+                    });
                 }
                 case BinOpIR::OpType::MUL: {
-
+                    generic_tile.add_instructions_after({
+                        Assembly::Mov(Assembly::REG32_ACCUM, operand1_reg),
+                        Assembly::IMul(operand2_reg),
+                        Assembly::Mov(abstract_reg, Assembly::REG32_ACCUM)
+                    });
                 }
                 case BinOpIR::OpType::DIV: {
-
+                    generic_tile.add_instructions_after({
+                        Assembly::Mov(Assembly::REG32_ACCUM, operand1_reg), // Move low 32 bits of divident into accumulator
+                        Assembly::Xor(Assembly::REG32_DATA, Assembly::REG32_DATA), // Clear high 32 bits of dividend
+                        Assembly::IDiv(operand2_reg),
+                        Assembly::Mov(abstract_reg, Assembly::REG32_ACCUM) // Quotient stored in ACCUM
+                    });
                 }
                 case BinOpIR::OpType::MOD: {
-
+                    generic_tile.add_instructions_after({
+                        Assembly::Mov(Assembly::REG32_ACCUM, operand1_reg), // Move low 32 bits of divident into accumulator
+                        Assembly::Xor(Assembly::REG32_DATA, Assembly::REG32_DATA), // Clear high 32 bits of dividend
+                        Assembly::IDiv(operand2_reg),
+                        Assembly::Mov(abstract_reg, Assembly::REG32_DATA) // Remainder stored in DATA
+                    });
                 }
                 case BinOpIR::OpType::AND: {
-
+                    generic_tile.add_instructions_after({
+                        Assembly::And(operand1_reg, operand2_reg),
+                        Assembly::Mov(abstract_reg, operand1_reg)
+                    });
                 }
                 case BinOpIR::OpType::OR: {
-
+                    generic_tile.add_instructions_after({
+                        Assembly::Or(operand1_reg, operand2_reg),
+                        Assembly::Mov(abstract_reg, operand1_reg)
+                    });
                 }
                 case BinOpIR::OpType::EQ: {
-
+                    generic_tile.add_instructions_after({
+                        Assembly::Cmp(operand1_reg, operand2_reg),
+                        Assembly::SetZ(Assembly::REG8L_ACCUM),
+                        Assembly::MovZX(abstract_reg, Assembly::REG8L_ACCUM)
+                    });
                 }
                 case BinOpIR::OpType::NEQ: {
-
+                    generic_tile.add_instructions_after({
+                        Assembly::Cmp(operand1_reg, operand2_reg),
+                        Assembly::SetNZ(Assembly::REG8L_ACCUM),
+                        Assembly::MovZX(abstract_reg, Assembly::REG8L_ACCUM)
+                    });
                 }
                 case BinOpIR::OpType::LT: {
-
+                    generic_tile.add_instructions_after({
+                        Assembly::Cmp(operand1_reg, operand2_reg),
+                        Assembly::SetL(Assembly::REG8L_ACCUM),
+                        Assembly::MovZX(abstract_reg, Assembly::REG8L_ACCUM)
+                    });
                 }
                 case BinOpIR::OpType::GT: {
-
+                    generic_tile.add_instructions_after({
+                        Assembly::Cmp(operand1_reg, operand2_reg),
+                        Assembly::SetG(Assembly::REG8L_ACCUM),
+                        Assembly::MovZX(abstract_reg, Assembly::REG8L_ACCUM)
+                    });
                 }
                 case BinOpIR::OpType::LEQ: {
-
+                    generic_tile.add_instructions_after({
+                        Assembly::Cmp(operand1_reg, operand2_reg),
+                        Assembly::SetLE(Assembly::REG8L_ACCUM),
+                        Assembly::MovZX(abstract_reg, Assembly::REG8L_ACCUM)
+                    });
                 }
                 case BinOpIR::OpType::GEQ: {
-
+                    generic_tile.add_instructions_after({
+                        Assembly::Cmp(operand1_reg, operand2_reg),
+                        Assembly::SetGE(Assembly::REG8L_ACCUM),
+                        Assembly::MovZX(abstract_reg, Assembly::REG8L_ACCUM)
+                    });
                 }
                 default: {
                     THROW_CompilerError("Operation is not supported in Joosc"); 
                 }
+
+                decideIsCandidate(ir, generic_tile);
             }
         },
 
