@@ -9,7 +9,7 @@ class BinOpIR {
     std::unique_ptr<ExpressionIR> right;
 public:
     enum OpType {
-        ADD, SUB, MUL, DIV, MOD, AND, OR, XOR, LSHIFT, RSHIFT, ARSHIFT,
+        ADD, SUB, MUL, DIV, MOD, AND, OR,
         EQ, NEQ, LT, GT, LEQ, GEQ
     };
     OpType op;
