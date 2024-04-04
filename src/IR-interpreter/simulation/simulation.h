@@ -47,6 +47,7 @@ class Simulator {
      * @return the IR node at the given address
      */
     IR* getIRFromPtr(IR_PTR ptr);
+
     /**
      * Holds the instruction pointer and temporary registers
      * within an execution frame.

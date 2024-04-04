@@ -28,7 +28,7 @@ void Simulator::ExecutionFrame::put(std::string tempName, int value) {
 
 bool Simulator::ExecutionFrame::advance() {
     if (parent.debugLevel > 1) {
-        std::cout << "Evaluating " << parent.getNodeType(getCurrentNode()) << " with ip: " << ip << std::endl;
+        std::cout << "\033[1;31mEvaluating " << parent.getNodeType(getCurrentNode()) << " with ip: " << ip << "\033[0m" << std::endl;
     }
 
     int backupIp = ip;
