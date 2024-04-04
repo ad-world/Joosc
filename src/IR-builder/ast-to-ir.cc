@@ -29,14 +29,8 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
     auto dest = convert(*expr.assigned_to);
     auto src = convert(*expr.assigned_from);
 
-    std::string dest_name;
-    std::visit(util::overload{
-        [&](TempIR &temp) { dest_name = temp.getName(); },
-        [&](auto &node) { THROW_CompilerError("Destination for assignment is not a temp"); }
-    }, *dest);
-
     auto statement_ir = MoveIR::makeStmt(std::move(dest), std::move(src));
-    auto expression_ir = TempIR::makeExpr(dest_name);
+    auto expression_ir = std::move(convert(*expr.assigned_to)); // copy of dest
     auto eseq = ESeqIR::makeExpr(std::move(statement_ir), std::move(expression_ir));
 
     return eseq;
