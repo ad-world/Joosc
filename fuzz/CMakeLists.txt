@@ -37,15 +37,15 @@ macro(fuzzer name)
     add_executable(${name} ${name}.cc)
     set_target_properties(${name}
             PROPERTIES
-            COMPILE_FLAGS "-fsanitize=fuzzer,address -fprofile-generate -ftest-coverage"
-            LINK_FLAGS "-fsanitize=fuzzer,address -fprofile-generate -ftest-coverage")
+            COMPILE_FLAGS "-fsanitize=fuzzer,address" # -fprofile-generate -ftest-coverage"
+            LINK_FLAGS "-fsanitize=fuzzer,address") # -fprofile-generate -ftest-coverage")
     target_link_libraries(${name}
             PRIVATE
             CommonLib
             joosc_proto
             ${Protobuf_LIBRARIES}
             ${ProtobufMutator_LIBRARIES}
-            gcov
+            # gcov
             )
 endmacro()
 
