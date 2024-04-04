@@ -8,7 +8,7 @@ graph: | generate-parser
 	(mkdir -p build && cd build && cmake -DGRAPHVIZ=ON .. && make && cp joosc ../joosc)
 
 fuzzer: | generate-parser
-	(ninja --version && (mkdir -p build && cd build && cmake -DFUZZER=ON -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer))
+	(ninja --version && (mkdir -p build && cd build && cmake -DFUZZER=ON -DCMAKE_CXX_FLAGS="-O3" -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer))
 
 build: | generate-parser
 	(ninja --version && (mkdir -p build && cd build && cmake .. -G Ninja && ninja && cp joosc ../joosc)) || \
@@ -52,6 +52,7 @@ clean:
 	rm -r -f ./build
 	rm -f integration.log
 	rm -f *.tmp
+	rm -f fuzzer
 
 submission: build
 	@[ "${anum}" ] || ( echo "Must pass assignment number; e.g. make submission anum=1"; exit 1 )

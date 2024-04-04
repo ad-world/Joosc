@@ -1,10 +1,13 @@
 project(joosc)
 cmake_minimum_required(VERSION 3.16)
 
-add_compile_options("-g")
-add_compile_options("-fdiagnostics-color=always")
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+option(FUZZER "Generate a graph of the parse tree" OFF)
+if ( NOT FUZZER )
+    add_compile_options("-g")
+    add_compile_options("-fdiagnostics-color=always")
+endif()
 
 # Graphing
 option(GRAPHVIZ "Generate a graph of the parse tree" OFF)
@@ -52,7 +55,6 @@ add_executable(lex_tester)
 target_sources(lex_tester PRIVATE $<TARGET_OBJECTS:CommonLib> "tests/lexing/lex_tester.cc")
 target_include_directories(lex_tester PRIVATE src)
 
-option(FUZZER "Generate a graph of the parse tree" OFF)
 if (FUZZER)
     add_subdirectory(fuzz)
 endif (FUZZER)
