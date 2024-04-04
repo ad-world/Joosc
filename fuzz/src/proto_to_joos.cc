@@ -48,9 +48,8 @@ std::ostream &operator<<(std::ostream &os, const Lvalue &x) {
 std::ostream &operator<<(std::ostream &os, const Rvalue &x) {
     if ( x.has_varref() ) return os << x.varref();
     if ( x.has_binop() ) return os << x.binop();
-    if ( x.has_cons() ) return os << x.cons();
-    // if ( x.has_method_invoc() ) return os << x.method_invoc();
-    throw std::runtime_error("error parsing Rvalue");
+    if ( x.has_method_invoc() ) return os << x.method_invoc();
+    return os << x.cons();
 }
 
 std::ostream &operator<<(std::ostream &os, const Const &x) {
@@ -147,20 +146,29 @@ std::ostream &operator<<(std::ostream &os, const While &x) {
     return (os);
 }
 
+std::ostream &operator<<(std::ostream &os, const ReturnStatement &x) {
+    printTabs(os);
+    return os << "return (" << x.rval() << ");\n";
+}
+
 std::ostream &operator<<(std::ostream &os, const Statement &x) {
-    if ( x.has_assignment() ) return os << x.assignment();
     if ( x.has_ifthen() ) return os << x.ifthen();
     if ( x.has_ifelse() ) return os << x.ifelse();
     if ( x.has_while_loop() ) return os << x.while_loop();
+    if ( x.has_ret_stmt() ) return os << x.ret_stmt();
     if ( x.has_method_call() ) return os << x.method_call();
-    // if ( x.has_declaration() ) return os << x.declaration();
-    throw std::runtime_error("error parsing BoolRvalue");
+    // if ( x.has_assignment() )
+    return os << x.assignment();
 }
 ///////////////////////////////////////
 
 std::ostream &operator<<(std::ostream &os, const StatementSeq &x) {
     for ( auto &stmt : x.statements() ) { os << stmt; }
     return os;
+}
+
+std::ostream &operator<<(std::ostream &os, const Function &x) {
+    return os << x.body() << x.ret_stmt();
 }
 
 std::ostream &operator<<(std::ostream &os, const StaticField &x) {
@@ -187,7 +195,7 @@ std::ostream &operator<<(std::ostream &os, const Class &x) {
 
     // Main function
     printTabs(os);
-    os << "public static void test() {\n"; num_tabs++;
+    os << "public static int test() {\n"; num_tabs++;
     os << x.main_body();
     printLessTabs(os);
     os << "}\n";
@@ -197,12 +205,15 @@ std::ostream &operator<<(std::ostream &os, const Class &x) {
     for ( int m = 0; m < NUM_METHODS; m++ ) {
         std::string method_name = "m" + std::to_string(m);
         printTabs(os);
-        os << "public static void " << method_name << "() {\n"; num_tabs++;
+        os << "public static int " << method_name << "() {\n"; num_tabs++;
 
         // Print body if exists
         if ( method_it != x.methods().end() ) {
             os << *method_it;
             method_it++;
+        } else {
+            printTabs(os);
+            os << "return 1;\n"; // default return for functions
         }
 
         printLessTabs(os);

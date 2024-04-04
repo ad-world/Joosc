@@ -27,9 +27,9 @@ message Rvalue {
     oneof rvalue_oneof {
         VarRef varref = 1;
         BinaryOp binop = 2;
-        // MethodInvocation method_invoc = 4;
+        MethodInvocation method_invoc = 3;
     }
-    required Const cons = 3;
+    required Const cons = 4;
 }
 
 message Const {
@@ -122,20 +122,30 @@ message While {
     required StatementSeq body = 2;
 }
 
+message ReturnStatement {
+    required Rvalue rval = 1;
+}
+
 message Statement {
     oneof stmt_oneof {
-        AssignmentStatement         assignment  = 1;
         IfThen                      ifthen      = 2;
         IfElse                      ifelse      = 3;
         While                       while_loop  = 4;
+        ReturnStatement             ret_stmt    = 5;
+        MethodInvocationStatement   method_call = 6;
         // VarDecl                     declaration = 6;
     }
-    required MethodInvocationStatement   method_call = 5;
+    required AssignmentStatement         assignment  = 1;
 }
 ///////////////////////////////////////
 
 message StatementSeq {
     repeated Statement statements = 1;
+}
+
+message Function {
+    required StatementSeq body = 1;
+    required ReturnStatement ret_stmt = 2;
 }
 
 message StaticField {
@@ -144,7 +154,7 @@ message StaticField {
 }
 
 message Class {
-    required StatementSeq main_body = 1;
+    required Function main_body = 1;
     repeated StaticField fields = 2;
-    repeated StatementSeq methods = 3;
+    repeated Function methods = 3;
 }
