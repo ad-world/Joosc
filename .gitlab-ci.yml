@@ -12,7 +12,12 @@
 # see https://hub.docker.com/_/gcc/
 
 before_script:
-  - apt-get update -qq && apt-get install -y -qq python3 python3-pip ninja-build gcc flex bison valgrind time git zip cmake nasm
+  - apt-get update -qq && apt-get install -y -qq python3 python3-pip ninja-build gcc flex bison valgrind time git zip cmake nasm clang
+
+stages:
+  - build
+  - test
+  - fuzz
 
 image:
   name: gcc
@@ -80,3 +85,26 @@ SUBMISSION:
     policy: pull
     paths:
       - .cache
+
+include:
+  - template: Coverage-Fuzzing.gitlab-ci.yml
+
+fuzz_joosc:
+  extends: .fuzz_base
+  before_script:
+    # From template
+    - export COVFUZZ_JOB_TOKEN="$CI_JOB_TOKEN"
+    - export COVFUZZ_PRIVATE_TOKEN="$CI_PRIVATE_TOKEN"
+    - export COVFUZZ_PROJECT_PATH="$CI_PROJECT_PATH"
+    - export COVFUZZ_PROJECT_ID="$CI_PROJECT_ID"
+    - if [ -x "$(command -v apt-get)" ] ; then apt-get update && apt-get install -y wget; fi
+    - wget -O gitlab-cov-fuzz "${COVFUZZ_URL_PREFIX}"/"${COVFUZZ_VERSION}"/binaries/gitlab-cov-fuzz_Linux_x86_64
+    - chmod a+x gitlab-cov-fuzz
+    - export REGRESSION=true
+    - if [[ "$CI_COMMIT_BRANCH" = "$COVFUZZ_BRANCH" ]]; then REGRESSION=false; fi;
+  script:
+    # Build your fuzz target binary in these steps, then run it with gitlab-cov-fuzz
+    # See our example repos for how you could do this with any of our supported languages
+    - apt-get update -qq && apt-get install -y -qq python3 python3-pip ninja-build gcc flex bison valgrind time git zip cmake nasm clang
+    - make fuzzer
+    - ./gitlab-cov-fuzz run --regression=$REGRESSION -- ./fuzzer
