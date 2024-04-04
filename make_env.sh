@@ -98,3 +98,8 @@ function rungraph {
     fi
 }
 complete -F _test_completions rungraph
+
+function run_java_ir {
+    javac -d java-ir-bin $(find java-ir -name "*.java")
+    java -cp java-ir-bin joosc.ir.interpret.Main
+}
