@@ -190,6 +190,7 @@ Tile* IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
         [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
 
+    if (generic_tile.getCost() == Tile().getCost()) THROW_CompilerError("Generic tile was not assigned");
     decideIsCandidate(ir, generic_tile);
 
     return &expression_memo[&ir];
@@ -289,6 +290,7 @@ Tile* IRToTilesConverter::tile(StatementIR &ir) {
         [&](auto &node) { THROW_CompilerError("Unimplemented"); }
     }, ir);
 
+    if (generic_tile.getCost() == Tile().getCost()) THROW_CompilerError("Generic tile was not assigned");
     decideIsCandidate(ir, generic_tile);
 
     return &statement_memo[&ir];
