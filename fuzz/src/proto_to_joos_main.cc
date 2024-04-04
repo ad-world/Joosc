@@ -8,7 +8,6 @@ int main(int argc, char **argv) {
         std::fstream in(argv[i]);
         std::string str((std::istreambuf_iterator<char>(in)),
                         std::istreambuf_iterator<char>());
-        std::cout << str.data();
         std::cout << "// " << argv[i] << std::endl;
         std::cout << joosc_fuzzer::ProtoToJoos(
             reinterpret_cast<const uint8_t *>(str.data()),

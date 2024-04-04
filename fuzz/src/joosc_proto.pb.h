@@ -746,8 +746,7 @@ class Rvalue final :
   }
   enum RvalueOneofCase {
     kVarref = 1,
-    kCons = 2,
-    kBinop = 3,
+    kBinop = 2,
     RVALUE_ONEOF_NOT_SET = 0,
   };
 
@@ -829,10 +828,28 @@ class Rvalue final :
   // accessors -------------------------------------------------------
 
   enum : int {
+    kConsFieldNumber = 3,
     kVarrefFieldNumber = 1,
-    kConsFieldNumber = 2,
-    kBinopFieldNumber = 3,
+    kBinopFieldNumber = 2,
   };
+  // required .joosc_fuzzer.Const cons = 3;
+  bool has_cons() const;
+  private:
+  bool _internal_has_cons() const;
+  public:
+  void clear_cons();
+  const ::joosc_fuzzer::Const& cons() const;
+  PROTOBUF_NODISCARD ::joosc_fuzzer::Const* release_cons();
+  ::joosc_fuzzer::Const* mutable_cons();
+  void set_allocated_cons(::joosc_fuzzer::Const* cons);
+  private:
+  const ::joosc_fuzzer::Const& _internal_cons() const;
+  ::joosc_fuzzer::Const* _internal_mutable_cons();
+  public:
+  void unsafe_arena_set_allocated_cons(
+      ::joosc_fuzzer::Const* cons);
+  ::joosc_fuzzer::Const* unsafe_arena_release_cons();
+
   // .joosc_fuzzer.VarRef varref = 1;
   bool has_varref() const;
   private:
@@ -851,25 +868,7 @@ class Rvalue final :
       ::joosc_fuzzer::VarRef* varref);
   ::joosc_fuzzer::VarRef* unsafe_arena_release_varref();
 
-  // .joosc_fuzzer.Const cons = 2;
-  bool has_cons() const;
-  private:
-  bool _internal_has_cons() const;
-  public:
-  void clear_cons();
-  const ::joosc_fuzzer::Const& cons() const;
-  PROTOBUF_NODISCARD ::joosc_fuzzer::Const* release_cons();
-  ::joosc_fuzzer::Const* mutable_cons();
-  void set_allocated_cons(::joosc_fuzzer::Const* cons);
-  private:
-  const ::joosc_fuzzer::Const& _internal_cons() const;
-  ::joosc_fuzzer::Const* _internal_mutable_cons();
-  public:
-  void unsafe_arena_set_allocated_cons(
-      ::joosc_fuzzer::Const* cons);
-  ::joosc_fuzzer::Const* unsafe_arena_release_cons();
-
-  // .joosc_fuzzer.BinaryOp binop = 3;
+  // .joosc_fuzzer.BinaryOp binop = 2;
   bool has_binop() const;
   private:
   bool _internal_has_binop() const;
@@ -893,7 +892,6 @@ class Rvalue final :
  private:
   class _Internal;
   void set_has_varref();
-  void set_has_cons();
   void set_has_binop();
 
   inline bool has_rvalue_oneof() const;
@@ -903,14 +901,15 @@ class Rvalue final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   struct Impl_ {
+    ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+    ::joosc_fuzzer::Const* cons_;
     union RvalueOneofUnion {
       constexpr RvalueOneofUnion() : _constinit_{} {}
         ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
       ::joosc_fuzzer::VarRef* varref_;
-      ::joosc_fuzzer::Const* cons_;
       ::joosc_fuzzer::BinaryOp* binop_;
     } rvalue_oneof_;
-    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
     uint32_t _oneof_case_[1];
 
   };
@@ -1371,7 +1370,6 @@ class BoolRvalue final :
   enum BoolBinopOneofCase {
     kBoolop = 1,
     kIntop = 2,
-    kCons = 3,
     BOOL_BINOP_ONEOF_NOT_SET = 0,
   };
 
@@ -1453,10 +1451,23 @@ class BoolRvalue final :
   // accessors -------------------------------------------------------
 
   enum : int {
+    kConsFieldNumber = 3,
     kBoolopFieldNumber = 1,
     kIntopFieldNumber = 2,
-    kConsFieldNumber = 3,
   };
+  // required bool cons = 3;
+  bool has_cons() const;
+  private:
+  bool _internal_has_cons() const;
+  public:
+  void clear_cons();
+  bool cons() const;
+  void set_cons(bool value);
+  private:
+  bool _internal_cons() const;
+  void _internal_set_cons(bool value);
+  public:
+
   // .joosc_fuzzer.BoolToBoolOp boolop = 1;
   bool has_boolop() const;
   private:
@@ -1493,19 +1504,6 @@ class BoolRvalue final :
       ::joosc_fuzzer::IntToBoolOp* intop);
   ::joosc_fuzzer::IntToBoolOp* unsafe_arena_release_intop();
 
-  // bool cons = 3;
-  bool has_cons() const;
-  private:
-  bool _internal_has_cons() const;
-  public:
-  void clear_cons();
-  bool cons() const;
-  void set_cons(bool value);
-  private:
-  bool _internal_cons() const;
-  void _internal_set_cons(bool value);
-  public:
-
   void clear_bool_binop_oneof();
   BoolBinopOneofCase bool_binop_oneof_case() const;
   // @@protoc_insertion_point(class_scope:joosc_fuzzer.BoolRvalue)
@@ -1513,7 +1511,6 @@ class BoolRvalue final :
   class _Internal;
   void set_has_boolop();
   void set_has_intop();
-  void set_has_cons();
 
   inline bool has_bool_binop_oneof() const;
   inline void clear_has_bool_binop_oneof();
@@ -1522,14 +1519,15 @@ class BoolRvalue final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   struct Impl_ {
+    ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+    bool cons_;
     union BoolBinopOneofUnion {
       constexpr BoolBinopOneofUnion() : _constinit_{} {}
         ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
       ::joosc_fuzzer::BoolToBoolOp* boolop_;
       ::joosc_fuzzer::IntToBoolOp* intop_;
-      bool cons_;
     } bool_binop_oneof_;
-    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
     uint32_t _oneof_case_[1];
 
   };
@@ -3177,7 +3175,6 @@ class Statement final :
     kIfthen = 2,
     kIfelse = 3,
     kWhileLoop = 4,
-    kMethodCall = 5,
     STMT_ONEOF_NOT_SET = 0,
   };
 
@@ -3259,12 +3256,30 @@ class Statement final :
   // accessors -------------------------------------------------------
 
   enum : int {
+    kMethodCallFieldNumber = 5,
     kAssignmentFieldNumber = 1,
     kIfthenFieldNumber = 2,
     kIfelseFieldNumber = 3,
     kWhileLoopFieldNumber = 4,
-    kMethodCallFieldNumber = 5,
   };
+  // required .joosc_fuzzer.MethodInvocationStatement method_call = 5;
+  bool has_method_call() const;
+  private:
+  bool _internal_has_method_call() const;
+  public:
+  void clear_method_call();
+  const ::joosc_fuzzer::MethodInvocationStatement& method_call() const;
+  PROTOBUF_NODISCARD ::joosc_fuzzer::MethodInvocationStatement* release_method_call();
+  ::joosc_fuzzer::MethodInvocationStatement* mutable_method_call();
+  void set_allocated_method_call(::joosc_fuzzer::MethodInvocationStatement* method_call);
+  private:
+  const ::joosc_fuzzer::MethodInvocationStatement& _internal_method_call() const;
+  ::joosc_fuzzer::MethodInvocationStatement* _internal_mutable_method_call();
+  public:
+  void unsafe_arena_set_allocated_method_call(
+      ::joosc_fuzzer::MethodInvocationStatement* method_call);
+  ::joosc_fuzzer::MethodInvocationStatement* unsafe_arena_release_method_call();
+
   // .joosc_fuzzer.AssignmentStatement assignment = 1;
   bool has_assignment() const;
   private:
@@ -3337,24 +3352,6 @@ class Statement final :
       ::joosc_fuzzer::While* while_loop);
   ::joosc_fuzzer::While* unsafe_arena_release_while_loop();
 
-  // .joosc_fuzzer.MethodInvocationStatement method_call = 5;
-  bool has_method_call() const;
-  private:
-  bool _internal_has_method_call() const;
-  public:
-  void clear_method_call();
-  const ::joosc_fuzzer::MethodInvocationStatement& method_call() const;
-  PROTOBUF_NODISCARD ::joosc_fuzzer::MethodInvocationStatement* release_method_call();
-  ::joosc_fuzzer::MethodInvocationStatement* mutable_method_call();
-  void set_allocated_method_call(::joosc_fuzzer::MethodInvocationStatement* method_call);
-  private:
-  const ::joosc_fuzzer::MethodInvocationStatement& _internal_method_call() const;
-  ::joosc_fuzzer::MethodInvocationStatement* _internal_mutable_method_call();
-  public:
-  void unsafe_arena_set_allocated_method_call(
-      ::joosc_fuzzer::MethodInvocationStatement* method_call);
-  ::joosc_fuzzer::MethodInvocationStatement* unsafe_arena_release_method_call();
-
   void clear_stmt_oneof();
   StmtOneofCase stmt_oneof_case() const;
   // @@protoc_insertion_point(class_scope:joosc_fuzzer.Statement)
@@ -3364,7 +3361,6 @@ class Statement final :
   void set_has_ifthen();
   void set_has_ifelse();
   void set_has_while_loop();
-  void set_has_method_call();
 
   inline bool has_stmt_oneof() const;
   inline void clear_has_stmt_oneof();
@@ -3373,6 +3369,9 @@ class Statement final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   struct Impl_ {
+    ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+    ::joosc_fuzzer::MethodInvocationStatement* method_call_;
     union StmtOneofUnion {
       constexpr StmtOneofUnion() : _constinit_{} {}
         ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized _constinit_;
@@ -3380,9 +3379,7 @@ class Statement final :
       ::joosc_fuzzer::IfThen* ifthen_;
       ::joosc_fuzzer::IfElse* ifelse_;
       ::joosc_fuzzer::While* while_loop_;
-      ::joosc_fuzzer::MethodInvocationStatement* method_call_;
     } stmt_oneof_;
-    mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
     uint32_t _oneof_case_[1];
 
   };
@@ -4189,81 +4186,7 @@ inline ::joosc_fuzzer::VarRef* Rvalue::mutable_varref() {
   return _msg;
 }
 
-// .joosc_fuzzer.Const cons = 2;
-inline bool Rvalue::_internal_has_cons() const {
-  return rvalue_oneof_case() == kCons;
-}
-inline bool Rvalue::has_cons() const {
-  return _internal_has_cons();
-}
-inline void Rvalue::set_has_cons() {
-  _impl_._oneof_case_[0] = kCons;
-}
-inline void Rvalue::clear_cons() {
-  if (_internal_has_cons()) {
-    if (GetArenaForAllocation() == nullptr) {
-      delete _impl_.rvalue_oneof_.cons_;
-    }
-    clear_has_rvalue_oneof();
-  }
-}
-inline ::joosc_fuzzer::Const* Rvalue::release_cons() {
-  // @@protoc_insertion_point(field_release:joosc_fuzzer.Rvalue.cons)
-  if (_internal_has_cons()) {
-    clear_has_rvalue_oneof();
-    ::joosc_fuzzer::Const* temp = _impl_.rvalue_oneof_.cons_;
-    if (GetArenaForAllocation() != nullptr) {
-      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
-    }
-    _impl_.rvalue_oneof_.cons_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline const ::joosc_fuzzer::Const& Rvalue::_internal_cons() const {
-  return _internal_has_cons()
-      ? *_impl_.rvalue_oneof_.cons_
-      : reinterpret_cast< ::joosc_fuzzer::Const&>(::joosc_fuzzer::_Const_default_instance_);
-}
-inline const ::joosc_fuzzer::Const& Rvalue::cons() const {
-  // @@protoc_insertion_point(field_get:joosc_fuzzer.Rvalue.cons)
-  return _internal_cons();
-}
-inline ::joosc_fuzzer::Const* Rvalue::unsafe_arena_release_cons() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:joosc_fuzzer.Rvalue.cons)
-  if (_internal_has_cons()) {
-    clear_has_rvalue_oneof();
-    ::joosc_fuzzer::Const* temp = _impl_.rvalue_oneof_.cons_;
-    _impl_.rvalue_oneof_.cons_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
-}
-inline void Rvalue::unsafe_arena_set_allocated_cons(::joosc_fuzzer::Const* cons) {
-  clear_rvalue_oneof();
-  if (cons) {
-    set_has_cons();
-    _impl_.rvalue_oneof_.cons_ = cons;
-  }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.Rvalue.cons)
-}
-inline ::joosc_fuzzer::Const* Rvalue::_internal_mutable_cons() {
-  if (!_internal_has_cons()) {
-    clear_rvalue_oneof();
-    set_has_cons();
-    _impl_.rvalue_oneof_.cons_ = CreateMaybeMessage< ::joosc_fuzzer::Const >(GetArenaForAllocation());
-  }
-  return _impl_.rvalue_oneof_.cons_;
-}
-inline ::joosc_fuzzer::Const* Rvalue::mutable_cons() {
-  ::joosc_fuzzer::Const* _msg = _internal_mutable_cons();
-  // @@protoc_insertion_point(field_mutable:joosc_fuzzer.Rvalue.cons)
-  return _msg;
-}
-
-// .joosc_fuzzer.BinaryOp binop = 3;
+// .joosc_fuzzer.BinaryOp binop = 2;
 inline bool Rvalue::_internal_has_binop() const {
   return rvalue_oneof_case() == kBinop;
 }
@@ -4335,6 +4258,96 @@ inline ::joosc_fuzzer::BinaryOp* Rvalue::mutable_binop() {
   ::joosc_fuzzer::BinaryOp* _msg = _internal_mutable_binop();
   // @@protoc_insertion_point(field_mutable:joosc_fuzzer.Rvalue.binop)
   return _msg;
+}
+
+// required .joosc_fuzzer.Const cons = 3;
+inline bool Rvalue::_internal_has_cons() const {
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.cons_ != nullptr);
+  return value;
+}
+inline bool Rvalue::has_cons() const {
+  return _internal_has_cons();
+}
+inline void Rvalue::clear_cons() {
+  if (_impl_.cons_ != nullptr) _impl_.cons_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
+}
+inline const ::joosc_fuzzer::Const& Rvalue::_internal_cons() const {
+  const ::joosc_fuzzer::Const* p = _impl_.cons_;
+  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::Const&>(
+      ::joosc_fuzzer::_Const_default_instance_);
+}
+inline const ::joosc_fuzzer::Const& Rvalue::cons() const {
+  // @@protoc_insertion_point(field_get:joosc_fuzzer.Rvalue.cons)
+  return _internal_cons();
+}
+inline void Rvalue::unsafe_arena_set_allocated_cons(
+    ::joosc_fuzzer::Const* cons) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(_impl_.cons_);
+  }
+  _impl_.cons_ = cons;
+  if (cons) {
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.Rvalue.cons)
+}
+inline ::joosc_fuzzer::Const* Rvalue::release_cons() {
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::joosc_fuzzer::Const* temp = _impl_.cons_;
+  _impl_.cons_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::joosc_fuzzer::Const* Rvalue::unsafe_arena_release_cons() {
+  // @@protoc_insertion_point(field_release:joosc_fuzzer.Rvalue.cons)
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::joosc_fuzzer::Const* temp = _impl_.cons_;
+  _impl_.cons_ = nullptr;
+  return temp;
+}
+inline ::joosc_fuzzer::Const* Rvalue::_internal_mutable_cons() {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  if (_impl_.cons_ == nullptr) {
+    auto* p = CreateMaybeMessage<::joosc_fuzzer::Const>(GetArenaForAllocation());
+    _impl_.cons_ = p;
+  }
+  return _impl_.cons_;
+}
+inline ::joosc_fuzzer::Const* Rvalue::mutable_cons() {
+  ::joosc_fuzzer::Const* _msg = _internal_mutable_cons();
+  // @@protoc_insertion_point(field_mutable:joosc_fuzzer.Rvalue.cons)
+  return _msg;
+}
+inline void Rvalue::set_allocated_cons(::joosc_fuzzer::Const* cons) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete _impl_.cons_;
+  }
+  if (cons) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(cons);
+    if (message_arena != submessage_arena) {
+      cons = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, cons, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.cons_ = cons;
+  // @@protoc_insertion_point(field_set_allocated:joosc_fuzzer.Rvalue.cons)
 }
 
 inline bool Rvalue::has_rvalue_oneof() const {
@@ -4743,38 +4756,28 @@ inline ::joosc_fuzzer::IntToBoolOp* BoolRvalue::mutable_intop() {
   return _msg;
 }
 
-// bool cons = 3;
+// required bool cons = 3;
 inline bool BoolRvalue::_internal_has_cons() const {
-  return bool_binop_oneof_case() == kCons;
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  return value;
 }
 inline bool BoolRvalue::has_cons() const {
   return _internal_has_cons();
 }
-inline void BoolRvalue::set_has_cons() {
-  _impl_._oneof_case_[0] = kCons;
-}
 inline void BoolRvalue::clear_cons() {
-  if (_internal_has_cons()) {
-    _impl_.bool_binop_oneof_.cons_ = false;
-    clear_has_bool_binop_oneof();
-  }
+  _impl_.cons_ = false;
+  _impl_._has_bits_[0] &= ~0x00000001u;
 }
 inline bool BoolRvalue::_internal_cons() const {
-  if (_internal_has_cons()) {
-    return _impl_.bool_binop_oneof_.cons_;
-  }
-  return false;
-}
-inline void BoolRvalue::_internal_set_cons(bool value) {
-  if (!_internal_has_cons()) {
-    clear_bool_binop_oneof();
-    set_has_cons();
-  }
-  _impl_.bool_binop_oneof_.cons_ = value;
+  return _impl_.cons_;
 }
 inline bool BoolRvalue::cons() const {
   // @@protoc_insertion_point(field_get:joosc_fuzzer.BoolRvalue.cons)
   return _internal_cons();
+}
+inline void BoolRvalue::_internal_set_cons(bool value) {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  _impl_.cons_ = value;
 }
 inline void BoolRvalue::set_cons(bool value) {
   _internal_set_cons(value);
@@ -6530,78 +6533,94 @@ inline ::joosc_fuzzer::While* Statement::mutable_while_loop() {
   return _msg;
 }
 
-// .joosc_fuzzer.MethodInvocationStatement method_call = 5;
+// required .joosc_fuzzer.MethodInvocationStatement method_call = 5;
 inline bool Statement::_internal_has_method_call() const {
-  return stmt_oneof_case() == kMethodCall;
+  bool value = (_impl_._has_bits_[0] & 0x00000001u) != 0;
+  PROTOBUF_ASSUME(!value || _impl_.method_call_ != nullptr);
+  return value;
 }
 inline bool Statement::has_method_call() const {
   return _internal_has_method_call();
 }
-inline void Statement::set_has_method_call() {
-  _impl_._oneof_case_[0] = kMethodCall;
-}
 inline void Statement::clear_method_call() {
-  if (_internal_has_method_call()) {
-    if (GetArenaForAllocation() == nullptr) {
-      delete _impl_.stmt_oneof_.method_call_;
-    }
-    clear_has_stmt_oneof();
-  }
-}
-inline ::joosc_fuzzer::MethodInvocationStatement* Statement::release_method_call() {
-  // @@protoc_insertion_point(field_release:joosc_fuzzer.Statement.method_call)
-  if (_internal_has_method_call()) {
-    clear_has_stmt_oneof();
-    ::joosc_fuzzer::MethodInvocationStatement* temp = _impl_.stmt_oneof_.method_call_;
-    if (GetArenaForAllocation() != nullptr) {
-      temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
-    }
-    _impl_.stmt_oneof_.method_call_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
-  }
+  if (_impl_.method_call_ != nullptr) _impl_.method_call_->Clear();
+  _impl_._has_bits_[0] &= ~0x00000001u;
 }
 inline const ::joosc_fuzzer::MethodInvocationStatement& Statement::_internal_method_call() const {
-  return _internal_has_method_call()
-      ? *_impl_.stmt_oneof_.method_call_
-      : reinterpret_cast< ::joosc_fuzzer::MethodInvocationStatement&>(::joosc_fuzzer::_MethodInvocationStatement_default_instance_);
+  const ::joosc_fuzzer::MethodInvocationStatement* p = _impl_.method_call_;
+  return p != nullptr ? *p : reinterpret_cast<const ::joosc_fuzzer::MethodInvocationStatement&>(
+      ::joosc_fuzzer::_MethodInvocationStatement_default_instance_);
 }
 inline const ::joosc_fuzzer::MethodInvocationStatement& Statement::method_call() const {
   // @@protoc_insertion_point(field_get:joosc_fuzzer.Statement.method_call)
   return _internal_method_call();
 }
-inline ::joosc_fuzzer::MethodInvocationStatement* Statement::unsafe_arena_release_method_call() {
-  // @@protoc_insertion_point(field_unsafe_arena_release:joosc_fuzzer.Statement.method_call)
-  if (_internal_has_method_call()) {
-    clear_has_stmt_oneof();
-    ::joosc_fuzzer::MethodInvocationStatement* temp = _impl_.stmt_oneof_.method_call_;
-    _impl_.stmt_oneof_.method_call_ = nullptr;
-    return temp;
-  } else {
-    return nullptr;
+inline void Statement::unsafe_arena_set_allocated_method_call(
+    ::joosc_fuzzer::MethodInvocationStatement* method_call) {
+  if (GetArenaForAllocation() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(_impl_.method_call_);
   }
-}
-inline void Statement::unsafe_arena_set_allocated_method_call(::joosc_fuzzer::MethodInvocationStatement* method_call) {
-  clear_stmt_oneof();
+  _impl_.method_call_ = method_call;
   if (method_call) {
-    set_has_method_call();
-    _impl_.stmt_oneof_.method_call_ = method_call;
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
   }
   // @@protoc_insertion_point(field_unsafe_arena_set_allocated:joosc_fuzzer.Statement.method_call)
 }
-inline ::joosc_fuzzer::MethodInvocationStatement* Statement::_internal_mutable_method_call() {
-  if (!_internal_has_method_call()) {
-    clear_stmt_oneof();
-    set_has_method_call();
-    _impl_.stmt_oneof_.method_call_ = CreateMaybeMessage< ::joosc_fuzzer::MethodInvocationStatement >(GetArenaForAllocation());
+inline ::joosc_fuzzer::MethodInvocationStatement* Statement::release_method_call() {
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::joosc_fuzzer::MethodInvocationStatement* temp = _impl_.method_call_;
+  _impl_.method_call_ = nullptr;
+#ifdef PROTOBUF_FORCE_COPY_IN_RELEASE
+  auto* old =  reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(temp);
+  temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  if (GetArenaForAllocation() == nullptr) { delete old; }
+#else  // PROTOBUF_FORCE_COPY_IN_RELEASE
+  if (GetArenaForAllocation() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
   }
-  return _impl_.stmt_oneof_.method_call_;
+#endif  // !PROTOBUF_FORCE_COPY_IN_RELEASE
+  return temp;
+}
+inline ::joosc_fuzzer::MethodInvocationStatement* Statement::unsafe_arena_release_method_call() {
+  // @@protoc_insertion_point(field_release:joosc_fuzzer.Statement.method_call)
+  _impl_._has_bits_[0] &= ~0x00000001u;
+  ::joosc_fuzzer::MethodInvocationStatement* temp = _impl_.method_call_;
+  _impl_.method_call_ = nullptr;
+  return temp;
+}
+inline ::joosc_fuzzer::MethodInvocationStatement* Statement::_internal_mutable_method_call() {
+  _impl_._has_bits_[0] |= 0x00000001u;
+  if (_impl_.method_call_ == nullptr) {
+    auto* p = CreateMaybeMessage<::joosc_fuzzer::MethodInvocationStatement>(GetArenaForAllocation());
+    _impl_.method_call_ = p;
+  }
+  return _impl_.method_call_;
 }
 inline ::joosc_fuzzer::MethodInvocationStatement* Statement::mutable_method_call() {
   ::joosc_fuzzer::MethodInvocationStatement* _msg = _internal_mutable_method_call();
   // @@protoc_insertion_point(field_mutable:joosc_fuzzer.Statement.method_call)
   return _msg;
+}
+inline void Statement::set_allocated_method_call(::joosc_fuzzer::MethodInvocationStatement* method_call) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArenaForAllocation();
+  if (message_arena == nullptr) {
+    delete _impl_.method_call_;
+  }
+  if (method_call) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+        ::PROTOBUF_NAMESPACE_ID::Arena::InternalGetOwningArena(method_call);
+    if (message_arena != submessage_arena) {
+      method_call = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, method_call, submessage_arena);
+    }
+    _impl_._has_bits_[0] |= 0x00000001u;
+  } else {
+    _impl_._has_bits_[0] &= ~0x00000001u;
+  }
+  _impl_.method_call_ = method_call;
+  // @@protoc_insertion_point(field_set_allocated:joosc_fuzzer.Statement.method_call)
 }
 
 inline bool Statement::has_stmt_oneof() const {

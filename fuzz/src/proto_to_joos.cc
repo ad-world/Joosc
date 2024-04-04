@@ -3,6 +3,7 @@
 
 #include <ostream>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 
 namespace joosc_fuzzer {
@@ -46,10 +47,10 @@ std::ostream &operator<<(std::ostream &os, const Lvalue &x) {
 
 std::ostream &operator<<(std::ostream &os, const Rvalue &x) {
     if ( x.has_varref() ) return os << x.varref();
-    if ( x.has_cons() ) return os << x.cons();
     if ( x.has_binop() ) return os << x.binop();
+    if ( x.has_cons() ) return os << x.cons();
     // if ( x.has_method_invoc() ) return os << x.method_invoc();
-    return os << "1";
+    throw std::runtime_error("error parsing Rvalue");
 }
 
 std::ostream &operator<<(std::ostream &os, const Const &x) {
@@ -72,7 +73,7 @@ std::ostream &operator<<(std::ostream &os, const BoolRvalue &x) {
     if ( x.has_intop() ) return os << x.intop();
     if ( x.has_boolop() ) return os << x.boolop();
     if ( x.has_cons() ) return os << (x.cons() ? "(true)" : "(false)");
-    return os << "(true)";
+    throw std::runtime_error("error parsing BoolRvalue");
 }
 
 std::ostream &operator<<(std::ostream &os, const BoolToBoolOp &x) {
@@ -153,8 +154,7 @@ std::ostream &operator<<(std::ostream &os, const Statement &x) {
     if ( x.has_while_loop() ) return os << x.while_loop();
     if ( x.has_method_call() ) return os << x.method_call();
     // if ( x.has_declaration() ) return os << x.declaration();
-    printTabs(os);
-    return os << ";\n";
+    throw std::runtime_error("error parsing BoolRvalue");
 }
 ///////////////////////////////////////
 

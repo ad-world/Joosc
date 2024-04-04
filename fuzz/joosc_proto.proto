@@ -26,10 +26,10 @@ message Lvalue {
 message Rvalue {
     oneof rvalue_oneof {
         VarRef varref = 1;
-        Const cons = 2;
-        BinaryOp binop = 3;
+        BinaryOp binop = 2;
         // MethodInvocation method_invoc = 4;
     }
+    required Const cons = 3;
 }
 
 message Const {
@@ -53,8 +53,8 @@ message BoolRvalue {
     oneof bool_binop_oneof {
         BoolToBoolOp boolop = 1;
         IntToBoolOp intop = 2;
-        bool cons = 3;
     }
+    required bool cons = 3;
 }
 
 message BoolToBoolOp {
@@ -128,9 +128,9 @@ message Statement {
         IfThen                      ifthen      = 2;
         IfElse                      ifelse      = 3;
         While                       while_loop  = 4;
-        MethodInvocationStatement   method_call = 5;
         // VarDecl                     declaration = 6;
     }
+    required MethodInvocationStatement   method_call = 5;
 }
 ///////////////////////////////////////
 
