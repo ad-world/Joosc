@@ -22,6 +22,9 @@ compile_commands.json
 graphs/*.gv
 graphs/*.png
 .gdb_history
+crash*
+leak*
+fuzzer
 output
 __pycache__
 *.tmp

@@ -5,6 +5,7 @@
 #include "expressions.h"
 #include "names.h"
 #include "environment-builder/symboltableentry.h"
+#include "cfg-builder/cfg-deleter.h"
 
 ClassDeclaration::ClassDeclaration(
     std::vector<Modifier>& modifiers,
@@ -193,4 +194,9 @@ std::string MethodDeclaration::getSignature() const {
     }
     methodSignature += ")";
     return methodSignature;
+}
+
+MethodDeclaration::~MethodDeclaration() {
+    auto deleter = CfgDeleter();
+    deleter(cfg_start);
 }

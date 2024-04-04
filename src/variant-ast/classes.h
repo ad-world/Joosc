@@ -99,6 +99,9 @@ struct MethodDeclaration : public AstNodeCommon {
         std::vector<FormalParameter>&& parameters,
         std::unique_ptr<Block>&& body
     );
+    MethodDeclaration(const MethodDeclaration &other) = default;
+    MethodDeclaration(MethodDeclaration &&other) = default;
+    ~MethodDeclaration();
 
     // Helper functions
     bool hasModifier(Modifier mod_to_check);

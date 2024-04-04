@@ -7,6 +7,9 @@ graph: | generate-parser
 	(ninja --version && (mkdir -p build && cd build && cmake -DGRAPHVIZ=ON .. -G Ninja  && ninja && cp joosc ../joosc)) || \
 	(mkdir -p build && cd build && cmake -DGRAPHVIZ=ON .. && make && cp joosc ../joosc)
 
+fuzzer: | generate-parser
+	(ninja --version && (mkdir -p build && cd build && cmake -DFUZZER=ON -DCMAKE_CXX_FLAGS="-O3" -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer))
+
 build: | generate-parser
 	(ninja --version && (mkdir -p build && cd build && cmake .. -G Ninja && ninja && cp joosc ../joosc)) || \
 	(mkdir -p build && cd build && cmake .. && make && cp joosc ../joosc)
@@ -49,13 +52,14 @@ clean:
 	rm -r -f ./build
 	rm -f integration.log
 	rm -f *.tmp
+	rm -f fuzzer
 
 submission: build
 	@[ "${anum}" ] || ( echo "Must pass assignment number; e.g. make submission anum=1"; exit 1 )
 	git log > a${anum}.log && zip a${anum}.zip -r src/ tests/ CMakeLists.txt Makefile a${anum}.log -x src/parsing/bison/location.hh src/parsing/bison/parser.cc src/parsing/bison/parser.hh src/parsing/bison/parser.output src/parsing/bison/scanner.cc 'tests/programs/*/marmoset/*'
 	rm a${anum}.log 
 
-.PHONY: clean submission generate-parser graph
+.PHONY: clean submission generate-parser graph fuzzer
 .PHONY: build fast-build slow-build
 .PHONY: scanner-test
 .PHONY: integration-test _integration-test-helper

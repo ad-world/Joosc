@@ -1,10 +1,12 @@
 #include "parsing/bison/location.hh"
 #include "variant-ast/astnode.h"
 #include "variant-ast/packages.h"
+#include <vector>
 
 class AddLocation {
     yy::location loc;
 public:
+    static std::vector<const std::string *> filenames;
     void operator()(CompilationUnit &node);
 
     void operator()(QualifiedIdentifier &node);
@@ -54,11 +56,18 @@ public:
 
     static std::string getString(yy::location &loc);
 
+    static void deleteFileNames() {
+        for ( auto filename : filenames ) {
+            delete filename;
+        }
+        filenames.clear();
+    }
+
     AddLocation(yy::location &location) {
         if ( location.begin.filename ) {
-            const std::string *filename = new std::string(*location.begin.filename);
-            yy::position begin{filename, location.begin.line, location.begin.column};
-            yy::position end{filename, location.end.line, location.end.column};
+            filenames.push_back(new std::string(*location.begin.filename));
+            yy::position begin{filenames.back(), location.begin.line, location.begin.column};
+            yy::position end{filenames.back(), location.end.line, location.end.column};
             loc = {begin, end};
         } else {
             loc = location;

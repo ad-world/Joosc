@@ -1,3 +1,5 @@
+#pragma once
+
 #include "cfg-builder/cfg-builder.h"
 #include <unordered_set>
 
