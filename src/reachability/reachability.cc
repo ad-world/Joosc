@@ -48,7 +48,24 @@ bool CfgReachabilityVisitor::isConstantExpression(Expression &node) {
         // The conditional-and operator && and the conditional-or operator ||
         [&](InfixExpression &infixexpr) -> bool {
             if ( infixexpr.expression1 && infixexpr.expression2 ) {
-                return isConstantExpression(*infixexpr.expression1) && isConstantExpression(*infixexpr.expression2);
+                if (isConstantExpression(*infixexpr.expression1) && isConstantExpression(*infixexpr.expression2)) {
+                    if (infixexpr.op == InfixOperator::DIVIDE ||
+                        infixexpr.op == InfixOperator::MODULO
+                    ) {
+                        // Check for division by 0
+                        auto right_lit = evalConstantExpression(*infixexpr.expression2);
+                        return std::visit(util::overload{
+                            [&](int64_t &right) {
+                                // Ensure not dividing by 0
+                                return right != 0;
+                            },
+                            [&](auto &lit) { return true; }
+                        }, right_lit);
+                    }
+
+                    // Not division or modulo
+                    return true;
+                }
             }
             return false;
         },
