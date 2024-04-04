@@ -1,24 +1,27 @@
 all: build
 
+CMAKE_ARGS=-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+CMAKE_FUZZER_ARGS=-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DFUZZER=ON -DCMAKE_CXX_FLAGS=-O3
+
 generate-parser:
 	make -C src/parsing/bison
 
 graph: | generate-parser
-	(ninja --version && (mkdir -p build && cd build && cmake -DGRAPHVIZ=ON .. -G Ninja  && ninja && cp joosc ../joosc)) || \
-	(mkdir -p build && cd build && cmake -DGRAPHVIZ=ON .. && make && cp joosc ../joosc)
+	(ninja --version && (mkdir -p build && cd build && cmake -DGRAPHVIZ=ON ${CMAKE_ARGS} .. -G Ninja  && ninja && cp joosc ../joosc)) || \
+	(mkdir -p build && cd build && cmake -DGRAPHVIZ=ON ${CMAKE_ARGS} .. && make && cp joosc ../joosc)
 
 fuzzer: | generate-parser
-	(ninja --version && (mkdir -p build && cd build && cmake -DFUZZER=ON -DCMAKE_CXX_FLAGS="-O3" -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer))
+	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_FUZZER_ARGS} -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer))
 
 build: | generate-parser
-	(ninja --version && (mkdir -p build && cd build && cmake .. -G Ninja && ninja && cp joosc ../joosc)) || \
-	(mkdir -p build && cd build && cmake .. && make && cp joosc ../joosc)
+	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_ARGS} .. -G Ninja && ninja && cp joosc ../joosc)) || \
+	(mkdir -p build && cd build && cmake ${CMAKE_ARGS} .. && make && cp joosc ../joosc)
 
 fast-build: | generate-parser
-	(ninja --version && (mkdir -p build && cd build && cmake .. -G Ninja && ninja && cp joosc ../joosc))
+	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_ARGS} .. -G Ninja && ninja && cp joosc ../joosc))
 
 slow-build: | generate-parser
-	(mkdir -p build && cd build && cmake .. && make && cp joosc ../joosc)
+	(mkdir -p build && cd build && cmake ${CMAKE_ARGS} .. && make && cp joosc ../joosc)
 
 unit-test: build
 	(cd build && ctest -V)
