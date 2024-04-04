@@ -22,6 +22,12 @@ add_library(joosc_proto
     )
 add_dependencies(joosc_proto ${PBM_PREFIX})
 
+# Add proto_to_joos executable
+add_executable(proto_to_joos src/proto_to_joos_main.cc)
+target_link_libraries(proto_to_joos
+    joosc_proto
+    )
+
 macro(fuzzer name)
     include_directories(${Protobuf_INCLUDE_DIRS})
     include_directories(${ProtobufMutator_INCLUDE_DIRS})
