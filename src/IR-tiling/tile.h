@@ -34,6 +34,9 @@ class Tile {
     // Represents a placeholder abstract register within the assembly instructions
     static const inline std::string ABSTRACT_REG = "\%\%PLACEHOLDER_ABSTRACT_REG\%\%";
 
+    // Creates copy of tile with replaced uses of Tile::ABSTRACT_REG with reg
+    Tile assignAbstract(std::string reg);
+
     // Produce a pair with the tile and the abstract reg it uses
     ExpressionTile pairWith(std::string abstract_reg);
 

@@ -4,6 +4,7 @@
 #include "utillities/overload.h"
 
 #include <limits>
+#include <regex>
 
 void Tile::calculateCost() {
     // Cost is defined as the number of assembly instructions used to implement tile
@@ -75,6 +76,26 @@ void Tile::add_instructions_before(std::vector<Instruction> instructions) {
         instructions.push_back(instr);
     }
     this->instructions = instructions;
+}
+
+Tile Tile::assignAbstract(std::string reg) {
+    Tile copy_tile = *this;
+    
+    for (auto& instr : copy_tile.instructions) {
+        std::visit(util::overload {
+            [&](AssemblyInstruction& asmb) {
+                asmb = std::regex_replace(asmb, std::regex(Tile::ABSTRACT_REG), reg);
+            },
+            [&](StatementTile tile) {},
+            [&](ExpressionTile tile) {
+                if (tile.second == reg) {
+                    *tile.first = tile.first->assignAbstract(reg);
+                }
+            }
+        }, instr);
+    }
+
+    return copy_tile;
 }
 
 ExpressionTile Tile::pairWith(std::string abstract_reg) {

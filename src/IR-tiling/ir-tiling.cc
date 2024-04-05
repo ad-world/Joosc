@@ -23,14 +23,19 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
         // For each function, tile each statement in the function body, and make a label for the function call
         [&](CompUnitIR &node) {
             std::list<std::string> output;
+
             for (auto& func : node.getFunctionList()) {
                 output.push_back(Assembly::Label(func->getName()));
 
                 auto body_tile = tile(func->getBody());
+
+                // RegisterAllocator::allocateRegisters(body_tile); (TODO)
+
                 for (auto& body_instruction : body_tile->getFullInstructions()) {
                     output.push_back(body_instruction);
                 }
             }
+
             return output;
         },
         [&](auto &node) -> std::list<std::string> { THROW_CompilerError("This should not happen"); }
