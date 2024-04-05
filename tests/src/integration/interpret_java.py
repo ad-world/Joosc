@@ -17,6 +17,8 @@ def interpret_java(program_path):
 
     result = subprocess.run([joosc_executable, "-j", *files, *stdlib_files])
 
+    passed = True
+
     if result.returncode == 0:
         print(f"{colors.OKGREEN}Running regular IR tree with Java simulation.{colors.ENDC}")
 
@@ -25,9 +27,11 @@ def interpret_java(program_path):
         result = subprocess.run(["javac", "-d", java_ir_bin_dir, *java_files_no_canonical])
         if (result.returncode == 0):
             result = subprocess.run(["java", "-cp", java_ir_bin_dir, "joosc.ir.interpret.MainNonCanonical"])     
-            print(f"{colors.OKCYAN}Interpreting regular IR tree resulted in: {result.returncode}. {colors.ENDC}");  
+            print(f"{colors.OKCYAN}Interpreting regular IR tree resulted in: {result.returncode}. {colors.ENDC}")
+            passed = passed and (result.returncode == 123)
         else:
             print(f"{colors.FAIL}Could not compile regular IR tree for Java simulation.{colors.ENDC}")
+            passed = False
 
         print(f"{colors.OKGREEN}Running canonical IR tree with Java simulation.{colors.ENDC}")
 
@@ -38,19 +42,68 @@ def interpret_java(program_path):
 
         if (result.returncode == 0):
             result = subprocess.run(["java", "-cp", java_ir_bin_dir, "joosc.ir.interpret.MainCanonical"])  
-            print(f"{colors.OKCYAN}Interpreting canonical IR tree resulted in: {result.returncode}. {colors.ENDC}");
+            print(f"{colors.OKCYAN}Interpreting canonical IR tree resulted in: {result.returncode}. {colors.ENDC}")
+            passed = passed and (result.returncode == 123)
         else:
             print(f"{colors.FAIL}Could not compile canonical IR tree for Java simulation.{colors.ENDC}")
-            
+            passed = False
 
     else:
         print(f"{colors.FAIL} program could not be outputted as Java. FAIL{colors.ENDC}\n")
+        passed = False
+
+    return passed
+
+def interpret_java_all_test():
+    """
+    Runs interpret_java test on all programs
+    """
+    integration_dir = os.path.dirname(__file__)
+    programs_dir = os.path.join(integration_dir, "../../programs")
+
+    # Get configured testable assignments from environment
+    assignments_to_test = os.getenv('COMPILED_OUTPUT_TEST', '').split(',')
+    test_results = {}
+    failures = False
+
+    for assignment in sorted(os.listdir(programs_dir)):
+        if assignment in assignments_to_test:
+            pass_count = 0
+            fail_count = 0
+
+            assignment_path = os.path.join(programs_dir, assignment)
+
+            for source in ("local", "marmoset"):
+                for test_type in ("valid", "warning"):
+
+                    directory = os.path.join(assignment_path, f"{source}/{test_type}")
+                    if not os.path.exists(directory): continue
+
+                    print(f"\n{colors.HEADER_BOLD_UNDERLINE}Testing all programs in {resolve_path(directory, '')}:{colors.ENDC}")
+
+                    for program in os.listdir(directory):
+                        program_path = resolve_path(directory, program)
+
+                        if os.path.exists(program_path):
+                            print(f"\n{colors.HEADER_BOLD_UNDERLINE}Testing {program_path}:{colors.ENDC}")
+                            passed = interpret_java(program_path)
+                            if passed:
+                                pass_count += 1
+                            else:
+                                fail_count += 1
+                                failures = True
+    
+            test_results[assignment] = { 'pass_count': pass_count, 'fail_count': fail_count, 'total_count': pass_count + fail_count }
+
+    return print_test_results(failures, test_results)
 
 if __name__ == "__main__":
     load_env_file()
 
-    if len(sys.argv) < 2:
-        print("Usage: python3 interpret_java.py [filepath]")
-        sys.exit(1)
-
-    sys.exit(interpret_java(sys.argv[1]))
+    if "-s" in sys.argv:
+        if len(sys.argv) < 3:
+            print("Must pass test file / test directory.")
+            sys.exit(1)
+        sys.exit(int(not interpret_java(sys.argv[2])))
+    else:
+        sys.exit(interpret_java_all_test())

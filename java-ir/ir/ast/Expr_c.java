@@ -5,7 +5,7 @@ import joosc.ir.visit.CheckCanonicalIRVisitor;
 /**
  * An intermediate representation for expressions
  */
-public abstract class Expr_c extends Node_c implements Expr {
+public abstract class Expr_c extends Stmt implements Expr {
     @Override
     public CheckCanonicalIRVisitor checkCanonicalEnter(
             CheckCanonicalIRVisitor v) {

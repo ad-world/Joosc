@@ -150,22 +150,35 @@ IRCanonicalizer::LoweredStatement IRCanonicalizer::convert(StatementIR &ir) {
         },
 
         [&](MoveIR &node) {
-            // Unoptimized form: assumes source's side effects can affect target
-            LoweredExpression lowered1 = convert(node.getTarget());
-            LoweredExpression lowered2 = convert(node.getSource());
+            if (std::get_if<TempIR>(&node.getTarget())) {
+                LoweredExpression lowered2 = convert(node.getSource());
+
+                auto statements = concatenate(
+                    lowered2.statements,
+                    MoveIR(std::make_unique<ExpressionIR>(std::move(node.getTarget())), std::move(lowered2.expression))
+                );
+
+                return LoweredStatement(std::move(statements));
+            } else if (std::get_if<MemIR>(&node.getTarget())) {
+                // Unoptimized form: assumes source's side effects can affect target
+                LoweredExpression lowered1 = convert(node.getTarget());
+                LoweredExpression lowered2 = convert(node.getSource());
             
-            std::string temp_name = TempIR::generateName();
+                std::string temp_name = TempIR::generateName();
 
-            auto mem = MemIR(std::make_unique<ExpressionIR>(TempIR(temp_name)));
+                auto mem = MemIR(std::make_unique<ExpressionIR>(TempIR(temp_name)));
 
-            auto statements = concatenate(
-                lowered1.statements,
-                MoveIR(std::make_unique<ExpressionIR>(TempIR(temp_name)), std::move(lowered1.expression)),
-                lowered2.statements,
-                MoveIR(std::make_unique<ExpressionIR>(std::move(mem)), std::move(lowered2.expression))
-            );
+                auto statements = concatenate(
+                    lowered1.statements,
+                    MoveIR(std::make_unique<ExpressionIR>(TempIR(temp_name)), std::move(lowered1.expression)),
+                    lowered2.statements,
+                    MoveIR(std::make_unique<ExpressionIR>(std::move(mem)), std::move(lowered2.expression))
+                );
 
-            return LoweredStatement(std::move(statements));
+                return LoweredStatement(std::move(statements));
+            } else {
+                THROW_CompilerError("MoveIR target is not a MemIR or TempIR node");
+            }
         },
 
         [&](ReturnIR &node) {
