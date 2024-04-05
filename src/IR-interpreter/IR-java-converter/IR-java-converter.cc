@@ -1,6 +1,6 @@
 #include "IR-java-converter.h"
 
-IRJavaConverter::IRJavaConverter() {
+IRJavaConverter::IRJavaConverter(std::string class_name): class_name(class_name) {
     num_tabs = 0;
     result = "";
 };
@@ -21,7 +21,7 @@ void IRJavaConverter::appendToResult(std::string s) {
 
 void IRJavaConverter::operator()(CompUnitIR &node) {
     result += "package joosc.ir.interpret;\nimport joosc.ir.ast.*;\nimport joosc.ir.visit.CheckCanonicalIRVisitor;\n\n";
-    result += "public class Main {";
+    result += "public class " + class_name + " {";
     num_tabs += 1;
     appendToResult("public static void main(String[] args) {");
     visit_children(node);
@@ -33,20 +33,14 @@ void IRJavaConverter::operator()(CompUnitIR &node) {
         appendToResult("compUnit.appendFunc(" + func + ");");
     }
 
-    appendToResult("{");
-    num_tabs += 1;
     appendToResult("Simulator sim = new Simulator(compUnit);");
     appendToResult("long result = sim.call(\"test\");");
-    appendToResult("System.out.println(\"Java Interpretation of IR results to: \" + result);");
-    num_tabs -= 1;
-    appendToResult("}");
-    appendToResult("{");
-    num_tabs += 1;
+    // appendToResult("System.out.println(\"Java Interpretation of IR results to: \" + result);");
     appendToResult("CheckCanonicalIRVisitor cv = new CheckCanonicalIRVisitor();");
-    appendToResult("System.out.print(\"Canonical? \");");
+    appendToResult("System.out.print(\"Correct canonical implementation: \");");
     appendToResult("System.out.println(cv.visit(compUnit));");
-    num_tabs -= 1;
-    appendToResult("}");
+
+    appendToResult("System.exit((int)result);");
     num_tabs -= 1;
     appendToResult("}");
     num_tabs -= 1;

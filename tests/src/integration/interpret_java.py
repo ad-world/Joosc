@@ -1,3 +1,4 @@
+import shutil
 import os, subprocess, sys
 from helpers.helpers import *
 
@@ -17,11 +18,31 @@ def interpret_java(program_path):
     result = subprocess.run([joosc_executable, "-j", *files, *stdlib_files])
 
     if result.returncode == 0:
-        print(f"{colors.OKGREEN}Program successfully outputted as Java, now running Java contents\n{colors.ENDC}")
- 
+        print(f"{colors.OKGREEN}Running regular IR tree with Java simulation.{colors.ENDC}")
 
-        result = subprocess.run(["javac", "-d", java_ir_bin_dir, *java_ir_files])
-        result = subprocess.run(["java", "-cp", java_ir_bin_dir, "joosc.ir.interpret.Main"])
+        java_files_no_canonical = [s for s in java_ir_files if not s.endswith("MainCanonical.java")]
+
+        result = subprocess.run(["javac", "-d", java_ir_bin_dir, *java_files_no_canonical])
+        if (result.returncode == 0):
+            result = subprocess.run(["java", "-cp", java_ir_bin_dir, "joosc.ir.interpret.MainNonCanonical"])     
+            print(f"{colors.OKCYAN}Interpreting regular IR tree resulted in: {result.returncode}. {colors.ENDC}");  
+        else:
+            print(f"{colors.FAIL}Could not compile regular IR tree for Java simulation.{colors.ENDC}")
+
+        print(f"{colors.OKGREEN}Running canonical IR tree with Java simulation.{colors.ENDC}")
+
+        java_files_no_main = [s for s in java_ir_files if not s.endswith("MainNonCanonical.java")]
+        shutil.rmtree(java_ir_bin_dir)
+
+        result = subprocess.run(["javac", "-d", java_ir_bin_dir, *java_files_no_main])
+
+        if (result.returncode == 0):
+            result = subprocess.run(["java", "-cp", java_ir_bin_dir, "joosc.ir.interpret.MainCanonical"])  
+            print(f"{colors.OKCYAN}Interpreting canonical IR tree resulted in: {result.returncode}. {colors.ENDC}");
+        else:
+            print(f"{colors.FAIL}Could not compile canonical IR tree for Java simulation.{colors.ENDC}")
+            
+
     else:
         print(f"{colors.FAIL} program could not be outputted as Java. FAIL{colors.ENDC}\n")
 
