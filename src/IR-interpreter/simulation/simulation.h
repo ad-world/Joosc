@@ -47,6 +47,7 @@ class Simulator {
      * @return the IR node at the given address
      */
     IR* getIRFromPtr(IR_PTR ptr);
+
     /**
      * Holds the instruction pointer and temporary registers
      * within an execution frame.
@@ -91,12 +92,19 @@ class Simulator {
          * @param ip the new instruction pointer
         */
         void setIP(int ip);
+
+        /**
+         * Get the Current Node object, based on the current ip
+         * @return IR_PTR the pointer of the IR node at the current ip
+         */
         IR_PTR getCurrentNode();    
+
+
     };
 protected:
     /** map from address to instruction */
     std::unordered_map<int, IR_PTR> indexToNode;
-    static const int debugLevel = 0;
+    int debugLevel = 0;
 
     int getMemoryIndex(int addr);
 
@@ -177,4 +185,19 @@ public:
      *          {@link Configuration#ABSTRACT_RET}
      */
     int call(ExecutionFrame& parent, std::string name, std::vector<int> args);
+
+    /**
+     * Set the Debug Level object
+     * 
+     * @param debugLevel 
+     */
+    void setDebugLevel(int debugLevel);
+
+    /**
+     * Return a string representation of the current node type
+     * 
+     * @param node 
+     * @return std::string a string representation of the current node type 
+     */
+    std::string getNodeType(IR_PTR node);
 };

@@ -18,5 +18,18 @@ public:
     StackItem(int value);
     StackItem(int value, int addr);
     StackItem(Kind type, int value, std::string string);
-
+    std::string getKindString() {
+        switch (type) {
+            case Kind::COMPUTED:
+                return "COMPUTED";
+            case Kind::MEM:
+                return "MEM";
+            case Kind::TEMP:
+                return "TEMP";
+            case Kind::NAME:
+                return "NAME";
+            default:
+                return "Unknown kind.";
+        };
+    }
 };

@@ -22,6 +22,7 @@
 #include "IR-builder/ast-to-ir.h"
 #include "IR-interpreter/simulation/simulation.h"
 #include "IR-canonicalizer/ir-canonicalizer.h"
+#include "IR-interpreter/IR-java-converter/IR-java-converter.h"
 
 
 #ifdef GRAPHVIZ
@@ -157,7 +158,14 @@ int Compiler::run() {
                 IRGraphVisitor().visit(main_ir);
             #endif
 
-            if (run_ir) {
+            if (run_java_ir) {
+                // Convert to Java IR
+                IRJavaConverter converter = IRJavaConverter("MainNonCanonical");
+                converter.visit(main_ir);
+                std::string result = converter.getResult();
+                std::ofstream java_file {"java-ir/ir/interpret/MainNonCanonical.java"};
+                java_file << result;
+            } else if (run_ir) {
                 // Run interpreter on IR and get value
                 try {
                     std::ofstream result_file {"ir_result.tmp"};
@@ -168,8 +176,31 @@ int Compiler::run() {
                 }
             }
 
-            // Canonicalize IR
+             // Canonicalize IR
             IRCanonicalizer().convert(main_ir);
+
+
+            if (run_java_ir) {
+                IRJavaConverter converter = IRJavaConverter("MainCanonical");
+                converter.visit(main_ir);
+                std::string result = converter.getResult();
+                std::ofstream java_file {"java-ir/ir/interpret/MainCanonical.java"};
+                java_file << result;
+            } else if (run_ir) {
+                // Run interpreter on Canonical IR and get value
+                try {
+                    std::ofstream result_file {"ir_canon_result.tmp"};
+                    int result = Simulator(&main_ir).call("test", {});
+                    result_file << result;
+                } catch (const SimulatorError &e ) {
+                    cerr << e.what() << "\n";
+                }
+            }
+
+            // TODO: remove this
+            std::cout << std::endl;
+
+           
 
             if (run_ir) {
                 // Run interpreter on Canonical IR and get value
@@ -181,6 +212,7 @@ int Compiler::run() {
                     cerr << e.what() << "\n";
                 }
             }
+
 
             // Emit assembly (TODO)
 

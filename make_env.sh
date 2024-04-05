@@ -45,9 +45,9 @@ complete -F _test_completions rundebug
 #   (supports folders & files)
 # Example: runtest Je_6_StaticThis_AfterStaticInvoke.java
 function runtest {
-    INPUT=$(getinput $1)
+    INPUT=$(getinput $1); shift
     if [[ -n $INPUT ]]; then
-        ./joosc ${INPUT} ${STDLIB}
+        ./joosc $@ ${INPUT} ${STDLIB}
     fi
 }
 complete -F _test_completions runtest
@@ -98,3 +98,8 @@ function rungraph {
     fi
 }
 complete -F _test_completions rungraph
+
+function run_java_ir {
+    javac -d java-ir-bin $(find java-ir -name "*.java")
+    java -cp java-ir-bin joosc.ir.interpret.Main
+}

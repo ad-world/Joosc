@@ -13,7 +13,7 @@ public:
     int popValue();
     StackItem pop();
     void pushAddr(int value, int addr);
-    void pushTemp(int value, int addr);
+    void pushTemp(int value, std::string temp);
     void pushName(int value, std::string name);
     void pushValue(int value);
 };

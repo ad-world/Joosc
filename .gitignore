@@ -29,7 +29,9 @@ output
 __pycache__
 *.tmp
 main
-
 corpus
 *.profraw
 *.profdata
+java-ir/ir/interpret/MainCanonical.java
+java-ir/ir/interpret/MainNonCanonical.java
+

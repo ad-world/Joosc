@@ -27,12 +27,14 @@ void Simulator::ExecutionFrame::put(std::string tempName, int value) {
 }
 
 bool Simulator::ExecutionFrame::advance() {
-    if (debugLevel > 1) {
-        // TODO: evaluate getCurrentNode() 
-        std::cout << "Evaluating " << ip << std::endl;
+    if (parent.debugLevel > 1) {
+        std::cout << "\033[1;31mEvaluating " << parent.getNodeType(getCurrentNode()) << " with ip: " << ip << "\033[0m" << std::endl;
     }
 
     int backupIp = ip;
+
+    if (ip >= parent.indexToNode.size()) return false;
+
     parent.leave(this); 
 
     if (ip == -1) return false;
@@ -45,29 +47,32 @@ bool Simulator::ExecutionFrame::advance() {
 void Simulator::ExecutionFrame::setIP(int ip) {
     this->ip = ip;
 
-    if (debugLevel > 1) {
+    if (parent.debugLevel > 1) {
         if (ip == -1) {
             std::cout << "Returning" << std::endl;
         } else {
-            std::cout << "Jumping to " << ip << std::endl; // TODO: evaluate getCurrentNode()
+            std::cout << "Jumping to " << parent.getNodeType(getCurrentNode()) << " with ip: " << ip << std::endl; 
         }
     }
 }
 
 IR_PTR Simulator::ExecutionFrame::getCurrentNode() {
     if (parent.indexToNode.find(ip) == parent.indexToNode.end()) {
-        THROW_SimulatorError("No next instruction. Forgot RETURN?");
+        THROW_SimulatorError("Looking for ip and could not find it.");
     }
 
     return parent.indexToNode[ip];
 }
 
-Simulator::Simulator(IR *compUnit, int heapSizeMax) : heapSizeMax(heapSizeMax), exprStack(debugLevel) {
+Simulator::Simulator(IR *compUnit, int heapSizeMax) : heapSizeMax(heapSizeMax) {
     if (std::holds_alternative<CompUnitIR>(*compUnit)) {
         this->compUnit = &std::get<CompUnitIR>(*compUnit);
     } else {
         THROW_SimulatorError("Expected CompUnitIR when creating Simulator");
     }
+
+    exprStack = ExprStack(2);
+    setDebugLevel(2);
 
     libraryFunctions.insert("__malloc");
     libraryFunctions.insert("__debexit");
@@ -122,12 +127,30 @@ void Simulator::store(int addr, int value) {
 }
 
 int Simulator::findLabel(std::string label) {
-    return 1;
+    if (nameToIndex.find(label) == nameToIndex.end()) {
+        int last_dot = label.find_last_of('.');
+        if (last_dot != std::string::npos) {
+            std::string short_label = label.substr(last_dot + 1);
+            if (nameToIndex.find(short_label) == nameToIndex.end()) {
+                THROW_SimulatorError("Could not find label '" + label + "'!");
+            } else {
+                return nameToIndex[short_label];
+            }
+        } else {
+            THROW_SimulatorError("Could not find label '" + label + "'!");
+
+        }
+    }
+    return nameToIndex[label];
+}
+
+std::string Simulator::getNodeType(IR_PTR node) {
+    return std::visit([&](auto *x) { return x->label(); }, node);
 }
 
 int Simulator::call(std::string name, std::vector<int> args) {
     auto frame = ExecutionFrame(-1, *this);
-    return this->call(frame, name, args);
+    return call(frame, name, args);
 }
 
 int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> args) {
@@ -145,14 +168,20 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
         auto frame = std::make_unique<ExecutionFrame>(ip, *this);
 
         for (int i = 0; i < args.size(); i++) {
+            std::cout << "Adding " << ABSTRACT_ARG_PREFIX + std::to_string(i) << " = " << args[i] << " to args" << std::endl;
             frame->put(ABSTRACT_ARG_PREFIX + std::to_string(i), args[i]);
         }
 
         while (frame->advance());
 
         return_value = frame->ret;
+
+        std::cout << "Frame return value is " << return_value << std::endl;
     }
 
+    parent.put(ABSTRACT_RET_PREFIX, return_value);
+    std::cout << "Calling " << name << " returned " << return_value << std::endl;
+ 
     return return_value;
 }
 
@@ -187,19 +216,19 @@ void Simulator::leave(ExecutionFrame *frame) {
     IR_PTR node = frame->getCurrentNode();
 
     std::visit(util::overload{
-        [&](ConstIR &cons) {
-            Simulator::exprStack.pushValue(cons.getValue());
+        [&](ConstIR *cons) {
+            Simulator::exprStack.pushValue(cons->getValue());
         },
-        [&](TempIR &temp) {
-            std::string tempName = temp.getName();
-            Simulator::exprStack.pushValue(frame->get(tempName));
+        [&](TempIR *temp) {
+            std::string tempName = temp->getName();
+            Simulator::exprStack.pushTemp(frame->get(tempName), tempName);
         },
-        [&](BinOpIR &binop) {
+        [&](BinOpIR *binop) {
             int r = Simulator::exprStack.popValue();
             int l = Simulator::exprStack.popValue();
 
             int result;
-            switch (binop.op) {
+            switch (binop->op) {
                 case BinOpIR::OpType::ADD:
                     result = l + r;
                     break;
@@ -247,12 +276,12 @@ void Simulator::leave(ExecutionFrame *frame) {
 
             Simulator::exprStack.pushValue(result);
         },
-        [&](MemIR &mem){
+        [&](MemIR *mem){
             int addr = Simulator::exprStack.popValue();
             Simulator::exprStack.pushAddr(read(addr), addr);
         },
-        [&](CallIR &call){
-            int argCount = call.getArgs().size();
+        [&](CallIR *call){
+            int argCount = call->getArgs().size();
             std::vector<int> args;
 
             for (int i = 0; i < argCount; i++) {
@@ -264,31 +293,38 @@ void Simulator::leave(ExecutionFrame *frame) {
 
             if (target.type == StackItem::Kind::NAME) {
                 targetName = target.name;
-            } else if (Simulator::indexToNode.find(target.addr) != Simulator::indexToNode.end()) {
-                auto ir_ptr = Simulator::indexToNode[target.addr];
+            } else if (Simulator::indexToNode.find(target.value) == Simulator::indexToNode.end()) {
+                auto ir_ptr = Simulator::indexToNode[target.value];
                 if (std::holds_alternative<FuncDeclIR*>(ir_ptr)) {
                     targetName = std::get<FuncDeclIR*>(ir_ptr)->getName();
+                    int last_dot = targetName.find_last_of('.');
+
+                    if (last_dot != std::string::npos) {
+                        targetName = targetName.substr(last_dot + 1);
+                    }
+
                 } else {
                     THROW_SimulatorError("Call to a non-function instruction");
                 }
             } else {
-                THROW_SimulatorError("Invalid function call " + call.label() + " (target " + std::to_string(target.value) + " is unknown)!");
+                std::string message = "Invalid function call " + call->label() + " (target " + std::to_string(target.value) + " is unknown)!";
+                THROW_SimulatorError(message);
             }
             
             int return_value = Simulator::call(*frame, targetName, args);
             Simulator::exprStack.pushValue(return_value);
         },
-        [&](NameIR &name) {
-            std::string str = name.getName();
+        [&](NameIR *name) {
+            std::string str = name->getName();
 
             if (Simulator::libraryFunctions.find(str) != Simulator::libraryFunctions.end()) {
                 Simulator::exprStack.pushName(-1, str);
             } else {
-                int addr = findLabel(str);
-                Simulator::exprStack.pushName(addr, str);
+                int label = findLabel(str);
+                Simulator::exprStack.pushName(label, str);
             }
         },
-        [&](MoveIR &move) {
+        [&](MoveIR *move) {
             int r = Simulator::exprStack.popValue();
             auto stackItem = Simulator::exprStack.pop();
 
@@ -301,37 +337,46 @@ void Simulator::leave(ExecutionFrame *frame) {
                     break;
                 case StackItem::Kind::TEMP:
                     if (Simulator::debugLevel > 0) {
-                        std::cout << "temp[" << stackItem.name << "] = " << r << std::endl;
+                        std::cout << "temp[" << stackItem.temp << "] = " << r << std::endl;
                     }
                     frame->put(stackItem.temp, r);
+                    break;
                 default:
-                    THROW_SimulatorError("Invalid MODE!");
+                    THROW_SimulatorError("Invalid MOVE - " + stackItem.getKindString());
             }
         },
-        [&](ExpIR &exp) {
+        [&](ExpIR *exp) {
             Simulator::exprStack.pop();
         },
-        [&](JumpIR &jump) {
+        [&](JumpIR *jump) {
             frame->setIP(Simulator::exprStack.popValue());
         },
-        [&](CJumpIR &cjump) {
+        [&](CJumpIR *cjump) {
             int top = Simulator::exprStack.popValue();
             std::string label;
 
             if (top == 0) {
-                label = cjump.falseLabel();
+                label = cjump->falseLabel();
             } else if (top == 1) {
-                label = cjump.trueLabel();
+                label = cjump->trueLabel();
             } else {
                 THROW_SimulatorError("Invalid condition for CJump, expected 0/1 and got " + top);
             }
 
             if (label != "") frame->setIP(findLabel(label));
         },
-        [&](ReturnIR &ret) {
+        [&](ReturnIR *ret) {
             frame->ret = Simulator::exprStack.popValue();
+            std::cout << "Encountered return, returning " << frame->ret << std::endl;
             frame->setIP(-1);
         },
-        [&](auto &node) {}
+        [&](auto &node) {
+            std::cout << "Leaving: " << node->label() << std::endl;
+        }
     }, node);
 }
+
+void Simulator::setDebugLevel(int level) {
+    Simulator::debugLevel = level;
+}
+

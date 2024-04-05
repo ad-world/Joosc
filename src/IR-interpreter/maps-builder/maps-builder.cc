@@ -1,6 +1,8 @@
 #include "maps-builder.h"
 #include "IR-interpreter/util/errors.h"
 #include "utillities/overload.h"
+#include <iostream>
+
 MapsBuilder::MapsBuilder() : index(0) {}
 
 void MapsBuilder::addNameToCurrentIndex(std::string name) {
