@@ -45,7 +45,7 @@ compiled-output-test-single: build
 	python3 tests/src/integration/correct_output_test.py -s ${path}
 
 interpret-java-test: build
-	python3 tests/src/integration/correct_output_test.py -sj ${path}
+	python3 tests/src/integration/interpret_java.py ${path}
 
 # Used to exit with non-zero if any test fails, but run them all anyway (no short-circuiting)
 _integration-test-helper: valid-invalid-test compiled-output-test

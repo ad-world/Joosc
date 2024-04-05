@@ -8,8 +8,16 @@
 class IRJavaConverter : public IRSkipVisitor {
     std::vector<std::string> functions;
     std::string result;
+    int num_tabs;
+
+    std::string getTabString();
+    std::string getNewlineAndTabString();
+    std::string getFunctionName(std::string functionName);
+
 public:
     using IRSkipVisitor::visit;
+
+    IRJavaConverter();
 
     std::string getResult() { return result; }
 

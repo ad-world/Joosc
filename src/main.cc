@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     try {
         // Handle optional arguments (eg. enable parse debugging)
         char opt;
-        while ((opt = getopt(argc, argv, "psrai")) != -1) {
+        while ((opt = getopt(argc, argv, "psraij")) != -1) {
             switch (opt) {
                 case static_cast<char>(CommandLineArg::OUTPUT_RETURN):
                     compiler.setOutputRC(true);

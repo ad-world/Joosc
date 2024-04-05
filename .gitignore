@@ -29,7 +29,7 @@ output
 __pycache__
 *.tmp
 main
-
 corpus
 *.profraw
 *.profdata
+java-ir/ir/interpret/Main.java

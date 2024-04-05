@@ -163,7 +163,8 @@ int Compiler::run() {
                 IRJavaConverter converter;
                 converter.visit(main_ir);
                 std::string result = converter.getResult();
-                std::cout << result << std::endl;
+                std::ofstream java_file {"java-ir/ir/interpret/Main.java"};
+                java_file << result;
             }
 
             if (run_ir) {

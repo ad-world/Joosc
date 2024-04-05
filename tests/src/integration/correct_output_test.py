@@ -7,7 +7,6 @@ def single_correct_output_test(program_path, compiler_args: List[str]) -> bool:
     """
     Run single correct output test on path. Returns true if test passed, otherwise returns false.
     """
-    # compiler_args = ["-i"]
     program = os.path.basename(program_path)
 
     root_dir = resolve_path(os.path.dirname(__file__), "../../../")
@@ -103,10 +102,5 @@ if __name__ == "__main__":
             print("Must pass test file / test directory.")
             sys.exit(1)
         sys.exit(int(not single_correct_output_test(sys.argv[2], ["-i"])))
-    elif "-sj" in sys.argv:
-        if len(sys.argv) < 3:
-            print("Must pass test file / test directory.")
-            sys.exit(1)
-        sys.exit(int(not single_correct_output_test(sys.argv[2], ["-j"])))
     else:
         sys.exit(correct_output_test())
