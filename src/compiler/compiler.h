@@ -17,6 +17,7 @@ private:
     bool output_rc = false;
     bool emit_code = true;
     bool run_ir = false;
+    bool run_java_ir = false;
     std::list<std::string> strfiles; // Strings inputted as files
     std::list<std::string> infiles; // File input
 
@@ -27,6 +28,7 @@ public:
     void setOutputRC(bool value) { output_rc = value; }
     void setEmitCode(bool value) { emit_code = value; }
     void setRunIR(bool value) { run_ir = value; }
+    void setRunJavaIR(bool value) { run_java_ir = value; }
 
     // File names
     void addInFile(std::string filename) { infiles.push_back(filename); }

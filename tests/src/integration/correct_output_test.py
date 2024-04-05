@@ -1,12 +1,13 @@
 import os, subprocess, sys
 from helpers.helpers import *
 from assemble import assemble_all_files
+from typing import List
 
-def single_correct_output_test(program_path) -> bool:
+def single_correct_output_test(program_path, compiler_args: List[str]) -> bool:
     """
     Run single correct output test on path. Returns true if test passed, otherwise returns false.
     """
-    compiler_args = ["-i"]
+    # compiler_args = ["-i"]
     program = os.path.basename(program_path)
 
     root_dir = resolve_path(os.path.dirname(__file__), "../../../")
@@ -82,7 +83,7 @@ def correct_output_test():
                         program_path = resolve_path(directory, program)
 
                         if os.path.exists(program_path):
-                            passed = single_correct_output_test(program_path)
+                            passed = single_correct_output_test(program_path, ["-i"])
                             if passed:
                                 pass_count += 1
                             else:
@@ -101,6 +102,11 @@ if __name__ == "__main__":
         if len(sys.argv) < 3:
             print("Must pass test file / test directory.")
             sys.exit(1)
-        sys.exit(int(not single_correct_output_test(sys.argv[2])))
+        sys.exit(int(not single_correct_output_test(sys.argv[2], ["-i"])))
+    elif "-sj" in sys.argv:
+        if len(sys.argv) < 3:
+            print("Must pass test file / test directory.")
+            sys.exit(1)
+        sys.exit(int(not single_correct_output_test(sys.argv[2], ["-j"])))
     else:
         sys.exit(correct_output_test())

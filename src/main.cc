@@ -11,7 +11,8 @@ enum class CommandLineArg {
     TRACE_PARSING = 'p',
     TRACE_SCANNING = 's',
     STATIC_ANALYSIS_ONLY = 'a', // Don't emit IR/assembly; used for pre-A5 tests
-    RUN_AND_TEST_IR = 'i'
+    RUN_AND_TEST_IR = 'i',
+    RUN_AND_TEST_JAVA_IR = 'j'
 };
 
 struct cmd_error {};
@@ -38,6 +39,9 @@ int main(int argc, char *argv[]) {
                     break;
                 case static_cast<char>(CommandLineArg::RUN_AND_TEST_IR):
                     compiler.setRunIR(true);
+                    break;
+                case static_cast<char>(CommandLineArg::RUN_AND_TEST_JAVA_IR):
+                    compiler.setRunJavaIR(true);
                     break;
                 default:
                     throw cmd_error();

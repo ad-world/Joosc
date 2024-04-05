@@ -22,6 +22,7 @@
 #include "IR-builder/ast-to-ir.h"
 #include "IR-interpreter/simulation/simulation.h"
 #include "IR-canonicalizer/ir-canonicalizer.h"
+#include "IR-interpreter/IR-java-converter/IR-java-converter.h"
 
 
 #ifdef GRAPHVIZ
@@ -156,6 +157,14 @@ int Compiler::run() {
                 // Graph IR
                 IRGraphVisitor().visit(main_ir);
             #endif
+
+            if (run_java_ir) {
+                // Convert to Java IR
+                IRJavaConverter converter;
+                converter.visit(main_ir);
+                std::string result = converter.getResult();
+                std::cout << result << std::endl;
+            }
 
             if (run_ir) {
                 // Run interpreter on IR and get value
