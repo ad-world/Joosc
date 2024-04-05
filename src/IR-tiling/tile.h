@@ -4,10 +4,16 @@
 #include <list>
 #include <vector>
 #include <variant>
+#include <utility>
 
 class Tile;
 
-using Instruction = std::variant<std::string, Tile*>;
+using AssemblyInstruction = std::string;
+
+using StatementTile = Tile*;
+using ExpressionTile = std::pair<Tile*, std::string>;
+
+using Instruction = std::variant<AssemblyInstruction, StatementTile, ExpressionTile>;
 
 // A sequence of instructions that implements a subtree of the IR AST.
 //
@@ -23,12 +29,16 @@ class Tile {
 
     // The cost function for calculating cost of a tile
     void calculateCost();
-  public:
-    // If this is an expression tile, the abstract register results are stored into
-    std::string abstract_register = "";
 
-    // Replace the abstract register in this tile's instructions with reg
-    Tile& withAbstractRegister(std::string& reg);
+  public:
+    // Represents a placeholder abstract register within the assembly instructions
+    static const inline std::string ABSTRACT_REG = "\%\%PLACEHOLDER_ABSTRACT_REG\%\%";
+
+    // Creates copy of tile with replaced uses of Tile::ABSTRACT_REG with reg
+    Tile assignAbstract(std::string reg);
+
+    // Produce a pair with the tile and the abstract reg it uses
+    ExpressionTile pairWith(std::string abstract_reg);
 
     // Get cost of the tile
     int getCost();
@@ -43,7 +53,6 @@ class Tile {
 
     // Construct tile with instructions
     Tile(std::vector<Instruction>);
-    Tile(std::vector<Instruction>, std::string abstract_reg);
 
     // Default construct max cost tile
     Tile();

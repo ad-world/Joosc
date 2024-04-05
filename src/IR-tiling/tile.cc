@@ -4,17 +4,21 @@
 #include "utillities/overload.h"
 
 #include <limits>
+#include <regex>
 
 void Tile::calculateCost() {
     // Cost is defined as the number of assembly instructions used to implement tile
     cost = 0;
     for (auto& instr : instructions) {
         std::visit(util::overload {
-            [&](std::string&) {
+            [&](AssemblyInstruction&) {
                 ++cost;
             },
-            [&](Tile* tile) {
+            [&](StatementTile tile) {
                 cost += tile->getCost();
+            },
+            [&](ExpressionTile tile) {
+                cost += tile.first->getCost();
             }
         }, instr);
     }
@@ -30,22 +34,21 @@ int Tile::getCost() {
     return cost;
 }
 
-Tile& Tile::withAbstractRegister(std::string& reg) {
-    // TODO : replace use in "instructions" with reg
-    abstract_register = reg;
-    return *this;
-}
-
 std::list<std::string> Tile::getFullInstructions() {
     std::list<std::string> output;
 
     for (auto& instr : instructions) {
         std::visit(util::overload {
-            [&](std::string& asmb) {
+            [&](AssemblyInstruction& asmb) {
                 output.push_back(asmb);
             },
-            [&](Tile* tile) {
+            [&](StatementTile tile) {
                 for (auto& sub_instr : tile->getFullInstructions()) {
+                    output.push_back(sub_instr);
+                }
+            },
+            [&](ExpressionTile tile) {
+                for (auto& sub_instr : tile.first->getFullInstructions()) {
                     output.push_back(sub_instr);
                 }
             }
@@ -75,11 +78,32 @@ void Tile::add_instructions_before(std::vector<Instruction> instructions) {
     this->instructions = instructions;
 }
 
+Tile Tile::assignAbstract(std::string reg) {
+    Tile copy_tile = *this;
+    
+    for (auto& instr : copy_tile.instructions) {
+        std::visit(util::overload {
+            [&](AssemblyInstruction& asmb) {
+                asmb = std::regex_replace(asmb, std::regex(Tile::ABSTRACT_REG), reg);
+            },
+            [&](StatementTile tile) {},
+            [&](ExpressionTile tile) {
+                if (tile.second == reg) {
+                    *tile.first = tile.first->assignAbstract(reg);
+                }
+            }
+        }, instr);
+    }
+
+    return copy_tile;
+}
+
+ExpressionTile Tile::pairWith(std::string abstract_reg) {
+    return std::make_pair(this, abstract_reg);
+}
+
 Tile::Tile(std::vector<Instruction> instructions) 
     : instructions{std::move(instructions)}, cost{0}, cost_calculated{false} {}
-
-Tile::Tile(std::vector<Instruction> instructions, std::string abstract_reg) 
-    : instructions{std::move(instructions)}, abstract_register{abstract_reg}, cost{0}, cost_calculated{false} {}
 
 Tile::Tile() 
     : instructions{}, cost{std::numeric_limits<int>::max()}, cost_calculated{true} {}
