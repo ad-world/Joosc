@@ -13,6 +13,7 @@ class IRJavaConverter : public IRSkipVisitor {
     std::string getTabString();
     std::string getNewlineAndTabString();
     std::string getFunctionName(std::string functionName);
+    void appendToResult(std::string s);
 
 public:
     using IRSkipVisitor::visit;

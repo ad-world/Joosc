@@ -15,38 +15,42 @@ std::string IRJavaConverter::getFunctionName(std::string functionName) {
     return functionName;
 };
 
+void IRJavaConverter::appendToResult(std::string s) {
+    result += getNewlineAndTabString() + s;
+}
+
 void IRJavaConverter::operator()(CompUnitIR &node) {
     result += "package joosc.ir.interpret;\nimport joosc.ir.ast.*;\nimport joosc.ir.visit.CheckCanonicalIRVisitor;\n\n";
     result += "public class Main {";
     num_tabs += 1;
-    result += getNewlineAndTabString() + "public static void main(String[] args) {";
+    appendToResult("public static void main(String[] args) {");
     visit_children(node);
 
     num_tabs += 1;
 
-    result += getNewlineAndTabString() + "CompUnit compUnit = new CompUnit(\"test\");";
+    appendToResult("CompUnit compUnit = new CompUnit(\"test\");");
     for (auto &func : functions) {
-        result += getNewlineAndTabString() + "compUnit.appendFunc(" + func + ");";
+        appendToResult("compUnit.appendFunc(" + func + ");");
     }
 
-    result += getNewlineAndTabString() + "{";
+    appendToResult("{");
     num_tabs += 1;
-    result += getNewlineAndTabString() + "Simulator sim = new Simulator(compUnit);";
-    result += getNewlineAndTabString() + "long result = sim.call(\"test\");";
-    result += getNewlineAndTabString() + "System.out.println(\"Java Interpretation of IR results to: \" + result);";
+    appendToResult("Simulator sim = new Simulator(compUnit);");
+    appendToResult("long result = sim.call(\"test\");");
+    appendToResult("System.out.println(\"Java Interpretation of IR results to: \" + result);");
     num_tabs -= 1;
-    result += getNewlineAndTabString() + "}";
-    result += getNewlineAndTabString() + "{";
+    appendToResult("}");
+    appendToResult("{");
     num_tabs += 1;
-    result += getNewlineAndTabString() + "CheckCanonicalIRVisitor cv = new CheckCanonicalIRVisitor();";
-    result += getNewlineAndTabString() + "System.out.print(\"Canonical? \");";
-    result += getNewlineAndTabString() + "System.out.println(cv.visit(compUnit));";
+    appendToResult("CheckCanonicalIRVisitor cv = new CheckCanonicalIRVisitor();");
+    appendToResult("System.out.print(\"Canonical? \");");
+    appendToResult("System.out.println(cv.visit(compUnit));");
     num_tabs -= 1;
-    result += getNewlineAndTabString() + "}";
+    appendToResult("}");
     num_tabs -= 1;
-    result += getNewlineAndTabString() + "}";
+    appendToResult("}");
     num_tabs -= 1;
-    result += getNewlineAndTabString() + "}";
+    appendToResult("}");
 }
 
 void IRJavaConverter::operator()(FuncDeclIR &node) {
@@ -55,39 +59,39 @@ void IRJavaConverter::operator()(FuncDeclIR &node) {
     functions.push_back(function_name); 
 
     num_tabs += 1;
-    result += getNewlineAndTabString() + "Stmt " + node.getName() + "Body = ";
+    appendToResult("Stmt " + node.getName() + "Body = ");
     visit_children(node);
     result += ";";
-    result += getNewlineAndTabString() + "FuncDecl " + function_name + " = new FuncDecl(\"" + node.getName() + "\"," + std::to_string(node.getNumParams()) + "," + node.getName() + "Body);\n";
+    appendToResult("FuncDecl " + function_name + " = new FuncDecl(\"" + node.getName() + "\"," + std::to_string(node.getNumParams()) + "," + node.getName() + "Body);\n");
     num_tabs -= 1;
 }
 
 void IRJavaConverter::operator()(BinOpIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new BinOp(BinOp.OpType." + node.label() + ",";
+    appendToResult("new BinOp(BinOp.OpType." + node.label() + ",");
     visit_children(node.getLeft());
     result += ",";
     visit_children(node.getRight());
-    result += getNewlineAndTabString() + ")";
+    appendToResult(")");
     num_tabs -= 1;
 }
 
 void IRJavaConverter::operator()(CallIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new Call(";
+    appendToResult("new Call(");
     visit_children(node.getTarget());
     if (node.getArgs().size() > 0) result += ",";
     for (auto &arg : node.getArgs()) {
         visit_children(arg);
         if (arg != node.getArgs().back()) result += ",";
     }
-    result += getNewlineAndTabString() + ")";
+    appendToResult(")");
     num_tabs -= 1;
 }
 
 void IRJavaConverter::operator()(ConstIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new Const(" + std::to_string(node.getValue()) + ")";
+    appendToResult("new Const(" + std::to_string(node.getValue()) + ")");
     num_tabs -= 1;
 }
 
@@ -97,33 +101,33 @@ void IRJavaConverter::operator()(ESeqIR &node) {
     visit_children(node.getStmt());
     result += ",";
     visit_children(node.getExpr());
-    result += getNewlineAndTabString() + ")";
+    appendToResult(")");
     num_tabs -= 1;
 }
 
 void IRJavaConverter::operator()(MemIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new Mem(";
+    appendToResult("new Mem(");
     visit_children(node);
-    result += getNewlineAndTabString() + ")";
+    appendToResult(")");
     num_tabs -= 1;
 }
 
 void IRJavaConverter::operator()(NameIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new Name(\"" + getFunctionName(node.getName()) + "\")";
+    appendToResult("new Name(\"" + getFunctionName(node.getName()) + "\")");
     num_tabs -=1;
 }
 
 void IRJavaConverter::operator()(TempIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new Temp(\"" + node.getName() + "\")";
+    appendToResult("new Temp(\"" + node.getName() + "\")");
     num_tabs -= 1;
 }
 
 void IRJavaConverter::operator()(CJumpIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new CJump(";
+    appendToResult("new CJump(");
     visit_children(node.getCondition());
     result += ", \"" + node.trueLabel() + "\", \"" + node.falseLabel() + "\")";
     num_tabs -= 1;
@@ -131,39 +135,39 @@ void IRJavaConverter::operator()(CJumpIR &node) {
 
 void IRJavaConverter::operator()(ExpIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new Exp(";
+    appendToResult("new Exp(");
     visit_children(node.getExpr());
-    result += getNewlineAndTabString() + ")";
+    appendToResult(")");
     num_tabs -= 1;
 }
 
 void IRJavaConverter::operator()(JumpIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new Jump(";
+    appendToResult("new Jump(");
     visit_children(node.getTarget());
-    result += getNewlineAndTabString() + ")";
+    appendToResult(")");
     num_tabs -= 1;
 }
 
 void IRJavaConverter::operator()(LabelIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new Label(\"" + node.getName() + "\")";
+    appendToResult("new Label(\"" + node.getName() + "\")");
     num_tabs -=1;
 }
 
 void IRJavaConverter::operator()(MoveIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new Move(";
+    appendToResult("new Move(");
     visit_children(node.getTarget());
     result += ",";
     visit_children(node.getSource());
-    result += getNewlineAndTabString() + ")";
+    appendToResult(")");
     num_tabs -= 1;
 }
 
 void IRJavaConverter::operator()(ReturnIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new Return(";
+    appendToResult("new Return(");
     visit_children(node);
     result += ")";
     num_tabs -= 1;
@@ -171,7 +175,7 @@ void IRJavaConverter::operator()(ReturnIR &node) {
 
 void IRJavaConverter::operator()(SeqIR &node) {
     num_tabs += 1;
-    result += getNewlineAndTabString() + "new Seq(";
+    appendToResult("new Seq(");
     for (auto &stmt : node.getStmts()) {
         visit_children(stmt);
 
@@ -179,7 +183,7 @@ void IRJavaConverter::operator()(SeqIR &node) {
             result += ",";
         }
     }
-    result += getNewlineAndTabString() + ")";
+    appendToResult(")");
     num_tabs -= 1;
 }
 
