@@ -10,11 +10,14 @@ void Tile::calculateCost() {
     cost = 0;
     for (auto& instr : instructions) {
         std::visit(util::overload {
-            [&](std::string&) {
+            [&](AssemblyInstruction&) {
                 ++cost;
             },
-            [&](Tile* tile) {
+            [&](StatementTile tile) {
                 cost += tile->getCost();
+            },
+            [&](ExpressionTile tile) {
+                cost += tile.first->getCost();
             }
         }, instr);
     }
@@ -30,22 +33,21 @@ int Tile::getCost() {
     return cost;
 }
 
-Tile& Tile::withAbstractRegister(std::string& reg) {
-    // TODO : replace use in "instructions" with reg
-    abstract_register = reg;
-    return *this;
-}
-
 std::list<std::string> Tile::getFullInstructions() {
     std::list<std::string> output;
 
     for (auto& instr : instructions) {
         std::visit(util::overload {
-            [&](std::string& asmb) {
+            [&](AssemblyInstruction& asmb) {
                 output.push_back(asmb);
             },
-            [&](Tile* tile) {
+            [&](StatementTile tile) {
                 for (auto& sub_instr : tile->getFullInstructions()) {
+                    output.push_back(sub_instr);
+                }
+            },
+            [&](ExpressionTile tile) {
+                for (auto& sub_instr : tile.first->getFullInstructions()) {
                     output.push_back(sub_instr);
                 }
             }
@@ -75,11 +77,12 @@ void Tile::add_instructions_before(std::vector<Instruction> instructions) {
     this->instructions = instructions;
 }
 
+ExpressionTile Tile::pairWith(std::string abstract_reg) {
+    return std::make_pair(this, abstract_reg);
+}
+
 Tile::Tile(std::vector<Instruction> instructions) 
     : instructions{std::move(instructions)}, cost{0}, cost_calculated{false} {}
-
-Tile::Tile(std::vector<Instruction> instructions, std::string abstract_reg) 
-    : instructions{std::move(instructions)}, abstract_register{abstract_reg}, cost{0}, cost_calculated{false} {}
 
 Tile::Tile() 
     : instructions{}, cost{std::numeric_limits<int>::max()}, cost_calculated{true} {}
