@@ -34,9 +34,9 @@ complete -F _test_completions getinput
 #   (supports folders & files)
 # Example: rundebug Je_6_StaticThis_AfterStaticInvoke.java
 function rundebug {
-    INPUT=$(getinput $1)
+    INPUT=$(getinput $1); shift
     if [[ -n $INPUT ]]; then
-        gdb --args ./joosc $INPUT ${STDLIB}
+        gdb --args ./joosc $@ $INPUT ${STDLIB}
     fi
 }
 complete -F _test_completions rundebug

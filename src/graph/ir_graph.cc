@@ -1,4 +1,5 @@
 #include "ir_graph.h"
+#include <iostream>
 
 // CompUnitIR
 void IRGraphVisitor::operator()(CompUnitIR &node) {
@@ -27,6 +28,7 @@ void IRGraphVisitor::operator()(CallIR &node) {
     addNode(&node, node.label());
     addChild(&node, getInnerAddr(node.getTarget()));
     for ( auto &arg : node.getArgs() ) {
+    std::cout << node.getNumArgs() << std::endl;
         assert(arg);
         addChild(&node, getInnerAddr(*arg));
     }

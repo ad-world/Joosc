@@ -28,10 +28,27 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
     assert(expr.assigned_from);
 
     auto dest = convert(*expr.assigned_to);
+    auto dest_copy = convert(*expr.assigned_to);
     auto src = convert(*expr.assigned_from);
 
+    auto convert_eseq_ir = [&](unique_ptr<ExpressionIR> &dest) {
+        // Make sure dest is either Temp or MemIR
+        std::visit(util::overload{
+            [&](TempIR &temp) { /* do nothing */ },
+            [&](MemIR &mem) { /* do nothing */ },
+            [&](ESeqIR &eseq) {
+                // Replace dest with expression from eseq
+                dest = make_unique<ExpressionIR>(std::move(eseq.getExpr()));
+            },
+            [&](auto &node) { THROW_CompilerError("Assignment destination is not TempIR or MemIR"); }
+        }, *dest);
+    };
+
+    convert_eseq_ir(dest);
+    convert_eseq_ir(dest_copy);
+
     auto statement_ir = MoveIR::makeStmt(std::move(dest), std::move(src));
-    auto expression_ir = std::move(convert(*expr.assigned_to)); // copy of dest
+    auto expression_ir = std::move(dest_copy); // copy of dest
     auto eseq = ESeqIR::makeExpr(std::move(statement_ir), std::move(expression_ir));
 
     return eseq;
@@ -322,7 +339,11 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
     string non_null_name = LabelIR::generateName("nonnull");
     auto non_null_check = CJumpIR::makeStmt(
         // NEQ(t_a, 0)
-        TempIR::makeExpr(array_name),
+        BinOpIR::makeExpr(
+            BinOpIR::NEQ,
+            TempIR::makeExpr(array_name),
+            ConstIR::makeZero()
+        ),
         non_null_name,
         error_name
     );
@@ -432,7 +453,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 
         // Error call
         auto error_label = LabelIR::makeStmt(error_name);
-        auto error_call = CallIR::makeException();
+        auto error_call = ExpIR::makeStmt(std::move(CallIR::makeException()));
 
         // Allocate space
         auto non_negative_label = LabelIR::makeStmt(non_negative_name);
@@ -465,6 +486,14 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
         auto exit_loop = LabelIR::generateName("exit_loop");
         auto dummy_name = LabelIR::generateName("dummy");
         vector<unique_ptr<StatementIR>> seq_vec;
+
+        seq_vec.push_back(std::move(size_get));
+        seq_vec.push_back(std::move(non_negative_check));
+        seq_vec.push_back(std::move(error_label));
+        seq_vec.push_back(std::move(error_call));
+        seq_vec.push_back(std::move(non_negative_label));
+        seq_vec.push_back(std::move(malloc));
+        seq_vec.push_back(std::move(write_size));
 
         seq_vec.push_back(
             // Move(t_i, 0)
