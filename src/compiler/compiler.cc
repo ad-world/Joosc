@@ -22,6 +22,7 @@
 #include "IR-builder/ast-to-ir.h"
 #include "IR-interpreter/simulation/simulation.h"
 #include "IR-canonicalizer/ir-canonicalizer.h"
+#include "IR-canonicalizer/check-canonical.h"
 #include "IR-interpreter/IR-java-converter/IR-java-converter.h"
 
 
@@ -178,7 +179,9 @@ int Compiler::run() {
 
              // Canonicalize IR
             IRCanonicalizer().convert(main_ir);
-
+            if (!CanonicalChecker().check(main_ir, true)) {
+                THROW_CompilerError("IR is not canonical after canonicalizing");
+            }
 
             if (run_java_ir) {
                 IRJavaConverter converter = IRJavaConverter("MainCanonical");
