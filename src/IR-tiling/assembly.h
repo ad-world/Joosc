@@ -59,6 +59,13 @@ class Assembly {
         return Add(target, std::to_string(arg2));
     }
 
+    static std::string Sub(std::string target, std::string arg2) {
+        return "sub " + target + ", " + arg2;
+    }
+    static std::string Sub(std::string target, int arg2) {
+        return Sub(target, std::to_string(arg2));
+    }
+
     static std::string IMul(std::string multiplicand) {
         return "imul " + multiplicand;
     }

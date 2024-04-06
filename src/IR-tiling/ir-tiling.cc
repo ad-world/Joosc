@@ -31,6 +31,13 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
 
                 // RegisterAllocator::allocateRegisters(body_tile); (TODO)
 
+                // Function prologue
+                int temp_count = 0;
+                output.push_back(Assembly::Push(Assembly::REG32_BP));
+                output.push_back(Assembly::Mov(Assembly::REG32_BP, Assembly::REG32_SP));
+                output.push_back(Assembly::Sub(Assembly::REG32_SP, 4*temp_count));
+
+                // Function body
                 for (auto& body_instruction : body_tile->getFullInstructions()) {
                     output.push_back(body_instruction);
                 }
@@ -234,14 +241,32 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         },
 
         [&](MoveIR &node) {
-            std::string target_reg = Assembly::newAbstractRegister();
-            std::string source_reg = Assembly::newAbstractRegister();
+            // Behaviour depends on target type
+            std::visit(util::overload {
 
-            generic_tile = Tile({
-                tile(node.getTarget(), target_reg),
-                tile(node.getSource(), source_reg),
-                Assembly::Mov(target_reg, source_reg)
-            });
+                [&](TempIR& target) {
+                    std::string source_reg = Assembly::newAbstractRegister();
+
+                    generic_tile = Tile({
+                        tile(node.getSource(), source_reg),
+                        Assembly::Mov(target.getName(), source_reg)
+                    });
+                },
+
+                [&](MemIR& target) {
+                    std::string address_reg = Assembly::newAbstractRegister();
+                    std::string source_reg = Assembly::newAbstractRegister();
+
+                    generic_tile = Tile({
+                        tile(node.getSource(), source_reg),
+                        tile(target.getAddress(), address_reg),
+                        Assembly::Mov(Assembly::MakeAddress(address_reg), source_reg)
+                    });
+                },
+
+                [&](auto&) { THROW_CompilerError("Invalid MoveIR target"); }
+
+            }, node.getTarget());
         },
 
         [&](ReturnIR &node) {
