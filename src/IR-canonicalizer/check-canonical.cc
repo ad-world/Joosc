@@ -54,7 +54,6 @@ void CanonicalChecker::check(ExpressionIR &ir) {
         },
 
         [&](MemIR &node) {
-            // Just concatenate the extracted statments in front and put the pure expr in the MemIR
             check(node.getAddress());
         },
 
