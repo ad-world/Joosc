@@ -413,6 +413,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
 
     auto eseq_ir = ESeqIR::makeExpr(
         SeqIR::makeStmt(std::move(seq_vec)),
+        // ConstIR::makeZero()
         std::move(inbound_call)                         // MEM(t_a + 4 + 4*t_i)
     );
 
@@ -477,7 +478,11 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
         // Write size
         auto write_size = MoveIR::makeStmt(
             MemIR::makeExpr(TempIR::makeExpr(array_name)),
-            TempIR::makeExpr(size_name)
+            BinOpIR::makeExpr(  // copy of t_size
+                BinOpIR::ADD,
+                TempIR::makeExpr(size_name),
+                ConstIR::makeZero()
+            )
         );
 
         // Zero initialize array (loop)
@@ -518,10 +523,10 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
             )
         );
         seq_vec.push_back(
-            // CJump(t_i >= 4 * t_size, exit_loop, start_loop)
+            // CJump(t_i > 4 * t_size, exit_loop, start_loop)
             CJumpIR::makeStmt(
                 BinOpIR::makeExpr(
-                    BinOpIR::GEQ,
+                    BinOpIR::GT,
                     TempIR::makeExpr(iterator_name),
                     BinOpIR::makeExpr(
                         BinOpIR::MUL,
@@ -538,13 +543,17 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
             LabelIR::makeStmt(dummy_name)
         );
         seq_vec.push_back(
-            // MOVE(MEM(t_a + t_i), 0) 
+            // MOVE(MEM(t_i + t_a + 4), 0) 
             MoveIR::makeStmt(
                 MemIR::makeExpr(
                     BinOpIR::makeExpr(
                         BinOpIR::ADD,
-                        TempIR::makeExpr(array_name),
-                        TempIR::makeExpr(iterator_name)
+                        TempIR::makeExpr(iterator_name),
+                        BinOpIR::makeExpr(
+                            BinOpIR::ADD,
+                            TempIR::makeExpr(array_name),
+                            ConstIR::makeWords()
+                        )
                     )
                 ),
                 ConstIR::makeZero()
