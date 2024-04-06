@@ -1,7 +1,5 @@
 #include "assembly.h"
 
-size_t Assembly::abstract_reg_count = 0;
-
 std::string Assembly::MakeAddress(
     std::string base_register, 
     std::string index_register,

@@ -7,11 +7,7 @@
 
 // Helper methods for creating x86 assembly instructions
 class Assembly {
-    static size_t abstract_reg_count;
   public:
-    // Registers
-    static std::string newAbstractRegister() { return "ABSTRACT_REG" + (abstract_reg_count++); }
-
     static const inline std::string REG8L_ACCUM = "al";
     static const inline std::string REG8H_ACCUM = "ah";
 

@@ -4,6 +4,8 @@
 
 #include "assembly.h"
 
+size_t IRToTilesConverter::abstract_reg_count = 0;
+
 void IRToTilesConverter::decideIsCandidate(ExpressionIR& ir, Tile candidate) {
     Tile& optimal_tile = expression_memo[&ir];
     if (candidate.getCost() < optimal_tile.getCost()) {
@@ -61,8 +63,8 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
         [&](BinOpIR &node) {
             
             // Generic tile that is always applicable : store operands in abstract registers, then do something
-            std::string operand1_reg = Assembly::newAbstractRegister();
-            std::string operand2_reg = Assembly::newAbstractRegister();
+            std::string operand1_reg = newAbstractRegister();
+            std::string operand2_reg = newAbstractRegister();
 
             generic_tile = Tile({
                 tile(node.getLeft(), operand1_reg),
@@ -171,7 +173,7 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
         },
 
         [&](MemIR &node) {
-            std::string address_reg = Assembly::newAbstractRegister();
+            std::string address_reg = newAbstractRegister();
 
             generic_tile = Tile({
                 tile(node.getAddress(), address_reg),
@@ -218,7 +220,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
     
     std::visit(util::overload {
         [&](CJumpIR &node) {
-            std::string cond_reg = Assembly::newAbstractRegister();
+            std::string cond_reg = newAbstractRegister();
 
             generic_tile = Tile({
                 tile(node.getCondition(), cond_reg),
@@ -228,7 +230,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         },
 
         [&](JumpIR &node) {
-            std::string target_reg = Assembly::newAbstractRegister();
+            std::string target_reg = newAbstractRegister();
 
             generic_tile = Tile({
                 tile(node.getTarget(), target_reg),
@@ -245,7 +247,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             std::visit(util::overload {
 
                 [&](TempIR& target) {
-                    std::string source_reg = Assembly::newAbstractRegister();
+                    std::string source_reg = newAbstractRegister();
 
                     generic_tile = Tile({
                         tile(node.getSource(), source_reg),
@@ -254,8 +256,8 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
                 },
 
                 [&](MemIR& target) {
-                    std::string address_reg = Assembly::newAbstractRegister();
-                    std::string source_reg = Assembly::newAbstractRegister();
+                    std::string address_reg = newAbstractRegister();
+                    std::string source_reg = newAbstractRegister();
 
                     generic_tile = Tile({
                         tile(node.getSource(), source_reg),
@@ -272,7 +274,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         [&](ReturnIR &node) {
             if (node.getRet()) {
                 // Return a value by placing it in REG32_ACCUM
-                std::string value_reg = Assembly::newAbstractRegister();
+                std::string value_reg = newAbstractRegister();
                 generic_tile = Tile({
                     tile(*node.getRet(), value_reg),
                     Assembly::Mov(Assembly::REG32_ACCUM, value_reg)
@@ -289,7 +291,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         [&](CallIR &node) {
             // Push arguments onto stack
             for (auto &arg : node.getArgs()) {
-                std::string argument_register = Assembly::newAbstractRegister();
+                std::string argument_register = newAbstractRegister();
                 generic_tile.add_instructions_after({
                     tile(*arg, argument_register),
                     Assembly::Push(argument_register)

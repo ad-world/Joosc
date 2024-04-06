@@ -11,6 +11,9 @@
 // Uses the Optimal Tiling Algorithm, with memoization.
 class IRToTilesConverter {
 
+    static size_t abstract_reg_count;
+    static std::string newAbstractRegister() { return "ABSTRACT_REG" + (abstract_reg_count++); }
+
     // Holds the computed best tile for the subtree rooted at every IR in the IR AST.
     // The best tile for each subtree is computed at most once.
     std::unordered_map<ExpressionIR*, Tile> expression_memo;
