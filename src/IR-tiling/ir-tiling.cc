@@ -60,7 +60,7 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
     }, ir);
 }
 
-ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
+ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abstract_reg) {
     if (expression_memo.count(&ir)) {
         return expression_memo[&ir].pairWith(abstract_reg);
     }
@@ -297,21 +297,19 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             if (current_is_entrypoint) {
                 // Return a value by executing exit() system call with value in REG32_BASE
                 if (!node.getRet()) THROW_CompilerError("invalid void return in entrypoint function");
-                std::string value_reg = newAbstractRegister();
                 generic_tile.add_instructions_after({
-                    tile(*node.getRet(), value_reg),
+                    Assembly::Comment("calculating return value and storing it in REG32_BASE"),
+                    tile(*node.getRet(), Assembly::REG32_BASE),
                     Assembly::Comment("exit() system call"),
-                    Assembly::Mov(Assembly::REG32_BASE, value_reg),
                     Assembly::Mov(Assembly::REG32_ACCUM, 1),
                     Assembly::SysCall()
                 });
             } else {
                 if (node.getRet()) {
                     // Return a value by placing it in REG32_ACCUM
-                    std::string value_reg = newAbstractRegister();
                     generic_tile.add_instructions_after({
-                        tile(*node.getRet(), value_reg),
-                        Assembly::Mov(Assembly::REG32_ACCUM, value_reg)
+                        Assembly::Comment("return a value by placing it in REG32_ACCUM"),
+                        tile(*node.getRet(), Assembly::REG32_ACCUM)
                     });
                 }
                 // Function epilogue
