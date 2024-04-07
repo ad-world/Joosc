@@ -212,7 +212,7 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
 
         [&](TempIR &node) {
             generic_tile = Tile({
-                Assembly::Mov(Tile::ABSTRACT_REG, node.getName())
+                Assembly::Mov(Tile::ABSTRACT_REG, escapeTemporary(node.getName()))
             });
         },
 
@@ -271,7 +271,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
 
                 [&](TempIR& target) {
                     generic_tile = Tile({
-                        tile(node.getSource(), target.getName())
+                        tile(node.getSource(), escapeTemporary(target.getName()))
                     });
                 },
 

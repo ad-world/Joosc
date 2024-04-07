@@ -5,8 +5,8 @@
 #include <cstdint> 
 #include "utillities/overload.h"
 
-std::string ABSTRACT_ARG_PREFIX = "_ARG";
-std::string ABSTRACT_RET_PREFIX = "_RET";
+#include "IR/code-gen-constants.h"
+
 int WORD_SIZE = 4;
 
 
@@ -168,9 +168,9 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
 
         for (int i = 0; i < args.size(); i++) {
             if (debugLevel > 1) {
-                std::cout << "Adding " << ABSTRACT_ARG_PREFIX + std::to_string(i) << " = " << args[i] << " to args" << std::endl;
+                std::cout << "Adding " << CGConstants::ABSTRACT_ARG_PREFIX + std::to_string(i) << " = " << args[i] << " to args" << std::endl;
             }
-            frame->put(ABSTRACT_ARG_PREFIX + std::to_string(i), args[i]);
+            frame->put(CGConstants::ABSTRACT_ARG_PREFIX + std::to_string(i), args[i]);
         }
 
         while (frame->advance());
@@ -181,7 +181,7 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
             std::cout << "Frame return value is " << return_value << std::endl;
     }
 
-    parent.put(ABSTRACT_RET_PREFIX, return_value);
+    parent.put(CGConstants::ABSTRACT_RET, return_value);
     if (debugLevel > 1)
         std::cout << "Calling " << name << " returned " << return_value << std::endl;
  

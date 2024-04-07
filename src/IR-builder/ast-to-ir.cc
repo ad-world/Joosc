@@ -9,6 +9,7 @@
 #include <variant>
 #include "exceptions/exceptions.h"
 #include "IR-interpreter/simulation/simulation.h"
+#include "IR/code-gen-constants.h"
 using namespace std;
 
 /***************************************************************
@@ -881,7 +882,7 @@ void IRBuilderVisitor::operator()(MethodDeclaration &node) {
                 int arg_num = 0;
                 for ( auto &param : node.parameters ) {
                     auto param_name = param.parameter_name->name;
-                    auto abstract_arg_name = ABSTRACT_ARG_PREFIX + to_string(arg_num++);
+                    auto abstract_arg_name = CGConstants::ABSTRACT_ARG_PREFIX + to_string(arg_num++);
                     auto arg_temp = TempIR::makeExpr(abstract_arg_name);
                     auto param_temp = TempIR::makeExpr(param_name);
                     load_args.push_back(

@@ -41,6 +41,9 @@ class IRToTilesConverter {
     // Generates instructions that implement the statement
     StatementTile tile(StatementIR& node);
 
+    // Escape the temporary, so no temporary is a substring of another
+    inline std::string escapeTemporary(const std::string& s) { return "%" + s + "%"; }
+
   public:
     IRToTilesConverter(RegisterAllocator* register_allocator) : register_allocator{register_allocator} {}
     

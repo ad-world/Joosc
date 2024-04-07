@@ -23,7 +23,12 @@ def single_correct_output_test(program_path, compiler_args: List[str]) -> bool:
 
     if result.returncode in (0, 43):
         # Program compiled, check output is correct
-        assemble_all_files()
+
+        successful_assemble = assemble_all_files()
+        if not successful_assemble:
+            print(f"{colors.FAIL}FAIL: joosc failed to assemble {program}, so it couldn't be run.{colors.ENDC}\n")
+            return False
+        
         program_result = subprocess.run(["./main"], cwd=root_dir)
 
         with open(resolve_path(root_dir, "ir_result.tmp"), "r") as file:
@@ -46,7 +51,7 @@ def single_correct_output_test(program_path, compiler_args: List[str]) -> bool:
             return True
     else:
         # Test failed due to compile failing
-        print(f"{colors.FAIL}FAIL: joosc failed to compile {program}, so it couldn't be ran. Return code: {result.returncode}{colors.ENDC}\n")
+        print(f"{colors.FAIL}FAIL: joosc failed to compile {program}, so it couldn't be run. Return code: {result.returncode}{colors.ENDC}\n")
         return False
     
 
