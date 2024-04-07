@@ -29,6 +29,12 @@ class Assembly {
         return name + ":";
     }
 
+    const static inline std::string Start = Label("_start");
+
+    static std::string Global(std::string arg) {
+        return "global " + arg;
+    }
+
     static std::string Jump(std::string target) {
         return "jmp " + target;
     }

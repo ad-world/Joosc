@@ -25,6 +25,8 @@
 #include "IR-canonicalizer/check-canonical.h"
 #include "IR-interpreter/IR-java-converter/IR-java-converter.h"
 
+#include "IR-tiling/ir-tiling.h"
+
 
 #ifdef GRAPHVIZ
     #include "graph/graph.h"
@@ -217,14 +219,15 @@ int Compiler::run() {
             }
 
 
-            // Emit assembly (TODO)
-
+            // Emit assembly
+            auto instructions = IRToTilesConverter().tile(main_ir);
+            std::ofstream output_file {"output/asm.s"};
+            for (auto& instr : instructions) {
+                output_file << instr << "\n";
+            }
         }
 
     } catch (const CompilerError &e ) {
-        cerr << e.what() << "\n";
-        return finishWith(ReturnCode::COMPILER_DEVELOPMENT_ERROR);
-    } catch (const SimulatorError &e ) {
         cerr << e.what() << "\n";
         return finishWith(ReturnCode::COMPILER_DEVELOPMENT_ERROR);
     } catch (const std::exception &e) {
