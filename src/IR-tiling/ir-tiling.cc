@@ -44,9 +44,9 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
 
                 // Function prologue
                 int temp_count = 0;
-                output.push_back(Assembly::Push(Assembly::REG32_BP));
-                output.push_back(Assembly::Mov(Assembly::REG32_BP, Assembly::REG32_SP));
-                output.push_back(Assembly::Sub(Assembly::REG32_SP, 4*temp_count));
+                output.push_back(Assembly::Push(Assembly::REG32_STACKBASEPTR));
+                output.push_back(Assembly::Mov(Assembly::REG32_STACKBASEPTR, Assembly::REG32_STACKPTR));
+                output.push_back(Assembly::Sub(Assembly::REG32_STACKPTR, 4*temp_count));
 
                 // Function body
                 for (auto& body_instruction : body_tile->getFullInstructions()) {
@@ -316,8 +316,8 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
                 }
                 // Function epilogue
                 generic_tile.add_instructions_after({
-                    Assembly::Mov(Assembly::REG32_SP, Assembly::REG32_BP),
-                    Assembly::Pop(Assembly::REG32_BP),
+                    Assembly::Mov(Assembly::REG32_STACKPTR, Assembly::REG32_STACKBASEPTR),
+                    Assembly::Pop(Assembly::REG32_STACKBASEPTR),
                     Assembly::Ret()
                 });
             }
@@ -341,7 +341,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             }
 
             // Pop arguments from stack
-            generic_tile.add_instruction(Assembly::Add(Assembly::REG32_SP, 4 * node.getNumArgs()));
+            generic_tile.add_instruction(Assembly::Add(Assembly::REG32_STACKPTR, 4 * node.getNumArgs()));
         },
 
         [&](SeqIR &node) {
