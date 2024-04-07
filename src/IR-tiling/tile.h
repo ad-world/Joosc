@@ -22,6 +22,8 @@ class Tile {
     // The instructions that implement this tile
     std::vector<Instruction> instructions;
 
+    friend class RegisterAllocator;
+
     // The cost of the tile
     int cost;
     // Whether the cost has already been calculated, and doesn't need to be recalculated

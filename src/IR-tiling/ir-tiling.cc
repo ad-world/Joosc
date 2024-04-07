@@ -41,6 +41,7 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
 
                 auto body_tile = tile(func->getBody());
 
+                // int32_t stack_size = 10;
                 int32_t stack_size = register_allocator->allocateRegisters(body_tile);
 
                 // Function prologue
@@ -269,11 +270,8 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             std::visit(util::overload {
 
                 [&](TempIR& target) {
-                    std::string source_reg = newAbstractRegister();
-
                     generic_tile = Tile({
-                        tile(node.getSource(), source_reg),
-                        Assembly::Mov(target.getName(), source_reg)
+                        tile(node.getSource(), target.getName())
                     });
                 },
 
