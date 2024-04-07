@@ -6,10 +6,15 @@
 #include <unordered_map>
 #include <list>
 
+class RegisterAllocator;
+
 // Convert Canonical IR to x86 assembly
 //
 // Uses the Optimal Tiling Algorithm, with memoization.
 class IRToTilesConverter {
+
+    // The algorithm for allocating registers
+    RegisterAllocator* register_allocator;
 
     const static inline std::string ENTRYPOINT_METHOD = "test";
 
@@ -37,6 +42,8 @@ class IRToTilesConverter {
     StatementTile tile(StatementIR& node);
 
   public:
+    IRToTilesConverter(RegisterAllocator* register_allocator) : register_allocator{register_allocator} {}
+    
     // Tile the whole compilation unit, producing a list of assembly instructions
     // Each element in the list returned is an assembly instruction
     std::list<std::string> tile(IR& node);

@@ -26,6 +26,7 @@
 #include "IR-interpreter/IR-java-converter/IR-java-converter.h"
 
 #include "IR-tiling/ir-tiling.h"
+#include "IR-tiling/register-allocation/brainless-allocator.h"
 
 
 #ifdef GRAPHVIZ
@@ -220,7 +221,8 @@ int Compiler::run() {
 
 
             // Emit assembly
-            auto instructions = IRToTilesConverter().tile(main_ir);
+            BrainlessRegisterAllocator allocator;
+            auto instructions = IRToTilesConverter(&allocator).tile(main_ir);
             std::ofstream output_file {"output/asm.s"};
             for (auto& instr : instructions) {
                 output_file << instr << "\n";

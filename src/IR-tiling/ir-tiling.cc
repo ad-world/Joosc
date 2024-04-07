@@ -3,6 +3,7 @@
 #include "exceptions/exceptions.h"
 
 #include "assembly.h"
+#include "register-allocation/register-allocator.h"
 
 size_t IRToTilesConverter::abstract_reg_count = 0;
 
@@ -40,13 +41,12 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
 
                 auto body_tile = tile(func->getBody());
 
-                // RegisterAllocator::allocateRegisters(body_tile); (TODO)
+                int32_t stack_size = register_allocator->allocateRegisters(body_tile);
 
                 // Function prologue
-                int temp_count = 0;
                 output.push_back(Assembly::Push(Assembly::REG32_STACKBASEPTR));
                 output.push_back(Assembly::Mov(Assembly::REG32_STACKBASEPTR, Assembly::REG32_STACKPTR));
-                output.push_back(Assembly::Sub(Assembly::REG32_STACKPTR, 4*temp_count));
+                output.push_back(Assembly::Sub(Assembly::REG32_STACKPTR, 4 * stack_size));
 
                 // Function body
                 for (auto& body_instruction : body_tile->getFullInstructions()) {
