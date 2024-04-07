@@ -172,8 +172,11 @@ int Compiler::run() {
             } else if (run_ir) {
                 // Run interpreter on IR and get value
                 try {
+                    auto sim = Simulator(&main_ir);
+                    sim.setDebugLevel(0);
+                    int result = sim.call("test", {});
+                    
                     std::ofstream result_file {"ir_result.tmp"};
-                    int result = Simulator(&main_ir).call("test", {});
                     result_file << result;
                 } catch (const SimulatorError &e ) {
                     cerr << e.what() << "\n";
@@ -196,7 +199,11 @@ int Compiler::run() {
                 // Run interpreter on Canonical IR and get value
                 try {
                     std::ofstream result_file {"ir_canon_result.tmp"};
-                    int result = Simulator(&main_ir).call("test", {});
+
+                    auto sim = Simulator(&main_ir);
+                    sim.setDebugLevel(0);
+                    int result = sim.call("test", {});
+
                     result_file << result;
                 } catch (const SimulatorError &e ) {
                     cerr << e.what() << "\n";
@@ -208,16 +215,20 @@ int Compiler::run() {
 
            
 
-            if (run_ir) {
-                // Run interpreter on Canonical IR and get value
-                try {
-                    std::ofstream result_file {"ir_canon_result.tmp"};
-                    int result = Simulator(&main_ir).call("test", {});
-                    result_file << result;
-                } catch (const SimulatorError &e ) {
-                    cerr << e.what() << "\n";
-                }
-            }
+            // if (run_ir) {
+            //     // Run interpreter on Canonical IR and get value
+            //     try {
+            //         std::ofstream result_file {"ir_canon_result.tmp"};
+
+            //         auto sim = Simulator(&main_ir);
+            //         sim.setDebugLevel(0);
+            //         int result = sim.call("test", {});
+
+            //         result_file << result;
+            //     } catch (const SimulatorError &e ) {
+            //         cerr << e.what() << "\n";
+            //     }
+            // }
 
 
             // Emit assembly

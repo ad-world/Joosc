@@ -71,8 +71,7 @@ Simulator::Simulator(IR *compUnit, int heapSizeMax) : heapSizeMax(heapSizeMax) {
         THROW_SimulatorError("Expected CompUnitIR when creating Simulator");
     }
 
-    exprStack = ExprStack(2);
-    setDebugLevel(2);
+    exprStack = ExprStack(debugLevel);
 
     libraryFunctions.insert("__malloc");
     libraryFunctions.insert("__debexit");
@@ -168,7 +167,9 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
         auto frame = std::make_unique<ExecutionFrame>(ip, *this);
 
         for (int i = 0; i < args.size(); i++) {
-            std::cout << "Adding " << ABSTRACT_ARG_PREFIX + std::to_string(i) << " = " << args[i] << " to args" << std::endl;
+            if (debugLevel > 1) {
+                std::cout << "Adding " << ABSTRACT_ARG_PREFIX + std::to_string(i) << " = " << args[i] << " to args" << std::endl;
+            }
             frame->put(ABSTRACT_ARG_PREFIX + std::to_string(i), args[i]);
         }
 
@@ -176,11 +177,13 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
 
         return_value = frame->ret;
 
-        std::cout << "Frame return value is " << return_value << std::endl;
+        if (debugLevel > 1)
+            std::cout << "Frame return value is " << return_value << std::endl;
     }
 
     parent.put(ABSTRACT_RET_PREFIX, return_value);
-    std::cout << "Calling " << name << " returned " << return_value << std::endl;
+    if (debugLevel > 1)
+        std::cout << "Calling " << name << " returned " << return_value << std::endl;
  
     return return_value;
 }
@@ -367,11 +370,13 @@ void Simulator::leave(ExecutionFrame *frame) {
         },
         [&](ReturnIR *ret) {
             frame->ret = Simulator::exprStack.popValue();
-            std::cout << "Encountered return, returning " << frame->ret << std::endl;
+            if (Simulator::debugLevel > 0) 
+                std::cout << "Encountered return, returning " << frame->ret << std::endl;
             frame->setIP(-1);
         },
         [&](auto &node) {
-            std::cout << "Leaving: " << node->label() << std::endl;
+            if (Simulator::debugLevel > 0) 
+                std::cout << "Leaving: " << node->label() << std::endl;
         }
     }, node);
 }
