@@ -25,13 +25,21 @@ class Assembly {
     static const inline std::string REG32_IP = "eip"; // Instruction pointer
 
     // Instructions
+    static std::string Comment(std::string text) {
+        return "; " + text;
+    }
+
     static std::string Label(std::string name) {
         return name + ":";
     }
 
-    const static inline std::string Start = Label("_start");
+    static std::string SysCall() {
+        return "int 0x80";
+    }
 
-    static std::string Global(std::string arg) {
+    const static inline std::string StartLabel = Label("_start");
+
+    static std::string GlobalSymbol(std::string arg) {
         return "global " + arg;
     }
 
