@@ -46,7 +46,7 @@ def single_correct_output_test(program_path, compiler_args: List[str]) -> bool:
             return True
     else:
         # Test failed due to compile failing
-        print(f"{colors.FAIL}FAIL: joosc failed to compile {program}, so it couldn't be ran.{colors.ENDC}\n")
+        print(f"{colors.FAIL}FAIL: joosc failed to compile {program}, so it couldn't be ran. Return code: {result.returncode}{colors.ENDC}\n")
         return False
     
 

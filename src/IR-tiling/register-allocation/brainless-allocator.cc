@@ -17,7 +17,7 @@ void BrainlessRegisterAllocator::findOffsets(Tile* function_body) {
                 findOffsets(tile);
             },
             [&](ExpressionTile tile) {
-                if (!reg_offsets.count(tile.second)) {
+                if (!Assembly::isRealRegister(tile.second) && !reg_offsets.count(tile.second)) {
                     reg_offsets[tile.second] = stack_offset;
                     stack_offset += 4;
                 }
@@ -84,7 +84,15 @@ void BrainlessRegisterAllocator::replaceAbstracts(AssemblyInstruction instructio
         } 
     }
 
-    if (found.size() > 3) THROW_CompilerError("x86 instruction using more than 3 registers? something is wrong");
+    if (found.size() > 3) {
+        std::string found_registers = "";
+        for (auto& reg: found) found_registers += " " + reg;
+        THROW_CompilerError(
+            "x86 instruction using more than 3 registers? Something is wrong.\n"
+            "Instruction: " + instruction + "\n"
+            "Found registers:" + found_registers
+        );
+    }
 
     for (int i = 0; i < found.size(); ++i) {
         target_vector.push_back(loadAbstractRegister(instruction_registers[i], found[i]));
