@@ -7,6 +7,7 @@
 #include "IR/ir_variant.h"
 #include "unordered_map"
 #include "IR/func-decl/func-decl.h"
+#include "exceptions/exceptions.h"
 
 class CompUnitIR {
     std::string name;
@@ -32,14 +33,12 @@ public:
     }
     FuncDeclIR* getFunc(std::string name) { 
         if (functions.find(name) == functions.end()) {
-            int last_dot = name.find_last_of('.');
-            if (last_dot != std::string::npos) {
-                name = name.substr(last_dot + 1);
-            }
+            THROW_ASTtoIRError("Could not find function with name " + name + " in the IR."); 
         }
-    
+
         return functions[name];
     }
+
     std::string getName() { return name; }
     std::unordered_map<std::string, FuncDeclIR*> getFunctions() { return functions; }
     std::unordered_map<std::string, ExpressionIR*> getFields() { return static_fields; }

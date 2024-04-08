@@ -5,16 +5,6 @@ IRJavaConverter::IRJavaConverter(std::string class_name): class_name(class_name)
     result = "";
 };
 
-std::string IRJavaConverter::getFunctionName(std::string functionName) {
-    int last_dot = functionName.find_last_of('.');
-    if (last_dot != std::string::npos) {
-        std::string short_func = functionName.substr(last_dot + 1);
-        return short_func;
-    }
-
-    return functionName;
-};
-
 void IRJavaConverter::appendToResult(std::string s) {
     result += getNewlineAndTabString() + s;
 }
@@ -109,7 +99,7 @@ void IRJavaConverter::operator()(MemIR &node) {
 
 void IRJavaConverter::operator()(NameIR &node) {
     num_tabs += 1;
-    appendToResult("new Name(\"" + getFunctionName(node.getName()) + "\")");
+    appendToResult("new Name(\"" + node.getName() + "\")");
     num_tabs -=1;
 }
 
