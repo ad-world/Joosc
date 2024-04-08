@@ -156,6 +156,10 @@ struct MethodInvocation: public ExpressionCommon {
     std::unique_ptr<Identifier> method_name;
     std::vector<Expression> arguments;
 
+    // The method declaration that is called.
+    // Resolved during typechecking; null beforehand.
+    MethodDeclarationObject* called_method = nullptr;
+
     MethodInvocation(
         std::unique_ptr<Expression>& parent_expr,
         std::unique_ptr<Identifier>& method_name,

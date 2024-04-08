@@ -277,28 +277,19 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(MethodInvocation &expr) {
-    assert(expr.method_name);
+    auto called_method = expr.called_method;
 
-    if (auto qi = std::get_if<QualifiedIdentifier>(expr.parent_expr.get())) {
-        // Static methods
-
+    if (called_method->ast_reference->hasModifier(Modifier::STATIC) || true) {
         // Args vectors
         vector<unique_ptr<ExpressionIR>> call_args_vec = {};
         for ( auto &arg : expr.arguments ) {
             call_args_vec.push_back(std::move(convert(arg)));
         }
 
-        // Name string
-        string name_str;
-        for ( auto &identifier : qi->identifiers ) {
-            name_str += identifier.name + ".";
-        }
-        name_str += expr.method_name->name;
-
         // Name IR
         auto name_ir = make_unique<ExpressionIR>(
             in_place_type<NameIR>,
-            name_str
+            CGConstants::uniqueMethodLabel(expr.called_method)
         );
 
         // Call IR
@@ -907,15 +898,17 @@ void IRBuilderVisitor::operator()(MethodDeclaration &node) {
             }
         }, *body_stmt);
 
+        auto label = CGConstants::uniqueMethodLabel(node.environment);
+
         // Create func_decl
         auto func_decl = make_unique<FuncDeclIR>(
-            node.environment->identifier,
+            label,
             std::move(body_stmt),
             (int) node.parameters.size()
         );
 
         // Add func_decl to comp_unit
-        comp_unit.appendFunc(node.environment->identifier, std::move(func_decl));
+        comp_unit.appendFunc(label, std::move(func_decl));
     }
 }
 

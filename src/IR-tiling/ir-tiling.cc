@@ -1,9 +1,11 @@
 #include "ir-tiling.h"
 #include "utillities/util.h"
 #include "exceptions/exceptions.h"
-
 #include "assembly.h"
 #include "register-allocation/register-allocator.h"
+#include "IR/code-gen-constants.h"
+
+#include <regex>
 
 size_t IRToTilesConverter::abstract_reg_count = 0;
 
@@ -29,7 +31,7 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
 
             for (auto& func : node.getFunctionList()) {
                 // Function label
-                if (func->getName() == IRToTilesConverter::ENTRYPOINT_METHOD) {
+                if (func->getName() == entrypoint_method) {
                     // Add global start symbol for program execution entrypoint
                     current_is_entrypoint = true;
                     output.push_back(Assembly::GlobalSymbol(Assembly::StartLabel));
@@ -41,7 +43,6 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
 
                 auto body_tile = tile(func->getBody());
 
-                // int32_t stack_size = 10;
                 int32_t stack_size = register_allocator->allocateRegisters(body_tile);
 
                 // Function prologue
@@ -90,7 +91,8 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
                 } 
                 case BinOpIR::OpType::SUB: {
                     generic_tile.add_instructions_after({
-                        Assembly::Lea(Tile::ABSTRACT_REG, Assembly::MakeAddress(operand1_reg, operand2_reg, -1))
+                        Assembly::Sub(operand1_reg, operand2_reg),
+                        Assembly::Mov(Tile::ABSTRACT_REG, operand1_reg)
                     });
                     break;
                 }
@@ -211,9 +213,30 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
         },
 
         [&](TempIR &node) {
-            generic_tile = Tile({
-                Assembly::Mov(Tile::ABSTRACT_REG, escapeTemporary(node.getName()))
-            });
+            // Special registers : ABSTRACT_RET is REG32_ACCUM
+            if (node.getName() == CGConstants::ABSTRACT_RET) {
+                generic_tile = Tile({
+                    Assembly::Mov(Tile::ABSTRACT_REG, Assembly::REG32_ACCUM)
+                });
+            }
+            // Special registers : ABSTRACT_ARG_PREFIX# is stack offset from caller
+            else if (node.getName().rfind(CGConstants::ABSTRACT_ARG_PREFIX, 0) == 0) {
+                int arg_num 
+                    = std::stoi(std::regex_replace(node.getName(), std::regex(CGConstants::ABSTRACT_ARG_PREFIX), ""));
+
+                generic_tile = Tile({
+                    Assembly::Mov(
+                        Tile::ABSTRACT_REG, 
+                        Assembly::MakeAddress(Assembly::REG32_STACKBASEPTR, "", 1, 4 * (arg_num + 1))
+                    )
+                });
+            }
+            // Not a special register
+            else {
+                generic_tile = Tile({
+                    Assembly::Mov(Tile::ABSTRACT_REG, escapeTemporary(node.getName()))
+                });
+            }
         },
 
         [&](ESeqIR &node) {
@@ -320,10 +343,10 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         },
 
         [&](CallIR &node) {
-            // Push arguments onto stack
+            // Push arguments onto stack, in reverse order (CDECL)
             for (auto &arg : node.getArgs()) {
                 std::string argument_register = newAbstractRegister();
-                generic_tile.add_instructions_after({
+                generic_tile.add_instructions_before({
                     tile(*arg, argument_register),
                     Assembly::Push(argument_register)
                 });
