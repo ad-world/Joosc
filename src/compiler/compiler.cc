@@ -29,6 +29,7 @@
 #include "IR/code-gen-constants.h"
 
 #include <regex>
+#include <variant>
 
 #ifdef GRAPHVIZ
     #include "graph/graph.h"
@@ -181,6 +182,40 @@ int Compiler::run() {
             // Convert to IR
             auto &main_ast = asts.front();
             IR main_ir = IRBuilderVisitor().visit(main_ast);
+
+            // TODO: add this to asm
+            // Add static fields (temporary)
+            CompUnitIR *main_comp = std::get_if<CompUnitIR>(&main_ir);
+            if ( main_comp ) {
+                auto test_func = main_comp->getFunc("test");
+                std::vector<std::unique_ptr<StatementIR>> seq_vec;
+
+                for ( auto &ast : asts ) {
+                    CompUnitIR ast_ir = IRBuilderVisitor().visit(ast);
+                    for ( auto &field : ast_ir.getFieldList() ) {
+                        std::string name = field.first;
+                        std::unique_ptr<ExpressionIR>& expr = field.second;
+                        seq_vec.push_back(MoveIR::makeStmt(
+                            TempIR::makeExpr(field.first),
+                            std::move(expr)
+                        ));
+                    }
+                }
+
+                std::visit(util::overload{
+                    [&](SeqIR seq) {
+                        for ( auto &stmt : seq.getStmts() ) {
+                            seq_vec.push_back(std::move(stmt));
+                        }
+                    },
+                    [&](auto &node) {
+                        THROW_ASTtoIRError("Error: Function body should always be SeqIR.");
+                    }
+                }, test_func->getBody());
+            } else {
+                // error
+                THROW_ASTtoIRError("Error: Main IR is not a CompUnitIR");
+            }
 
             #ifdef GRAPHVIZ
                 // Graph IR

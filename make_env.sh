@@ -18,7 +18,7 @@ function _test_completions {
 # Find input files from test name
 #   Not for use
 function getinput {
-    FILE=$(find ./tests/ -name $1 | tail -1)
+    FILE=$(find ./tests/programs/ -name $1 | tail -1)
     if [[ -n $FILE ]]; then
         if [ -f $FILE ]; then
             INPUT=$FILE

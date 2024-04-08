@@ -361,6 +361,12 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
                 )
             )
         );
+    } else if ( auto linkedClass = link.getIfNonArrayIsClass() ) {
+        std::string packageName = linkedClass->package_contained_in->identifier;
+        std::string className = linkedClass->identifier;
+        std::string varName = expr.identifier->name;
+
+        return TempIR::makeExpr(packageName + className + varName);
     }
     THROW_ASTtoIRError("TODO: Deferred to A6 - non-static field");
 }
@@ -961,6 +967,27 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration 
 void IRBuilderVisitor::operator()(ClassDeclaration &node) {
     // CREATE CompUnit
     comp_unit = {node.environment->identifier};
+
+    // Add fields
+    assert(node.environment->package_contained_in);
+    std::string packageName = node.environment->package_contained_in->identifier;
+    std::string className = node.environment->identifier;
+    for ( auto &field : node.field_declarations ) {
+        if ( field.hasModifier(Modifier::STATIC) ) {
+            // Static field
+            std::string name = packageName + className + (field.environment->identifier);
+            assert(field.variable_declarator);
+            if ( field.variable_declarator->expression ) {
+                // Non-null
+                comp_unit.appendField(name, convert(*field.variable_declarator->expression));
+            } else {
+                // Null
+                comp_unit.appendField(name, ConstIR::makeZero());
+            } // if
+        } // if
+    } // for
+
+    // Add functions
     this->visit_children(node);
 }
 
