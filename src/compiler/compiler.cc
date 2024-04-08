@@ -203,7 +203,7 @@ int Compiler::run() {
                 }
 
                 std::visit(util::overload{
-                    [&](SeqIR seq) {
+                    [&](SeqIR &seq) {
                         for ( auto &stmt : seq.getStmts() ) {
                             seq_vec.push_back(std::move(stmt));
                         }
