@@ -19,7 +19,7 @@ class IRToTilesConverter {
     const std::string entrypoint_method;
 
     static size_t abstract_reg_count;
-    static std::string newAbstractRegister() { return "\%ABSTRACT_REG" + std::to_string(abstract_reg_count++) + "%"; }
+    static std::string newAbstractRegister() { return "%_ABSTRACT_REG" + std::to_string(abstract_reg_count++) + "%"; }
 
     // Whether the current method being tiled is the entrypoint
     bool current_is_entrypoint = false;

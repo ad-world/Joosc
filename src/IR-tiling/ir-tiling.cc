@@ -227,7 +227,7 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
                 generic_tile = Tile({
                     Assembly::Mov(
                         Tile::ABSTRACT_REG, 
-                        Assembly::MakeAddress(Assembly::REG32_STACKBASEPTR, "", 1, 4 * (arg_num + 1))
+                        Assembly::MakeAddress(Assembly::REG32_STACKBASEPTR, "", 1, 4 * (arg_num + 2))
                     )
                 });
             }
@@ -335,6 +335,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
                 }
                 // Function epilogue
                 generic_tile.add_instructions_after({
+                    Assembly::Comment("function epilogue"),
                     Assembly::Mov(Assembly::REG32_STACKPTR, Assembly::REG32_STACKBASEPTR),
                     Assembly::Pop(Assembly::REG32_STACKBASEPTR),
                     Assembly::Ret()

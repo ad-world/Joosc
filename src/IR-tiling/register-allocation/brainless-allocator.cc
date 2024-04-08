@@ -7,7 +7,8 @@
 #include <regex>
 
 std::vector<std::string> BrainlessRegisterAllocator::instruction_registers 
-    = {Assembly::REG32_ACCUM, Assembly::REG32_COUNTER, Assembly::REG32_DATA};
+    // = {Assembly::REG32_COUNTER, Assembly::REG32_DATA, Assembly::REG32_ACCUM};
+    = {Assembly::REG32_COUNTER, Assembly::REG32_SOURCE, Assembly::REG32_DEST};
 
 void BrainlessRegisterAllocator::findOffsets(Tile* function_body) {
     for (auto& instr : getInstructions(function_body)) {
@@ -99,4 +100,7 @@ void BrainlessRegisterAllocator::replaceAbstracts(AssemblyInstruction instructio
         instruction = std::regex_replace(instruction, std::regex(found[i]), instruction_registers[i]);
     }
     target_vector.push_back(instruction);
-}
+
+    // if (found.size() > 0)
+    //     target_vector.push_back(storeAbstractRegister(found[0], instruction_registers[0]));
+}  
