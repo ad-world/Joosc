@@ -48,6 +48,7 @@ std::list<std::string> Tile::getFullInstructions() {
                 }
             },
             [&](ExpressionTile tile) {
+                tile.first->assignAbstract(tile.second);
                 for (auto& sub_instr : tile.first->getFullInstructions()) {
                     output.push_back(sub_instr);
                 }
@@ -78,10 +79,8 @@ void Tile::add_instructions_before(std::vector<Instruction> instructions) {
     this->instructions = instructions;
 }
 
-Tile Tile::assignAbstract(std::string reg) {
-    Tile copy_tile = *this;
-    
-    for (auto& instr : copy_tile.instructions) {
+void Tile::assignAbstract(std::string reg) {
+    for (auto& instr : this->instructions) {
         std::visit(util::overload {
             [&](AssemblyInstruction& asmb) {
                 asmb = std::regex_replace(asmb, std::regex(Tile::ABSTRACT_REG), reg);
@@ -89,12 +88,16 @@ Tile Tile::assignAbstract(std::string reg) {
             [&](StatementTile tile) {},
             [&](ExpressionTile tile) {
                 if (tile.second == reg) {
-                    *tile.first = tile.first->assignAbstract(reg);
+                    tile.first->assignAbstract(reg);
                 }
             }
         }, instr);
     }
+}
 
+Tile Tile::assignAbstractToCopy(std::string reg) {
+    Tile copy_tile = *this;
+    copy_tile.assignAbstract(reg);
     return copy_tile;
 }
 

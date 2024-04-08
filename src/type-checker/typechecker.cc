@@ -592,6 +592,7 @@ void TypeChecker::operator()(MethodInvocation &node) {
 
     // JLS 15.12.2: Compile Time Step 2 - Determine Method Signature
     MethodDeclarationObject* determined_method = determineMethodSignature(type_to_search, method_name, node.arguments, false);
+    node.called_method = determined_method;
 
     // JLS 15.12.3 Compile-Time Step 3 - Is the Chosen Method Appropriate?
     if (type_to_search.not_expression) {

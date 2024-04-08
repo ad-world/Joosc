@@ -2,6 +2,7 @@
 #include "utillities/util.h"
 #include "exceptions/exceptions.h"
 #include "concatenate.h"
+#include "IR/code-gen-constants.h"
 
 IRCanonicalizer::LoweredStatement::LoweredStatement(std::vector<StatementIR> statements)
     : statements{std::move(statements)} {}
@@ -71,7 +72,7 @@ IRCanonicalizer::LoweredExpression IRCanonicalizer::convert(ExpressionIR &ir) {
             auto target = std::make_unique<ExpressionIR>(std::move(node.getTarget()));
 
             result.statements.emplace_back(CallIR(std::move(target), std::move(arg_temporaries)));
-            result.expression = std::make_unique<ExpressionIR>(TempIR(RETURN_TEMPORARY_NAME));
+            result.expression = std::make_unique<ExpressionIR>(TempIR(CGConstants::ABSTRACT_RET));
 
             return result;
         },
@@ -205,7 +206,7 @@ IRCanonicalizer::LoweredStatement IRCanonicalizer::convert(StatementIR &ir) {
         },
 
         [&](CallIR &node) -> LoweredStatement {
-             THROW_CompilerError("Call IR should not be considered a statement before conversion"); 
+            THROW_CompilerError("Call IR should not be considered a statement before conversion"); 
         }
     }, ir);
 }

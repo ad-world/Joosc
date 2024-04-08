@@ -9,6 +9,7 @@
 #include <variant>
 #include "exceptions/exceptions.h"
 #include "IR-interpreter/simulation/simulation.h"
+#include "IR/code-gen-constants.h"
 using namespace std;
 
 /***************************************************************
@@ -23,8 +24,8 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Expression &expr) {
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
-    assert(expr.assigned_to.get());
-    assert(expr.assigned_from.get());
+    assert(expr.assigned_to);
+    assert(expr.assigned_from);
 
     auto dest = convert(*expr.assigned_to);
     auto src = convert(*expr.assigned_from);
@@ -173,7 +174,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(InfixExpression &expr) {
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) {
-    assert(expr.expression.get());
+    assert(expr.expression);
 
     auto expression = convert(*expr.expression);
     switch ( expr.op ) {
@@ -194,7 +195,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(CastExpression &expr) {
-    assert(expr.expression.get());
+    assert(expr.expression);
     return convert(*expr.expression);
 }
 
@@ -238,15 +239,15 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Literal &expr) {
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ClassInstanceCreationExpression &expr) {
-    assert(expr.class_name.get());
+    assert(expr.class_name);
 
     // Call the appropriate constructor of the class
     THROW_ASTtoIRError("TODO: Deferred to A6 - feature of OOP");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
-    assert(expr.expression.get());
-    assert(expr.identifier.get());
+    assert(expr.expression);
+    assert(expr.identifier);
 
     auto link = TypeChecker::getLink(*expr.expression);
     if ( link.is_array && expr.identifier->name == "length" ) {
@@ -276,29 +277,19 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(MethodInvocation &expr) {
-    // assert(expr.parent_expr.get());  // can be null
-    assert(expr.method_name.get());
+    auto called_method = expr.called_method;
 
-    if ( auto qi = std::get_if<QualifiedIdentifier>(expr.parent_expr.get()) ) {
-        // Static methods
-
+    if (called_method->ast_reference->hasModifier(Modifier::STATIC) || true) {
         // Args vectors
         vector<unique_ptr<ExpressionIR>> call_args_vec = {};
         for ( auto &arg : expr.arguments ) {
             call_args_vec.push_back(std::move(convert(arg)));
         }
 
-        // Name string
-        string name_str;
-        for ( auto &identifier : qi->identifiers ) {
-            name_str += identifier.name + ".";
-        }
-        name_str += expr.method_name->name;
-
         // Name IR
         auto name_ir = make_unique<ExpressionIR>(
             in_place_type<NameIR>,
-            name_str
+            CGConstants::uniqueMethodLabel(expr.called_method)
         );
 
         // Call IR
@@ -316,8 +307,8 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(MethodInvocation &expr) 
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
-    assert(expr.array.get());
-    assert(expr.selector.get());
+    assert(expr.array);
+    assert(expr.selector);
 
     // Get array in temp
     string array_name = TempIR::generateName("array");
@@ -412,8 +403,8 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedThis &expr) {
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression &expr) {
-    assert(expr.type.get());
-    assert(expr.expression.get());
+    assert(expr.type);
+    assert(expr.expression);
 
     if ( auto primitive = expr.type->link.getIfIsPrimitive() ) {
         // Primitive type
@@ -583,7 +574,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(InstanceOfExpression &ex
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ParenthesizedExpression &expr) {
-    assert(expr.expression.get());
+    assert(expr.expression);
     return convert(*expr.expression);
 }
 
@@ -598,8 +589,8 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(Statement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenStatement &stmt) {
-    assert(stmt.if_clause.get());
-    assert(stmt.then_clause.get());
+    assert(stmt.if_clause);
+    assert(stmt.then_clause);
 
     auto if_true = LabelIR::generateName("if_true");
     auto if_exit = LabelIR::generateName("if_exit");
@@ -635,9 +626,9 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenStatement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenElseStatement &stmt) {
-    assert(stmt.if_clause.get());
-    assert(stmt.then_clause.get());
-    assert(stmt.else_clause.get());
+    assert(stmt.if_clause);
+    assert(stmt.then_clause);
+    assert(stmt.else_clause);
 
     auto if_true = LabelIR::generateName("if_true");
     auto if_false = LabelIR::generateName("if_false");
@@ -691,8 +682,8 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(IfThenElseStatement &stmt
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(WhileStatement &stmt) {
-    assert(stmt.condition_expression.get());
-    assert(stmt.body_statement.get());
+    assert(stmt.condition_expression);
+    assert(stmt.body_statement);
 
     vector<unique_ptr<StatementIR>> seq_vec;
     auto while_start = LabelIR::generateName("while_start");
@@ -739,10 +730,8 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(WhileStatement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
-    // assert(stmt.init_statement.get());
-    assert(stmt.condition_expression.get());
-    // assert(stmt.update_statement.get());
-    assert(stmt.body_statement.get());
+    assert(stmt.condition_expression);
+    assert(stmt.body_statement);
 
     vector<unique_ptr<StatementIR>> seq_vec;
     auto for_start = LabelIR::generateName("for_start");
@@ -750,7 +739,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
     auto for_exit = LabelIR::generateName("for_exit");
 
     // Init statement
-    if ( stmt.init_statement.get() ) {
+    if (stmt.init_statement) {
         seq_vec.push_back(
             convert(*stmt.init_statement)
         );
@@ -783,7 +772,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
     );
 
     // Update
-    if ( stmt.update_statement.get() ) {
+    if (stmt.update_statement) {
         seq_vec.push_back(
             convert(*stmt.update_statement)
         );
@@ -805,13 +794,13 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ForStatement &stmt) {
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(Block &stmt) {
     vector<unique_ptr<StatementIR>> seq_vec;
 
-    for ( auto &stmt : stmt.statements ) {
+    for (auto &stmt : stmt.statements) {
         seq_vec.push_back(
             convert(stmt)
         );
     }
 
-    if ( seq_vec.empty() ) {
+    if (seq_vec.empty()) {
         return SeqIR::makeEmpty();
     // } else if ( seq_vec.size() == 1 ) {
     //     return std::move(seq_vec.back());
@@ -833,7 +822,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ExpressionStatement &stmt
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ReturnStatement &stmt) {
-    if ( stmt.return_expression.get() ) {
+    if (stmt.return_expression) {
         return ReturnIR::makeStmt(convert(*stmt.return_expression));
     } else {
         return ReturnIR::makeStmt(nullptr);
@@ -841,8 +830,8 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ReturnStatement &stmt) {
 }
 
 std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration &stmt) {
-    assert(stmt.variable_declarator.get());
-    assert(stmt.variable_declarator->expression.get());
+    assert(stmt.variable_declarator);
+    assert(stmt.variable_declarator->expression);
 
     vector<unique_ptr<StatementIR>> seq_vec;
     auto var_name = stmt.variable_declarator->variable_name->name;
@@ -866,7 +855,12 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
 }
 
 void IRBuilderVisitor::operator()(MethodDeclaration &node) {
-    if ( node.body.get() ) {
+    if (node.environment->is_constructor) {
+        // Constructors are an Object-Oriented feature that will be handled in A6
+        return; 
+    }
+
+    if (node.body) {
         // CREATE FuncDecl
 
         // Add load arguments to body statement
@@ -879,7 +873,7 @@ void IRBuilderVisitor::operator()(MethodDeclaration &node) {
                 int arg_num = 0;
                 for ( auto &param : node.parameters ) {
                     auto param_name = param.parameter_name->name;
-                    auto abstract_arg_name = ABSTRACT_ARG_PREFIX + to_string(arg_num++);
+                    auto abstract_arg_name = CGConstants::ABSTRACT_ARG_PREFIX + to_string(arg_num++);
                     auto arg_temp = TempIR::makeExpr(abstract_arg_name);
                     auto param_temp = TempIR::makeExpr(param_name);
                     load_args.push_back(
@@ -904,15 +898,17 @@ void IRBuilderVisitor::operator()(MethodDeclaration &node) {
             }
         }, *body_stmt);
 
+        auto label = CGConstants::uniqueMethodLabel(node.environment);
+
         // Create func_decl
         auto func_decl = make_unique<FuncDeclIR>(
-            node.environment->identifier,
+            label,
             std::move(body_stmt),
             (int) node.parameters.size()
         );
 
         // Add func_decl to comp_unit
-        comp_unit.appendFunc(node.environment->identifier, std::move(func_decl));
+        comp_unit.appendFunc(label, std::move(func_decl));
     }
 }
 

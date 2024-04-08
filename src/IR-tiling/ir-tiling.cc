@@ -1,8 +1,13 @@
 #include "ir-tiling.h"
 #include "utillities/util.h"
 #include "exceptions/exceptions.h"
-
 #include "assembly.h"
+#include "register-allocation/register-allocator.h"
+#include "IR/code-gen-constants.h"
+
+#include <regex>
+
+size_t IRToTilesConverter::abstract_reg_count = 0;
 
 void IRToTilesConverter::decideIsCandidate(ExpressionIR& ir, Tile candidate) {
     Tile& optimal_tile = expression_memo[&ir];
@@ -25,12 +30,28 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
             std::list<std::string> output;
 
             for (auto& func : node.getFunctionList()) {
+                // Function label
+                if (func->getName() == entrypoint_method) {
+                    // Add global start symbol for program execution entrypoint
+                    current_is_entrypoint = true;
+                    output.push_back(Assembly::GlobalSymbol(Assembly::StartLabel));
+                    output.push_back(Assembly::StartLabel);
+                } else {
+                    current_is_entrypoint = false;
+                }
                 output.push_back(Assembly::Label(func->getName()));
 
                 auto body_tile = tile(func->getBody());
 
-                // RegisterAllocator::allocateRegisters(body_tile); (TODO)
+                int32_t stack_size = register_allocator->allocateRegisters(body_tile);
+                // int32_t stack_size = 40;
 
+                // Function prologue
+                output.push_back(Assembly::Push(Assembly::REG32_STACKBASEPTR));
+                output.push_back(Assembly::Mov(Assembly::REG32_STACKBASEPTR, Assembly::REG32_STACKPTR));
+                output.push_back(Assembly::Sub(Assembly::REG32_STACKPTR, 4 * stack_size));
+
+                // Function body
                 for (auto& body_instruction : body_tile->getFullInstructions()) {
                     output.push_back(body_instruction);
                 }
@@ -42,7 +63,7 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
     }, ir);
 }
 
-ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_reg) {
+ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abstract_reg) {
     if (expression_memo.count(&ir)) {
         return expression_memo[&ir].pairWith(abstract_reg);
     }
@@ -54,8 +75,8 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
         [&](BinOpIR &node) {
             
             // Generic tile that is always applicable : store operands in abstract registers, then do something
-            std::string operand1_reg = Assembly::newAbstractRegister();
-            std::string operand2_reg = Assembly::newAbstractRegister();
+            std::string operand1_reg = newAbstractRegister();
+            std::string operand2_reg = newAbstractRegister();
 
             generic_tile = Tile({
                 tile(node.getLeft(), operand1_reg),
@@ -67,11 +88,14 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
                     generic_tile.add_instructions_after({
                         Assembly::Lea(Tile::ABSTRACT_REG, Assembly::MakeAddress(operand1_reg, operand2_reg))
                     });
+                    break;
                 } 
                 case BinOpIR::OpType::SUB: {
                     generic_tile.add_instructions_after({
-                        Assembly::Lea(Tile::ABSTRACT_REG, Assembly::MakeAddress(operand1_reg, operand2_reg, -1))
+                        Assembly::Sub(operand1_reg, operand2_reg),
+                        Assembly::Mov(Tile::ABSTRACT_REG, operand1_reg)
                     });
+                    break;
                 }
                 case BinOpIR::OpType::MUL: {
                     generic_tile.add_instructions_after({
@@ -79,34 +103,39 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
                         Assembly::IMul(operand2_reg),
                         Assembly::Mov(Tile::ABSTRACT_REG, Assembly::REG32_ACCUM)
                     });
+                    break;
                 }
                 case BinOpIR::OpType::DIV: {
                     generic_tile.add_instructions_after({
-                        Assembly::Mov(Assembly::REG32_ACCUM, operand1_reg), // Move low 32 bits of divident into accumulator
+                        Assembly::Mov(Assembly::REG32_ACCUM, operand1_reg), // Move low 32 bits of dividend into accumulator
                         Assembly::Xor(Assembly::REG32_DATA, Assembly::REG32_DATA), // Clear high 32 bits of dividend
                         Assembly::IDiv(operand2_reg),
                         Assembly::Mov(Tile::ABSTRACT_REG, Assembly::REG32_ACCUM) // Quotient stored in ACCUM
                     });
+                    break;
                 }
                 case BinOpIR::OpType::MOD: {
                     generic_tile.add_instructions_after({
-                        Assembly::Mov(Assembly::REG32_ACCUM, operand1_reg), // Move low 32 bits of divident into accumulator
+                        Assembly::Mov(Assembly::REG32_ACCUM, operand1_reg), // Move low 32 bits of dividend into accumulator
                         Assembly::Xor(Assembly::REG32_DATA, Assembly::REG32_DATA), // Clear high 32 bits of dividend
                         Assembly::IDiv(operand2_reg),
                         Assembly::Mov(Tile::ABSTRACT_REG, Assembly::REG32_DATA) // Remainder stored in DATA
                     });
+                    break;
                 }
                 case BinOpIR::OpType::AND: {
                     generic_tile.add_instructions_after({
                         Assembly::And(operand1_reg, operand2_reg),
                         Assembly::Mov(Tile::ABSTRACT_REG, operand1_reg)
                     });
+                    break;
                 }
                 case BinOpIR::OpType::OR: {
                     generic_tile.add_instructions_after({
                         Assembly::Or(operand1_reg, operand2_reg),
                         Assembly::Mov(Tile::ABSTRACT_REG, operand1_reg)
                     });
+                    break;
                 }
                 case BinOpIR::OpType::EQ: {
                     generic_tile.add_instructions_after({
@@ -114,6 +143,7 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
                         Assembly::SetZ(Assembly::REG8L_ACCUM),
                         Assembly::MovZX(Tile::ABSTRACT_REG, Assembly::REG8L_ACCUM)
                     });
+                    break;
                 }
                 case BinOpIR::OpType::NEQ: {
                     generic_tile.add_instructions_after({
@@ -121,6 +151,7 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
                         Assembly::SetNZ(Assembly::REG8L_ACCUM),
                         Assembly::MovZX(Tile::ABSTRACT_REG, Assembly::REG8L_ACCUM)
                     });
+                    break;
                 }
                 case BinOpIR::OpType::LT: {
                     generic_tile.add_instructions_after({
@@ -128,6 +159,7 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
                         Assembly::SetL(Assembly::REG8L_ACCUM),
                         Assembly::MovZX(Tile::ABSTRACT_REG, Assembly::REG8L_ACCUM)
                     });
+                    break;
                 }
                 case BinOpIR::OpType::GT: {
                     generic_tile.add_instructions_after({
@@ -135,6 +167,7 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
                         Assembly::SetG(Assembly::REG8L_ACCUM),
                         Assembly::MovZX(Tile::ABSTRACT_REG, Assembly::REG8L_ACCUM)
                     });
+                    break;
                 }
                 case BinOpIR::OpType::LEQ: {
                     generic_tile.add_instructions_after({
@@ -142,6 +175,7 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
                         Assembly::SetLE(Assembly::REG8L_ACCUM),
                         Assembly::MovZX(Tile::ABSTRACT_REG, Assembly::REG8L_ACCUM)
                     });
+                    break;
                 }
                 case BinOpIR::OpType::GEQ: {
                     generic_tile.add_instructions_after({
@@ -149,9 +183,10 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
                         Assembly::SetGE(Assembly::REG8L_ACCUM),
                         Assembly::MovZX(Tile::ABSTRACT_REG, Assembly::REG8L_ACCUM)
                     });
+                    break;
                 }
                 default: {
-                    THROW_CompilerError("Operation is not supported in Joosc"); 
+                    THROW_CompilerError("Operation is not supported in Joosc");
                 }
             }
         },
@@ -164,7 +199,7 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
         },
 
         [&](MemIR &node) {
-            std::string address_reg = Assembly::newAbstractRegister();
+            std::string address_reg = newAbstractRegister();
 
             generic_tile = Tile({
                 tile(node.getAddress(), address_reg),
@@ -179,9 +214,30 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
         },
 
         [&](TempIR &node) {
-            generic_tile = Tile({
-                Assembly::Mov(Tile::ABSTRACT_REG, node.getName())
-            });
+            // Special registers : ABSTRACT_RET is REG32_ACCUM
+            if (node.getName() == CGConstants::ABSTRACT_RET) {
+                generic_tile = Tile({
+                    Assembly::Mov(Tile::ABSTRACT_REG, Assembly::REG32_ACCUM)
+                });
+            }
+            // Special registers : ABSTRACT_ARG_PREFIX# is stack offset from caller
+            else if (node.getName().rfind(CGConstants::ABSTRACT_ARG_PREFIX, 0) == 0) {
+                int arg_num 
+                    = std::stoi(std::regex_replace(node.getName(), std::regex(CGConstants::ABSTRACT_ARG_PREFIX), ""));
+
+                generic_tile = Tile({
+                    Assembly::Mov(
+                        Tile::ABSTRACT_REG, 
+                        Assembly::MakeAddress(Assembly::REG32_STACKBASEPTR, "", 1, 4 * (arg_num + 2))
+                    )
+                });
+            }
+            // Not a special register
+            else {
+                generic_tile = Tile({
+                    Assembly::Mov(Tile::ABSTRACT_REG, escapeTemporary(node.getName()))
+                });
+            }
         },
 
         [&](ESeqIR &node) {
@@ -190,12 +246,12 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, std::string &abstract_
 
         [&](CallIR &node) {
             THROW_CompilerError("CallIR should not be considered an expression after canonicalization"); 
-        },
-
-        [&](auto &node) { THROW_CompilerError("Unimplemented"); }
+        }
     }, ir);
 
-    if (generic_tile.getCost() == Tile().getCost()) THROW_CompilerError("Generic tile was not assigned");
+    if (generic_tile.getCost() == Tile().getCost()) {
+        THROW_CompilerError("Generic tile was not assigned to " + std::visit([&](auto &x){ return x.label(); }, ir));
+    }
     decideIsCandidate(ir, generic_tile);
 
     return expression_memo[&ir].pairWith(abstract_reg);
@@ -211,7 +267,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
     
     std::visit(util::overload {
         [&](CJumpIR &node) {
-            std::string cond_reg = Assembly::newAbstractRegister();
+            std::string cond_reg = newAbstractRegister();
 
             generic_tile = Tile({
                 tile(node.getCondition(), cond_reg),
@@ -221,7 +277,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         },
 
         [&](JumpIR &node) {
-            std::string target_reg = Assembly::newAbstractRegister();
+            std::string target_reg = newAbstractRegister();
 
             generic_tile = Tile({
                 tile(node.getTarget(), target_reg),
@@ -234,37 +290,65 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         },
 
         [&](MoveIR &node) {
-            std::string target_reg = Assembly::newAbstractRegister();
-            std::string source_reg = Assembly::newAbstractRegister();
+            // Behaviour depends on target type
+            std::visit(util::overload {
 
-            generic_tile = Tile({
-                tile(node.getTarget(), target_reg),
-                tile(node.getSource(), source_reg),
-                Assembly::Mov(target_reg, source_reg)
-            });
+                [&](TempIR& target) {
+                    generic_tile = Tile({
+                        tile(node.getSource(), escapeTemporary(target.getName()))
+                    });
+                },
+
+                [&](MemIR& target) {
+                    std::string address_reg = newAbstractRegister();
+                    std::string source_reg = newAbstractRegister();
+
+                    generic_tile = Tile({
+                        tile(node.getSource(), source_reg),
+                        tile(target.getAddress(), address_reg),
+                        Assembly::Mov(Assembly::MakeAddress(address_reg), source_reg)
+                    });
+                },
+
+                [&](auto&) { THROW_CompilerError("Invalid MoveIR target"); }
+
+            }, node.getTarget());
         },
 
         [&](ReturnIR &node) {
-            if (node.getRet()) {
-                // Return a value by placing it in REG32_ACCUM
-                std::string value_reg = Assembly::newAbstractRegister();
-                generic_tile = Tile({
-                    tile(*node.getRet(), value_reg),
-                    Assembly::Mov(Assembly::REG32_ACCUM, value_reg)
+            if (current_is_entrypoint) {
+                // Return a value by executing exit() system call with value in REG32_BASE
+                if (!node.getRet()) THROW_CompilerError("invalid void return in entrypoint function");
+                generic_tile.add_instructions_after({
+                    Assembly::Comment("calculating return value and storing it in REG32_BASE"),
+                    tile(*node.getRet(), Assembly::REG32_BASE),
+                    Assembly::Comment("exit() system call"),
+                    Assembly::Mov(Assembly::REG32_ACCUM, 1),
+                    Assembly::SysCall()
+                });
+            } else {
+                if (node.getRet()) {
+                    // Return a value by placing it in REG32_ACCUM
+                    generic_tile.add_instructions_after({
+                        Assembly::Comment("return a value by placing it in REG32_ACCUM"),
+                        tile(*node.getRet(), Assembly::REG32_ACCUM)
+                    });
+                }
+                // Function epilogue
+                generic_tile.add_instructions_after({
+                    Assembly::Comment("function epilogue"),
+                    Assembly::Mov(Assembly::REG32_STACKPTR, Assembly::REG32_STACKBASEPTR),
+                    Assembly::Pop(Assembly::REG32_STACKBASEPTR),
+                    Assembly::Ret()
                 });
             }
-            // Function epilogue
-            generic_tile.add_instructions_after({
-                Assembly::Mov(Assembly::REG32_SP, Assembly::REG32_BP),
-                Assembly::Pop(Assembly::REG32_BP),
-                Assembly::Ret()
-            });
         },
 
         [&](CallIR &node) {
-            // Push arguments onto stack
+            // Push arguments onto stack, in reverse order (CDECL)
+            generic_tile.add_instruction(Assembly::Comment("Call: pushing arguments onto stack"));
             for (auto &arg : node.getArgs()) {
-                std::string argument_register = Assembly::newAbstractRegister();
+                std::string argument_register = newAbstractRegister();
                 generic_tile.add_instructions_after({
                     tile(*arg, argument_register),
                     Assembly::Push(argument_register)
@@ -279,10 +363,12 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             }
 
             // Pop arguments from stack
-            generic_tile.add_instruction(Assembly::Add(Assembly::REG32_SP, 4 * node.getNumArgs()));
+            generic_tile.add_instruction(Assembly::Comment("Call: popping arguments onto stack"));
+            generic_tile.add_instruction(Assembly::Add(Assembly::REG32_STACKPTR, 4 * node.getNumArgs()));
         },
 
         [&](SeqIR &node) {
+            generic_tile = Tile(std::vector<Instruction>());
             for (auto& stmt : node.getStmts()) {
                 generic_tile.add_instruction(tile(*stmt));
             }
@@ -290,12 +376,12 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
 
         [&](ExpIR &node) {
             THROW_CompilerError("ExpIR should not exist after canonicalization"); 
-        },
-
-        [&](auto &node) { THROW_CompilerError("Unimplemented"); }
+        }
     }, ir);
 
-    if (generic_tile.getCost() == Tile().getCost()) THROW_CompilerError("Generic tile was not assigned");
+    if (generic_tile.getCost() == Tile().getCost()) {
+        THROW_CompilerError("Generic tile was not assigned to " + std::visit([&](auto &x){ return x.label(); }, ir));
+    }
     decideIsCandidate(ir, generic_tile);
 
     return &statement_memo[&ir];

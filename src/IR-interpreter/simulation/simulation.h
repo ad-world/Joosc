@@ -10,8 +10,6 @@
 #include "IR-interpreter/util/errors.h"
 #include "IR-interpreter/maps-builder/maps-builder.h"
 
-extern std::string ABSTRACT_ARG_PREFIX;
-extern std::string ABSTRACT_RET_PREFIX;
 extern int WORD_SIZE;
 
 

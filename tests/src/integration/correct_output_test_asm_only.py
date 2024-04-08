@@ -31,24 +31,31 @@ def single_correct_output_test(program_path, compiler_args: List[str]) -> bool:
         
         program_result = subprocess.run(["./main"], cwd=root_dir)
 
-        with open(resolve_path(root_dir, "ir_result.tmp"), "r") as file:
-            ir_result = file.read()
-            ir_result = ir_result if ir_result else "NOTHING"
-            print(f"{colors.OKCYAN}program {program} returned {ir_result} after interpreting IR{colors.ENDC}")
+        # with open(resolve_path(root_dir, "ir_result.tmp"), "r") as file:
+        #     ir_result = file.read()
+        #     ir_result = ir_result if ir_result else "NOTHING"
+        #     print(f"{colors.OKCYAN}program {program} returned {ir_result} after interpreting IR{colors.ENDC}")
         
-        with open(resolve_path(root_dir, "ir_canon_result.tmp"), "r") as file:
-            ir_canon_result = file.read()
-            ir_canon_result = ir_canon_result if ir_canon_result else "NOTHING"
-            print(f"{colors.OKCYAN}program {program} returned {ir_canon_result} after interpreting Canonical IR{colors.ENDC}")
+        # with open(resolve_path(root_dir, "ir_canon_result.tmp"), "r") as file:
+        #     ir_canon_result = file.read()
+        #     ir_canon_result = ir_canon_result if ir_canon_result else "NOTHING"
+        #     print(f"{colors.OKCYAN}program {program} returned {ir_canon_result} after interpreting Canonical IR{colors.ENDC}")
 
         print(f"{colors.OKCYAN}program {program} returned {program_result.returncode} after compiling and executing{colors.ENDC}")
 
-        if not (str(program_result.returncode) == ir_canon_result and ir_canon_result == ir_result):
-            print(f"{colors.FAIL}FAIL: IR, Canonical IR, and binary results are not the same!{colors.ENDC}\n")
+        if not (program_result.returncode == 123):
+            print("Result is not 123!\n")
             return False
         else:
             print("")
             return True
+
+        # if not (str(program_result.returncode) == ir_canon_result and ir_canon_result == ir_result):
+        #     print(f"{colors.FAIL}FAIL: IR, Canonical IR, and binary results are not the same!{colors.ENDC}\n")
+        #     return False
+        # else:
+        #     print("")
+        #     return True
     else:
         # Test failed due to compile failing
         print(f"{colors.FAIL}FAIL: joosc failed to compile {program}, so it couldn't be run. Return code: {result.returncode}{colors.ENDC}\n")
@@ -87,7 +94,8 @@ def correct_output_test():
                         program_path = resolve_path(directory, program)
 
                         if os.path.exists(program_path):
-                            passed = single_correct_output_test(program_path, ["-i"])
+                            args = [] # ["-i"]
+                            passed = single_correct_output_test(program_path, args)
                             if passed:
                                 pass_count += 1
                             else:

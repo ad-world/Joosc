@@ -6,10 +6,23 @@
 #include <unordered_map>
 #include <list>
 
+class RegisterAllocator;
+
 // Convert Canonical IR to x86 assembly
 //
 // Uses the Optimal Tiling Algorithm, with memoization.
 class IRToTilesConverter {
+
+    // The algorithm for allocating registers
+    RegisterAllocator* register_allocator;
+
+    const std::string entrypoint_method;
+
+    static size_t abstract_reg_count;
+    static std::string newAbstractRegister() { return "%_ABSTRACT_REG" + std::to_string(abstract_reg_count++) + "%"; }
+
+    // Whether the current method being tiled is the entrypoint
+    bool current_is_entrypoint = false;
 
     // Holds the computed best tile for the subtree rooted at every IR in the IR AST.
     // The best tile for each subtree is computed at most once.
@@ -22,13 +35,19 @@ class IRToTilesConverter {
 
     // Tile the expression, producing the lowest cost tile
     // Generates instructions that store the result in abstract_reg
-    ExpressionTile tile(ExpressionIR& node, std::string& abstract_reg);
+    ExpressionTile tile(ExpressionIR& node, const std::string& abstract_reg);
 
     // Tile the statement, producing the lowest cost tile
     // Generates instructions that implement the statement
     StatementTile tile(StatementIR& node);
 
+    // Escape the temporary, so no temporary is a substring of another
+    inline std::string escapeTemporary(const std::string& s) { return "%" + s + "%"; }
+
   public:
+    IRToTilesConverter(RegisterAllocator* register_allocator, std::string entrypoint_method) 
+      : register_allocator{register_allocator}, entrypoint_method{entrypoint_method} {}
+    
     // Tile the whole compilation unit, producing a list of assembly instructions
     // Each element in the list returned is an assembly instruction
     std::list<std::string> tile(IR& node);

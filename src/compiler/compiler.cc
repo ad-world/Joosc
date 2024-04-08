@@ -24,12 +24,38 @@
 #include "IR-canonicalizer/ir-canonicalizer.h"
 #include "IR-canonicalizer/check-canonical.h"
 #include "IR-interpreter/IR-java-converter/IR-java-converter.h"
+#include "IR-tiling/ir-tiling.h"
+#include "IR-tiling/register-allocation/brainless-allocator.h"
+#include "IR/code-gen-constants.h"
 
+#include <regex>
 
 #ifdef GRAPHVIZ
     #include "graph/graph.h"
     #include "graph/ir_graph.h"
 #endif
+
+std::string Compiler::getEntryPointMethod() {
+    if (infiles.size() < 1) {
+        THROW_CompilerError("No first file for entrypoint");
+    }
+
+    std::string first_file = infiles.front();
+    std::string base_file = first_file.substr(first_file.find_last_of("/") + 1);
+    std::string class_name = std::regex_replace(base_file, std::regex(".java"), "");
+
+    auto cls = Util::root_package->findClassDeclaration(class_name);
+    if (!cls) {
+        THROW_CompilerError("First file '" + first_file + "' does not have class '" + class_name + "'");
+    }
+
+    auto entry_method = cls->all_methods["test"];
+    if (!entry_method) {
+        THROW_CompilerError("Class '" + class_name + "' has no method 'test'");
+    }
+
+    return CGConstants::uniqueMethodLabel(entry_method);
+}
 
 int Compiler::finishWith(ReturnCode code) {
     AddLocation::deleteFileNames();
@@ -150,6 +176,8 @@ int Compiler::run() {
 
         // Code generation
         if (emit_code) {
+            auto entrypoint_method = getEntryPointMethod();
+
             // Convert to IR
             auto &main_ast = asts.front();
             IR main_ir = IRBuilderVisitor().visit(main_ast);
@@ -169,8 +197,11 @@ int Compiler::run() {
             } else if (run_ir) {
                 // Run interpreter on IR and get value
                 try {
+                    auto sim = Simulator(&main_ir);
+                    sim.setDebugLevel(0);
+                    int result = sim.call(entrypoint_method, {});
+                    
                     std::ofstream result_file {"ir_result.tmp"};
-                    int result = Simulator(&main_ir).call("test", {});
                     result_file << result;
                 } catch (const SimulatorError &e ) {
                     cerr << e.what() << "\n";
@@ -193,38 +224,27 @@ int Compiler::run() {
                 // Run interpreter on Canonical IR and get value
                 try {
                     std::ofstream result_file {"ir_canon_result.tmp"};
-                    int result = Simulator(&main_ir).call("test", {});
+
+                    auto sim = Simulator(&main_ir);
+                    sim.setDebugLevel(0);
+                    int result = sim.call(entrypoint_method, {});
+
                     result_file << result;
                 } catch (const SimulatorError &e ) {
                     cerr << e.what() << "\n";
                 }
             }
 
-            // TODO: remove this
-            std::cout << std::endl;
-
-           
-
-            if (run_ir) {
-                // Run interpreter on Canonical IR and get value
-                try {
-                    std::ofstream result_file {"ir_canon_result.tmp"};
-                    int result = Simulator(&main_ir).call("test", {});
-                    result_file << result;
-                } catch (const SimulatorError &e ) {
-                    cerr << e.what() << "\n";
-                }
+            // Emit assembly
+            BrainlessRegisterAllocator allocator;
+            auto instructions = IRToTilesConverter(&allocator, entrypoint_method).tile(main_ir);
+            std::ofstream output_file {"output/asm.s"};
+            for (auto& instr : instructions) {
+                output_file << instr << "\n";
             }
-
-
-            // Emit assembly (TODO)
-
         }
 
     } catch (const CompilerError &e ) {
-        cerr << e.what() << "\n";
-        return finishWith(ReturnCode::COMPILER_DEVELOPMENT_ERROR);
-    } catch (const SimulatorError &e ) {
         cerr << e.what() << "\n";
         return finishWith(ReturnCode::COMPILER_DEVELOPMENT_ERROR);
     } catch (const std::exception &e) {

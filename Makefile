@@ -44,6 +44,12 @@ compiled-output-test: build
 compiled-output-test-single: build
 	python3 tests/src/integration/correct_output_test.py -s ${path}
 
+compiled-output-test-asm-only: build
+	python3 tests/src/integration/correct_output_test_asm_only.py
+
+compiled-output-test-single-asm-only: build
+	python3 tests/src/integration/correct_output_test_asm_only.py -s ${path}
+
 interpret-java-test: build
 	python3 tests/src/integration/interpret_java.py ${path}
 

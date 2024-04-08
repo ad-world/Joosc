@@ -35,7 +35,6 @@ class IRCanonicalizer {
     };
 
     static inline std::string ARG_TEMPORARY_PREFIX = "CANON_ARG";
-    static inline std::string RETURN_TEMPORARY_NAME = "RET";
 
   public:
     void operator()(IR&);

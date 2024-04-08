@@ -21,6 +21,8 @@ private:
     std::list<std::string> strfiles; // Strings inputted as files
     std::list<std::string> infiles; // File input
 
+    // Return the label of the entry point method
+    std::string getEntryPointMethod();
 public:
     Compiler() {};
     void setTraceParsing(bool value) { trace_parsing = value; }
