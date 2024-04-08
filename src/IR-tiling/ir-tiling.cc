@@ -44,6 +44,7 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
                 auto body_tile = tile(func->getBody());
 
                 int32_t stack_size = register_allocator->allocateRegisters(body_tile);
+                // int32_t stack_size = 40;
 
                 // Function prologue
                 output.push_back(Assembly::Push(Assembly::REG32_STACKBASEPTR));
@@ -345,9 +346,10 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
 
         [&](CallIR &node) {
             // Push arguments onto stack, in reverse order (CDECL)
+            generic_tile.add_instruction(Assembly::Comment("Call: pushing arguments onto stack"));
             for (auto &arg : node.getArgs()) {
                 std::string argument_register = newAbstractRegister();
-                generic_tile.add_instructions_before({
+                generic_tile.add_instructions_after({
                     tile(*arg, argument_register),
                     Assembly::Push(argument_register)
                 });
@@ -361,6 +363,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             }
 
             // Pop arguments from stack
+            generic_tile.add_instruction(Assembly::Comment("Call: popping arguments onto stack"));
             generic_tile.add_instruction(Assembly::Add(Assembly::REG32_STACKPTR, 4 * node.getNumArgs()));
         },
 
