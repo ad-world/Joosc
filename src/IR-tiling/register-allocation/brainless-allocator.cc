@@ -102,9 +102,6 @@ void BrainlessRegisterAllocator::replaceAbstracts(AssemblyInstruction instructio
     
     target_vector.push_back(instruction);
 
-    // if (found.size() > 0)
-    //     target_vector.push_back(storeAbstractRegister(found[0], instruction_registers[0]));
-
     for (int i = 0; i < found.size(); ++i) {
         target_vector.push_back(storeAbstractRegister(found[i], instruction_registers[i]));
     }
