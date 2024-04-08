@@ -49,7 +49,7 @@ def interpret_java(program_path):
             passed = False
 
     else:
-        print(f"{colors.FAIL} program could not be outputted as Java. FAIL{colors.ENDC}\n")
+        print(f"{colors.FAIL}Program could not be outputted as Java, joosc failed with return code {result.returncode} FAIL{colors.ENDC}\n")
         passed = False
 
     return passed
