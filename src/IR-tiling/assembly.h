@@ -72,6 +72,10 @@ class Assembly {
 
     const static inline std::string StartLabel = Label("_start");
 
+    static std::string ExternSymbol(std::string arg) {
+        return "extern " + arg;
+    }
+
     static std::string GlobalSymbol(std::string arg) {
         return "global " + arg;
     }

@@ -34,6 +34,7 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
                 if (func->getName() == entrypoint_method) {
                     // Add global start symbol for program execution entrypoint
                     current_is_entrypoint = true;
+                    output.push_back(Assembly::ExternSymbol("__exception"));
                     output.push_back(Assembly::GlobalSymbol(Assembly::StartLabel));
                     output.push_back(Assembly::StartLabel);
                 } else {
