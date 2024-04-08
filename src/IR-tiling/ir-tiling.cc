@@ -34,6 +34,7 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
                 if (func->getName() == entrypoint_method) {
                     // Add global start symbol for program execution entrypoint
                     current_is_entrypoint = true;
+                    output.push_back(Assembly::ExternSymbol("__exception"));
                     output.push_back(Assembly::GlobalSymbol(Assembly::StartLabel));
                     output.push_back(Assembly::StartLabel);
                 } else {
@@ -107,6 +108,8 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
                 }
                 case BinOpIR::OpType::DIV: {
                     generic_tile.add_instructions_after({
+                        Assembly::Cmp(operand2_reg, "0"), // Check for division by zero
+                        Assembly::Je("__exception"), // Jump to exception handler if division by zero
                         Assembly::Mov(Assembly::REG32_ACCUM, operand1_reg), // Move low 32 bits of dividend into accumulator
                         Assembly::Xor(Assembly::REG32_DATA, Assembly::REG32_DATA), // Clear high 32 bits of dividend
                         Assembly::IDiv(operand2_reg),
@@ -116,6 +119,8 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
                 }
                 case BinOpIR::OpType::MOD: {
                     generic_tile.add_instructions_after({
+                        Assembly::Cmp(operand2_reg, "0"), // Check for division by zero
+                        Assembly::Je("__exception"), // Jump to exception handler if division by zero
                         Assembly::Mov(Assembly::REG32_ACCUM, operand1_reg), // Move low 32 bits of dividend into accumulator
                         Assembly::Xor(Assembly::REG32_DATA, Assembly::REG32_DATA), // Clear high 32 bits of dividend
                         Assembly::IDiv(operand2_reg),
