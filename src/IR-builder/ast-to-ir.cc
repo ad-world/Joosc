@@ -214,6 +214,78 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(CastExpression &expr) {
     assert(expr.expression);
     return convert(*expr.expression);
+
+    const int8_t byte_cast = 0xFF;
+    const int16_t short_cast = 0xFFFF;
+    const int32_t int_cast = 0xFFFFFFFF;
+    const uint16_t char_cast = 0xFFFF;
+    auto converted_expr = convert(*expr.expression);
+
+    return std::visit(util::overload{
+        [&](Literal &lit) {
+            if ( auto primitive = expr.type->link.getIfIsPrimitive() ) {
+                unique_ptr<ExpressionIR> expr;
+
+                std::visit(util::overload{
+                    [&](int64_t int_lit) {
+                        switch (*primitive) {
+                            case PrimitiveType::BYTE:
+                                expr = ConstIR::makeExpr(byte_cast & (int8_t) int_lit);
+                                break;
+                            case PrimitiveType::SHORT:
+                                expr = ConstIR::makeExpr(short_cast & (int16_t) int_lit);
+                                break;
+                            case PrimitiveType::INT:
+                                expr = ConstIR::makeExpr(int_lit);
+                                break;
+                            case PrimitiveType::CHAR:
+                                expr = ConstIR::makeExpr(char_cast & (uint16_t) int_lit);
+                                break;
+                            default:
+                                THROW_ASTtoIRError("Error casting to type int");
+                        }
+                    },
+                    [&](char char_lit) {
+                        switch (*primitive) {
+                            case PrimitiveType::BYTE: // fallthru
+                                expr = ConstIR::makeExpr(byte_cast & (int8_t) char_lit);    // TODO: test
+                            case PrimitiveType::SHORT: // fallthru
+                                expr = ConstIR::makeExpr(short_cast & (int16_t) char_lit);  // TODO: test
+                            case PrimitiveType::INT: // fallthru
+                            case PrimitiveType::CHAR:
+                                // Widening
+                                expr = ConstIR::makeExpr(char_lit);
+                                break;
+                            default:
+                                THROW_ASTtoIRError("Error casting to type char");
+                        }
+                    },
+                    [&](string str_lit) {
+                        THROW_ASTtoIRError("Error casting a string to a primitive type");
+                    },
+                    [&](bool bool_lit) {
+                        if ( *primitive == PrimitiveType::BOOLEAN ) {
+                            expr = bool_lit ? ConstIR::makeOne() : ConstIR::makeZero();
+                            return;
+                        }
+                        THROW_ASTtoIRError("Error casting to type boolean");
+                    },
+                    [&](nullptr_t null_lit) {
+                        if ( *primitive == PrimitiveType::NULL_T ) {
+                            expr = ConstIR::makeZero();
+                            return;
+                        }
+                        THROW_ASTtoIRError("Error casting to type NULL");
+                    },
+                }, lit);
+
+                return expr;
+            } else {
+                THROW_ASTtoIRError("TODO: Deferred to A6 - non-primitive casts");
+            } // if
+        },
+        [&](auto &node) { return convert(*expr.expression); }
+    }, *expr.expression);
 }
 
 // int64_t, bool, char, std::string, std::nullptr_t
