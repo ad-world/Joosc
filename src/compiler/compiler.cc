@@ -240,7 +240,7 @@ int Compiler::run() {
 
             if (run_java_ir) {
                 // Convert to Java IR
-                IRJavaConverter converter = IRJavaConverter("MainNonCanonical");
+                IRJavaConverter converter = IRJavaConverter("MainNonCanonical", entrypoint_method);
                 converter.visit(main_ir);
                 std::string result = converter.getResult();
                 std::ofstream java_file {"java-ir/ir/interpret/MainNonCanonical.java"};
@@ -266,7 +266,7 @@ int Compiler::run() {
             }
 
             if (run_java_ir) {
-                IRJavaConverter converter = IRJavaConverter("MainCanonical");
+                IRJavaConverter converter = IRJavaConverter("MainCanonical", entrypoint_method);
                 converter.visit(main_ir);
                 std::string result = converter.getResult();
                 std::ofstream java_file {"java-ir/ir/interpret/MainCanonical.java"};

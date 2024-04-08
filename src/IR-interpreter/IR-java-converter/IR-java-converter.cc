@@ -1,6 +1,6 @@
 #include "IR-java-converter.h"
 
-IRJavaConverter::IRJavaConverter(std::string class_name): class_name(class_name) {
+IRJavaConverter::IRJavaConverter(std::string class_name, std::string entry_point): class_name(class_name), entry_point(entry_point) {
     num_tabs = 0;
     result = "";
 };
@@ -23,8 +23,10 @@ void IRJavaConverter::operator()(CompUnitIR &node) {
         appendToResult("compUnit.appendFunc(" + func + ");");
     }
 
+    std::string entryPoint = "ltestl_l0l";
+
     appendToResult("Simulator sim = new Simulator(compUnit);");
-    appendToResult("long result = sim.call(\"test\");");
+    appendToResult("long result = sim.call(\"" + entry_point + "\");");
     // appendToResult("System.out.println(\"Java Interpretation of IR results to: \" + result);");
     appendToResult("CheckCanonicalIRVisitor cv = new CheckCanonicalIRVisitor();");
     appendToResult("System.out.print(\"Correct canonical implementation: \");");

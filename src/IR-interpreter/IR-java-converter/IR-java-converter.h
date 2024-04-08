@@ -16,6 +16,11 @@ class IRJavaConverter : public IRSkipVisitor {
     std::string class_name;
 
     // Number of tabs to produce on current line when outputted to result
+
+    // The converted unique entrypoint function
+    std::string entry_point;
+
+    // Number of tabs to produce on current line when outputted to result
     int num_tabs;
 
     // Get a string of num_tabs concatenated
@@ -30,7 +35,7 @@ class IRJavaConverter : public IRSkipVisitor {
 public:
     using IRSkipVisitor::visit;
 
-    IRJavaConverter(std::string class_name);
+    IRJavaConverter(std::string class_name, std::string entry_point);
 
     std::string getResult() { return result; }
 
