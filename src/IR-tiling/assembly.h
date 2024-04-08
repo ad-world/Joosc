@@ -80,6 +80,10 @@ class Assembly {
         return "jmp " + target;
     }
 
+    static std::string Je(std::string target) {
+        return "je " + target;
+    }
+
     static std::string JumpIfNZ(std::string target) {
         return "jnz " + target;
     }

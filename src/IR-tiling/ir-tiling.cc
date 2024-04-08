@@ -109,6 +109,8 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
                     generic_tile.add_instructions_after({
                         Assembly::Mov(Assembly::REG32_ACCUM, operand1_reg), // Move low 32 bits of dividend into accumulator
                         Assembly::Xor(Assembly::REG32_DATA, Assembly::REG32_DATA), // Clear high 32 bits of dividend
+                        Assembly::Cmp(operand2_reg, "0"), // Check for division by zero
+                        Assembly::Je("__exception"), // Jump to exception handler if division by zero
                         Assembly::IDiv(operand2_reg),
                         Assembly::Mov(Tile::ABSTRACT_REG, Assembly::REG32_ACCUM) // Quotient stored in ACCUM
                     });
@@ -118,6 +120,8 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
                     generic_tile.add_instructions_after({
                         Assembly::Mov(Assembly::REG32_ACCUM, operand1_reg), // Move low 32 bits of dividend into accumulator
                         Assembly::Xor(Assembly::REG32_DATA, Assembly::REG32_DATA), // Clear high 32 bits of dividend
+                        Assembly::Cmp(operand2_reg, "0"), // Check for division by zero
+                        Assembly::Je("__exception"), // Jump to exception handler if division by zero
                         Assembly::IDiv(operand2_reg),
                         Assembly::Mov(Tile::ABSTRACT_REG, Assembly::REG32_DATA) // Remainder stored in DATA
                     });
