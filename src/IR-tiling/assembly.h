@@ -189,6 +189,10 @@ class Assembly {
         return "call " + arg;
     }
 
+    static std::string Cdq() {
+        return "cdq";
+    }
+
     // Other helpers
 
     // Create [base + (index * scale) + displacement] effective address
@@ -198,4 +202,10 @@ class Assembly {
         int scale = 1,
         int displacement = 0
     );
+
+    static std::string LineBreak(int how_many=1) {
+        std::string result = "";
+        for (int i = 1; i < how_many; ++i) result += "\n";
+        return result;
+    }
 };
