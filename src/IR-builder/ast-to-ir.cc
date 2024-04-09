@@ -28,8 +28,8 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
     assert(expr.assigned_from);
 
     auto dest = convert(*expr.assigned_to);
-    auto dest_copy = convert(*expr.assigned_to);
     auto src = convert(*expr.assigned_from);
+    vector<unique_ptr<StatementIR>> seq_vec;
 
     auto convert_eseq_ir = [&](unique_ptr<ExpressionIR> &dest) {
         // Make sure dest is either Temp or MemIR
@@ -38,6 +38,15 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
             [&](MemIR &mem) { /* do nothing */ },
             [&](ESeqIR &eseq) {
                 // Replace dest with expression from eseq
+                std::visit(util::overload{
+                    [&](SeqIR &seq) {
+                        seq_vec.clear();
+                        for ( auto &stmt : seq.getStmts() ) {
+                            seq_vec.push_back(std::move(stmt));
+                        }
+                    },
+                    [&](auto &node) { THROW_CompilerError("ESEQ is not composed of a sequence IR"); }
+                }, eseq.getStmt());
                 dest = make_unique<ExpressionIR>(std::move(eseq.getExpr()));
             },
             [&](auto &node) { THROW_CompilerError("Assignment destination is not TempIR or MemIR"); }
@@ -45,10 +54,19 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
     };
 
     convert_eseq_ir(dest);
-    convert_eseq_ir(dest_copy);
 
-    auto statement_ir = MoveIR::makeStmt(std::move(dest), std::move(src));
-    auto expression_ir = std::move(dest_copy); // copy of dest
+    auto ret_temp = TempIR::generateName("assign_ret");
+    seq_vec.push_back(MoveIR::makeStmt(
+        TempIR::makeExpr(ret_temp),
+        std::move(src)
+    ));
+    seq_vec.push_back(MoveIR::makeStmt(
+        std::move(dest),
+        TempIR::makeExpr(ret_temp)
+    ));
+
+    auto statement_ir = SeqIR::makeStmt(std::move(seq_vec));
+    auto expression_ir = TempIR::makeExpr(ret_temp);
     auto eseq = ESeqIR::makeExpr(std::move(statement_ir), std::move(expression_ir));
 
     return eseq;
