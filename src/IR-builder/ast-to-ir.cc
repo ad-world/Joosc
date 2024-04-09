@@ -213,7 +213,6 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(CastExpression &expr) {
     assert(expr.expression);
-    return convert(*expr.expression);
 
     const int8_t byte_cast = 0xFF;
     const int16_t short_cast = 0xFFFF;
