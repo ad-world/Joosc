@@ -1,18 +1,8 @@
 #include "IR-java-converter.h"
 
-IRJavaConverter::IRJavaConverter(std::string class_name): class_name(class_name) {
+IRJavaConverter::IRJavaConverter(std::string class_name, std::string entry_point): class_name(class_name), entry_point(entry_point) {
     num_tabs = 0;
     result = "";
-};
-
-std::string IRJavaConverter::getFunctionName(std::string functionName) {
-    int last_dot = functionName.find_last_of('.');
-    if (last_dot != std::string::npos) {
-        std::string short_func = functionName.substr(last_dot + 1);
-        return short_func;
-    }
-
-    return functionName;
 };
 
 void IRJavaConverter::appendToResult(std::string s) {
@@ -33,8 +23,10 @@ void IRJavaConverter::operator()(CompUnitIR &node) {
         appendToResult("compUnit.appendFunc(" + func + ");");
     }
 
+    std::string entryPoint = "ltestl_l0l";
+
     appendToResult("Simulator sim = new Simulator(compUnit);");
-    appendToResult("long result = sim.call(\"test\");");
+    appendToResult("long result = sim.call(\"" + entry_point + "\");");
     // appendToResult("System.out.println(\"Java Interpretation of IR results to: \" + result);");
     appendToResult("CheckCanonicalIRVisitor cv = new CheckCanonicalIRVisitor();");
     appendToResult("System.out.print(\"Correct canonical implementation: \");");
@@ -109,7 +101,7 @@ void IRJavaConverter::operator()(MemIR &node) {
 
 void IRJavaConverter::operator()(NameIR &node) {
     num_tabs += 1;
-    appendToResult("new Name(\"" + getFunctionName(node.getName()) + "\")");
+    appendToResult("new Name(\"" + node.getName() + "\")");
     num_tabs -=1;
 }
 

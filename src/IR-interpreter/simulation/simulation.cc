@@ -128,18 +128,7 @@ void Simulator::store(int addr, int value) {
 
 int Simulator::findLabel(std::string label) {
     if (nameToIndex.find(label) == nameToIndex.end()) {
-        int last_dot = label.find_last_of('.');
-        if (last_dot != std::string::npos) {
-            std::string short_label = label.substr(last_dot + 1);
-            if (nameToIndex.find(short_label) == nameToIndex.end()) {
-                THROW_SimulatorError("Could not find label '" + label + "'!");
-            } else {
-                return nameToIndex[short_label];
-            }
-        } else {
-            THROW_SimulatorError("Could not find label '" + label + "'!");
-
-        }
+        THROW_SimulatorError("Could not find label '" + label + "'!");
     }
     return nameToIndex[label];
 }
@@ -301,12 +290,6 @@ void Simulator::leave(ExecutionFrame *frame) {
                 auto ir_ptr = Simulator::indexToNode[target.value];
                 if (std::holds_alternative<FuncDeclIR*>(ir_ptr)) {
                     targetName = std::get<FuncDeclIR*>(ir_ptr)->getName();
-                    int last_dot = targetName.find_last_of('.');
-
-                    if (last_dot != std::string::npos) {
-                        targetName = targetName.substr(last_dot + 1);
-                    }
-
                 } else {
                     THROW_SimulatorError("Call to a non-function instruction");
                 }

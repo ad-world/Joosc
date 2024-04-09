@@ -6,23 +6,40 @@
 #include <vector>
 
 class IRJavaConverter : public IRSkipVisitor {
+    // A list of function names that have been encountered in this specific CompUnit
     std::vector<std::string> functions;
+
+    // A variable storing the outputted Java code
     std::string result;
+
+    // The current class name
     std::string class_name;
+
+    // Number of tabs to produce on current line when outputted to result
+
+    // The converted unique entrypoint function
+    std::string entry_point;
+
+    // Number of tabs to produce on current line when outputted to result
     int num_tabs;
 
+    // Get a string of num_tabs concatenated
     std::string getTabString();
+
+    // Get a string of \n and num_tabs concatenated
     std::string getNewlineAndTabString();
-    std::string getFunctionName(std::string functionName);
+
+    // Append a specific line of code to the result
     void appendToResult(std::string s);
 
 public:
     using IRSkipVisitor::visit;
 
-    IRJavaConverter(std::string class_name);
+    IRJavaConverter(std::string class_name, std::string entry_point);
 
     std::string getResult() { return result; }
 
+    // Overriding visitor operators
     void operator()(CompUnitIR &node) override;
     void operator()(FuncDeclIR &node) override;
 
