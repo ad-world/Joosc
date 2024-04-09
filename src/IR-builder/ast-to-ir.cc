@@ -28,7 +28,6 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
     assert(expr.assigned_from);
 
     auto dest = convert(*expr.assigned_to);
-    auto dest_copy = convert(*expr.assigned_to);
     auto src = convert(*expr.assigned_from);
     vector<unique_ptr<StatementIR>> seq_vec;
 
@@ -55,15 +54,19 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
     };
 
     convert_eseq_ir(dest);
-    convert_eseq_ir(dest_copy);
 
+    auto ret_temp = TempIR::generateName("assign_ret");
+    seq_vec.push_back(MoveIR::makeStmt(
+        TempIR::makeExpr(ret_temp),
+        std::move(src)
+    ));
     seq_vec.push_back(MoveIR::makeStmt(
         std::move(dest),
-        std::move(src)
+        TempIR::makeExpr(ret_temp)
     ));
 
     auto statement_ir = SeqIR::makeStmt(std::move(seq_vec));
-    auto expression_ir = std::move(dest_copy); // copy of dest
+    auto expression_ir = TempIR::makeExpr(ret_temp);
     auto eseq = ESeqIR::makeExpr(std::move(statement_ir), std::move(expression_ir));
 
     return eseq;
