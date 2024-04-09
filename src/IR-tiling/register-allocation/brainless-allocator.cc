@@ -47,11 +47,17 @@ int32_t BrainlessRegisterAllocator::allocateRegisters(Tile* function_body) {
                     allocateRegisters(tile.first);
                     new_instructions.push_back(tile);
                 } else {
-                    tile.first->assignAbstract(Assembly::REG32_ACCUM);
+                    // tile.first->assignAbstract(Assembly::REG32_ACCUM);
+                    // allocateRegisters(tile.first);
+
+                    // new_instructions.push_back(tile.first);
+                    // new_instructions.push_back(storeAbstractRegister(tile.second, Assembly::REG32_ACCUM));
+
+                    tile.first->assignAbstract(tile.second);
                     allocateRegisters(tile.first);
 
                     new_instructions.push_back(tile.first);
-                    new_instructions.push_back(storeAbstractRegister(tile.second, Assembly::REG32_ACCUM));
+                    // new_instructions.push_back(storeAbstractRegister(tile.second, Assembly::REG32_ACCUM));
                 }
             }
         }, instr);
