@@ -35,6 +35,7 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
                     // Add global start symbol for program execution entrypoint
                     current_is_entrypoint = true;
                     output.push_back(Assembly::ExternSymbol("__exception"));
+                    output.push_back(Assembly::ExternSymbol("__malloc"));
                     output.push_back(Assembly::GlobalSymbol(Assembly::StartLabel));
                     output.push_back(Assembly::StartLabel);
                 } else {
