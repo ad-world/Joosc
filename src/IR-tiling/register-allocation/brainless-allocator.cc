@@ -7,7 +7,6 @@
 #include <regex>
 
 std::vector<std::string> BrainlessRegisterAllocator::instruction_registers 
-    // = {Assembly::REG32_COUNTER, Assembly::REG32_DATA, Assembly::REG32_ACCUM};
     = {Assembly::REG32_COUNTER, Assembly::REG32_SOURCE, Assembly::REG32_DEST};
 
 void BrainlessRegisterAllocator::findOffsets(Tile* function_body) {
@@ -43,14 +42,9 @@ int32_t BrainlessRegisterAllocator::allocateRegisters(Tile* function_body) {
                 new_instructions.push_back(tile);
             },
             [&](ExpressionTile tile) {
-                if (Assembly::isRealRegister(tile.second)) {
-                    allocateRegisters(tile.first);
-                    new_instructions.push_back(tile);
-                } else {
-                    tile.first->assignAbstract(tile.second);
-                    allocateRegisters(tile.first);
-                    new_instructions.push_back(tile.first);
-                }
+                tile.first->assignAbstract(tile.second);
+                allocateRegisters(tile.first);
+                new_instructions.push_back(tile.first);
             }
         }, instr);
     }
@@ -75,6 +69,8 @@ Instruction BrainlessRegisterAllocator::storeAbstractRegister(std::string abstra
 }
 
 void BrainlessRegisterAllocator::replaceAbstracts(AssemblyInstruction instruction, std::vector<Instruction>& target_vector) {
+    auto original_instruction = instruction;
+
     // Inefficiently, search for every single abstract register used in the function in every single instruction
     std::vector<AssemblyInstruction> found;
     for (const auto& [reg, offset] : reg_offsets) {
@@ -93,12 +89,14 @@ void BrainlessRegisterAllocator::replaceAbstracts(AssemblyInstruction instructio
         );
     }
 
+    target_vector.push_back(Assembly::LineBreak());
     for (int i = 0; i < found.size(); ++i) {
         target_vector.push_back(loadAbstractRegister(instruction_registers[i], found[i]));
         instruction = std::regex_replace(instruction, std::regex(found[i]), instruction_registers[i]);
     }
     
-    target_vector.push_back(instruction);
+    auto optional_comment = found.size() ? " " + Assembly::Comment(original_instruction) : "";
+    target_vector.push_back(instruction + optional_comment);
 
     for (int i = 0; i < found.size(); ++i) {
         target_vector.push_back(storeAbstractRegister(found[i], instruction_registers[i]));
