@@ -979,7 +979,12 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
             assert(field.variable_declarator);
             if ( field.variable_declarator->expression ) {
                 // Non-null
-                comp_unit.appendField(name, convert(*field.variable_declarator->expression));
+                try {
+                    comp_unit.appendField(name, convert(*field.variable_declarator->expression));
+                } catch (...) {
+                    // TODO: remove
+                    // Skip if unable to convert initializer
+                }
             } else {
                 // Null
                 comp_unit.appendField(name, ConstIR::makeZero());
@@ -988,7 +993,9 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
     } // for
 
     // Add functions
-    this->visit_children(node);
+    if ( !static_fields_only ) {
+        this->visit_children(node);
+    }
 }
 
 void IRBuilderVisitor::operator()(MethodDeclaration &node) {

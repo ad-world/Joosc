@@ -187,11 +187,13 @@ int Compiler::run() {
             // Add static fields (temporary)
             CompUnitIR *main_comp = std::get_if<CompUnitIR>(&main_ir);
             if ( main_comp ) {
-                auto test_func = main_comp->getFunc("test");
+                auto test_func = main_comp->getFunc(entrypoint_method);
+                assert(test_func);
                 std::vector<std::unique_ptr<StatementIR>> seq_vec;
 
                 for ( auto &ast : asts ) {
-                    CompUnitIR ast_ir = IRBuilderVisitor().visit(ast);
+                    CompUnitIR ast_ir = IRBuilderVisitor(true).visit(ast);
+
                     for ( auto &field : ast_ir.getFieldList() ) {
                         std::string name = field.first;
                         std::unique_ptr<ExpressionIR>& expr = field.second;
