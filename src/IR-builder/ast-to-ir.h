@@ -6,6 +6,7 @@
 
 class IRBuilderVisitor : public DefaultSkipVisitor<CompUnitIR> {
     CompUnitIR comp_unit;
+    bool static_fields_only = false;
 
     // Statement converters
     std::unique_ptr<StatementIR> convert(Statement &stmt);
@@ -45,7 +46,7 @@ public:
     // void operator()(InterfaceDeclaration &node) override;
     // void operator()(FieldDeclaration &node) override;
 
-    IRBuilderVisitor() : comp_unit{""} {}
+    IRBuilderVisitor(bool static_fields_only = false) : comp_unit{""}, static_fields_only{static_fields_only} {}
 
     CompUnitIR visit(AstNodeVariant &ast) override {
         std::visit(*this, ast);

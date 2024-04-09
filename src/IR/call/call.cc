@@ -4,7 +4,7 @@
 #include <utility>
 
 std::unique_ptr<ExpressionIR> CallIR::makeMalloc(std::unique_ptr<ExpressionIR> arg) {
-    std::vector<std::unique_ptr<ExpressionIR>> args(1); // one vector
+    std::vector<std::unique_ptr<ExpressionIR>> args; // one vector
     args.push_back(std::move(arg));
     return makeExpr(NameIR::makeMalloc(), std::move(args));
 }

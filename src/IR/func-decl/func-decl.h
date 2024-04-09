@@ -16,6 +16,7 @@ class FuncDeclIR {
 
     std::string &getName() { return name; }
     StatementIR &getBody() { assert(body.get()); return *body.get(); }
+    void setBody(std::unique_ptr<StatementIR> other) { body = std::move(other); }
     int getNumParams() { return num_params; }
 
     std::string label() { return "FUNC " + name; }

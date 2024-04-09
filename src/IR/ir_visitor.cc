@@ -15,7 +15,7 @@ void IRSkipVisitor::visit_children(FuncDeclIR &node) {
 
 // ExpressionIRs
 void IRSkipVisitor::visit_children(std::unique_ptr<ExpressionIR> &node) {
-    assert(node.get());
+    assert(node);
     this->operator()(*node);
 }
 void IRSkipVisitor::visit_children(ExpressionIR &node) {
@@ -52,7 +52,7 @@ void IRSkipVisitor::visit_children(TempIR &node) {
 
 // StatementIRs
 void IRSkipVisitor::visit_children(std::unique_ptr<StatementIR> &node) {
-    assert(node.get());
+    assert(node);
     this->operator()(*node);
 }
 void IRSkipVisitor::visit_children(StatementIR &node) {

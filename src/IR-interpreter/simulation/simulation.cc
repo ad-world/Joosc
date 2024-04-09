@@ -1,6 +1,7 @@
 #include "simulation.h"
 #include <random>
 #include <iostream>
+#include <string>
 #include <variant>
 #include <cstdint> 
 #include "utillities/overload.h"
@@ -363,7 +364,7 @@ void Simulator::leave(ExecutionFrame *frame) {
             } else if (top == 1) {
                 label = cjump->trueLabel();
             } else {
-                THROW_SimulatorError("Invalid condition for CJump, expected 0/1 and got " + top);
+                THROW_SimulatorError("Invalid condition for CJump, expected 0/1 and got " + std::to_string(top));
             }
 
             if (label != "") frame->setIP(findLabel(label));

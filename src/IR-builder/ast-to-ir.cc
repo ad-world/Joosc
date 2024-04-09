@@ -28,10 +28,27 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
     assert(expr.assigned_from);
 
     auto dest = convert(*expr.assigned_to);
+    auto dest_copy = convert(*expr.assigned_to);
     auto src = convert(*expr.assigned_from);
 
+    auto convert_eseq_ir = [&](unique_ptr<ExpressionIR> &dest) {
+        // Make sure dest is either Temp or MemIR
+        std::visit(util::overload{
+            [&](TempIR &temp) { /* do nothing */ },
+            [&](MemIR &mem) { /* do nothing */ },
+            [&](ESeqIR &eseq) {
+                // Replace dest with expression from eseq
+                dest = make_unique<ExpressionIR>(std::move(eseq.getExpr()));
+            },
+            [&](auto &node) { THROW_CompilerError("Assignment destination is not TempIR or MemIR"); }
+        }, *dest);
+    };
+
+    convert_eseq_ir(dest);
+    convert_eseq_ir(dest_copy);
+
     auto statement_ir = MoveIR::makeStmt(std::move(dest), std::move(src));
-    auto expression_ir = std::move(convert(*expr.assigned_to)); // copy of dest
+    auto expression_ir = std::move(dest_copy); // copy of dest
     auto eseq = ESeqIR::makeExpr(std::move(statement_ir), std::move(expression_ir));
 
     return eseq;
@@ -197,6 +214,78 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(PrefixExpression &expr) 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(CastExpression &expr) {
     assert(expr.expression);
     return convert(*expr.expression);
+
+    const int8_t byte_cast = 0xFF;
+    const int16_t short_cast = 0xFFFF;
+    const int32_t int_cast = 0xFFFFFFFF;
+    const uint16_t char_cast = 0xFFFF;
+    auto converted_expr = convert(*expr.expression);
+
+    return std::visit(util::overload{
+        [&](Literal &lit) {
+            if ( auto primitive = expr.type->link.getIfIsPrimitive() ) {
+                unique_ptr<ExpressionIR> expr;
+
+                std::visit(util::overload{
+                    [&](int64_t int_lit) {
+                        switch (*primitive) {
+                            case PrimitiveType::BYTE:
+                                expr = ConstIR::makeExpr(byte_cast & (int8_t) int_lit);
+                                break;
+                            case PrimitiveType::SHORT:
+                                expr = ConstIR::makeExpr(short_cast & (int16_t) int_lit);
+                                break;
+                            case PrimitiveType::INT:
+                                expr = ConstIR::makeExpr(int_lit);
+                                break;
+                            case PrimitiveType::CHAR:
+                                expr = ConstIR::makeExpr(char_cast & (uint16_t) int_lit);
+                                break;
+                            default:
+                                THROW_ASTtoIRError("Error casting to type int");
+                        }
+                    },
+                    [&](char char_lit) {
+                        switch (*primitive) {
+                            case PrimitiveType::BYTE: // fallthru
+                                expr = ConstIR::makeExpr(byte_cast & (int8_t) char_lit);    // TODO: test
+                            case PrimitiveType::SHORT: // fallthru
+                                expr = ConstIR::makeExpr(short_cast & (int16_t) char_lit);  // TODO: test
+                            case PrimitiveType::INT: // fallthru
+                            case PrimitiveType::CHAR:
+                                // Widening
+                                expr = ConstIR::makeExpr(char_lit);
+                                break;
+                            default:
+                                THROW_ASTtoIRError("Error casting to type char");
+                        }
+                    },
+                    [&](string str_lit) {
+                        THROW_ASTtoIRError("Error casting a string to a primitive type");
+                    },
+                    [&](bool bool_lit) {
+                        if ( *primitive == PrimitiveType::BOOLEAN ) {
+                            expr = bool_lit ? ConstIR::makeOne() : ConstIR::makeZero();
+                            return;
+                        }
+                        THROW_ASTtoIRError("Error casting to type boolean");
+                    },
+                    [&](nullptr_t null_lit) {
+                        if ( *primitive == PrimitiveType::NULL_T ) {
+                            expr = ConstIR::makeZero();
+                            return;
+                        }
+                        THROW_ASTtoIRError("Error casting to type NULL");
+                    },
+                }, lit);
+
+                return expr;
+            } else {
+                THROW_ASTtoIRError("TODO: Deferred to A6 - non-primitive casts");
+            } // if
+        },
+        [&](auto &node) { return convert(*expr.expression); }
+    }, *expr.expression);
 }
 
 // int64_t, bool, char, std::string, std::nullptr_t
@@ -272,6 +361,12 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
                 )
             )
         );
+    } else if ( auto linkedClass = link.getIfNonArrayIsClass() ) {
+        std::string packageName = linkedClass->package_contained_in->identifier;
+        std::string className = linkedClass->identifier;
+        std::string varName = expr.identifier->name;
+
+        return TempIR::makeExpr(packageName + className + varName);
     }
     THROW_ASTtoIRError("TODO: Deferred to A6 - non-static field");
 }
@@ -322,7 +417,11 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
     string non_null_name = LabelIR::generateName("nonnull");
     auto non_null_check = CJumpIR::makeStmt(
         // NEQ(t_a, 0)
-        TempIR::makeExpr(array_name),
+        BinOpIR::makeExpr(
+            BinOpIR::NEQ,
+            TempIR::makeExpr(array_name),
+            ConstIR::makeZero()
+        ),
         non_null_name,
         error_name
     );
@@ -392,6 +491,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
 
     auto eseq_ir = ESeqIR::makeExpr(
         SeqIR::makeStmt(std::move(seq_vec)),
+        // ConstIR::makeZero()
         std::move(inbound_call)                         // MEM(t_a + 4 + 4*t_i)
     );
 
@@ -432,7 +532,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 
         // Error call
         auto error_label = LabelIR::makeStmt(error_name);
-        auto error_call = CallIR::makeException();
+        auto error_call = ExpIR::makeStmt(std::move(CallIR::makeException()));
 
         // Allocate space
         auto non_negative_label = LabelIR::makeStmt(non_negative_name);
@@ -456,7 +556,11 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
         // Write size
         auto write_size = MoveIR::makeStmt(
             MemIR::makeExpr(TempIR::makeExpr(array_name)),
-            TempIR::makeExpr(size_name)
+            BinOpIR::makeExpr(  // copy of t_size
+                BinOpIR::ADD,
+                TempIR::makeExpr(size_name),
+                ConstIR::makeZero()
+            )
         );
 
         // Zero initialize array (loop)
@@ -465,6 +569,14 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
         auto exit_loop = LabelIR::generateName("exit_loop");
         auto dummy_name = LabelIR::generateName("dummy");
         vector<unique_ptr<StatementIR>> seq_vec;
+
+        seq_vec.push_back(std::move(size_get));
+        seq_vec.push_back(std::move(non_negative_check));
+        seq_vec.push_back(std::move(error_label));
+        seq_vec.push_back(std::move(error_call));
+        seq_vec.push_back(std::move(non_negative_label));
+        seq_vec.push_back(std::move(malloc));
+        seq_vec.push_back(std::move(write_size));
 
         seq_vec.push_back(
             // Move(t_i, 0)
@@ -489,10 +601,10 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
             )
         );
         seq_vec.push_back(
-            // CJump(t_i >= 4 * t_size, exit_loop, start_loop)
+            // CJump(t_i > 4 * t_size, exit_loop, start_loop)
             CJumpIR::makeStmt(
                 BinOpIR::makeExpr(
-                    BinOpIR::GEQ,
+                    BinOpIR::GT,
                     TempIR::makeExpr(iterator_name),
                     BinOpIR::makeExpr(
                         BinOpIR::MUL,
@@ -509,13 +621,17 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
             LabelIR::makeStmt(dummy_name)
         );
         seq_vec.push_back(
-            // MOVE(MEM(t_a + t_i), 0) 
+            // MOVE(MEM(t_i + t_a + 4), 0) 
             MoveIR::makeStmt(
                 MemIR::makeExpr(
                     BinOpIR::makeExpr(
                         BinOpIR::ADD,
-                        TempIR::makeExpr(array_name),
-                        TempIR::makeExpr(iterator_name)
+                        TempIR::makeExpr(iterator_name),
+                        BinOpIR::makeExpr(
+                            BinOpIR::ADD,
+                            TempIR::makeExpr(array_name),
+                            ConstIR::makeWords()
+                        )
                     )
                 ),
                 ConstIR::makeZero()
@@ -851,7 +967,35 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration 
 void IRBuilderVisitor::operator()(ClassDeclaration &node) {
     // CREATE CompUnit
     comp_unit = {node.environment->identifier};
-    this->visit_children(node);
+
+    // Add fields
+    assert(node.environment->package_contained_in);
+    std::string packageName = node.environment->package_contained_in->identifier;
+    std::string className = node.environment->identifier;
+    for ( auto &field : node.field_declarations ) {
+        if ( field.hasModifier(Modifier::STATIC) ) {
+            // Static field
+            std::string name = packageName + className + (field.environment->identifier);
+            assert(field.variable_declarator);
+            if ( field.variable_declarator->expression ) {
+                // Non-null
+                try {
+                    comp_unit.appendField(name, convert(*field.variable_declarator->expression));
+                } catch (...) {
+                    // TODO: remove
+                    // Skip if unable to convert initializer
+                }
+            } else {
+                // Null
+                comp_unit.appendField(name, ConstIR::makeZero());
+            } // if
+        } // if
+    } // for
+
+    // Add functions
+    if ( !static_fields_only ) {
+        this->visit_children(node);
+    }
 }
 
 void IRBuilderVisitor::operator()(MethodDeclaration &node) {
