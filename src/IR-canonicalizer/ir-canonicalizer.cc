@@ -160,9 +160,11 @@ IRCanonicalizer::LoweredStatement IRCanonicalizer::convert(StatementIR &ir) {
                 );
 
                 return LoweredStatement(std::move(statements));
-            } else if (std::get_if<MemIR>(&node.getTarget())) {
+            } else if (MemIR* mem_target = std::get_if<MemIR>(&node.getTarget())) { // MOVE mem[i], k
                 // Unoptimized form: assumes source's side effects can affect target
-                LoweredExpression lowered1 = convert(node.getTarget());
+                LoweredExpression lowered1 = convert(mem_target->getAddress());
+
+                // LoweredExpression lowered1 = convert(node.getTarget());
                 LoweredExpression lowered2 = convert(node.getSource());
             
                 std::string temp_name = TempIR::generateName();
@@ -171,9 +173,9 @@ IRCanonicalizer::LoweredStatement IRCanonicalizer::convert(StatementIR &ir) {
 
                 auto statements = concatenate(
                     lowered1.statements,
-                    MoveIR(std::make_unique<ExpressionIR>(TempIR(temp_name)), std::move(lowered1.expression)),
+                    MoveIR(std::make_unique<ExpressionIR>(TempIR(temp_name)), std::move(lowered1.expression)), // T = i
                     lowered2.statements,
-                    MoveIR(std::make_unique<ExpressionIR>(std::move(mem)), std::move(lowered2.expression))
+                    MoveIR(std::make_unique<ExpressionIR>(std::move(mem)), std::move(lowered2.expression)) // mem[i] = k
                 );
 
                 return LoweredStatement(std::move(statements));
