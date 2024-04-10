@@ -12,6 +12,11 @@
 
 extern int WORD_SIZE;
 
+// System call raised in the simulator to exit with a return code
+struct ExitSysCall {
+    int rc;
+    ExitSysCall(int rc) : rc{rc} {}
+};
 
 /**
  * A simple IR interpreter

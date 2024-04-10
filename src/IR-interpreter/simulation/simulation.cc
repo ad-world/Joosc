@@ -138,8 +138,12 @@ std::string Simulator::getNodeType(IR_PTR node) {
 }
 
 int Simulator::call(std::string name, std::vector<int> args) {
-    auto frame = ExecutionFrame(-1, *this);
-    return call(frame, name, args);
+    try {
+        auto frame = ExecutionFrame(-1, *this);
+        return call(frame, name, args);
+    } catch (ExitSysCall &e) {
+        return e.rc;
+    }
 }
 
 int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> args) {
@@ -195,9 +199,13 @@ int Simulator::libraryCall(std::string name, std::vector<int> args) {
     } else if (name == "__malloc") {
         return_value = malloc(args[0]);
     } else if (name == "__debexit") {
-        std::exit(args[0]);
+        //std::exit(args[0]);
+        // return_value = args[0];
+        throw ExitSysCall(args[0]);
     } else if (name == "__exception") {
-        std::exit(13);
+        //std::exit(13);
+        // return_value = 13;
+        throw ExitSysCall(13);
     } else {
         THROW_SimulatorError("Unsupported library function: " + name);
     }
