@@ -13,3 +13,6 @@ RUN make fuzzer
 
 RUN mkdir corpus
 RUN echo -ne '\xa\x0' > corpus/blanktest
+
+RUN echo 'afl-fuzz -i corpus/ -o fuzzout/ -- ./fuzzer' > start_fuzzing.sh
+RUN chmod +x start_fuzzing.sh
