@@ -29,7 +29,9 @@ PROJECT_BUILD:
   # before_script:
   #   - apt update && apt -y install make autoconf
   script:
+    - ccache --zero-stats
     - make build
+    - ccache --show-stats
   artifacts:
     paths:
       - joosc
