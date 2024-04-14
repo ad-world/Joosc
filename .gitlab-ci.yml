@@ -11,16 +11,16 @@
 # can use versions as well, like gcc:5.2
 # see https://hub.docker.com/_/gcc/
 
-before_script:
-  - apt-get update -qq && apt-get install -y -qq python3 python3-pip ninja-build gcc flex bison valgrind time git zip cmake nasm ccache
-
 variables:
   CCACHE_BASEDIR: $CI_PROJECT_DIR
   CCACHE_DIR: $CI_PROJECT_DIR/ccache
 
-image:
-  name: gcc
-  pull_policy: [always, if-not-present]
+default:
+  image:
+    name: gcc
+    pull_policy: [always, if-not-present]
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq python3 python3-pip ninja-build gcc flex bison valgrind time git zip cmake nasm ccache
 
 PROJECT_BUILD:
   stage: build
