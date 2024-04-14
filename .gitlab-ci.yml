@@ -15,12 +15,19 @@ variables:
   CCACHE_BASEDIR: $CI_PROJECT_DIR
   CCACHE_DIR: $CI_PROJECT_DIR/ccache
 
+cache:
+  key: "$CI_PIPELINE_ID"
+  paths:
+    - $CCACHE_DIR
+
 default:
   image:
     name: gcc
     pull_policy: [always, if-not-present]
   before_script:
     - apt-get update -qq && apt-get install -y -qq python3 python3-pip ninja-build gcc flex bison valgrind time git zip cmake nasm ccache
+    - export CCACHE_BASEDIR="$CI_PROJECT_DIR"
+    - export CCACHE_DIR="$CI_PROJECT_DIR/ccache"
 
 PROJECT_BUILD:
   stage: build
@@ -35,34 +42,18 @@ PROJECT_BUILD:
   artifacts:
     paths:
       - joosc
-  cache:
-    key: "$CI_PIPELINE_ID"
-    paths:
-      - $CCACHE_DIR
 
 UNIT_TEST:
   stage: test
   script: make unit-test
-  cache:
-    key: "$CI_PIPELINE_ID"
-    paths:
-      - $CCACHE_DIR
 
 SCANNER_TEST:
   stage: test
   script: make scanner-test
-  cache:
-    key: "$CI_PIPELINE_ID"
-    paths:
-      - $CCACHE_DIR
 
 INTEGRATION_TEST:
   stage: test
   script: make integration-test
-  cache:
-    key: "$CI_PIPELINE_ID"
-    paths:
-      - $CCACHE_DIR
   allow_failure: true
 
 SUBMISSION:
@@ -73,7 +64,3 @@ SUBMISSION:
   artifacts:
     paths:
       - a*.zip
-  cache:
-    key: "$CI_PIPELINE_ID"
-    paths:
-      - $CCACHE_DIR
