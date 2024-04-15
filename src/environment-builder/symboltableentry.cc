@@ -1,6 +1,7 @@
 #include "symboltableentry.h"
 #include "symboltable.h"
 #include "exceptions/exceptions.h"
+#include <cassert>
 #include <sstream>
 #include "utillities/util.h"
 
@@ -126,6 +127,14 @@ ClassDeclarationObject* PackageDeclarationObject::findClassDeclaration(std::stri
 InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(std::string str) {
     std::vector<Identifier> ids = string_to_identifiers(str);
     return findInterfaceDeclaration(ids);
+}
+
+std::string PackageDeclarationObject::getPackagePath() {
+    std::string packageName;
+    for ( auto package = this; package != nullptr; package = package->parent_package ) {
+        packageName = package->identifier + (packageName.empty() ? "" : ".") + packageName;
+    }
+    return packageName;
 }
 
 TypeDeclarationObject::TypeDeclarationObject() : methods{init_table()} {}

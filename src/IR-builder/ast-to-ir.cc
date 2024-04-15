@@ -357,31 +357,9 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
     assert(expr.identifier);
 
     auto link = TypeChecker::getLink(*expr.expression);
-    if ( link.is_array && expr.identifier->name == "length" ) {
-        // Access length of array
-        vector<unique_ptr<StatementIR>> seq_vec;
-
-        // Get array in temp
-        string array_name = TempIR::generateName("array");
-
-        // MoveIR(t_a, e)
-        // MemIR(t_a - 4)
-        return ESeqIR::makeExpr(
-            MoveIR::makeStmt(
-                TempIR::makeExpr(array_name),
-                std::move(convert(*expr.expression))
-            ),
-            MemIR::makeExpr(
-                BinOpIR::makeExpr(
-                    BinOpIR::SUB,
-                    TempIR::makeExpr(array_name),
-                    ConstIR::makeWords()
-                )
-            )
-        );
-    } else if ( auto linkedClass = link.getIfNonArrayIsClass() ) {
-        std::string packageName = linkedClass->package_contained_in->identifier;
-        std::string className = linkedClass->identifier;
+    if ( auto linkedClass = link.getIfNonArrayIsClass() ) {
+        std::string packageName = linkedClass->package_contained_in->getPackagePath() + ".";
+        std::string className = linkedClass->identifier + ".";
         std::string varName = expr.identifier->name;
 
         return TempIR::makeExpr(packageName + className + varName);
@@ -702,6 +680,25 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &exp
         ));
     } else {
         // Static field access (typically)
+
+        auto prefix = expr.getQualifiedIdentifierWithoutLast().identifiers;
+        // Find class path
+        if ( auto classObj = Util::root_package->findClassDeclaration(prefix) ) {
+            // Parent is class in root package
+            std::string packageName = classObj->package_contained_in->getPackagePath() + ".";
+            std::string className = classObj->identifier + ".";
+            std::string varName = expr.identifiers.back().name;
+
+            return TempIR::makeExpr(packageName + className + varName);
+        } else if ( auto classObj = Util::root_package->findPackageDeclaration("java.lang")->findClassDeclaration(prefix) ) {
+            // Parent is class in java.lang
+            std::string packageName = classObj->package_contained_in->getPackagePath() + ".";
+            std::string className = classObj->identifier + ".";
+            std::string varName = expr.identifiers.back().name;
+
+            return TempIR::makeExpr(packageName + className + varName);
+        }
+
         string qualified_str = expr.getQualifiedName();
         #warning Not always a static field
         return TempIR::makeExpr(qualified_str);
@@ -994,8 +991,8 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
 
     // Add fields
     assert(node.environment->package_contained_in);
-    std::string packageName = node.environment->package_contained_in->identifier;
-    std::string className = node.environment->identifier;
+    std::string packageName = node.environment->package_contained_in->getPackagePath() + ".";
+    std::string className = node.environment->identifier + ".";
     for ( auto &field : node.field_declarations ) {
         if ( field.hasModifier(Modifier::STATIC) ) {
             // Static field
