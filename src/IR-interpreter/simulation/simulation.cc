@@ -289,6 +289,11 @@ void Simulator::leave(ExecutionFrame *frame) {
                 args.push_back(Simulator::exprStack.popValue());
             }
 
+            // Reverse args back to original order
+            for ( int i = 0; i < argCount / 2; i++ ) {
+                std::swap(args[i], args[argCount - i - 1]);
+            }
+
             auto target = Simulator::exprStack.pop();
             std::string targetName;
 

@@ -357,7 +357,16 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
     assert(expr.identifier);
 
     auto link = TypeChecker::getLink(*expr.expression);
-    if ( auto linkedClass = link.getIfNonArrayIsClass() ) {
+    if ( auto array = link.is_array && expr.identifier->name == "length" ) {
+        // Array length
+        return MemIR::makeExpr(
+            BinOpIR::makeExpr(
+                BinOpIR::SUB,
+                convert(*expr.expression),
+                ConstIR::makeWords()
+            )
+        );
+    } else if ( auto linkedClass = link.getIfNonArrayIsClass() ) {
         std::string packageName = linkedClass->package_contained_in->getPackagePath() + ".";
         std::string className = linkedClass->identifier + ".";
         std::string varName = expr.identifier->name;
@@ -377,20 +386,10 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(MethodInvocation &expr) 
             call_args_vec.push_back(std::move(convert(arg)));
         }
 
-        // Name IR
-        auto name_ir = make_unique<ExpressionIR>(
-            in_place_type<NameIR>,
-            CGConstants::uniqueMethodLabel(expr.called_method)
-        );
-
-        // Call IR
-        auto call_ir = make_unique<ExpressionIR>(
-            in_place_type<CallIR>,
-            std::move(name_ir),
+        return CallIR::makeExpr(
+            NameIR::makeExpr(CGConstants::uniqueMethodLabel(expr.called_method)),
             std::move(call_args_vec)
         );
-
-        return call_ir;
     } else {
         // Non-static methods
         THROW_ASTtoIRError("TODO: Deferred to A6 - non-static method");
@@ -962,7 +961,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ReturnStatement &stmt) {
     if (stmt.return_expression) {
         return ReturnIR::makeStmt(convert(*stmt.return_expression));
     } else {
-        return ReturnIR::makeStmt(nullptr);
+        return ReturnIR::makeStmt(ConstIR::makeZero());
     }
 }
 
@@ -1057,6 +1056,11 @@ void IRBuilderVisitor::operator()(MethodDeclaration &node) {
                     load_args.push_back(
                         std::move(body_stmt)
                     );
+                }
+
+                // Add implicit return to void functions
+                if ( node.environment->return_type.isVoid() ) {
+                    load_args.push_back(ReturnIR::makeStmt(ConstIR::makeZero()));
                 }
 
                 body_stmt = SeqIR::makeStmt(std::move(load_args));
