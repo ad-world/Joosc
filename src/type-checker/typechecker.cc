@@ -343,6 +343,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                             // Special case: "length" field of an array
                             qid.link = LinkedType(PrimitiveType::INT);
                             qid.is_variable = false;
+                            qid.is_array_length = true;
                             return;
                         }
                         if (auto class_type = T.getIfNonArrayIsClass()) {

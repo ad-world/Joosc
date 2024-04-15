@@ -2,6 +2,7 @@
 #include "IR/ir_variant.h"
 #include "type-checker/typechecker.h"
 #include "utillities/overload.h"
+#include "utillities/util.h"
 #include "variant-ast/expressions.h"
 #include <memory>
 #include <string>
@@ -55,18 +56,18 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
 
     convert_eseq_ir(dest);
 
-    auto ret_temp = TempIR::generateName("assign_ret");
+    auto src_temp = TempIR::generateName("assign_src");
     seq_vec.push_back(MoveIR::makeStmt(
-        TempIR::makeExpr(ret_temp),
+        TempIR::makeExpr(src_temp),
         std::move(src)
     ));
     seq_vec.push_back(MoveIR::makeStmt(
         std::move(dest),
-        TempIR::makeExpr(ret_temp)
+        TempIR::makeExpr(src_temp)
     ));
 
     auto statement_ir = SeqIR::makeStmt(std::move(seq_vec));
-    auto expression_ir = TempIR::makeExpr(ret_temp);
+    auto expression_ir = TempIR::makeExpr(src_temp);
     auto eseq = ESeqIR::makeExpr(std::move(statement_ir), std::move(expression_ir));
 
     return eseq;
@@ -573,11 +574,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
         // Write size
         auto write_size = MoveIR::makeStmt(
             MemIR::makeExpr(TempIR::makeExpr(array_name)),
-            BinOpIR::makeExpr(  // copy of t_size
-                BinOpIR::ADD,
-                TempIR::makeExpr(size_name),
-                ConstIR::makeZero()
-            )
+            TempIR::makeExpr(size_name)
         );
 
         // Zero initialize array (loop)
@@ -693,6 +690,16 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &exp
         // Local variable access
         auto identifier = expr.identifiers.front();
         return TempIR::makeExpr(identifier.name);
+    } else if ( expr.is_array_length ) {
+        // Some array's length prop
+        auto qid = expr.getQualifiedIdentifierWithoutLast();
+
+        // MEM(arr - 4)
+        return MemIR::makeExpr(BinOpIR::makeExpr(
+            BinOpIR::SUB,
+            convert(qid),
+            ConstIR::makeWords()
+        ));
     } else {
         // Static field access (typically)
         string qualified_str = expr.getQualifiedName();
@@ -1010,12 +1017,15 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
     } // for
 
     // Add functions
-    if ( !static_fields_only ) {
-        this->visit_children(node);
-    }
+    this->visit_children(node);
 }
 
 void IRBuilderVisitor::operator()(MethodDeclaration &node) {
+    if ( !node.hasModifier(Modifier::STATIC) || !node.environment->return_type.isPrimitive() ) {
+        // Skip non-static methods
+        return;
+    }
+
     if (node.environment->is_constructor) {
         // Constructors are an Object-Oriented feature that will be handled in A6
         return; 
