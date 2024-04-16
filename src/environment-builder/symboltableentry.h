@@ -28,6 +28,7 @@ using SymbolTableEntry = std::variant<
 
 struct PackageDeclarationObject {
     std::string identifier;
+    std::string full_qualified_name = "";
     bool is_default_package;
 
     PackageDeclarationObject* parent_package = nullptr;
@@ -58,6 +59,8 @@ struct PackageDeclarationObject {
 
 // Common fields for class and interface
 struct TypeDeclarationObject {
+    std::string full_qualified_name = "";
+
     std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
     std::unordered_map<std::string, std::list<MethodDeclarationObject*>> overloaded_methods; // declared and inherited methods
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
@@ -111,6 +114,7 @@ struct InterfaceDeclarationObject : public TypeDeclarationObject {
 
 struct FieldDeclarationObject {
     std::string identifier;
+    std::string full_qualified_name = "";
     class FieldDeclaration* ast_reference = nullptr;
 
     ClassDeclarationObject* containing_class;
@@ -123,6 +127,7 @@ struct FieldDeclarationObject {
 
 struct MethodDeclarationObject {
     std::string identifier;
+    std::string full_qualified_name = "";
     class MethodDeclaration* ast_reference = nullptr;
 
     std::unique_ptr<SymbolTable> parameters; // SymbolTable mapping to FormalParameterDeclarationObject

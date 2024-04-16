@@ -279,6 +279,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                     auto possible_var = current_method->scope_manager.lookupDeclaredVariable(name);
                     if (possible_var) {
                         qid.link = possible_var->type;
+                        qid.setRefersTo(possible_var);
                         qid.is_variable = true;
                         return;
                     }
@@ -289,6 +290,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         = current_method->parameters->lookupUniqueSymbol<FormalParameterDeclarationObject>(name);
                     if (possible_param) {
                         qid.link = possible_param->type;
+                        qid.setRefersTo(possible_param);
                         qid.is_variable = true;
                         return;
                     }
@@ -302,6 +304,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                     // Look up in instance fields
                     if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, name, false)) {
                         qid.link = possible_field->type;
+                        qid.setRefersTo(possible_field);
                         qid.is_variable = true;
                         return;
                     }
@@ -320,6 +323,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         if (auto cls = std::get_if<ClassDeclarationObject*>(&cls_lookup)) {
                             if (auto possible_field = checkIfFieldIsAccessible(current_class, *cls, id, true)) {
                                 qid.link = possible_field->type;
+                                qid.setRefersTo(possible_field);
                                 qid.is_variable = true;
                                 return;
                             }
@@ -349,6 +353,7 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         if (auto class_type = T.getIfNonArrayIsClass()) {
                             if (auto possible_field = checkIfFieldIsAccessible(current_class, class_type, id)) {
                                 qid.link = possible_field->type;
+                                qid.setRefersTo(possible_field);
                                 qid.is_variable = true;
                                 return;
                             }
@@ -720,6 +725,7 @@ void TypeChecker::operator()(FieldAccess &node) {
         );
         if (resolved_field) {
             node.link = resolved_field->type;
+            node.identifier->field = resolved_field;
             node.is_variable = true;
             return;
         }
