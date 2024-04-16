@@ -1,7 +1,8 @@
 all: build
 
 CMAKE_ARGS=-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
-CMAKE_FUZZER_ARGS=-DCMAKE_C_COMPILER=afl-clang-lto -DCMAKE_CXX_COMPILER=afl-clang-lto++ -DFUZZER=ON
+CMAKE_FUZZER_ARGS=-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DFUZZER=ON
+CMAKE_AFL_FUZZER_ARGS=-DCMAKE_C_COMPILER=afl-clang-lto -DCMAKE_CXX_COMPILER=afl-clang-lto++ -DFUZZER=ON
 #-DCMAKE_CXX_FLAGS=-O3
 
 generate-parser:
@@ -12,7 +13,10 @@ graph: | generate-parser
 	(mkdir -p build && cd build && cmake -DGRAPHVIZ=ON ${CMAKE_ARGS} .. && make && cp joosc ../joosc)
 
 fuzzer: | generate-parser
-	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_FUZZER_ARGS} -GNinja .. && cmake --build . -j10 && cp fuzz/fuzz_joosc ../fuzzer))
+	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_FUZZER_ARGS} -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer))
+
+afl-fuzzer: | generate-parser
+	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_AFL_FUZZER_ARGS} -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer))
 
 build: | generate-parser
 	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_ARGS} .. -G Ninja && ninja && cp joosc ../joosc)) || \

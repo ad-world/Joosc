@@ -16,7 +16,7 @@ add_library(joosc_proto
     src/proto_to_joos.cc
     ${Protobuf_LIBRARIES}
     )
-add_dependencies(joosc_proto ${PBM_PREFIX})
+# add_dependencies(joosc_proto ${PBM_PREFIX})
 
 # Add proto_to_joos executable
 add_executable(proto_to_joos src/proto_to_joos_main.cc)
