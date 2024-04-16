@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 set(CMAKE_CXX_STANDARD 17)
 
-### Set compiler to clang
-set(CMAKE_C_COMPILER clang)
-set(CMAKE_CXX_COMPILER clang++)
-
 ### Include LPM
 include (cmake/protobuf.cmake)
 
@@ -37,8 +33,8 @@ macro(fuzzer name)
     add_executable(${name} ${name}.cc)
     set_target_properties(${name}
             PROPERTIES
-            COMPILE_FLAGS "-fsanitize=fuzzer,address" # -fprofile-generate -ftest-coverage"
-            LINK_FLAGS "-fsanitize=fuzzer,address") # -fprofile-generate -ftest-coverage")
+            COMPILE_FLAGS "-fsanitize=fuzzer"#,address" # -fprofile-generate -ftest-coverage"
+            LINK_FLAGS "-fsanitize=fuzzer")#,address") # -fprofile-generate -ftest-coverage")
     target_link_libraries(${name}
             PRIVATE
             CommonLib

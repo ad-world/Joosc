@@ -41,6 +41,16 @@ std::string Compiler::getEntryPointMethod() {
         THROW_CompilerError("No first file for entrypoint");
     }
 
+    if ( !strfiles.empty() ) {
+        std::string class_name = "Foo";
+        auto cls = Util::root_package->findClassDeclaration(class_name);
+        auto entry_method = cls->all_methods["test"];
+        if (!entry_method) {
+            THROW_CompilerError("Class '" + class_name + "' has no method 'test'");
+        }
+        return CGConstants::uniqueMethodLabel(entry_method);
+    }
+
     std::string first_file = infiles.front();
     std::string base_file = first_file.substr(first_file.find_last_of("/") + 1);
     std::string class_name = std::regex_replace(base_file, std::regex(".java"), "");
@@ -59,12 +69,18 @@ std::string Compiler::getEntryPointMethod() {
 }
 
 int Compiler::finishWith(ReturnCode code) {
-    AddLocation::deleteFileNames();
     if ( output_rc ) { cerr << "RETURN CODE " << code << endl; }
     return code;
 }
 
+struct Destructor {
+    ~Destructor() {
+        AddLocation::deleteFileNames();
+    }
+};
+
 int Compiler::run() {
+    Destructor destruct;
     Driver drv;
     AstWeeder weeder;
     vector<AstNodeVariant> asts;
