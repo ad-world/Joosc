@@ -1019,6 +1019,19 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
 void IRBuilderVisitor::operator()(MethodDeclaration &node) {
     if ( !node.hasModifier(Modifier::STATIC) || !node.environment->return_type.isPrimitive() ) {
         // Skip non-static methods
+        // If non-primitive return type or non-static method, add an empty function
+
+        auto label = CGConstants::uniqueMethodLabel(node.environment);
+
+        // Create func_decl
+        auto func_decl = make_unique<FuncDeclIR>(
+            label,
+            SeqIR::makeEmpty(),
+            (int) node.parameters.size()
+        );
+
+        // Add func_decl to comp_unit
+        comp_unit.appendFunc(label, std::move(func_decl));
         return;
     }
 
