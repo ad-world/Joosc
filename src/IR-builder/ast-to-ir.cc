@@ -672,45 +672,24 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &expr) {
-    if (expr.identifiers.size() == 1) {
-        // Local variable access
-        auto identifier = expr.identifiers.front();
-        #warning Not always a local variable access
-        return TempIR::makeExpr(identifier.name);
-    } else if ( expr.is_array_length ) {
-        // Some array's length prop
-        auto qid = expr.getQualifiedIdentifierWithoutLast();
-
-        // MEM(arr - 4)
-        return MemIR::makeExpr(BinOpIR::makeExpr(
-            BinOpIR::SUB,
-            convert(qid),
-            ConstIR::makeWords()
-        ));
-    } else {
-        // Static field access (typically)
-
-        auto prefix = expr.getQualifiedIdentifierWithoutLast().identifiers;
-        // Find class path
-        if ( auto classObj = Util::root_package->findClassDeclaration(prefix) ) {
-            // Parent is class in root package
-            std::string varName = expr.identifiers.back().name;
-            std::string name = classObj->full_qualified_name + "." + varName;
-
-            return TempIR::makeExpr(name);
-        } else if ( auto classObj = Util::root_package->findPackageDeclaration("java.lang")->findClassDeclaration(prefix) ) {
-            // Parent is class in java.lang
-            std::string varName = expr.identifiers.back().name;
-            std::string name = classObj->full_qualified_name + "." + varName;
-
-            return TempIR::makeExpr(name);
-        }
-
-        string qualified_str = expr.getQualifiedName();
-        #warning Not always a static field
-        return TempIR::makeExpr(qualified_str);
+    // Local variable access
+    if (expr.getIfRefersToLocalVariable() || expr.getIfRefersToParameter()) {
+        #warning maybe want different convention for local var & field
+        return TempIR::makeExpr(expr.getFullUnderlyingQualifiedName());
     }
-    // THROW_ASTtoIRError("TODO: Deferred to A6 - qualified identifiers");
+    
+    // Static field access
+    if (expr.getIfRefersToField() && expr.getIfRefersToField()->ast_reference->hasModifier(Modifier::STATIC)) {
+        return TempIR::makeExpr(expr.getFullUnderlyingQualifiedName());
+    }
+
+    // Instance field access
+    if (expr.getIfRefersToField()) {
+        #warning TODO: (A6) access the correct field of the correct object
+        return TempIR::makeExpr(expr.getFullUnderlyingQualifiedName());
+    }
+
+    THROW_CompilerError("Qualified identifier not linked - likely bug");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(InstanceOfExpression &expr) {
