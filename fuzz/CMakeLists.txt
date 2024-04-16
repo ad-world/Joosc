@@ -16,7 +16,7 @@ add_library(joosc_proto
     src/proto_to_joos.cc
     ${Protobuf_LIBRARIES}
     )
-add_dependencies(joosc_proto ${PBM_PREFIX})
+# add_dependencies(joosc_proto ${PBM_PREFIX})
 
 # Add proto_to_joos executable
 add_executable(proto_to_joos src/proto_to_joos_main.cc)
@@ -33,8 +33,8 @@ macro(fuzzer name)
     add_executable(${name} ${name}.cc)
     set_target_properties(${name}
             PROPERTIES
-            COMPILE_FLAGS "-fsanitize=fuzzer"#,address" # -fprofile-generate -ftest-coverage"
-            LINK_FLAGS "-fsanitize=fuzzer")#,address") # -fprofile-generate -ftest-coverage")
+            COMPILE_FLAGS "-fsanitize=fuzzer,address,undefined" # -fprofile-generate -ftest-coverage"
+            LINK_FLAGS "-fsanitize=fuzzer,address,undefined") # -fprofile-generate -ftest-coverage")
     target_link_libraries(${name}
             PRIVATE
             CommonLib

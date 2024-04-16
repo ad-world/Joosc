@@ -290,6 +290,7 @@ int Compiler::run() {
                 THROW_CompilerError("IR is not canonical after canonicalizing");
             }
 
+#ifndef LIBFUZZER
             if (run_java_ir) {
                 IRJavaConverter converter = IRJavaConverter("MainCanonical", entrypoint_method);
                 converter.visit(main_ir);
@@ -310,6 +311,7 @@ int Compiler::run() {
                     cerr << e.what() << "\n";
                 }
             }
+#endif
 
             // Emit assembly
             BrainlessRegisterAllocator allocator;
