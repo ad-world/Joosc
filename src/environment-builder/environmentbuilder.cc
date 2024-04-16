@@ -29,6 +29,8 @@ void EnvironmentBuilder::operator()(CompilationUnit &node) {
                 // Package statement implictly declares package for the first time
                 this->current_package 
                     = current_package->sub_packages->addSymbol<PackageDeclarationObject>(package_subname);
+
+                this->current_package->full_qualified_name = node.package_declaration->getQualifiedName();
             }
         }
     }
@@ -52,6 +54,7 @@ void EnvironmentBuilder::operator()(ClassDeclaration &node) {
     // Class does not conflict in package and can be added
     auto class_env = current_package->classes->addSymbol<ClassDeclarationObject>(class_name);
     class_env->package_contained_in = current_package;
+    class_env->full_qualified_name = current_package->full_qualified_name + "." + class_env->identifier;
     this->current_type = class_env;
 
     linkDeclaration(node, *class_env);
@@ -77,6 +80,7 @@ void EnvironmentBuilder::operator()(InterfaceDeclaration &node) {
     // Interface does not conflict in package and can be added
     auto int_env = current_package->interfaces->addSymbol<InterfaceDeclarationObject>(interface_name);
     int_env->package_contained_in = current_package;
+    int_env->full_qualified_name = current_package->full_qualified_name + "." + int_env->identifier;
     this->current_type = int_env;
     
     linkDeclaration(node, *int_env);
@@ -98,6 +102,7 @@ void EnvironmentBuilder::operator()(FieldDeclaration &node) {
         // Field does not conflict in class and can be added
         auto field_env = current_class->fields->addSymbol<FieldDeclarationObject>(field_name);
         field_env->containing_class = current_class;
+        field_env->full_qualified_name = current_class->full_qualified_name + "." + field_env->identifier;
         linkDeclaration(node, *field_env);
     } else {
         // This should not happen
@@ -117,6 +122,7 @@ void EnvironmentBuilder::operator()(MethodDeclaration &node) {
     std::visit([&](auto cls_or_int_obj) {
         this->current_method = cls_or_int_obj->methods->template addSymbol<MethodDeclarationObject>(method_name);
         this->current_method->containing_type = cls_or_int_obj;
+        this->current_method->full_qualified_name = cls_or_int_obj->full_qualified_name + "." + this->current_method->identifier;
     }, current_type);
 
     this->current_method->scope_manager.closeAllScopes();
