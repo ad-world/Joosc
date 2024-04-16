@@ -11,8 +11,5 @@ ENV AFL_LLVM_ALLOWLIST=/myapp/fuzz/allow.txt
 COPY . .
 # RUN make fuzzer
 
-RUN mkdir corpus
-RUN echo -ne '\xa\x0' > corpus/blanktest
-
-RUN echo 'afl-fuzz -i corpus/ -o fuzzout/ -- ./fuzzer' > start_fuzzing.sh
+RUN echo 'afl-fuzz -i fuzz/corpus/ -o fuzz/output/ -- ./fuzzer' > start_fuzzing.sh
 RUN chmod +x start_fuzzing.sh
