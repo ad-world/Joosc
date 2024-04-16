@@ -53,6 +53,8 @@ struct QualifiedIdentifier: public ExpressionCommon {
     QualifiedIdentifier(std::vector<Identifier>&& identifiers) : identifiers(std::move(identifiers)) {}
 
 public:
+    bool is_array_length = false;
+
     Classification getClassification() { return identifiers.back().classification; }
 
     void setRefersTo(FieldDeclarationObject* dec) { identifiers.back().field = dec; }

@@ -12,7 +12,7 @@ class FuncDeclIR {
 
   public:
     FuncDeclIR(std::string name, std::unique_ptr<StatementIR> body, int num_params)
-        : name{std::move(name)}, body{std::move(body)}, num_params{num_params} {}
+        : name{name}, body{std::move(body)}, num_params{num_params} {}
 
     std::string &getName() { return name; }
     StatementIR &getBody() { assert(body.get()); return *body.get(); }

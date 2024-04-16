@@ -46,10 +46,17 @@ std::ostream &operator<<(std::ostream &os, const Lvalue &x) {
 }
 
 std::ostream &operator<<(std::ostream &os, const Rvalue &x) {
-    if ( x.has_varref() ) return os << x.varref();
-    if ( x.has_binop() ) return os << x.binop();
-    if ( x.has_method_invoc() ) return os << x.method_invoc();
-    return os << x.cons();
+    switch ( x.rvalue_oneof_case() ) {
+        case Rvalue::kVarref:
+            return os << x.varref();
+        case Rvalue::kBinop:
+            return os << x.binop();
+        case Rvalue::kMethodInvoc:
+            return os << x.method_invoc();
+        case Rvalue::RVALUE_ONEOF_NOT_SET:
+        default:
+            return os << x.cons();
+    }
 }
 
 std::ostream &operator<<(std::ostream &os, const Const &x) {
@@ -69,10 +76,15 @@ std::ostream &operator<<(std::ostream &os, const BinaryOp &x) {
 }
 
 std::ostream &operator<<(std::ostream &os, const BoolRvalue &x) {
-    if ( x.has_intop() ) return os << x.intop();
-    if ( x.has_boolop() ) return os << x.boolop();
-    if ( x.has_cons() ) return os << (x.cons() ? "(true)" : "(false)");
-    throw std::runtime_error("error parsing BoolRvalue");
+    switch ( x.bool_binop_oneof_case() ) {
+        case BoolRvalue::kIntop:
+            return os << x.intop();
+        case BoolRvalue::kBoolop:
+            return os << x.boolop();
+        case BoolRvalue::BOOL_BINOP_ONEOF_NOT_SET:
+        default:
+            return os << (x.cons() ? "(true)" : "(false)");
+    }
 }
 
 std::ostream &operator<<(std::ostream &os, const BoolToBoolOp &x) {
@@ -152,13 +164,21 @@ std::ostream &operator<<(std::ostream &os, const ReturnStatement &x) {
 }
 
 std::ostream &operator<<(std::ostream &os, const Statement &x) {
-    if ( x.has_ifthen() ) return os << x.ifthen();
-    if ( x.has_ifelse() ) return os << x.ifelse();
-    if ( x.has_while_loop() ) return os << x.while_loop();
-    if ( x.has_ret_stmt() ) return os << x.ret_stmt();
-    if ( x.has_method_call() ) return os << x.method_call();
-    // if ( x.has_assignment() )
-    return os << x.assignment();
+    switch ( x.stmt_oneof_case() ) {
+        case Statement::kIfthen:
+            return os << x.ifthen();
+        case Statement::kIfelse:
+            return os << x.ifelse();
+        case Statement::kWhileLoop:
+            return os << x.while_loop();
+        case Statement::kRetStmt:
+            return os << x.ret_stmt();
+        case Statement::kMethodCall:
+            return os << x.method_call();
+        case Statement::STMT_ONEOF_NOT_SET:
+        default:
+            return os << x.assignment();
+    }
 }
 ///////////////////////////////////////
 

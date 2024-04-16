@@ -27,6 +27,7 @@ void EnvironmentBuilder::operator()(CompilationUnit &node) {
                 this->current_package = &(std::get<PackageDeclarationObject>(*possible_package));
             } else {
                 // Package statement implictly declares package for the first time
+                auto parent_package = this->current_package;
                 this->current_package 
                     = current_package->sub_packages->addSymbol<PackageDeclarationObject>(package_subname);
 

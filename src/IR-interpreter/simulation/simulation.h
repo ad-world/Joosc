@@ -29,7 +29,7 @@ class Simulator {
     std::unordered_map<std::string, int> nameToIndex;
 
     /** heap */
-    std::vector<int> memory;
+    std::vector<int> memory = {0, 0, 0, 0}; // malloc should not return 0 on success
     
     /** heap size maximum **/
     int heapSizeMax;

@@ -6,7 +6,7 @@
 #include <cassert>
 
 class ReturnIR {
-    std::unique_ptr<ExpressionIR> ret; // CAN BE NULL
+    std::unique_ptr<ExpressionIR> ret; // CANNOT BE NULL ANYMORE (causes a lot of errors - returns 0 for void function)
 
 public:
     ReturnIR(std::unique_ptr<ExpressionIR> ret) : ret{std::move(ret)} {}

@@ -2,6 +2,7 @@
 #include "IR/ir_variant.h"
 #include "type-checker/typechecker.h"
 #include "utillities/overload.h"
+#include "utillities/util.h"
 #include "variant-ast/expressions.h"
 #include <memory>
 #include <string>
@@ -55,18 +56,18 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(Assignment &expr) {
 
     convert_eseq_ir(dest);
 
-    auto ret_temp = TempIR::generateName("assign_ret");
+    auto src_temp = TempIR::generateName("assign_src");
     seq_vec.push_back(MoveIR::makeStmt(
-        TempIR::makeExpr(ret_temp),
+        TempIR::makeExpr(src_temp),
         std::move(src)
     ));
     seq_vec.push_back(MoveIR::makeStmt(
         std::move(dest),
-        TempIR::makeExpr(ret_temp)
+        TempIR::makeExpr(src_temp)
     ));
 
     auto statement_ir = SeqIR::makeStmt(std::move(seq_vec));
-    auto expression_ir = TempIR::makeExpr(ret_temp);
+    auto expression_ir = TempIR::makeExpr(src_temp);
     auto eseq = ESeqIR::makeExpr(std::move(statement_ir), std::move(expression_ir));
 
     return eseq;
@@ -356,34 +357,20 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
     assert(expr.identifier);
 
     auto link = TypeChecker::getLink(*expr.expression);
-    if ( link.is_array && expr.identifier->name == "length" ) {
-        // Access length of array
-        vector<unique_ptr<StatementIR>> seq_vec;
-
-        // Get array in temp
-        string array_name = TempIR::generateName("array");
-
-        // MoveIR(t_a, e)
-        // MemIR(t_a - 4)
-        return ESeqIR::makeExpr(
-            MoveIR::makeStmt(
-                TempIR::makeExpr(array_name),
-                std::move(convert(*expr.expression))
-            ),
-            MemIR::makeExpr(
-                BinOpIR::makeExpr(
-                    BinOpIR::SUB,
-                    TempIR::makeExpr(array_name),
-                    ConstIR::makeWords()
-                )
+    if ( auto array = link.is_array && expr.identifier->name == "length" ) {
+        // Array length
+        return MemIR::makeExpr(
+            BinOpIR::makeExpr(
+                BinOpIR::SUB,
+                convert(*expr.expression),
+                ConstIR::makeWords()
             )
         );
     } else if ( auto linkedClass = link.getIfNonArrayIsClass() ) {
-        std::string packageName = linkedClass->package_contained_in->identifier;
-        std::string className = linkedClass->identifier;
         std::string varName = expr.identifier->name;
+        std::string name = linkedClass->full_qualified_name + "." + varName;
 
-        return TempIR::makeExpr(packageName + className + varName);
+        return TempIR::makeExpr(name);
     }
     THROW_ASTtoIRError("TODO: Deferred to A6 - non-static field");
 }
@@ -398,20 +385,10 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(MethodInvocation &expr) 
             call_args_vec.push_back(std::move(convert(arg)));
         }
 
-        // Name IR
-        auto name_ir = make_unique<ExpressionIR>(
-            in_place_type<NameIR>,
-            CGConstants::uniqueMethodLabel(expr.called_method)
-        );
-
-        // Call IR
-        auto call_ir = make_unique<ExpressionIR>(
-            in_place_type<CallIR>,
-            std::move(name_ir),
+        return CallIR::makeExpr(
+            NameIR::makeExpr(CGConstants::uniqueMethodLabel(expr.called_method)),
             std::move(call_args_vec)
         );
-
-        return call_ir;
     } else {
         // Non-static methods
         THROW_ASTtoIRError("TODO: Deferred to A6 - non-static method");
@@ -458,17 +435,27 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
     // Bounds check
     auto inbound_name = LabelIR::generateName("inbounds");
     auto bounds_check = CJumpIR::makeStmt(
-        // GEQ(t_i, MEM(t_a - 4))
+        // t_i < 0 || t_i >= mem(t_a - 4)
         BinOpIR::makeExpr(
-            BinOpIR::GEQ,
-            TempIR::makeExpr(selector_name),
-            // MEM(t_a - 4)
-            MemIR::makeExpr(
-                // SUB(t_a, 4)
-                BinOpIR::makeExpr(
-                    BinOpIR::SUB,
-                    TempIR::makeExpr(array_name),
-                    ConstIR::makeWords()
+            BinOpIR::OR,
+            // LT(t_i, 0)
+            BinOpIR::makeExpr(
+                BinOpIR::LT,
+                TempIR::makeExpr(selector_name),
+                ConstIR::makeZero()
+            ),
+            // GEQ(t_i, MEM(t_a - 4))
+            BinOpIR::makeExpr(
+                BinOpIR::GEQ,
+                TempIR::makeExpr(selector_name),
+                // MEM(t_a - 4)
+                MemIR::makeExpr(
+                    // SUB(t_a, 4)
+                    BinOpIR::makeExpr(
+                        BinOpIR::SUB,
+                        TempIR::makeExpr(array_name),
+                        ConstIR::makeWords()
+                    )
                 )
             )
         ),
@@ -573,11 +560,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
         // Write size
         auto write_size = MoveIR::makeStmt(
             MemIR::makeExpr(TempIR::makeExpr(array_name)),
-            BinOpIR::makeExpr(  // copy of t_size
-                BinOpIR::ADD,
-                TempIR::makeExpr(size_name),
-                ConstIR::makeZero()
-            )
+            TempIR::makeExpr(size_name)
         );
 
         // Zero initialize array (loop)
@@ -965,7 +948,7 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(ReturnStatement &stmt) {
     if (stmt.return_expression) {
         return ReturnIR::makeStmt(convert(*stmt.return_expression));
     } else {
-        return ReturnIR::makeStmt(nullptr);
+        return ReturnIR::makeStmt(ConstIR::makeZero());
     }
 }
 
@@ -994,12 +977,11 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
 
     // Add fields
     assert(node.environment->package_contained_in);
-    std::string packageName = node.environment->package_contained_in->identifier;
-    std::string className = node.environment->identifier;
     for ( auto &field : node.field_declarations ) {
         if ( field.hasModifier(Modifier::STATIC) ) {
             // Static field
-            std::string name = packageName + className + (field.environment->identifier);
+            std::string name = field.environment->full_qualified_name;
+
             assert(field.variable_declarator);
             if ( field.variable_declarator->expression ) {
                 // Non-null
@@ -1017,12 +999,28 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
     } // for
 
     // Add functions
-    if ( !static_fields_only ) {
-        this->visit_children(node);
-    }
+    this->visit_children(node);
 }
 
 void IRBuilderVisitor::operator()(MethodDeclaration &node) {
+    if ( !node.hasModifier(Modifier::STATIC) || !node.environment->return_type.isPrimitive() ) {
+        // Skip non-static methods
+        // If non-primitive return type or non-static method, add an empty function
+
+        auto label = CGConstants::uniqueMethodLabel(node.environment);
+
+        // Create func_decl
+        auto func_decl = make_unique<FuncDeclIR>(
+            label,
+            SeqIR::makeEmpty(),
+            (int) node.parameters.size()
+        );
+
+        // Add func_decl to comp_unit
+        comp_unit.appendFunc(label, std::move(func_decl));
+        return;
+    }
+
     if (node.environment->is_constructor) {
         // Constructors are an Object-Oriented feature that will be handled in A6
         return; 
@@ -1057,6 +1055,11 @@ void IRBuilderVisitor::operator()(MethodDeclaration &node) {
                     load_args.push_back(
                         std::move(body_stmt)
                     );
+                }
+
+                // Add implicit return to void functions
+                if ( node.environment->return_type.isVoid() ) {
+                    load_args.push_back(ReturnIR::makeStmt(ConstIR::makeZero()));
                 }
 
                 body_stmt = SeqIR::makeStmt(std::move(load_args));

@@ -41,6 +41,16 @@ std::string Compiler::getEntryPointMethod() {
         THROW_CompilerError("No first file for entrypoint");
     }
 
+    if ( !strfiles.empty() ) {
+        std::string class_name = "Foo";
+        auto cls = Util::root_package->findClassDeclaration(class_name);
+        auto entry_method = cls->all_methods["test"];
+        if (!entry_method) {
+            THROW_CompilerError("Class '" + class_name + "' has no method 'test'");
+        }
+        return CGConstants::uniqueMethodLabel(entry_method);
+    }
+
     std::string first_file = infiles.front();
     std::string base_file = first_file.substr(first_file.find_last_of("/") + 1);
     std::string class_name = std::regex_replace(base_file, std::regex(".java"), "");
@@ -59,21 +69,23 @@ std::string Compiler::getEntryPointMethod() {
 }
 
 int Compiler::finishWith(ReturnCode code) {
-    AddLocation::deleteFileNames();
     if ( output_rc ) { cerr << "RETURN CODE " << code << endl; }
     return code;
 }
 
+struct Destructor {
+    ~Destructor() {
+        AddLocation::deleteFileNames();
+    }
+};
+
 int Compiler::run() {
+    Destructor destruct;
     Driver drv;
     AstWeeder weeder;
     vector<AstNodeVariant> asts;
     Util::linked_asts = &asts;
     
-    #ifdef GRAPHVIZ
-    GraphVisitor gv(asts); // runs on return/destruct
-    #endif
-
     // Lexing and parsing
     try {
         drv.trace_scanning = trace_scanning;
@@ -120,6 +132,10 @@ int Compiler::run() {
     Util::root_package = &default_package;
 
     try {
+        #ifdef GRAPHVIZ
+            GraphVisitor gv(asts); // runs on return/destruct
+        #endif
+
         // Environment building
         for (auto &ast : asts) {
             EnvironmentBuilder(default_package).visit(ast);
@@ -203,7 +219,7 @@ int Compiler::run() {
 
                 for ( auto &ast : asts ) {
                     if ( &ast != &asts.front() ) {
-                        CompUnitIR ast_ir = IRBuilderVisitor(true).visit(ast);
+                        CompUnitIR ast_ir = IRBuilderVisitor().visit(ast);
 
                         for ( auto &field : ast_ir.getFieldList() ) {
                             std::string name = field.first;
@@ -212,6 +228,15 @@ int Compiler::run() {
                                 TempIR::makeExpr(field.first),
                                 std::move(expr)
                             ));
+                        }
+
+                        // Add fields to Main CompUnit
+                        for ( auto &func : ast_ir.getFunctionList() ) {
+                            std::string func_name = func->getName();
+                            main_comp->appendFunc(func_name,
+                                                  std::make_unique<FuncDeclIR>(func->getName(),
+                                                                               std::make_unique<StatementIR>(std::move(func->getBody())),
+                                                                               func->getNumParams()));
                         }
                     }
                 }

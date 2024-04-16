@@ -8,7 +8,7 @@ std::unordered_map<MethodDeclarationObject*, std::string> CGConstants::method_la
 
 std::string CGConstants::uniqueMethodLabel(MethodDeclarationObject* method) {
     if (!method_labels.count(method)) {
-        std::string label = "l" + method->identifier + "l_l" + std::to_string(next_method_id) + "l";
+        std::string label = "l" + method->identifier + "l_l" + std::to_string(next_method_id++) + "l";
         method_labels[method] = label;
     }
 
