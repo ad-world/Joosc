@@ -1,6 +1,7 @@
 #include "symboltableentry.h"
 #include "symboltable.h"
 #include "exceptions/exceptions.h"
+#include <cassert>
 #include <sstream>
 #include "utillities/util.h"
 
