@@ -11,6 +11,7 @@ const std::string stdlib_java = stdlib + "java/";
 
 DEFINE_BINARY_PROTO_FUZZER(const joosc_fuzzer::Class& class_msg) {
     Compiler compiler;
+    compiler.setRunIR(true);
     auto strfile = joosc_fuzzer::ClassToString(class_msg);
     // std::cout << strfile << std::endl;
     compiler.addStringFile(strfile);

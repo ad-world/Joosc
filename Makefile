@@ -13,10 +13,10 @@ graph: | generate-parser
 	(mkdir -p build && cd build && cmake -DGRAPHVIZ=ON ${CMAKE_ARGS} .. && make && cp joosc ../joosc)
 
 fuzzer: | generate-parser
-	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_FUZZER_ARGS} -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer))
+	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_FUZZER_ARGS} -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer && cp fuzz/proto_to_joos ..))
 
 afl-fuzzer: | generate-parser
-	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_AFL_FUZZER_ARGS} -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer))
+	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_AFL_FUZZER_ARGS} -GNinja .. && cmake --build . && cp fuzz/fuzz_joosc ../fuzzer && cp fuzz/proto_to_joos ..))
 
 build: | generate-parser
 	(ninja --version && (mkdir -p build && cd build && cmake ${CMAKE_ARGS} .. -G Ninja && ninja && cp joosc ../joosc)) || \

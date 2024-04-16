@@ -134,3 +134,7 @@ public:
     ASTtoIRError(std::string message, std::string file, int line)
         : runtime_error(make_message("Ast to IR error", message, file, line)) {}
 };
+
+#ifdef LIBFUZZER
+#define THROW_LibfuzzerError() int *ptr = nullptr; int crash = *ptr
+#endif

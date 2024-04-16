@@ -22,6 +22,10 @@ struct ExitSysCall {
  * A simple IR interpreter
  */
 class Simulator {
+#ifdef LIBFUZZER
+    size_t depth = 0;
+    size_t max_depth = 100;
+#endif
     /** compilation unit to be interpreted */
     CompUnitIR *compUnit;    
 

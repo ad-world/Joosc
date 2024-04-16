@@ -4,6 +4,7 @@
 #include <string>
 #include <variant>
 #include <cstdint> 
+#include "exceptions/exceptions.h"
 #include "utillities/overload.h"
 
 #include "IR/code-gen-constants.h"
@@ -147,6 +148,12 @@ int Simulator::call(std::string name, std::vector<int> args) {
 }
 
 int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> args) {
+#ifdef LIBFUZZER
+    depth++;
+    if ( depth > max_depth ) {
+        THROW_SimulatorError("Max function call depth exceeded. (Most likely recursion)");
+    }
+#endif
     int return_value;
 
     if (libraryFunctions.find(name) != libraryFunctions.end()) {
@@ -179,11 +186,18 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
     if (debugLevel > 1)
         std::cout << "Calling " << name << " returned " << return_value << std::endl;
  
+#ifdef LIBFUZZER
+    depth--;
+#endif
+
     return return_value;
 }
 
 int Simulator::getMemoryIndex(int addr) {
     if (addr % WORD_SIZE != 0) {
+#ifdef LIBFUZZER
+        THROW_LibfuzzerError();
+#endif
         THROW_SimulatorError("Unaligned memory access: " + std::to_string(addr) + " is not a multiple of " + std::to_string(WORD_SIZE));
     }
 
