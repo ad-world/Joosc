@@ -31,8 +31,6 @@ struct PackageDeclarationObject {
     std::string full_qualified_name = "";
     bool is_default_package;
 
-    PackageDeclarationObject* parent_package = nullptr;
-
     std::unique_ptr<SymbolTable> sub_packages;
     std::unique_ptr<SymbolTable> classes;
     std::unique_ptr<SymbolTable> interfaces;
@@ -52,9 +50,6 @@ struct PackageDeclarationObject {
     PackageDeclarationObject* findPackageDeclaration(std::string str);
     ClassDeclarationObject* findClassDeclaration(std::string str);
     InterfaceDeclarationObject* findInterfaceDeclaration(std::string str);
-
-    // eg. java.lang
-    std::string getPackagePath();
 };
 
 // Common fields for class and interface

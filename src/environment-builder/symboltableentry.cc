@@ -129,18 +129,6 @@ InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(s
     return findInterfaceDeclaration(ids);
 }
 
-std::string PackageDeclarationObject::getPackagePath() {
-    std::string packageName;
-    for ( auto package = this; package != nullptr && !package->is_default_package; package = package->parent_package ) {
-        if ( packageName.empty() ) {
-            packageName = package->identifier;
-            continue;
-        }
-        packageName = package->identifier + "." + packageName;
-    }
-    return packageName;
-}
-
 TypeDeclarationObject::TypeDeclarationObject() : methods{init_table()} {}
 
 ClassDeclarationObject::ClassDeclarationObject(const std::string &identifier) :

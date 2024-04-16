@@ -30,7 +30,6 @@ void EnvironmentBuilder::operator()(CompilationUnit &node) {
                 auto parent_package = this->current_package;
                 this->current_package 
                     = current_package->sub_packages->addSymbol<PackageDeclarationObject>(package_subname);
-                this->current_package->parent_package = parent_package;
 
                 this->current_package->full_qualified_name = node.package_declaration->getQualifiedName();
             }
@@ -56,7 +55,10 @@ void EnvironmentBuilder::operator()(ClassDeclaration &node) {
     // Class does not conflict in package and can be added
     auto class_env = current_package->classes->addSymbol<ClassDeclarationObject>(class_name);
     class_env->package_contained_in = current_package;
-    class_env->full_qualified_name = current_package->full_qualified_name + "." + class_env->identifier;
+    if ( !current_package->full_qualified_name.empty() ) {
+        class_env->full_qualified_name = current_package->full_qualified_name + ".";
+    }
+    class_env->full_qualified_name += class_env->identifier;
     this->current_type = class_env;
 
     linkDeclaration(node, *class_env);
@@ -82,7 +84,10 @@ void EnvironmentBuilder::operator()(InterfaceDeclaration &node) {
     // Interface does not conflict in package and can be added
     auto int_env = current_package->interfaces->addSymbol<InterfaceDeclarationObject>(interface_name);
     int_env->package_contained_in = current_package;
-    int_env->full_qualified_name = current_package->full_qualified_name + "." + int_env->identifier;
+    if ( !current_package->full_qualified_name.empty() ) {
+        int_env->full_qualified_name = current_package->full_qualified_name + ".";
+    }
+    int_env->full_qualified_name += int_env->identifier;
     this->current_type = int_env;
     
     linkDeclaration(node, *int_env);
