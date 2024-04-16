@@ -59,6 +59,10 @@ public:
     void setRefersTo(LocalVariableDeclarationObject* dec) { identifiers.back().variable = dec; }
     void setRefersTo(FormalParameterDeclarationObject* dec) { identifiers.back().parameter = dec; }
 
+    FieldDeclarationObject* getIfRefersToField() { return identifiers.back().field; }
+    LocalVariableDeclarationObject* getIfRefersToLocalVariable() { return identifiers.back().variable; }
+    FormalParameterDeclarationObject* getIfRefersToParameter() { return identifiers.back().parameter; }
+
     bool isSimple() { return identifiers.size() == 1; }
 
     // Returns the stringified qualified name, as accessed.

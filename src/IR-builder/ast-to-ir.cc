@@ -689,18 +689,24 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &expr) {
-    if (expr.identifiers.size() == 1) {
-        // Local variable access
-        auto identifier = expr.identifiers.front();
-        #warning Not always a local variable access
-        return TempIR::makeExpr(identifier.name);
-    } else {
-        // Static field access (typically)
-        string qualified_str = expr.getQualifiedName();
-        #warning Not always a static field
-        return TempIR::makeExpr(qualified_str);
+    // Local variable access
+    if (expr.getIfRefersToLocalVariable() || expr.getIfRefersToParameter()) {
+        #warning maybe want different convention for local var & field
+        return TempIR::makeExpr(expr.getFullUnderlyingQualifiedName());
     }
-    // THROW_ASTtoIRError("TODO: Deferred to A6 - qualified identifiers");
+    
+    // Static field access
+    if (expr.getIfRefersToField() && expr.getIfRefersToField()->ast_reference->hasModifier(Modifier::STATIC)) {
+        return TempIR::makeExpr(expr.getFullUnderlyingQualifiedName());
+    }
+
+    // Instance field access
+    if (expr.getIfRefersToField()) {
+        #warning TODO: (A6) access the correct field of the correct object
+        return TempIR::makeExpr(expr.getFullUnderlyingQualifiedName());
+    }
+
+    THROW_CompilerError("Qualified identifier not linked - likely bug");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(InstanceOfExpression &expr) {
