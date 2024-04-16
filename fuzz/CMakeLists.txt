@@ -33,8 +33,8 @@ macro(fuzzer name)
     add_executable(${name} ${name}.cc)
     set_target_properties(${name}
             PROPERTIES
-            COMPILE_FLAGS "-fsanitize=fuzzer"#,address" # -fprofile-generate -ftest-coverage"
-            LINK_FLAGS "-fsanitize=fuzzer")#,address") # -fprofile-generate -ftest-coverage")
+            COMPILE_FLAGS "-fsanitize=fuzzer,address,undefined" # -fprofile-generate -ftest-coverage"
+            LINK_FLAGS "-fsanitize=fuzzer,address,undefined") # -fprofile-generate -ftest-coverage")
     target_link_libraries(${name}
             PRIVATE
             CommonLib
