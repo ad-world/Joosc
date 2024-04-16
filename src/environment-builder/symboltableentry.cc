@@ -131,8 +131,12 @@ InterfaceDeclarationObject* PackageDeclarationObject::findInterfaceDeclaration(s
 
 std::string PackageDeclarationObject::getPackagePath() {
     std::string packageName;
-    for ( auto package = this; package != nullptr; package = package->parent_package ) {
-        packageName = package->identifier + (packageName.empty() ? "" : ".") + packageName;
+    for ( auto package = this; package != nullptr && !package->is_default_package; package = package->parent_package ) {
+        if ( packageName.empty() ) {
+            packageName = package->identifier;
+            continue;
+        }
+        packageName = package->identifier + "." + packageName;
     }
     return packageName;
 }

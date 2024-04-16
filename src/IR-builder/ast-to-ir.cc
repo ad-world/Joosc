@@ -367,11 +367,10 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
             )
         );
     } else if ( auto linkedClass = link.getIfNonArrayIsClass() ) {
-        std::string packageName = linkedClass->package_contained_in->getPackagePath() + ".";
-        std::string className = linkedClass->identifier + ".";
         std::string varName = expr.identifier->name;
+        std::string name = linkedClass->full_qualified_name + "." + varName;
 
-        return TempIR::makeExpr(packageName + className + varName);
+        return TempIR::makeExpr(name);
     }
     THROW_ASTtoIRError("TODO: Deferred to A6 - non-static field");
 }
@@ -685,18 +684,16 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &exp
         // Find class path
         if ( auto classObj = Util::root_package->findClassDeclaration(prefix) ) {
             // Parent is class in root package
-            std::string packageName = classObj->package_contained_in->getPackagePath() + ".";
-            std::string className = classObj->identifier + ".";
             std::string varName = expr.identifiers.back().name;
+            std::string name = classObj->full_qualified_name + "." + varName;
 
-            return TempIR::makeExpr(packageName + className + varName);
+            return TempIR::makeExpr(name);
         } else if ( auto classObj = Util::root_package->findPackageDeclaration("java.lang")->findClassDeclaration(prefix) ) {
             // Parent is class in java.lang
-            std::string packageName = classObj->package_contained_in->getPackagePath() + ".";
-            std::string className = classObj->identifier + ".";
             std::string varName = expr.identifiers.back().name;
+            std::string name = classObj->full_qualified_name + "." + varName;
 
-            return TempIR::makeExpr(packageName + className + varName);
+            return TempIR::makeExpr(name);
         }
 
         string qualified_str = expr.getQualifiedName();
@@ -991,12 +988,11 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
 
     // Add fields
     assert(node.environment->package_contained_in);
-    std::string packageName = node.environment->package_contained_in->getPackagePath() + ".";
-    std::string className = node.environment->identifier + ".";
     for ( auto &field : node.field_declarations ) {
         if ( field.hasModifier(Modifier::STATIC) ) {
             // Static field
-            std::string name = packageName + className + (field.environment->identifier);
+            std::string name = field.environment->full_qualified_name;
+
             assert(field.variable_declarator);
             if ( field.variable_declarator->expression ) {
                 // Non-null
