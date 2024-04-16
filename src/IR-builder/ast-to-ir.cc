@@ -435,17 +435,27 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayAccess &expr) {
     // Bounds check
     auto inbound_name = LabelIR::generateName("inbounds");
     auto bounds_check = CJumpIR::makeStmt(
-        // GEQ(t_i, MEM(t_a - 4))
+        // t_i < 0 || t_i >= mem(t_a - 4)
         BinOpIR::makeExpr(
-            BinOpIR::GEQ,
-            TempIR::makeExpr(selector_name),
-            // MEM(t_a - 4)
-            MemIR::makeExpr(
-                // SUB(t_a, 4)
-                BinOpIR::makeExpr(
-                    BinOpIR::SUB,
-                    TempIR::makeExpr(array_name),
-                    ConstIR::makeWords()
+            BinOpIR::OR,
+            // LT(t_i, 0)
+            BinOpIR::makeExpr(
+                BinOpIR::LT,
+                TempIR::makeExpr(selector_name),
+                ConstIR::makeZero()
+            ),
+            // GEQ(t_i, MEM(t_a - 4))
+            BinOpIR::makeExpr(
+                BinOpIR::GEQ,
+                TempIR::makeExpr(selector_name),
+                // MEM(t_a - 4)
+                MemIR::makeExpr(
+                    // SUB(t_a, 4)
+                    BinOpIR::makeExpr(
+                        BinOpIR::SUB,
+                        TempIR::makeExpr(array_name),
+                        ConstIR::makeWords()
+                    )
                 )
             )
         ),
