@@ -692,6 +692,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &exp
     if (expr.identifiers.size() == 1) {
         // Local variable access
         auto identifier = expr.identifiers.front();
+        #warning Not always a local variable access
         return TempIR::makeExpr(identifier.name);
     } else {
         // Static field access (typically)
