@@ -1,3 +1,5 @@
+#pragma once
+
 #include "parsing/bison/location.hh"
 #include "variant-ast/astnode.h"
 #include "variant-ast/packages.h"

@@ -355,10 +355,10 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ClassInstanceCreationExp
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
     assert(expr.expression);
     assert(expr.identifier);
+    auto accessed_obj_type = TypeChecker::getLink(*expr.expression);
 
-    auto link = TypeChecker::getLink(*expr.expression);
-    if ( auto array = link.is_array && expr.identifier->name == "length" ) {
-        // Array length
+    // Special case: array length field
+    if (accessed_obj_type.is_array && expr.identifier->name == "length") {
         return MemIR::makeExpr(
             BinOpIR::makeExpr(
                 BinOpIR::SUB,
@@ -366,13 +366,24 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
                 ConstIR::makeWords()
             )
         );
-    } else if ( auto linkedClass = link.getIfNonArrayIsClass() ) {
-        std::string varName = expr.identifier->name;
-        std::string name = linkedClass->full_qualified_name + "." + varName;
+    }
 
+    // Static field access
+    if (expr.identifier->field && expr.identifier->field->ast_reference->hasModifier(Modifier::STATIC)) {
+        THROW_CompilerError(
+            "Non-static static field access not supported in Joosc; this should only happen in QualifiedIdentifier\n"
+            "Erroneous field access is on " + expr.identifier->name
+        );
+    }
+
+    // Instance field access
+    if (expr.identifier->field) {
+        #warning TODO: (A6) access the correct field of the correct object, will require typechecking changes probably
+        auto name = expr.identifier->field->full_qualified_name; // Incorrect because we don't have this info yet
         return TempIR::makeExpr(name);
     }
-    THROW_ASTtoIRError("TODO: Deferred to A6 - non-static field");
+
+    THROW_CompilerError("Identifier '" + expr.identifier->name + "' not linked to a field");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(MethodInvocation &expr) {
@@ -672,6 +683,18 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &expr) {
+    // Special case: array length field
+    if (expr.refersToArrayLength()) {
+        auto array_name = expr.getQualifiedIdentifierWithoutLast().getFullUnderlyingQualifiedName();
+
+        // Length stored at MEM[array_name - 4]
+        return MemIR::makeExpr(BinOpIR::makeExpr(
+            BinOpIR::SUB,
+            TempIR::makeExpr(array_name),
+            ConstIR::makeWords()
+        ));
+    }
+
     // Local variable access
     if (expr.getIfRefersToLocalVariable() || expr.getIfRefersToParameter()) {
         #warning maybe want different convention for local var & field
@@ -689,7 +712,10 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &exp
         return TempIR::makeExpr(expr.getFullUnderlyingQualifiedName());
     }
 
-    THROW_CompilerError("Qualified identifier not linked - likely bug");
+    THROW_CompilerError(
+        "Qualified identifier '" + expr.getQualifiedName() + "' not linked - likely bug\n"
+        "Classification is " + classificationToString(expr.getClassification())
+    );
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(InstanceOfExpression &expr) {
@@ -975,31 +1001,33 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
     // CREATE CompUnit
     comp_unit = {node.environment->identifier};
 
-    // Add fields
-    assert(node.environment->package_contained_in);
-    for ( auto &field : node.field_declarations ) {
-        if ( field.hasModifier(Modifier::STATIC) ) {
-            // Static field
-            std::string name = field.environment->full_qualified_name;
-
-            assert(field.variable_declarator);
-            if ( field.variable_declarator->expression ) {
-                // Non-null
-                try {
-                    comp_unit.appendField(name, convert(*field.variable_declarator->expression));
-                } catch (...) {
-                    // TODO: remove
-                    // Skip if unable to convert initializer
-                }
-            } else {
-                // Null
-                comp_unit.appendField(name, ConstIR::makeZero());
-            } // if
-        } // if
-    } // for
-
-    // Add functions
+    // Add methods and fields
     this->visit_children(node);
+}
+
+void IRBuilderVisitor::operator()(FieldDeclaration &field) {
+    if (field.hasModifier(Modifier::STATIC)) {
+        // Static field
+        std::string name = field.environment->full_qualified_name;
+
+        assert(field.variable_declarator);
+        if (field.variable_declarator->expression) {
+            // Non-null initalized
+            try {
+                comp_unit.appendField(name, convert(*field.variable_declarator->expression));
+            } catch (...) {
+                // TODO: remove
+                // Skip if unable to convert initializer
+            }
+        } else {
+            // Null initalized
+            comp_unit.appendField(name, ConstIR::makeZero());
+        }
+    } else {
+        // Instance field; deferred to A6
+
+        // Do nothing for now
+    }
 }
 
 void IRBuilderVisitor::operator()(MethodDeclaration &node) {
