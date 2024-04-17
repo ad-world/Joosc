@@ -43,7 +43,7 @@ public:
     void operator()(ClassDeclaration &node) override;
     void operator()(MethodDeclaration &node) override;
     // void operator()(InterfaceDeclaration &node) override;
-    // void operator()(FieldDeclaration &node) override;
+    void operator()(FieldDeclaration &node) override;
 
     IRBuilderVisitor() : comp_unit{""} {}
 

@@ -1001,31 +1001,33 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
     // CREATE CompUnit
     comp_unit = {node.environment->identifier};
 
-    // Add fields
-    assert(node.environment->package_contained_in);
-    for ( auto &field : node.field_declarations ) {
-        if ( field.hasModifier(Modifier::STATIC) ) {
-            // Static field
-            std::string name = field.environment->full_qualified_name;
-
-            assert(field.variable_declarator);
-            if ( field.variable_declarator->expression ) {
-                // Non-null
-                try {
-                    comp_unit.appendField(name, convert(*field.variable_declarator->expression));
-                } catch (...) {
-                    // TODO: remove
-                    // Skip if unable to convert initializer
-                }
-            } else {
-                // Null
-                comp_unit.appendField(name, ConstIR::makeZero());
-            } // if
-        } // if
-    } // for
-
-    // Add functions
+    // Add methods and fields
     this->visit_children(node);
+}
+
+void IRBuilderVisitor::operator()(FieldDeclaration &field) {
+    if (field.hasModifier(Modifier::STATIC)) {
+        // Static field
+        std::string name = field.environment->full_qualified_name;
+
+        assert(field.variable_declarator);
+        if (field.variable_declarator->expression) {
+            // Non-null initalized
+            try {
+                comp_unit.appendField(name, convert(*field.variable_declarator->expression));
+            } catch (...) {
+                // TODO: remove
+                // Skip if unable to convert initializer
+            }
+        } else {
+            // Null initalized
+            comp_unit.appendField(name, ConstIR::makeZero());
+        }
+    } else {
+        // Instance field; deferred to A6
+
+        // Do nothing for now
+    }
 }
 
 void IRBuilderVisitor::operator()(MethodDeclaration &node) {
