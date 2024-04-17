@@ -4,6 +4,7 @@
 #include <vector>
 #include "astnodecommon.h"
 #include "astnode.h"
+#include <unordered_map>
 
 enum Classification {
     EXPRESSION_NAME,
@@ -12,6 +13,17 @@ enum Classification {
     METHOD_NAME,
     UNCLASSIFIED
 };
+
+std::string inline classificationToString(Classification classification) {
+    switch (classification) {
+        case EXPRESSION_NAME: return "EXPRESSION_NAME";
+        case TYPE_NAME: return "TYPE_NAME";
+        case PACKAGE_NAME: return "PACKAGE_NAME";
+        case METHOD_NAME: return "METHOD_NAME";
+        case UNCLASSIFIED: return "UNCLASSIFIED";
+        default: return "ERROR CLASSIFICATION NOT FOUND";
+    }
+}
 
 struct Identifier: public AstNodeCommon {
     std::string name; // Identifier name
@@ -39,6 +51,12 @@ struct Identifier: public AstNodeCommon {
     // Resolved during Type Checking.
     FormalParameterDeclarationObject* parameter = nullptr;
 
+    // If this identifier is classified as an EXPRESSION_NAME and the expression is the length of an array,
+    // is true. This should be the case if all the above are null and this is an EXPRESSION_NAME.
+    //
+    // Resolved during Type Checking.
+    bool is_array_length = false;
+
     Classification classification = UNCLASSIFIED;
 
     Identifier(std::string& name) : name(std::move(name)) {}
@@ -53,17 +71,19 @@ struct QualifiedIdentifier: public ExpressionCommon {
     QualifiedIdentifier(std::vector<Identifier>&& identifiers) : identifiers(std::move(identifiers)) {}
 
 public:
-    bool is_array_length = false;
+    // bool is_array_length = false;
 
     Classification getClassification() { return identifiers.back().classification; }
 
     void setRefersTo(FieldDeclarationObject* dec) { identifiers.back().field = dec; }
     void setRefersTo(LocalVariableDeclarationObject* dec) { identifiers.back().variable = dec; }
     void setRefersTo(FormalParameterDeclarationObject* dec) { identifiers.back().parameter = dec; }
+    void setRefersToArrayLength() { identifiers.back().is_array_length = true; }
 
     FieldDeclarationObject* getIfRefersToField() { return identifiers.back().field; }
     LocalVariableDeclarationObject* getIfRefersToLocalVariable() { return identifiers.back().variable; }
     FormalParameterDeclarationObject* getIfRefersToParameter() { return identifiers.back().parameter; }
+    bool refersToArrayLength() { return identifiers.back().is_array_length; }
 
     bool isSimple() { return identifiers.size() == 1; }
 

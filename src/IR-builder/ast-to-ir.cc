@@ -672,6 +672,18 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &expr) {
+    // Special case: array length field
+    if (expr.refersToArrayLength()) {
+        auto array_name = expr.getFullUnderlyingQualifiedName();
+
+        // MEM(arr - 4)
+        return MemIR::makeExpr(BinOpIR::makeExpr(
+            BinOpIR::SUB,
+            TempIR::makeExpr(expr.getFullUnderlyingQualifiedName()),
+            ConstIR::makeWords()
+        ));
+    }
+
     // Local variable access
     if (expr.getIfRefersToLocalVariable() || expr.getIfRefersToParameter()) {
         #warning maybe want different convention for local var & field
@@ -689,7 +701,10 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &exp
         return TempIR::makeExpr(expr.getFullUnderlyingQualifiedName());
     }
 
-    THROW_CompilerError("Qualified identifier not linked - likely bug");
+    THROW_CompilerError(
+        "Qualified identifier '" + expr.getQualifiedName() + "' not linked - likely bug\n"
+        "Classification is " + classificationToString(expr.getClassification())
+    );
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(InstanceOfExpression &expr) {

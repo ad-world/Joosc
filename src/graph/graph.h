@@ -1,3 +1,5 @@
+#pragma once
+
 #include "variant-ast/astvisitor/defaultskipvisitor.h"
 #include "variant-ast/expressions.h"
 #include "variant-ast/packages.h"

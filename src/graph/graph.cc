@@ -50,17 +50,6 @@ void GraphVisitor::operator()(CompilationUnit &node) {
     map.insert({(AstNodeVariant*) &node, children});
 }
 
-std::string classificationToString(Classification classification) {
-    switch (classification) {
-        case EXPRESSION_NAME: return "EXPRESSION_NAME";
-        case TYPE_NAME: return "TYPE_NAME";
-        case PACKAGE_NAME: return "PACKAGE_NAME";
-        case METHOD_NAME: return "METHOD_NAME";
-        case UNCLASSIFIED: return "UNCLASSIFIED";
-        default: return "ERROR CLASSIFICATION NOT FOUND";
-    }
-}
-
 void GraphVisitor::operator()(QualifiedIdentifier &node) {
     label_map[(AstNodeVariant*)&node] = "QualifiedIdentifier\n" + node.getQualifiedName() + "\n" + classificationToString(node.getClassification());
 #ifdef GRAPH_LOCATION

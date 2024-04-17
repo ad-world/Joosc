@@ -346,8 +346,8 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                         if (T.is_array && id == "length") {
                             // Special case: "length" field of an array
                             qid.link = LinkedType(PrimitiveType::INT);
+                            qid.setRefersToArrayLength();
                             qid.is_variable = false;
-                            qid.is_array_length = true;
                             return;
                         }
                         if (auto class_type = T.getIfNonArrayIsClass()) {
@@ -713,6 +713,7 @@ void TypeChecker::operator()(FieldAccess &node) {
     if (object_type.is_array) {
         if (field_name == "length") {
             node.link = LinkedType(PrimitiveType::INT);
+            node.identifier->is_array_length = true;
             node.is_variable = false;
             return;
         }
