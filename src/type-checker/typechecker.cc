@@ -348,6 +348,10 @@ void TypeChecker::operator()(QualifiedIdentifier &qid) {
                             qid.link = LinkedType(PrimitiveType::INT);
                             qid.setRefersToArrayLength();
                             qid.is_variable = false;
+
+                            // Make the second last identifier in qid have the link to the array (ugly but works)
+                            qid.identifiers[qid.identifiers.size() - 2] = Q.identifiers.back();
+
                             return;
                         }
                         if (auto class_type = T.getIfNonArrayIsClass()) {

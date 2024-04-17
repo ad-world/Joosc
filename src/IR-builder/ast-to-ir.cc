@@ -355,10 +355,10 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ClassInstanceCreationExp
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
     assert(expr.expression);
     assert(expr.identifier);
+    auto accessed_obj_type = TypeChecker::getLink(*expr.expression);
 
-    auto link = TypeChecker::getLink(*expr.expression);
-    if ( auto array = link.is_array && expr.identifier->name == "length" ) {
-        // Array length
+    // Special case: array length field
+    if (accessed_obj_type.is_array && expr.identifier->name == "length") {
         return MemIR::makeExpr(
             BinOpIR::makeExpr(
                 BinOpIR::SUB,
@@ -366,13 +366,24 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
                 ConstIR::makeWords()
             )
         );
-    } else if ( auto linkedClass = link.getIfNonArrayIsClass() ) {
-        std::string varName = expr.identifier->name;
-        std::string name = linkedClass->full_qualified_name + "." + varName;
+    }
 
+    // Static field access
+    if (expr.identifier->field && expr.identifier->field->ast_reference->hasModifier(Modifier::STATIC)) {
+        THROW_CompilerError(
+            "Non-static static field access not supported in Joosc; this should only happen in QualifiedIdentifier\n"
+            "Erroneous field access is on " + expr.identifier->name
+        );
+    }
+
+    // Instance field access
+    if (expr.identifier->field) {
+        #warning TODO: (A6) access the correct field of the correct object, will require typechecking changes probably
+        auto name = expr.identifier->field->full_qualified_name; // Incorrect because we don't have this info yet
         return TempIR::makeExpr(name);
     }
-    THROW_ASTtoIRError("TODO: Deferred to A6 - non-static field");
+
+    THROW_CompilerError("Identifier '" + expr.identifier->name + "' not linked to a field");
 }
 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(MethodInvocation &expr) {
@@ -674,12 +685,12 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &expr) {
     // Special case: array length field
     if (expr.refersToArrayLength()) {
-        auto array_name = expr.getFullUnderlyingQualifiedName();
+        auto array_name = expr.getQualifiedIdentifierWithoutLast().getFullUnderlyingQualifiedName();
 
-        // MEM(arr - 4)
+        // Length stored at MEM[array_name - 4]
         return MemIR::makeExpr(BinOpIR::makeExpr(
             BinOpIR::SUB,
-            TempIR::makeExpr(expr.getFullUnderlyingQualifiedName()),
+            TempIR::makeExpr(array_name),
             ConstIR::makeWords()
         ));
     }

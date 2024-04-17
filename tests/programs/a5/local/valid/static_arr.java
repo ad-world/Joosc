@@ -19,4 +19,6 @@ public class static_arr {
 	public static int m3() {
 		return 1;
 	}
+
+	public static_arr() {}
 }

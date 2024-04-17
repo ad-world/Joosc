@@ -16,17 +16,23 @@ std::string QualifiedIdentifier::getQualifiedName() {
 }
 
 std::string QualifiedIdentifier::getFullUnderlyingQualifiedName() {
-    if (identifiers.back().field) {
-        return identifiers.back().field->full_qualified_name;
+    if (refersToArrayLength()) {
+        return getQualifiedIdentifierWithoutLast().getFullUnderlyingQualifiedName() + ".length";
     }
-    if (identifiers.back().variable) {
-        return identifiers.back().variable->identifier;
+    if (auto field = getIfRefersToField()) {
+        return field->full_qualified_name;
     }
-    if (identifiers.back().parameter) {
-        return identifiers.back().parameter->identifier;
+    if (auto variable = getIfRefersToLocalVariable()) {
+        return variable->identifier;
+    }
+    if (auto parameter = getIfRefersToParameter()) {
+        return parameter->identifier;
     }
 
-    THROW_CompilerError("No underlying qualified name, possible bug");
+    THROW_CompilerError(
+        "No underlying qualified name in '" + getQualifiedName() + "' - likely bug\n"
+        "Classification is " + classificationToString(getClassification())
+    );
 }
 
 std::string QualifiedIdentifier::getPackagePrefix() {
