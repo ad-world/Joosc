@@ -1081,7 +1081,7 @@ void IRBuilderVisitor::operator()(MethodDeclaration &node) {
             [&](SeqIR &seq) {
                 vector<unique_ptr<StatementIR>> load_args;
 
-                // Move each parameter into abstract argument register
+                // Move each value in abstract argument register from caller into parameter temnp
                 int arg_num = 0;
                 for ( auto &param : node.parameters ) {
                     auto param_name = CGConstants::uniqueParameterLabel(param.environment);
