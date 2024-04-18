@@ -702,14 +702,14 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &exp
     }
 
     // Local variable access
-    if (expr.getIfRefersToLocalVariable()) {
-        auto name = CGConstants::uniqueLocalVariableLabel(expr.getIfRefersToLocalVariable());
+    if (auto variable = expr.getIfRefersToLocalVariable()) {
+        auto name = CGConstants::uniqueLocalVariableLabel(variable);
         return TempIR::makeExpr(name);
     }
 
     // Parameter access
-    if (expr.getIfRefersToParameter()) {
-        auto name = CGConstants::uniqueParameterLabel(expr.getIfRefersToParameter());
+    if (auto parameter = expr.getIfRefersToParameter()) {
+        auto name = CGConstants::uniqueParameterLabel(parameter);
         return TempIR::makeExpr(name);
     }
     
@@ -720,10 +720,10 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &exp
     }
 
     // Instance field access
-    if (expr.getIfRefersToField()) {
+    if (auto field = expr.getIfRefersToField()) {
         #warning TODO: (A6) access the correct field of the correct object
 
-        auto name = CGConstants::uniqueFieldLabel(expr.getIfRefersToField());
+        auto name = CGConstants::uniqueFieldLabel(field);
         return TempIR::makeExpr(name);
     }
 
