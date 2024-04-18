@@ -5,11 +5,6 @@
 
 #include "environment-builder/symboltableentry.h"
 
-class MethodDeclarationObject;
-class FieldDeclarationObject;
-class LocalVariableDeclarationObject;
-class FormalParameterDeclarationObject;
-
 // Conventions that need to be the same across different code gen components
 class CGConstants {
     static size_t next_method_id;
