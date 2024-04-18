@@ -29,35 +29,34 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
         [&](CompUnitIR &node) {
             std::list<std::string> output;
 
-            for (auto& func : node.getFunctionList()) {
-                // Function label
-                if (func->getName() == entrypoint_method) {
-                    // Add global start symbol for program execution entrypoint
-                    current_is_entrypoint = true;
-                    output.push_back(Assembly::ExternSymbol("__exception"));
-                    output.push_back(Assembly::ExternSymbol("__malloc"));
-                    output.push_back(Assembly::GlobalSymbol(Assembly::StartLabel));
-                    output.push_back(Assembly::StartLabel);
-                } else {
-                    current_is_entrypoint = false;
-                }
-                output.push_back(Assembly::Label(func->getName()));
+            // for (auto& func : node.getFunctionList()) {
+            //     // Function label
+            //     if (func->getName() == entrypoint_method) {
+            //         // Add global start symbol for program execution entrypoint
+            //         current_is_entrypoint = true;
+            //         output.push_back(Assembly::ExternSymbol("__exception"));
+            //         output.push_back(Assembly::ExternSymbol("__malloc"));
+            //         output.push_back(Assembly::GlobalSymbol("_start"));
+            //         output.push_back("_start");
+            //     } else {
+            //         current_is_entrypoint = false;
+            //     }
+            //     output.push_back(Assembly::Label(func->getName()));
 
-                auto body_tile = tile(func->getBody());
+            //     auto body_tile = tile(func->getBody());
 
-                int32_t stack_size = register_allocator->allocateRegisters(body_tile);
-                // int32_t stack_size = 40;
+            //     int32_t stack_size = register_allocator->allocateRegisters(body_tile);
 
-                // Function prologue
-                output.push_back(Assembly::Push(Assembly::REG32_STACKBASEPTR));
-                output.push_back(Assembly::Mov(Assembly::REG32_STACKBASEPTR, Assembly::REG32_STACKPTR));
-                output.push_back(Assembly::Sub(Assembly::REG32_STACKPTR, 4 * stack_size));
+            //     // Function prologue
+            //     output.push_back(Assembly::Push(Assembly::REG32_STACKBASEPTR));
+            //     output.push_back(Assembly::Mov(Assembly::REG32_STACKBASEPTR, Assembly::REG32_STACKPTR));
+            //     output.push_back(Assembly::Sub(Assembly::REG32_STACKPTR, 4 * stack_size));
 
-                // Function body
-                for (auto& body_instruction : body_tile->getFullInstructions()) {
-                    output.push_back(body_instruction);
-                }
-            }
+            //     // Function body
+            //     for (auto& body_instruction : body_tile->getFullInstructions()) {
+            //         output.push_back(body_instruction);
+            //     }
+            // }
 
             return output;
         },

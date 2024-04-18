@@ -27,6 +27,7 @@
 #include "IR-tiling/tiling/ir-tiling.h"
 #include "IR-tiling/register-allocation/brainless-allocator.h"
 #include "IR/code-gen-constants.h"
+#include "IR-tiling/assembly-generator/assembly-generator.h"
 
 #include <regex>
 #include <variant>
@@ -201,62 +202,62 @@ int Compiler::run() {
 
             // TODO: add this to asm
             // Add static fields (temporary)
-            CompUnitIR *main_comp = std::get_if<CompUnitIR>(&main_ir);
-            if ( main_comp ) {
-                assert(main_comp);
-                auto test_func = main_comp->getFunc(entrypoint_method);
-                assert(test_func);
-                std::vector<std::unique_ptr<StatementIR>> seq_vec;
+            // CompUnitIR *main_comp = std::get_if<CompUnitIR>(&main_ir);
+            // if ( main_comp ) {
+            //     assert(main_comp);
+            //     auto test_func = main_comp->getFunc(entrypoint_method);
+            //     assert(test_func);
+            //     std::vector<std::unique_ptr<StatementIR>> seq_vec;
 
-                for ( auto &field : main_comp->getFieldList() ) {
-                    std::string name = field.first;
-                    std::unique_ptr<ExpressionIR>& expr = field.second;
-                    seq_vec.push_back(MoveIR::makeStmt(
-                        TempIR::makeExpr(field.first),
-                        std::move(expr)
-                    ));
-                }
+            //     for ( auto &field : main_comp->getFieldList() ) {
+            //         std::string name = field.first;
+            //         std::unique_ptr<ExpressionIR>& expr = field.second;
+            //         seq_vec.push_back(MoveIR::makeStmt(
+            //             TempIR::makeExpr(field.first),
+            //             std::move(expr)
+            //         ));
+            //     }
 
-                for ( auto &ast : asts ) {
-                    if ( &ast != &asts.front() ) {
-                        CompUnitIR ast_ir = IRBuilderVisitor().visit(ast);
+            //     for ( auto &ast : asts ) {
+            //         if ( &ast != &asts.front() ) {
+            //             CompUnitIR ast_ir = IRBuilderVisitor().visit(ast);
 
-                        for ( auto &field : ast_ir.getFieldList() ) {
-                            std::string name = field.first;
-                            std::unique_ptr<ExpressionIR>& expr = field.second;
-                            seq_vec.push_back(MoveIR::makeStmt(
-                                TempIR::makeExpr(field.first),
-                                std::move(expr)
-                            ));
-                        }
+            //             for ( auto &field : ast_ir.getFieldList() ) {
+            //                 std::string name = field.first;
+            //                 std::unique_ptr<ExpressionIR>& expr = field.second;
+            //                 seq_vec.push_back(MoveIR::makeStmt(
+            //                     TempIR::makeExpr(field.first),
+            //                     std::move(expr)
+            //                 ));
+            //             }
 
-                        // Add fields to Main CompUnit
-                        for ( auto &func : ast_ir.getFunctionList() ) {
-                            std::string func_name = func->getName();
-                            main_comp->appendFunc(func_name,
-                                                  std::make_unique<FuncDeclIR>(func->getName(),
-                                                                               std::make_unique<StatementIR>(std::move(func->getBody())),
-                                                                               func->getNumParams()));
-                        }
-                    }
-                }
+            //             // Add fields to Main CompUnit
+            //             for ( auto &func : ast_ir.getFunctionList() ) {
+            //                 std::string func_name = func->getName();
+            //                 main_comp->appendFunc(func_name,
+            //                                       std::make_unique<FuncDeclIR>(func->getName(),
+            //                                                                    std::make_unique<StatementIR>(std::move(func->getBody())),
+            //                                                                    func->getNumParams()));
+            //             }
+            //         }
+            //     }
 
-                std::visit(util::overload{
-                    [&](SeqIR &seq) {
-                        for ( auto &stmt : seq.getStmts() ) {
-                            seq_vec.push_back(std::move(stmt));
-                        }
-                    },
-                    [&](auto &node) {
-                        THROW_ASTtoIRError("Error: Function body should always be SeqIR.");
-                    }
-                }, test_func->getBody());
+            //     std::visit(util::overload{
+            //         [&](SeqIR &seq) {
+            //             for ( auto &stmt : seq.getStmts() ) {
+            //                 seq_vec.push_back(std::move(stmt));
+            //             }
+            //         },
+            //         [&](auto &node) {
+            //             THROW_ASTtoIRError("Error: Function body should always be SeqIR.");
+            //         }
+            //     }, test_func->getBody());
 
-                test_func->setBody(SeqIR::makeStmt(std::move(seq_vec)));
-            } else {
-                // error
-                THROW_ASTtoIRError("Error: Main IR is not a CompUnitIR");
-            }
+            //     test_func->setBody(SeqIR::makeStmt(std::move(seq_vec)));
+            // } else {
+            //     // error
+            //     THROW_ASTtoIRError("Error: Main IR is not a CompUnitIR");
+            // }
 
             #ifdef GRAPHVIZ
                 // Graph IR
@@ -318,12 +319,16 @@ int Compiler::run() {
 #endif
 
             // Emit assembly
-            BrainlessRegisterAllocator allocator;
-            auto instructions = IRToTilesConverter(&allocator, entrypoint_method).tile(main_ir);
-            std::ofstream output_file {"output/asm.s"};
-            for (auto& instr : instructions) {
-                output_file << instr << "\n";
-            }
+            std::vector<IR> irs;
+            irs.push_back(std::move(main_ir));
+            AssemblyGenerator().generateCode(irs, entrypoint_method);
+
+            // BrainlessRegisterAllocator allocator;
+            // auto instructions = IRToTilesConverter(&allocator, entrypoint_method).tile(main_ir);
+            // std::ofstream output_file {"output/asm.s"};
+            // for (auto& instr : instructions) {
+            //     output_file << instr << "\n";
+            // }
         }
 
     } catch (const CompilerError &e ) {

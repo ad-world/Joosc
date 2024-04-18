@@ -33,6 +33,13 @@ class IRToTilesConverter {
     void decideIsCandidate(ExpressionIR& ir, Tile candidate);
     void decideIsCandidate(StatementIR& ir, Tile candidate); 
 
+    // Escape the temporary, so no temporary is a substring of another
+    inline std::string escapeTemporary(const std::string& s) { return "%" + s + "%"; }
+
+  public:
+    IRToTilesConverter(RegisterAllocator* register_allocator=nullptr, std::string entrypoint_method="") 
+      : register_allocator{register_allocator}, entrypoint_method{entrypoint_method} {}
+
     // Tile the expression, producing the lowest cost tile
     // Generates instructions that store the result in abstract_reg
     ExpressionTile tile(ExpressionIR& node, const std::string& abstract_reg);
@@ -40,13 +47,6 @@ class IRToTilesConverter {
     // Tile the statement, producing the lowest cost tile
     // Generates instructions that implement the statement
     StatementTile tile(StatementIR& node);
-
-    // Escape the temporary, so no temporary is a substring of another
-    inline std::string escapeTemporary(const std::string& s) { return "%" + s + "%"; }
-
-  public:
-    IRToTilesConverter(RegisterAllocator* register_allocator, std::string entrypoint_method) 
-      : register_allocator{register_allocator}, entrypoint_method{entrypoint_method} {}
     
     // Tile the whole compilation unit, producing a list of assembly instructions
     // Each element in the list returned is an assembly instruction
