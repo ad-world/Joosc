@@ -690,15 +690,12 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &expr) {
     // Special case: array length field
     if (expr.refersToArrayLength()) {
-        // auto array_name = expr.getQualifiedIdentifierWithoutLast().getFullUnderlyingQualifiedName();
-
         auto qid_before_length = expr.getQualifiedIdentifierWithoutLast();
         auto array = convert(qid_before_length);
 
         // Length stored at MEM[array - 4]
         return MemIR::makeExpr(BinOpIR::makeExpr(
             BinOpIR::SUB,
-            //TempIR::makeExpr(array_name),
             std::move(array),
             ConstIR::makeWords()
         ));
