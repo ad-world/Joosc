@@ -1,8 +1,8 @@
 #include "ir-tiling.h"
 #include "utillities/util.h"
 #include "exceptions/exceptions.h"
-#include "assembly.h"
-#include "register-allocation/register-allocator.h"
+#include "IR-tiling/assembly/assembly.h"
+#include "IR-tiling/register-allocation/register-allocator.h"
 #include "IR/code-gen-constants.h"
 
 #include <regex>

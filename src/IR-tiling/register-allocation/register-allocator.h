@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "IR-tiling/tile.h"
+#include "IR-tiling/tiling/tile.h"
 
 // Abstract class for a register allocation algorithm.
 class RegisterAllocator {

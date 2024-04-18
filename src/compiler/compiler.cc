@@ -24,7 +24,7 @@
 #include "IR-canonicalizer/ir-canonicalizer.h"
 #include "IR-canonicalizer/check-canonical.h"
 #include "IR-interpreter/IR-java-converter/IR-java-converter.h"
-#include "IR-tiling/ir-tiling.h"
+#include "IR-tiling/tiling/ir-tiling.h"
 #include "IR-tiling/register-allocation/brainless-allocator.h"
 #include "IR/code-gen-constants.h"
 
