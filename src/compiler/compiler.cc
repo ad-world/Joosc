@@ -48,7 +48,7 @@ std::string Compiler::getEntryPointMethod() {
         if (!entry_method) {
             THROW_CompilerError("Class '" + class_name + "' has no method 'test'");
         }
-        return CGConstants::uniqueMethodLabel(entry_method);
+        return CGConstants::uniqueStaticMethodLabel(entry_method);
     }
 
     std::string first_file = infiles.front();
@@ -65,7 +65,7 @@ std::string Compiler::getEntryPointMethod() {
         THROW_CompilerError("Class '" + class_name + "' has no method 'test'");
     }
 
-    return CGConstants::uniqueMethodLabel(entry_method);
+    return CGConstants::uniqueStaticMethodLabel(entry_method);
 }
 
 int Compiler::finishWith(ReturnCode code) {
