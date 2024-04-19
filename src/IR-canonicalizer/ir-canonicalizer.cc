@@ -103,7 +103,7 @@ IRCanonicalizer::LoweredExpression IRCanonicalizer::convert(ExpressionIR &ir) {
 
             return LoweredExpression(
                 std::move(lowered_address.statements),
-                MemIR(std::make_unique<ExpressionIR>(std::move(lowered_address.expression)))
+                MemIR::makeExpr(std::move(lowered_address.expression))
             ); 
         },
 
