@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <string>
 #include <memory>
 #include <unordered_map>
@@ -58,6 +59,7 @@ struct TypeDeclarationObject {
 
     std::unordered_map<std::string, MethodDeclarationObject*> all_methods; // declared and inherited methods
     std::unordered_map<std::string, std::list<MethodDeclarationObject*>> overloaded_methods; // declared and inherited methods
+    std::set<MethodDeclarationObject*> method_list; // declared and inherited methods
     std::unique_ptr<SymbolTable> methods; // SymbolTable mapping to MethodDeclarationObjects
 
     PackageDeclarationObject* package_contained_in; // Back-link to the package that contains this type

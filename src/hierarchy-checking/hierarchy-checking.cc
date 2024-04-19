@@ -409,6 +409,7 @@ void HierarchyCheckingVisitor::operator()(ClassDeclaration &node) {
         auto method_env = my_method.environment;
         node.environment->all_methods.insert({method_name, method_env});
         node.environment->overloaded_methods[method_name].push_back(method_env);
+        node.environment->method_list.insert(method_env);
     }
     
     // Add inherited methods (non-replaced)
@@ -417,6 +418,7 @@ void HierarchyCheckingVisitor::operator()(ClassDeclaration &node) {
         auto method_env = inherited_method;
         node.environment->all_methods.insert({method_name, method_env});
         node.environment->overloaded_methods[method_name].push_back(method_env);
+        node.environment->method_list.insert(method_env);
     }
 };
 
@@ -492,6 +494,7 @@ void HierarchyCheckingVisitor::operator()(InterfaceDeclaration &node) {
         auto method_env = my_method.environment;
         node.environment->all_methods.insert({method_name, method_env});
         node.environment->overloaded_methods[method_name].push_back(method_env);
+        node.environment->method_list.insert(method_env);
     }
     
     // Add implicit Object methods
@@ -500,6 +503,7 @@ void HierarchyCheckingVisitor::operator()(InterfaceDeclaration &node) {
         auto method_env = implicit_method.environment;
         node.environment->all_methods.insert({method_name, method_env});
         node.environment->overloaded_methods[method_name].push_back(method_env);
+        node.environment->method_list.insert(method_env);
     }
 
     // Add inheritied methods
@@ -508,6 +512,7 @@ void HierarchyCheckingVisitor::operator()(InterfaceDeclaration &node) {
         auto method_env = parent_method;
         node.environment->all_methods.insert({method_name, method_env});
         node.environment->overloaded_methods[method_name].push_back(method_env);
+        node.environment->method_list.insert(method_env);
     }
 }
 
