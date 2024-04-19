@@ -115,14 +115,14 @@ int Simulator::calloc(int size) {
 
 int Simulator::read(int addr) {
     int i = getMemoryIndex(addr);
-    if (i >= memory.size()) THROW_SimulatorError("Attempting to read past end of heap");
+    if (i >= memory.size()) throw ExitSysCall(13);
 
     return memory[i];
 }
 
 void Simulator::store(int addr, int value) {
     int i = getMemoryIndex(addr);
-    if (i >= memory.size()) THROW_SimulatorError("Attempting to store past end of heap");
+    if (i >= memory.size()) throw ExitSysCall(13);
     
     memory[i] = value;
 }
