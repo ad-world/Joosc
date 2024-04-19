@@ -11,9 +11,8 @@ class DVBuilder : DefaultSkipVisitor<void>{
         std::unordered_map<MethodDeclarationObject*, std::set<MethodDeclarationObject*>> neighbours;
         std::unordered_map<MethodDeclarationObject*, int> colour;
     } graph;
-    // Visited nodes (for construction)
-    std::set<ClassDeclarationObject*> visited_class;
-    std::set<InterfaceDeclarationObject*> visited_interface;
+
+    void addMethodsToGraph(std::set<MethodDeclarationObject*> &method_list);
 public:
     void operator()(ClassDeclaration &node) override;
     void operator()(InterfaceDeclaration &node) override;
