@@ -42,7 +42,9 @@ void DVBuilder::assignColours() {
                 to_visit.push(neighbour);
             }
         }
+
         graph.colour[node] = max + 1;
+        visited.insert(node);
     }
 }
 
