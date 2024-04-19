@@ -14,6 +14,10 @@ class DVBuilder : DefaultSkipVisitor<void>{
 
     void addMethodsToGraph(std::set<MethodDeclarationObject*> &method_list);
 public:
+    void colourMethods();
+    void resetColours();
+    void assertColoured();
+
     void operator()(ClassDeclaration &node) override;
     void operator()(InterfaceDeclaration &node) override;
 };
