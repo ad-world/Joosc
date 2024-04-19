@@ -281,6 +281,11 @@ int Compiler::run() {
                     result_file << result;
                 } catch (const SimulatorError &e ) {
                     cerr << e.what() << "\n";
+#ifdef LIBFUZZER
+                    if ( !e.soft ) {
+                        THROW_LibfuzzerError();
+                    }
+#endif
                 }
             }
 
