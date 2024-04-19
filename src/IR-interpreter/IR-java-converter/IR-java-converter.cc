@@ -40,15 +40,25 @@ void IRJavaConverter::operator()(CompUnitIR &node) {
 }
 
 void IRJavaConverter::operator()(FuncDeclIR &node) {
+    std::string name = node.getName();
+    int pos;
+    while ( (pos = name.find('#')) != std::string::npos ) {
+        name.replace(pos, 1, "_hash_");
+    }
+    while ( (pos = name.find('.')) != std::string::npos ) {
+        name.replace(pos, 1, "_dot_");
+    }
+    // std::replace(name.begin(), name.end(), '#', '_');
+    // std::replace(name.begin(), name.end(), '.', '_');
 
-    std::string function_name = node.getName() + "Func";
+    std::string function_name = name + "Func";
     functions.push_back(function_name); 
 
     num_tabs += 1;
-    appendToResult("Stmt " + node.getName() + "Body = ");
+    appendToResult("Stmt " + name + "Body = ");
     visit_children(node);
     result += ";";
-    appendToResult("FuncDecl " + function_name + " = new FuncDecl(\"" + node.getName() + "\"," + std::to_string(node.getNumParams()) + "," + node.getName() + "Body);\n");
+    appendToResult("FuncDecl " + function_name + " = new FuncDecl(\"" + node.getName() + "\"," + std::to_string(node.getNumParams()) + "," + name + "Body);\n");
     num_tabs -= 1;
 }
 
