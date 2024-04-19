@@ -151,7 +151,7 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
 #ifdef LIBFUZZER
     depth++;
     if ( depth > max_depth ) {
-        THROW_SimulatorError("Max function call depth exceeded. (Most likely recursion)");
+        THROW_SoftSimulatorError("Max function call depth exceeded. (Most likely recursion)");
     }
 #endif
     int return_value;
@@ -195,9 +195,6 @@ int Simulator::call(ExecutionFrame& parent, std::string name, std::vector<int> a
 
 int Simulator::getMemoryIndex(int addr) {
     if (addr % WORD_SIZE != 0) {
-#ifdef LIBFUZZER
-        THROW_LibfuzzerError();
-#endif
         THROW_SimulatorError("Unaligned memory access: " + std::to_string(addr) + " is not a multiple of " + std::to_string(WORD_SIZE));
     }
 
@@ -254,11 +251,11 @@ void Simulator::leave(ExecutionFrame *frame) {
                     result = l * r;
                     break;
                 case BinOpIR::OpType::DIV:
-                    if (r == 0) THROW_SimulatorError("Division by zero");
+                    if (r == 0) THROW_SoftSimulatorError("Division by zero");
                     result = l / r;
                     break;
                 case BinOpIR::OpType::MOD:
-                    if (r == 0) THROW_SimulatorError("Division by zero");
+                    if (r == 0) THROW_SoftSimulatorError("Division by zero");
                     result = l % r;
                     break;
                 case BinOpIR::OpType::AND:
