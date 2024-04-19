@@ -300,12 +300,11 @@ int Compiler::run() {
             } else if (run_ir) {
                 // Run interpreter on Canonical IR and get value
                 try {
-                    std::ofstream result_file {"ir_canon_result.tmp"};
-
                     auto sim = Simulator(&main_ir);
                     sim.setDebugLevel(0);
                     int result = sim.call(entrypoint_method, {});
 
+                    std::ofstream result_file {"ir_canon_result.tmp"};
                     result_file << result;
                 } catch (const SimulatorError &e ) {
                     cerr << e.what() << "\n";
