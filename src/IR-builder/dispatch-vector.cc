@@ -1,6 +1,7 @@
 #include "dispatch-vector.h"
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 #include <queue>
 #include <set>
 
@@ -20,7 +21,7 @@ void DVBuilder::addMethodsToGraph(std::set<MethodDeclarationObject*> &method_lis
     }
 }
 
-void DVBuilder::colourMethods() {
+void DVBuilder::assignColours() {
     // Basic coloring (wastes space)
     if ( graph.methods.empty() ) { return; }
 

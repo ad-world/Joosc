@@ -17,6 +17,7 @@
 #include "reachability/reachability.h"
 #include "reachability/reached-statement.h"
 #include "local-variables/local-variable-visitor.h"
+#include "IR-builder/dispatch-vector.h"
 
 #include "IR/ir.h"
 #include "IR-builder/ast-to-ir.h"
@@ -190,6 +191,13 @@ int Compiler::run() {
         for (auto &ast: asts) {
             LocalVariableVisitor().visit(ast);
         }
+
+        // Dispatch vector creation
+        for (auto &ast: asts) {
+            DVBuilder().visit(ast);
+        }
+        DVBuilder::assignColours();
+        DVBuilder::assertColoured();
 
         // Code generation
         if (emit_code) {
