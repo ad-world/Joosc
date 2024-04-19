@@ -379,7 +379,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
     // Instance field access
     if (expr.identifier->field) {
         #warning TODO: (A6) access the correct field of the correct object, will require typechecking changes probably
-        auto name = expr.identifier->field->full_qualified_name; // Incorrect because we don't have this info yet
+        auto name = CGConstants::uniqueFieldLabel(expr.identifier->field); // Incorrect because we don't have this info yet
         return TempIR::makeExpr(name);
     }
 
@@ -389,20 +389,25 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(MethodInvocation &expr) {
     auto called_method = expr.called_method;
 
-    if (called_method->ast_reference->hasModifier(Modifier::STATIC) || true) {
-        // Args vectors
-        vector<unique_ptr<ExpressionIR>> call_args_vec = {};
-        for ( auto &arg : expr.arguments ) {
-            call_args_vec.push_back(std::move(convert(arg)));
-        }
+    vector<unique_ptr<ExpressionIR>> call_args_vec = {};
+    for (auto &arg : expr.arguments) {
+        call_args_vec.push_back(std::move(convert(arg)));
+    }
+
+    if (called_method->ast_reference->hasModifier(Modifier::STATIC)) {
+        // Static method invoked
+        return CallIR::makeExpr(
+            NameIR::makeExpr(CGConstants::uniqueStaticMethodLabel(expr.called_method)),
+            std::move(call_args_vec)
+        );
+    } else {
+        // Instance method invoked
+        #warning TODO OOP a6 feature not properly implemented yet
 
         return CallIR::makeExpr(
             NameIR::makeExpr(CGConstants::uniqueMethodLabel(expr.called_method)),
             std::move(call_args_vec)
         );
-    } else {
-        // Non-static methods
-        THROW_ASTtoIRError("TODO: Deferred to A6 - non-static method");
     }
 }
 
@@ -685,31 +690,41 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(ArrayCreationExpression 
 std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &expr) {
     // Special case: array length field
     if (expr.refersToArrayLength()) {
-        auto array_name = expr.getQualifiedIdentifierWithoutLast().getFullUnderlyingQualifiedName();
+        auto qid_before_length = expr.getQualifiedIdentifierWithoutLast();
+        auto array = convert(qid_before_length);
 
-        // Length stored at MEM[array_name - 4]
+        // Length stored at MEM[array - 4]
         return MemIR::makeExpr(BinOpIR::makeExpr(
             BinOpIR::SUB,
-            TempIR::makeExpr(array_name),
+            std::move(array),
             ConstIR::makeWords()
         ));
     }
 
     // Local variable access
-    if (expr.getIfRefersToLocalVariable() || expr.getIfRefersToParameter()) {
-        #warning maybe want different convention for local var & field
-        return TempIR::makeExpr(expr.getFullUnderlyingQualifiedName());
+    if (auto variable = expr.getIfRefersToLocalVariable()) {
+        auto name = CGConstants::uniqueLocalVariableLabel(variable);
+        return TempIR::makeExpr(name);
+    }
+
+    // Parameter access
+    if (auto parameter = expr.getIfRefersToParameter()) {
+        auto name = CGConstants::uniqueParameterLabel(parameter);
+        return TempIR::makeExpr(name);
     }
     
     // Static field access
     if (expr.getIfRefersToField() && expr.getIfRefersToField()->ast_reference->hasModifier(Modifier::STATIC)) {
-        return TempIR::makeExpr(expr.getFullUnderlyingQualifiedName());
+        auto name = CGConstants::uniqueStaticFieldLabel(expr.getIfRefersToField());
+        return TempIR::makeExpr(name);
     }
 
     // Instance field access
-    if (expr.getIfRefersToField()) {
+    if (auto field = expr.getIfRefersToField()) {
         #warning TODO: (A6) access the correct field of the correct object
-        return TempIR::makeExpr(expr.getFullUnderlyingQualifiedName());
+
+        auto name = CGConstants::uniqueFieldLabel(field);
+        return TempIR::makeExpr(name);
     }
 
     THROW_CompilerError(
@@ -983,7 +998,8 @@ std::unique_ptr<StatementIR> IRBuilderVisitor::convert(LocalVariableDeclaration 
     assert(stmt.variable_declarator->expression);
 
     vector<unique_ptr<StatementIR>> seq_vec;
-    auto var_name = stmt.variable_declarator->variable_name->name;
+    //auto var_name = stmt.variable_declarator->variable_name->name;
+    auto var_name = CGConstants::uniqueLocalVariableLabel(stmt.environment);
 
     // Move(var, rhs)
     #warning This will overwrite a previous LVD (should have some kind of stack)
@@ -1008,7 +1024,7 @@ void IRBuilderVisitor::operator()(ClassDeclaration &node) {
 void IRBuilderVisitor::operator()(FieldDeclaration &field) {
     if (field.hasModifier(Modifier::STATIC)) {
         // Static field
-        std::string name = field.environment->full_qualified_name;
+        std::string name = CGConstants::uniqueStaticFieldLabel(field.environment);
 
         assert(field.variable_declarator);
         if (field.variable_declarator->expression) {
@@ -1031,7 +1047,8 @@ void IRBuilderVisitor::operator()(FieldDeclaration &field) {
 }
 
 void IRBuilderVisitor::operator()(MethodDeclaration &node) {
-    if ( !node.hasModifier(Modifier::STATIC) || !node.environment->return_type.isPrimitive() ) {
+    // Instance method
+    if (!node.hasModifier(Modifier::STATIC) || !node.environment->return_type.isPrimitive()) {
         // Skip non-static methods
         // If non-primitive return type or non-static method, add an empty function
 
@@ -1054,6 +1071,7 @@ void IRBuilderVisitor::operator()(MethodDeclaration &node) {
         return; 
     }
 
+    // Static method
     if (node.body) {
         // CREATE FuncDecl
 
@@ -1063,13 +1081,15 @@ void IRBuilderVisitor::operator()(MethodDeclaration &node) {
             [&](SeqIR &seq) {
                 vector<unique_ptr<StatementIR>> load_args;
 
-                // Add parameter moves
+                // Move each value in abstract argument register from caller into parameter temnp
                 int arg_num = 0;
                 for ( auto &param : node.parameters ) {
-                    auto param_name = param.parameter_name->name;
+                    auto param_name = CGConstants::uniqueParameterLabel(param.environment);
+                    auto param_temp = TempIR::makeExpr(param_name);
+
                     auto abstract_arg_name = CGConstants::ABSTRACT_ARG_PREFIX + to_string(arg_num++);
                     auto arg_temp = TempIR::makeExpr(abstract_arg_name);
-                    auto param_temp = TempIR::makeExpr(param_name);
+
                     load_args.push_back(
                         MoveIR::makeStmt(
                             std::move(param_temp),
@@ -1097,7 +1117,7 @@ void IRBuilderVisitor::operator()(MethodDeclaration &node) {
             }
         }, *body_stmt);
 
-        auto label = CGConstants::uniqueMethodLabel(node.environment);
+        auto label = CGConstants::uniqueStaticMethodLabel(node.environment);
 
         // Create func_decl
         auto func_decl = make_unique<FuncDeclIR>(
