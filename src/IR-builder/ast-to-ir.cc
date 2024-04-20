@@ -716,7 +716,7 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &exp
     // Static field access
     if (expr.getIfRefersToField() && expr.getIfRefersToField()->ast_reference->hasModifier(Modifier::STATIC)) {
         auto name = CGConstants::uniqueStaticFieldLabel(expr.getIfRefersToField());
-        return TempIR::makeExpr(name);
+        return TempIR::makeExpr(name, true);
     }
 
     // Instance field access

@@ -64,19 +64,19 @@ void Tile::add_instruction(Instruction instr) {
     instructions.push_back(instr);
 }
 
-void Tile::add_instructions_after(std::vector<Instruction> instructions) {
+void Tile::add_instructions_after(std::vector<Instruction> after_instructions) {
     cost_calculated = false; // Cost must be recalculated
-    for (auto &instr : instructions) {
+    for (auto &instr : after_instructions) {
         this->instructions.push_back(instr);
     }
 }
 
-void Tile::add_instructions_before(std::vector<Instruction> instructions) {
+void Tile::add_instructions_before(std::vector<Instruction> before_instructions) {
     cost_calculated = false; // Cost must be recalculated
     for (auto &instr : this->instructions) {
-        instructions.push_back(instr);
+        before_instructions.push_back(instr);
     }
-    this->instructions = instructions;
+    this->instructions = before_instructions;
 }
 
 void Tile::assignAbstract(std::string reg) {

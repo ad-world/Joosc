@@ -70,8 +70,6 @@ class Assembly {
         return "int 0x80";
     }
 
-    const static inline std::string StartLabel = Label("_start");
-
     static std::string ExternSymbol(std::string arg) {
         return "extern " + arg;
     }

@@ -1,8 +1,8 @@
 #include "ir-tiling.h"
 #include "utillities/util.h"
 #include "exceptions/exceptions.h"
-#include "assembly.h"
-#include "register-allocation/register-allocator.h"
+#include "IR-tiling/assembly/assembly.h"
+#include "IR-tiling/register-allocation/register-allocator.h"
 #include "IR/code-gen-constants.h"
 
 #include <regex>
@@ -22,48 +22,6 @@ void IRToTilesConverter::decideIsCandidate(StatementIR& ir, Tile candidate) {
         optimal_tile = candidate;
     }
 };
-
-std::list<std::string> IRToTilesConverter::tile(IR &ir) {
-    return std::visit(util::overload {
-        // For each function, tile each statement in the function body, and make a label for the function call
-        [&](CompUnitIR &node) {
-            std::list<std::string> output;
-
-            for (auto& func : node.getFunctionList()) {
-                // Function label
-                if (func->getName() == entrypoint_method) {
-                    // Add global start symbol for program execution entrypoint
-                    current_is_entrypoint = true;
-                    output.push_back(Assembly::ExternSymbol("__exception"));
-                    output.push_back(Assembly::ExternSymbol("__malloc"));
-                    output.push_back(Assembly::GlobalSymbol(Assembly::StartLabel));
-                    output.push_back(Assembly::StartLabel);
-                } else {
-                    current_is_entrypoint = false;
-                }
-                output.push_back(Assembly::Label(func->getName()));
-
-                auto body_tile = tile(func->getBody());
-
-                int32_t stack_size = register_allocator->allocateRegisters(body_tile);
-                // int32_t stack_size = 40;
-
-                // Function prologue
-                output.push_back(Assembly::Push(Assembly::REG32_STACKBASEPTR));
-                output.push_back(Assembly::Mov(Assembly::REG32_STACKBASEPTR, Assembly::REG32_STACKPTR));
-                output.push_back(Assembly::Sub(Assembly::REG32_STACKPTR, 4 * stack_size));
-
-                // Function body
-                for (auto& body_instruction : body_tile->getFullInstructions()) {
-                    output.push_back(body_instruction);
-                }
-            }
-
-            return output;
-        },
-        [&](auto &node) -> std::list<std::string> { THROW_CompilerError("This should not happen"); }
-    }, ir);
-}
 
 ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abstract_reg) {
     if (expression_memo.count(&ir)) {
@@ -237,8 +195,17 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
                         Assembly::MakeAddress(Assembly::REG32_STACKBASEPTR, "", 1, 4 * (arg_num + 2))
                     )
                 });
+            } 
+            // Special temp : Static variable in .data section
+            else if (node.isGlobal) {
+                generic_tile = Tile({
+                    Assembly::Mov(
+                        Tile::ABSTRACT_REG,
+                        Assembly::MakeAddress(node.getName())
+                    )
+                });
             }
-            // Not a special register
+            // Not special
             else {
                 generic_tile = Tile({
                     Assembly::Mov(Tile::ABSTRACT_REG, escapeTemporary(node.getName()))
@@ -300,9 +267,19 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             std::visit(util::overload {
 
                 [&](TempIR& target) {
-                    generic_tile = Tile({
-                        tile(node.getSource(), escapeTemporary(target.getName()))
-                    });
+                    if (target.isGlobal) {
+                        // Update global variable
+                        std::string temp_value_reg = newAbstractRegister();
+
+                        generic_tile = Tile({
+                            tile(node.getSource(), temp_value_reg),
+                            Assembly::Mov(Assembly::MakeAddress(target.getName()), temp_value_reg)
+                        });
+                    } else {
+                        generic_tile = Tile({
+                            tile(node.getSource(), escapeTemporary(target.getName()))
+                        });
+                    }
                 },
 
                 [&](MemIR& target) {
@@ -322,37 +299,24 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         },
 
         [&](ReturnIR &node) {
-            if (current_is_entrypoint) {
-                // Return a value by executing exit() system call with value in REG32_BASE
-                if (!node.getRet()) THROW_CompilerError("invalid void return in entrypoint function");
+            if (node.getRet()) {
+                // Return a value by placing it in REG32_ACCUM
                 generic_tile.add_instructions_after({
-                    Assembly::Comment("calculating return value and storing it in REG32_BASE"),
-                    tile(*node.getRet(), Assembly::REG32_BASE),
-                    Assembly::Comment("exit() system call"),
-                    Assembly::Mov(Assembly::REG32_ACCUM, 1),
-                    Assembly::SysCall()
-                });
-            } else {
-                if (node.getRet()) {
-                    // Return a value by placing it in REG32_ACCUM
-                    generic_tile.add_instructions_after({
-                        Assembly::Comment("return a value by placing it in REG32_ACCUM"),
-                        tile(*node.getRet(), Assembly::REG32_ACCUM)
-                    });
-                }
-                // Function epilogue
-                generic_tile.add_instructions_after({
-                    Assembly::Comment("function epilogue"),
-                    Assembly::Mov(Assembly::REG32_STACKPTR, Assembly::REG32_STACKBASEPTR),
-                    Assembly::Pop(Assembly::REG32_STACKBASEPTR),
-                    Assembly::Ret()
+                    Assembly::Comment("return a value by placing it in REG32_ACCUM"),
+                    tile(*node.getRet(), Assembly::REG32_ACCUM)
                 });
             }
+            // Function epilogue
+            generic_tile.add_instructions_after({
+                Assembly::Comment("function epilogue"),
+                Assembly::Mov(Assembly::REG32_STACKPTR, Assembly::REG32_STACKBASEPTR),
+                Assembly::Pop(Assembly::REG32_STACKBASEPTR),
+                Assembly::Ret()
+            });
         },
 
         [&](CallIR &node) {
             // Push arguments onto stack, in reverse order (CDECL)
-            generic_tile.add_instruction(Assembly::Comment("Call: pushing arguments onto stack"));
             for (auto &arg : node.getArgs()) {
                 std::string argument_register = newAbstractRegister();
                 generic_tile.add_instructions_after({
@@ -360,6 +324,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
                     Assembly::Push(argument_register)
                 });
             }
+            generic_tile.add_instructions_before({Assembly::Comment("Call: pushing arguments onto stack")});
 
             // Perform call instruction on function label
             if (auto name = std::get_if<NameIR>(&node.getTarget())) {
@@ -369,7 +334,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             }
 
             // Pop arguments from stack
-            generic_tile.add_instruction(Assembly::Comment("Call: popping arguments onto stack"));
+            generic_tile.add_instruction(Assembly::Comment("Call: popping arguments off stack"));
             generic_tile.add_instruction(Assembly::Add(Assembly::REG32_STACKPTR, 4 * node.getNumArgs()));
         },
 

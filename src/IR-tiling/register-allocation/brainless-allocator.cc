@@ -1,7 +1,7 @@
 #include "brainless-allocator.h"
-#include "IR-tiling/tile.h"
+#include "IR-tiling/tiling/tile.h"
 #include "utillities/overload.h"
-#include "IR-tiling/assembly.h"
+#include "IR-tiling/assembly/assembly.h"
 #include "exceptions/exceptions.h"
 
 #include <regex>

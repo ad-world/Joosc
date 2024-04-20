@@ -24,9 +24,10 @@
 #include "IR-canonicalizer/ir-canonicalizer.h"
 #include "IR-canonicalizer/check-canonical.h"
 #include "IR-interpreter/IR-java-converter/IR-java-converter.h"
-#include "IR-tiling/ir-tiling.h"
+#include "IR-tiling/tiling/ir-tiling.h"
 #include "IR-tiling/register-allocation/brainless-allocator.h"
 #include "IR/code-gen-constants.h"
+#include "IR-tiling/assembly-generator/assembly-generator.h"
 
 #include <regex>
 #include <variant>
@@ -196,84 +197,27 @@ int Compiler::run() {
             auto entrypoint_method = getEntryPointMethod();
 
             // Convert to IR
-            auto &main_ast = asts.front();
-            IR main_ir = IRBuilderVisitor().visit(main_ast);
-
-            // TODO: add this to asm
-            // Add static fields (temporary)
-            CompUnitIR *main_comp = std::get_if<CompUnitIR>(&main_ir);
-            if ( main_comp ) {
-                assert(main_comp);
-                auto test_func = main_comp->getFunc(entrypoint_method);
-                assert(test_func);
-                std::vector<std::unique_ptr<StatementIR>> seq_vec;
-
-                for ( auto &field : main_comp->getFieldList() ) {
-                    std::string name = field.first;
-                    std::unique_ptr<ExpressionIR>& expr = field.second;
-                    seq_vec.push_back(MoveIR::makeStmt(
-                        TempIR::makeExpr(field.first),
-                        std::move(expr)
-                    ));
-                }
-
-                for ( auto &ast : asts ) {
-                    if ( &ast != &asts.front() ) {
-                        CompUnitIR ast_ir = IRBuilderVisitor().visit(ast);
-
-                        for ( auto &field : ast_ir.getFieldList() ) {
-                            std::string name = field.first;
-                            std::unique_ptr<ExpressionIR>& expr = field.second;
-                            seq_vec.push_back(MoveIR::makeStmt(
-                                TempIR::makeExpr(field.first),
-                                std::move(expr)
-                            ));
-                        }
-
-                        // Add fields to Main CompUnit
-                        for ( auto &func : ast_ir.getFunctionList() ) {
-                            std::string func_name = func->getName();
-                            main_comp->appendFunc(func_name,
-                                                  std::make_unique<FuncDeclIR>(func->getName(),
-                                                                               std::make_unique<StatementIR>(std::move(func->getBody())),
-                                                                               func->getNumParams()));
-                        }
-                    }
-                }
-
-                std::visit(util::overload{
-                    [&](SeqIR &seq) {
-                        for ( auto &stmt : seq.getStmts() ) {
-                            seq_vec.push_back(std::move(stmt));
-                        }
-                    },
-                    [&](auto &node) {
-                        THROW_ASTtoIRError("Error: Function body should always be SeqIR.");
-                    }
-                }, test_func->getBody());
-
-                test_func->setBody(SeqIR::makeStmt(std::move(seq_vec)));
-            } else {
-                // error
-                THROW_ASTtoIRError("Error: Main IR is not a CompUnitIR");
+            std::vector<IR> IR_asts;
+            for (auto &ast: asts) {
+                IR_asts.emplace_back(IRBuilderVisitor().visit(ast));
             }
 
             #ifdef GRAPHVIZ
                 // Graph IR
-                IRGraphVisitor().visit(main_ir);
+                IRGraphVisitor().visit(IR_asts.front());
             #endif
 
             if (run_java_ir) {
                 // Convert to Java IR
                 IRJavaConverter converter = IRJavaConverter("MainNonCanonical", entrypoint_method);
-                converter.visit(main_ir);
+                converter.visit(IR_asts.front());
                 std::string result = converter.getResult();
                 std::ofstream java_file {"java-ir/ir/interpret/MainNonCanonical.java"};
                 java_file << result;
             } else if (run_ir) {
                 // Run interpreter on IR and get value
                 try {
-                    auto sim = Simulator(&main_ir);
+                    auto sim = Simulator(&IR_asts.front());
                     sim.setDebugLevel(0);
                     int result = sim.call(entrypoint_method, {});
                     
@@ -281,49 +225,45 @@ int Compiler::run() {
                     result_file << result;
                 } catch (const SimulatorError &e ) {
                     cerr << e.what() << "\n";
-#ifdef LIBFUZZER
-                    if ( !e.soft ) {
-                        THROW_LibfuzzerError();
-                    }
-#endif
+                    #ifdef LIBFUZZER
+                        if ( !e.soft ) {
+                            THROW_LibfuzzerError();
+                        }
+                    #endif
                 }
             }
 
              // Canonicalize IR
-            IRCanonicalizer().convert(main_ir);
-            if (!CanonicalChecker().check(main_ir, true)) {
-                THROW_CompilerError("IR is not canonical after canonicalizing");
-            }
-
-#ifndef LIBFUZZER
-            if (run_java_ir) {
-                IRJavaConverter converter = IRJavaConverter("MainCanonical", entrypoint_method);
-                converter.visit(main_ir);
-                std::string result = converter.getResult();
-                std::ofstream java_file {"java-ir/ir/interpret/MainCanonical.java"};
-                java_file << result;
-            } else if (run_ir) {
-                // Run interpreter on Canonical IR and get value
-                try {
-                    auto sim = Simulator(&main_ir);
-                    sim.setDebugLevel(0);
-                    int result = sim.call(entrypoint_method, {});
-
-                    std::ofstream result_file {"ir_canon_result.tmp"};
-                    result_file << result;
-                } catch (const SimulatorError &e ) {
-                    cerr << e.what() << "\n";
+            for (auto &ir_ast: IR_asts) {
+                IRCanonicalizer().convert(ir_ast);
+                if (!CanonicalChecker().check(ir_ast, true)) {
+                    THROW_CompilerError("IR is not canonical after canonicalizing");
                 }
             }
-#endif
 
-            // Emit assembly
-            BrainlessRegisterAllocator allocator;
-            auto instructions = IRToTilesConverter(&allocator, entrypoint_method).tile(main_ir);
-            std::ofstream output_file {"output/asm.s"};
-            for (auto& instr : instructions) {
-                output_file << instr << "\n";
-            }
+            #ifndef LIBFUZZER
+                if (run_java_ir) {
+                    IRJavaConverter converter = IRJavaConverter("MainCanonical", entrypoint_method);
+                    converter.visit(IR_asts.front());
+                    std::string result = converter.getResult();
+                    std::ofstream java_file {"java-ir/ir/interpret/MainCanonical.java"};
+                    java_file << result;
+                } else if (run_ir) {
+                    // Run interpreter on Canonical IR and get value
+                    try {
+                        auto sim = Simulator(&IR_asts.front());
+                        sim.setDebugLevel(0);
+                        int result = sim.call(entrypoint_method, {});
+
+                        std::ofstream result_file {"ir_canon_result.tmp"};
+                        result_file << result;
+                    } catch (const SimulatorError &e ) {
+                        cerr << e.what() << "\n";
+                    }
+                }
+            #endif
+            
+            AssemblyGenerator().generateCode(IR_asts, entrypoint_method);
         }
 
     } catch (const CompilerError &e ) {
