@@ -298,7 +298,6 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
 
         [&](CallIR &node) {
             // Push arguments onto stack, in reverse order (CDECL)
-            generic_tile.add_instruction(Assembly::Comment("Call: pushing arguments onto stack"));
             for (auto &arg : node.getArgs()) {
                 std::string argument_register = newAbstractRegister();
                 generic_tile.add_instructions_after({
@@ -306,6 +305,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
                     Assembly::Push(argument_register)
                 });
             }
+            generic_tile.add_instructions_before({Assembly::Comment("Call: pushing arguments onto stack")});
 
             // Perform call instruction on function label
             if (auto name = std::get_if<NameIR>(&node.getTarget())) {
@@ -315,7 +315,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             }
 
             // Pop arguments from stack
-            generic_tile.add_instruction(Assembly::Comment("Call: popping arguments onto stack"));
+            generic_tile.add_instruction(Assembly::Comment("Call: popping arguments off stack"));
             generic_tile.add_instruction(Assembly::Add(Assembly::REG32_STACKPTR, 4 * node.getNumArgs()));
         },
 
