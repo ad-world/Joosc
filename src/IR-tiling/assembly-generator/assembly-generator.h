@@ -64,7 +64,6 @@ class AssemblyGenerator {
         std::vector<std::pair<std::string, Tile>> static_fields;
         
         // Reset output directory
-        // std::filesystem::remove_all("output");
         for (auto& path: std::filesystem::directory_iterator("output")) {
             std::filesystem::remove_all(path);
         }
