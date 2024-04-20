@@ -209,6 +209,11 @@ IRCanonicalizer::LoweredStatement IRCanonicalizer::convert(StatementIR &ir) {
 
         [&](CallIR &node) -> LoweredStatement {
             THROW_CompilerError("Call IR should not be considered a statement before conversion"); 
+        },
+
+        [&](CommentIR &node) -> LoweredStatement {
+            // Leave alone
+            return LoweredStatement(std::move(node));
         }
     }, ir);
 }

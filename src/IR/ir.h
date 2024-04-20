@@ -19,6 +19,7 @@
 #include "move/move.h"
 #include "return/return.h"
 #include "seq/seq.h"
+#include "comment/comment.h"
 
 #include "comp-unit/comp-unit.h"
 #include "func-decl/func-decl.h"

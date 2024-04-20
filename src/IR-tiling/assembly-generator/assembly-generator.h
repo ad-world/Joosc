@@ -11,9 +11,12 @@
 #include "IR-tiling/assembly/assembly.h"
 #include "utillities/overload.h"
 #include "IR-tiling/tiling/ir-tiling.h"
-#include "IR-tiling/register-allocation/brainless-allocator.h"
 
-#define USED_REG_ALLOCATOR BrainlessRegisterAllocator
+#include "IR-tiling/register-allocation/brainless-allocator.h"
+#include "IR-tiling/register-allocation/noop-allocator.h"
+
+// #define USED_REG_ALLOCATOR BrainlessRegisterAllocator
+#define USED_REG_ALLOCATOR NoopRegisterAllocator
 
 // Find methods/static fields from other compilation units that need to be linked to the assembly file for this cu
 class DependencyFinder : public IRSkipVisitor {

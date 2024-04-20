@@ -86,3 +86,6 @@ void IRSkipVisitor::visit_children(SeqIR &node) {
         this->operator()(stmt);
     }
 }
+void IRSkipVisitor::visit_children(CommentIR &node) {
+    // No children
+}
