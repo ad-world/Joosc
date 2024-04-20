@@ -31,16 +31,6 @@ std::list<std::string> IRToTilesConverter::tile(IR &ir) {
 
             // for (auto& func : node.getFunctionList()) {
             //     // Function label
-            //     if (func->getName() == entrypoint_method) {
-            //         // Add global start symbol for program execution entrypoint
-            //         current_is_entrypoint = true;
-            //         output.push_back(Assembly::ExternSymbol("__exception"));
-            //         output.push_back(Assembly::ExternSymbol("__malloc"));
-            //         output.push_back(Assembly::GlobalSymbol("_start"));
-            //         output.push_back("_start");
-            //     } else {
-            //         current_is_entrypoint = false;
-            //     }
             //     output.push_back(Assembly::Label(func->getName()));
 
             //     auto body_tile = tile(func->getBody());
@@ -321,32 +311,20 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         },
 
         [&](ReturnIR &node) {
-            if (current_is_entrypoint) {
-                // Return a value by executing exit() system call with value in REG32_BASE
-                if (!node.getRet()) THROW_CompilerError("invalid void return in entrypoint function");
+            if (node.getRet()) {
+                // Return a value by placing it in REG32_ACCUM
                 generic_tile.add_instructions_after({
-                    Assembly::Comment("calculating return value and storing it in REG32_BASE"),
-                    tile(*node.getRet(), Assembly::REG32_BASE),
-                    Assembly::Comment("exit() system call"),
-                    Assembly::Mov(Assembly::REG32_ACCUM, 1),
-                    Assembly::SysCall()
-                });
-            } else {
-                if (node.getRet()) {
-                    // Return a value by placing it in REG32_ACCUM
-                    generic_tile.add_instructions_after({
-                        Assembly::Comment("return a value by placing it in REG32_ACCUM"),
-                        tile(*node.getRet(), Assembly::REG32_ACCUM)
-                    });
-                }
-                // Function epilogue
-                generic_tile.add_instructions_after({
-                    Assembly::Comment("function epilogue"),
-                    Assembly::Mov(Assembly::REG32_STACKPTR, Assembly::REG32_STACKBASEPTR),
-                    Assembly::Pop(Assembly::REG32_STACKBASEPTR),
-                    Assembly::Ret()
+                    Assembly::Comment("return a value by placing it in REG32_ACCUM"),
+                    tile(*node.getRet(), Assembly::REG32_ACCUM)
                 });
             }
+            // Function epilogue
+            generic_tile.add_instructions_after({
+                Assembly::Comment("function epilogue"),
+                Assembly::Mov(Assembly::REG32_STACKPTR, Assembly::REG32_STACKBASEPTR),
+                Assembly::Pop(Assembly::REG32_STACKBASEPTR),
+                Assembly::Ret()
+            });
         },
 
         [&](CallIR &node) {

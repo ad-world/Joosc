@@ -4,8 +4,9 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <unordered_map>
+#include <unordered_set>
 #include "IR/ir_variant.h"
-#include "unordered_map"
 #include "IR/func-decl/func-decl.h"
 #include "exceptions/exceptions.h"
 
@@ -19,23 +20,27 @@ class CompUnitIR {
 
     std::string class_name; // Used for graphing
 
-public:
-    // PROBABLY NOT NEEDED (causes errors)
-    // CompUnitIR(std::string name, std::unordered_map<std::string, std::unique_ptr<FuncDeclIR>> functions) : name(name), functions(functions) {}
+  public:
+    // Called functions this CU uses that need to be extern'd
+    // Built during tiling
+    std::unordered_set<std::string> external_functions;
+
     CompUnitIR(std::string name) : name(name) {}
+
     void appendFunc(std::string name, std::unique_ptr<FuncDeclIR> func) {
         child_functions.emplace_back(std::move(func));
         functions[name] = child_functions.back().get();
     }
+
     void appendField(std::string name, std::unique_ptr<ExpressionIR> value) {
         child_static_fields.emplace_back(std::make_pair(name, std::move(value)));
         static_fields[name] = child_static_fields.back().second.get();
     }
+
     FuncDeclIR* getFunc(std::string name) { 
         if (functions.find(name) == functions.end()) {
             THROW_ASTtoIRError("Could not find function with name " + name + " in the IR."); 
         }
-
         return functions[name];
     }
 
@@ -47,4 +52,12 @@ public:
     void setClassName(std::string name) { class_name = name; }
     std::vector<std::unique_ptr<FuncDeclIR>>& getFunctionList() { return child_functions; }
     std::vector<std::pair<std::string, std::unique_ptr<ExpressionIR>>>& getFieldList() { return child_static_fields; }
+
+    void requireFunction(std::string label) {
+        if (functions.count(label) || external_functions.count(label)) {
+            // Required function is from this compilation unit already or already included
+            return;
+        }
+        external_functions.insert(label);
+    }
 };

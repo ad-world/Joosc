@@ -9,7 +9,9 @@ class TempIR {
     std::string name;
 
 public:
-    TempIR(std::string name) : name{std::move(name)} {}
+    bool isGlobal = false; // Is a static field
+
+    TempIR(std::string name, bool isGlobal=false) : name{std::move(name)}, isGlobal{isGlobal} {}
 
     std::string &getName() { return name; }
     static std::string generateName(std::string prefix = "") {
@@ -20,5 +22,5 @@ public:
     std::string label() { return "TEMP(" + name + ")"; }
     bool isConstant() { return false; }
 
-    static std::unique_ptr<ExpressionIR> makeExpr(std::string str);
+    static std::unique_ptr<ExpressionIR> makeExpr(std::string str, bool isGlobal=false);
 };
