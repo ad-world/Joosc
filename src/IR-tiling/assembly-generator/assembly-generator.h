@@ -12,8 +12,9 @@
 #include "utillities/overload.h"
 #include "IR-tiling/tiling/ir-tiling.h"
 #include "IR-tiling/register-allocation/brainless-allocator.h"
+#include "IR-tiling/register-allocation/linear-scan.h"
 
-#define USED_REG_ALLOCATOR BrainlessRegisterAllocator
+#define USED_REG_ALLOCATOR LinearScanAllocator
 
 // Find methods/static fields from other compilation units that need to be linked to the assembly file for this cu
 class DependencyFinder : public IRSkipVisitor {
@@ -80,7 +81,9 @@ class AssemblyGenerator {
                         assert(field_initalizer);
                         auto [tile, _] = converter.tile(*field_initalizer, Assembly::REG32_ACCUM);
                         tile->assignAbstract(Assembly::REG32_ACCUM);
-                        USED_REG_ALLOCATOR().allocateRegisters(tile);
+                        USED_REG_ALLOCATOR registerAllocator;
+                        registerAllocator.allocateRegisters(tile);
+                        registerAllocator.print_live_intervals();
                         static_fields.emplace_back(field_name, *tile);
                     }
 
@@ -111,8 +114,9 @@ class AssemblyGenerator {
 
                         // Function prologue
                         auto body_tile = converter.tile(func->getBody());
-                        int32_t stack_size = USED_REG_ALLOCATOR().allocateRegisters(body_tile);
-
+                        USED_REG_ALLOCATOR registerAllocator;
+                        int32_t stack_size = registerAllocator.allocateRegisters(body_tile);
+                        registerAllocator.print_live_intervals();
                         output_file << "\t" << Assembly::Push(Assembly::REG32_STACKBASEPTR)                            << "\n";
                         output_file << "\t" << Assembly::Mov(Assembly::REG32_STACKBASEPTR, Assembly::REG32_STACKPTR)   << "\n";
                         output_file << "\t" << Assembly::Sub(Assembly::REG32_STACKPTR, 4 * stack_size)                 << "\n";

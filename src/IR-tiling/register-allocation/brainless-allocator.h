@@ -26,5 +26,5 @@ class BrainlessRegisterAllocator : public RegisterAllocator {
     void replaceAbstracts(AssemblyInstruction instruction, std::vector<Instruction>& target_vector);
 
   public:
-    int32_t allocateRegisters(Tile* function_body) override;
+    int32_t allocateRegisters(Tile* function_body, int instruction_no = 0) override;
 };

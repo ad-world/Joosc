@@ -27,7 +27,7 @@ void BrainlessRegisterAllocator::findOffsets(Tile* function_body) {
     }
 }
 
-int32_t BrainlessRegisterAllocator::allocateRegisters(Tile* function_body) {
+int32_t BrainlessRegisterAllocator::allocateRegisters(Tile* function_body, int instruction_no) {
     findOffsets(function_body);
 
     std::vector<Instruction> new_instructions;
