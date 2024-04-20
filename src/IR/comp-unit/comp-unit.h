@@ -21,10 +21,6 @@ class CompUnitIR {
     std::string class_name; // Used for graphing
 
   public:
-    // Called functions this CU uses that need to be extern'd
-    // Built during tiling
-    std::unordered_set<std::string> external_functions;
-
     CompUnitIR(std::string name) : name(name) {}
 
     void appendFunc(std::string name, std::unique_ptr<FuncDeclIR> func) {
@@ -52,12 +48,4 @@ class CompUnitIR {
     void setClassName(std::string name) { class_name = name; }
     std::vector<std::unique_ptr<FuncDeclIR>>& getFunctionList() { return child_functions; }
     std::vector<std::pair<std::string, std::unique_ptr<ExpressionIR>>>& getFieldList() { return child_static_fields; }
-
-    void requireFunction(std::string label) {
-        if (functions.count(label) || external_functions.count(label)) {
-            // Required function is from this compilation unit already or already included
-            return;
-        }
-        external_functions.insert(label);
-    }
 };
