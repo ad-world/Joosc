@@ -23,37 +23,6 @@ void IRToTilesConverter::decideIsCandidate(StatementIR& ir, Tile candidate) {
     }
 };
 
-std::list<std::string> IRToTilesConverter::tile(IR &ir) {
-    return std::visit(util::overload {
-        // For each function, tile each statement in the function body, and make a label for the function call
-        [&](CompUnitIR &node) {
-            std::list<std::string> output;
-
-            // for (auto& func : node.getFunctionList()) {
-            //     // Function label
-            //     output.push_back(Assembly::Label(func->getName()));
-
-            //     auto body_tile = tile(func->getBody());
-
-            //     int32_t stack_size = register_allocator->allocateRegisters(body_tile);
-
-            //     // Function prologue
-            //     output.push_back(Assembly::Push(Assembly::REG32_STACKBASEPTR));
-            //     output.push_back(Assembly::Mov(Assembly::REG32_STACKBASEPTR, Assembly::REG32_STACKPTR));
-            //     output.push_back(Assembly::Sub(Assembly::REG32_STACKPTR, 4 * stack_size));
-
-            //     // Function body
-            //     for (auto& body_instruction : body_tile->getFullInstructions()) {
-            //         output.push_back(body_instruction);
-            //     }
-            // }
-
-            return output;
-        },
-        [&](auto &node) -> std::list<std::string> { THROW_CompilerError("This should not happen"); }
-    }, ir);
-}
-
 ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abstract_reg) {
     if (expression_memo.count(&ir)) {
         return expression_memo[&ir].pairWith(abstract_reg);
