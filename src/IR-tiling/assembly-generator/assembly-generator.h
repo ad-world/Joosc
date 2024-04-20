@@ -27,6 +27,8 @@ class DependencyFinder : public IRSkipVisitor {
 
     explicit DependencyFinder(CompUnitIR& cu) : cu{cu} {
         this->operator()(cu);
+        required_functions.insert("__exception");
+        required_functions.insert("__malloc");
     }
 
     virtual void operator()(CallIR &node) override {
@@ -129,16 +131,18 @@ class AssemblyGenerator {
         // Emit a main file for the entrypoint
         std::ofstream start_file {"output/main.s"};
         
-        start_file << "section .data\n";
+        start_file << "section .data\n\n";
         for (auto& [field_name, initalizer_tile] : static_fields) {
-            start_file << "\n";
-            start_file << Assembly::GlobalSymbol(field_name) << "\n";
-            start_file << Assembly::Label(field_name) << "\n";
+            start_file << field_name + ": dd 0" << "\n";
         }
         start_file << "\n"
 
-        << "section .text"                              << "\n\n"
+        << "section .text"                              << "\n\n";
 
+        for (auto& [field_name, initalizer_tile] : static_fields) {
+            start_file << Assembly::GlobalSymbol(field_name) << "\n";
+        }
+        start_file 
         << Assembly::GlobalSymbol("_start")             << "\n"
         << Assembly::ExternSymbol(entrypoint_method)    << "\n\n"
 

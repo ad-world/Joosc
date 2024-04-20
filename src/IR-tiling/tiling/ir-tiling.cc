@@ -195,8 +195,17 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
                         Assembly::MakeAddress(Assembly::REG32_STACKBASEPTR, "", 1, 4 * (arg_num + 2))
                     )
                 });
+            } 
+            // Special temp : Static variable in .data section
+            else if (node.isGlobal) {
+                generic_tile = Tile({
+                    Assembly::Mov(
+                        Tile::ABSTRACT_REG,
+                        Assembly::MakeAddress(node.getName())
+                    )
+                });
             }
-            // Not a special register
+            // Not special
             else {
                 generic_tile = Tile({
                     Assembly::Mov(Tile::ABSTRACT_REG, escapeTemporary(node.getName()))
@@ -258,9 +267,19 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             std::visit(util::overload {
 
                 [&](TempIR& target) {
-                    generic_tile = Tile({
-                        tile(node.getSource(), escapeTemporary(target.getName()))
-                    });
+                    if (target.isGlobal) {
+                        // Update global variable
+                        std::string temp_value_reg = newAbstractRegister();
+
+                        generic_tile = Tile({
+                            tile(node.getSource(), temp_value_reg),
+                            Assembly::Mov(Assembly::MakeAddress(target.getName()), temp_value_reg)
+                        });
+                    } else {
+                        generic_tile = Tile({
+                            tile(node.getSource(), escapeTemporary(target.getName()))
+                        });
+                    }
                 },
 
                 [&](MemIR& target) {
