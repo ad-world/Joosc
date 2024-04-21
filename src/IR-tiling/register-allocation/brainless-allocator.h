@@ -8,7 +8,7 @@
 // Register allocator that spills all variables to the stack.
 class BrainlessRegisterAllocator : public RegisterAllocator {
     std::unordered_map<std::string, int> reg_offsets;
-    int stack_offset = 0;
+    int stack_offset = 4;
 
     // Registers designated to load stack values into
     static std::vector<std::string> instruction_registers;
