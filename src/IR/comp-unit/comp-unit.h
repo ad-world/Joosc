@@ -12,13 +12,17 @@
 
 class CompUnitIR {
     std::string name;
+    std::string class_name; // Used for graphing
+
     std::unordered_map<std::string, FuncDeclIR*> functions;     // These point to functions inside of child_functions
     std::vector<std::unique_ptr<FuncDeclIR>> child_functions;
 
     std::unordered_map<std::string, ExpressionIR*> static_fields;
     std::vector<std::pair<std::string, std::unique_ptr<ExpressionIR>>> child_static_fields;
 
-    std::string class_name; // Used for graphing
+    bool staticFieldsCanonicalized = false;
+
+    std::vector<std::pair<std::string, std::unique_ptr<StatementIR>>> child_canonical_static_fields;
 
   public:
     CompUnitIR(std::string name) : name(name) {}
@@ -47,5 +51,21 @@ class CompUnitIR {
 
     void setClassName(std::string name) { class_name = name; }
     std::vector<std::unique_ptr<FuncDeclIR>>& getFunctionList() { return child_functions; }
-    std::vector<std::pair<std::string, std::unique_ptr<ExpressionIR>>>& getFieldList() { return child_static_fields; }
+
+    std::vector<std::pair<std::string, std::unique_ptr<ExpressionIR>>>& getFieldList() { 
+        if (staticFieldsCanonicalized) THROW_CompilerError("Static field initalizers are canonicalized; use getCanonFieldList");
+        return child_static_fields; 
+    }
+
+    std::vector<std::pair<std::string, std::unique_ptr<StatementIR>>>& getCanonFieldList() { 
+        if (!staticFieldsCanonicalized) THROW_CompilerError("Static field initalizers are not canonicalized; use getFieldList");
+        return child_canonical_static_fields; 
+    }
+
+    bool areStaticFieldsCanonicalized() { return staticFieldsCanonicalized; }
+
+    void canonicalizeStaticFields(std::vector<std::pair<std::string, std::unique_ptr<StatementIR>>>& child_canonical_static_fields) {
+        this->child_canonical_static_fields = std::move(child_canonical_static_fields);
+        staticFieldsCanonicalized = true;
+    }
 };

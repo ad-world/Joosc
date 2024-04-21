@@ -64,6 +64,15 @@ class DependencyFinder : public IRSkipVisitor {
 // Tiles each compilation unit and creates the files as appropriate.
 class AssemblyGenerator {
     IRToTilesConverter converter;
+
+    std::string makeFunctionPrologue(int32_t stack_size) {
+        std::string output;
+        output += "\t" + Assembly::Push(Assembly::REG32_STACKBASEPTR) + "\n";
+        output += "\t" + Assembly::Mov(Assembly::REG32_STACKBASEPTR, Assembly::REG32_STACKPTR) + "\n";
+        output += "\t" + Assembly::Sub(Assembly::REG32_STACKPTR, 4 * stack_size) + "\n";
+        return output;
+    }
+
   public:
     void generateCode(std::vector<IR>& ir_trees, std::string entrypoint_method) {
         std::vector<std::pair<std::string, Tile>> static_fields;
@@ -79,11 +88,9 @@ class AssemblyGenerator {
             std::visit(util::overload {
                 [&](CompUnitIR& cu) {
                     // Get static fields to dump in .data section of entrypoint file later
-                    for (auto& [field_name, field_initalizer] : cu.getFieldList()) {
+                    for (auto& [field_name, field_initalizer] : cu.getCanonFieldList()) {
                         assert(field_initalizer);
-                        auto [tile, _] = converter.tile(*field_initalizer, Assembly::REG32_ACCUM);
-                        tile->assignAbstract(Assembly::REG32_ACCUM);
-                        USED_REG_ALLOCATOR().allocateRegisters(tile);
+                        auto tile = converter.tile(*field_initalizer);
                         static_fields.emplace_back(field_name, *tile);
                     }
 
@@ -115,10 +122,7 @@ class AssemblyGenerator {
                         // Function prologue
                         auto body_tile = converter.tile(func->getBody());
                         int32_t stack_size = USED_REG_ALLOCATOR().allocateRegisters(body_tile);
-
-                        output_file << "\t" << Assembly::Push(Assembly::REG32_STACKBASEPTR)                            << "\n";
-                        output_file << "\t" << Assembly::Mov(Assembly::REG32_STACKBASEPTR, Assembly::REG32_STACKPTR)   << "\n";
-                        output_file << "\t" << Assembly::Sub(Assembly::REG32_STACKPTR, 4 * stack_size)                 << "\n";
+                        output_file << makeFunctionPrologue(stack_size);
 
                         // Function body
                         for (auto& body_instruction : body_tile->getFullInstructions()) {
@@ -147,15 +151,22 @@ class AssemblyGenerator {
         }
         start_file 
         << Assembly::GlobalSymbol("_start")             << "\n"
+        << Assembly::ExternSymbol("__exception")        << "\n"
+        << Assembly::ExternSymbol("__malloc")           << "\n"
         << Assembly::ExternSymbol(entrypoint_method)    << "\n\n"
 
         << Assembly::Label("_start") << "\n"
             << "\t" << Assembly::Comment("Initialize all the static fields of all the compilation units, in order");
             for (auto& [field_name, initalizer_tile] : static_fields) {
+                int32_t stack_size_for_initializer = USED_REG_ALLOCATOR().allocateRegisters(&initalizer_tile);
+
+                start_file << makeFunctionPrologue(stack_size_for_initializer);
                 for (auto &instr : initalizer_tile.getFullInstructions()) {
                     start_file << "\t" << instr << "\n";
                 }
-                start_file << "\t" << Assembly::Mov(Assembly::MakeAddress(field_name), Assembly::REG32_ACCUM) << "\n";
+
+                start_file << "\t" << Assembly::Mov(Assembly::REG32_STACKPTR, Assembly::REG32_STACKBASEPTR) << "\n";
+                start_file << "\t" << Assembly::Pop(Assembly::REG32_STACKBASEPTR) << "\n";
             }
             start_file << "\n"
 
