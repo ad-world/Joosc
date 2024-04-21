@@ -110,6 +110,8 @@ void CanonicalChecker::check(StatementIR &ir) {
             for (auto& arg : node.getArgs()) {
                 check(*arg);
             }
-        }
+        },
+
+        [&](CommentIR &) {},
     }, ir);
 }

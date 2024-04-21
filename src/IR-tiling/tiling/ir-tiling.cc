@@ -302,7 +302,6 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             if (node.getRet()) {
                 // Return a value by placing it in REG32_ACCUM
                 generic_tile.add_instructions_after({
-                    Assembly::Comment("return a value by placing it in REG32_ACCUM"),
                     tile(*node.getRet(), Assembly::REG32_ACCUM)
                 });
             }
@@ -347,6 +346,10 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
 
         [&](ExpIR &node) {
             THROW_CompilerError("ExpIR should not exist after canonicalization"); 
+        },
+
+        [&](CommentIR &node) {
+            generic_tile = Tile(std::vector<Instruction>());
         }
     }, ir);
 

@@ -31,6 +31,7 @@ protected:
     void visit_children(MoveIR &node);
     void visit_children(ReturnIR &node);
     void visit_children(SeqIR &node);
+    void visit_children(CommentIR &node);
 
 public:
     // CompUnitIR
@@ -60,6 +61,7 @@ public:
     virtual void operator()(MoveIR &node) { this->visit_children(node); }
     virtual void operator()(ReturnIR &node) { this->visit_children(node); }
     virtual void operator()(SeqIR &node) { this->visit_children(node); }
+    virtual void operator()(CommentIR &node) { this->visit_children(node); }
 
     // Can call either visitor(node) or visitor.visit(node) as the entrypoint
     void operator()(IR &node) {
