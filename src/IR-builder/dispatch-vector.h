@@ -27,6 +27,10 @@ class DVBuilder : DefaultSkipVisitor<void>{
 
     void addMethodsToGraph(std::set<MethodDeclarationObject*> &method_list);
     static inline std::unordered_map<ClassDeclarationObject*, std::unique_ptr<DV>> class_dvs;
+
+    static std::set<MethodDeclarationObject*> removeMethodFromGraph(MethodDeclarationObject* method);
+
+    static void addMethodToGraph(MethodDeclarationObject* method, std::set<MethodDeclarationObject*> neighbour_list);
 public:
     using DefaultSkipVisitor<void>::operator();
 
