@@ -167,7 +167,7 @@ ExpressionTile IRToTilesConverter::tile(const std::string &abstract_reg, Express
 
             generic_tile = Tile({
                 tile(address_reg, node.getAddress()),
-                Assembly::Lea(Tile::ABSTRACT_REG, Assembly::MakeAddress(address_reg))
+                Assembly::Mov(Tile::ABSTRACT_REG, Assembly::MakeAddress(address_reg))
             });
         },
 
