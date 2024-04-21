@@ -23,7 +23,7 @@ void IRToTilesConverter::decideIsCandidate(StatementIR& ir, Tile candidate) {
     }
 };
 
-ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abstract_reg) {
+ExpressionTile IRToTilesConverter::tile(const std::string &abstract_reg, ExpressionIR &ir) {
     if (expression_memo.count(&ir)) {
         return expression_memo[&ir].pairWith(abstract_reg);
     }
@@ -39,8 +39,8 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
             std::string operand2_reg = newAbstractRegister();
 
             generic_tile = Tile({
-                tile(node.getLeft(), operand1_reg),
-                tile(node.getRight(), operand2_reg)
+                tile(operand1_reg, node.getLeft()),
+                tile(operand2_reg, node.getRight())
             });
 
             switch (node.op) {
@@ -166,7 +166,7 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
             std::string address_reg = newAbstractRegister();
 
             generic_tile = Tile({
-                tile(node.getAddress(), address_reg),
+                tile(address_reg, node.getAddress()),
                 Assembly::Lea(Tile::ABSTRACT_REG, Assembly::MakeAddress(address_reg))
             });
         },
@@ -243,7 +243,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             std::string cond_reg = newAbstractRegister();
 
             generic_tile = Tile({
-                tile(node.getCondition(), cond_reg),
+                tile(cond_reg, node.getCondition()),
                 Assembly::Test(cond_reg, cond_reg),
                 Assembly::JumpIfNZ(node.trueLabel())
             });
@@ -253,7 +253,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             std::string target_reg = newAbstractRegister();
 
             generic_tile = Tile({
-                tile(node.getTarget(), target_reg),
+                tile(target_reg, node.getTarget()),
                 Assembly::Jump(target_reg)
             });
         },
@@ -272,12 +272,12 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
                         std::string temp_value_reg = newAbstractRegister();
 
                         generic_tile = Tile({
-                            tile(node.getSource(), temp_value_reg),
+                            tile(temp_value_reg, node.getSource()),
                             Assembly::Mov(Assembly::MakeAddress(target.getName()), temp_value_reg)
                         });
                     } else {
                         generic_tile = Tile({
-                            tile(node.getSource(), escapeTemporary(target.getName()))
+                            tile(escapeTemporary(target.getName()), node.getSource())
                         });
                     }
                 },
@@ -287,8 +287,8 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
                     std::string source_reg = newAbstractRegister();
 
                     generic_tile = Tile({
-                        tile(node.getSource(), source_reg),
-                        tile(target.getAddress(), address_reg),
+                        tile(source_reg, node.getSource()),
+                        tile(address_reg, target.getAddress()),
                         Assembly::Mov(Assembly::MakeAddress(address_reg), source_reg)
                     });
                 },
@@ -302,7 +302,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             if (node.getRet()) {
                 // Return a value by placing it in REG32_ACCUM
                 generic_tile.add_instructions_after({
-                    tile(*node.getRet(), Assembly::REG32_ACCUM)
+                    tile(Assembly::REG32_ACCUM, *node.getRet())
                 });
             }
             // Function epilogue
@@ -319,7 +319,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             for (auto &arg : node.getArgs()) {
                 std::string argument_register = newAbstractRegister();
                 generic_tile.add_instructions_after({
-                    tile(*arg, argument_register),
+                    tile(argument_register, *arg),
                     Assembly::Push(argument_register)
                 });
             }
