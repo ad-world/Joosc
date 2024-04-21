@@ -26,6 +26,22 @@ void IRCanonicalizer::convert(IR &ir) {
             for (auto& func : node.getFunctionList()) {
                 func->getBody() = SeqIR(convert(func->getBody()).statements);
             }
+
+            std::vector<std::pair<std::string, std::unique_ptr<StatementIR>>> child_canonical_static_fields;
+            for (auto& [static_field_name, initializer] : node.getFieldList()) {
+                LoweredExpression lowered = convert(*initializer);
+
+                std::vector<StatementIR> initializer_statements = concatenate(
+                    lowered.statements,
+                    MoveIR(std::make_unique<ExpressionIR>(TempIR(static_field_name, true)), std::move(lowered.expression))
+                );
+
+                child_canonical_static_fields.emplace_back(
+                    static_field_name,
+                    SeqIR::makeStmt(std::move(initializer_statements))
+                );
+            }
+            node.canonicalizeStaticFields(child_canonical_static_fields);
         },
         [&](auto &node) { THROW_CompilerError("This should not happen"); }
     }, ir);

@@ -29,4 +29,5 @@ public:
 
     static std::unique_ptr<StatementIR> makeEmpty();
     static std::unique_ptr<StatementIR> makeStmt(std::vector<std::unique_ptr<StatementIR>> stmts, bool replaceParent = false);
+    static std::unique_ptr<StatementIR> makeStmt(std::vector<StatementIR> stmts);
 };

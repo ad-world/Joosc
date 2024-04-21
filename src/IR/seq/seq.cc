@@ -2,7 +2,7 @@
 #include "IR/ir.h"
 
 std::unique_ptr<StatementIR> SeqIR::makeEmpty() {
-    return makeStmt({});
+    return makeStmt(std::vector<StatementIR>{});
 }
 
 SeqIR::SeqIR(std::vector<StatementIR> stmts) {
@@ -18,5 +18,12 @@ std::unique_ptr<StatementIR> SeqIR::makeStmt(std::vector<std::unique_ptr<Stateme
         std::in_place_type<SeqIR>,
         std::move(stmts),
         replaceParent
+    );
+}
+
+std::unique_ptr<StatementIR> SeqIR::makeStmt(std::vector<StatementIR> stmts) {
+    return std::make_unique<StatementIR>(
+        std::in_place_type<SeqIR>,
+        std::move(stmts)
     );
 }

@@ -16,6 +16,24 @@ bool CanonicalChecker::check(IR &ir, bool output_reason) {
 
     std::visit(util::overload {
         [&](CompUnitIR &node) {
+            if (!node.areStaticFieldsCanonicalized()) {
+                notCanonicalBecause("Static field initalizers were never canonicalized");
+            } else {
+                for (auto& [name, initializer] : node.getCanonFieldList()) {
+                    if (auto body = std::get_if<SeqIR>(&*initializer)) {
+                        current_body = &body->getStmts();
+                        current_statement = 0;
+
+                        for (auto& stmt : body->getStmts()) {
+                            check(*stmt);
+                            ++current_statement;
+                        }
+                    } else {
+                        notCanonicalBecause("Static field initalizer is not SeqIR");
+                    }
+                }
+            }
+
             for (auto& func : node.getFunctionList()) {
                 if (auto body = std::get_if<SeqIR>(&func->getBody())) {
                     current_body = &body->getStmts();
@@ -66,6 +84,8 @@ void CanonicalChecker::check(ExpressionIR &ir) {
 void CanonicalChecker::check(StatementIR &ir) {
     return std::visit(util::overload {
         [&](CJumpIR &node) {
+            check(node.getCondition());
+
             // False label should be fall-through
             auto cJumpFalseLabel = node.falseLabel();
 

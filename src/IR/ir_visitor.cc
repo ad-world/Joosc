@@ -6,6 +6,18 @@ void IRSkipVisitor::visit_children(CompUnitIR &node) {
         assert(kv_pair.second);
         this->operator()(*kv_pair.second);
     }
+
+    if (node.areStaticFieldsCanonicalized()) {
+        for (auto& [name, initializer] : node.getCanonFieldList()) {
+            assert(initializer);
+            this->operator()(*initializer);
+        }
+    } else {
+        for (auto& [name, initializer] : node.getFieldList()) {
+            assert(initializer);
+            this->operator()(*initializer);
+        }
+    }
 }
 
 // FuncDeclIR
