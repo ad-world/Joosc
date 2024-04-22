@@ -6,6 +6,7 @@
 #include <iostream>
 #include <queue>
 #include <set>
+#include <iostream>
 
 void DVBuilder::addMethodsToGraph(std::set<MethodDeclarationObject*> &method_list) {
     // Sets the minimum colours to the size of each complete graph
@@ -29,29 +30,28 @@ void DVBuilder::addMethodsToGraph(std::set<MethodDeclarationObject*> &method_lis
 }
 
 void DVBuilder::assignColours() {
-    // Basic coloring (wastes space)
-    if ( graph.methods.empty() ) { return; }
+    auto firstVertex = graph.neighbours.begin()->first;
+    graph.colour[firstVertex] = 1;
 
-    std::set<MethodDeclarationObject*> visited;
-    std::queue<MethodDeclarationObject*> to_visit;
-    to_visit.push(*graph.methods.begin());
+    std::unordered_set<int> availableColors;
 
-    while ( !to_visit.empty() ) {
-        auto node = to_visit.front();
-        to_visit.pop();
+    for (auto& vertex : graph.neighbours) {
+        if (vertex.first == firstVertex) continue; 
 
-        int max = 0;
-        for ( auto neighbour : graph.neighbours[node] ) {
-            if ( visited.find(neighbour) != visited.end() ) {
-                // Neighbour already coloured
-                max = std::max(max, graph.colour[neighbour]);
-            } else {
-                to_visit.push(neighbour);
+        availableColors.clear();
+
+        for (auto& adjacent : graph.neighbours[vertex.first]) {
+            if (graph.colour[adjacent] != 0) {
+                availableColors.insert(graph.colour[adjacent]);
             }
         }
 
-        graph.colour[node] = max + 1;
-        visited.insert(node);
+        int currentColor = 1;
+        while (availableColors.find(currentColor) != availableColors.end()) {
+            currentColor++;
+        }
+
+        graph.colour[vertex.first] = currentColor;
     }
 }
 
