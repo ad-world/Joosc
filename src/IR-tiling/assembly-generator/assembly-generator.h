@@ -156,7 +156,7 @@ class AssemblyGenerator {
         << Assembly::ExternSymbol(entrypoint_method)    << "\n\n"
 
         << Assembly::Label("_start") << "\n"
-            << "\t" << Assembly::Comment("Initialize all the static fields of all the compilation units, in order");
+            << "\t" << Assembly::Comment("Initialize all the static fields of all the compilation units, in order") << "\n";
             for (auto& [field_name, initalizer_tile] : static_fields) {
                 int32_t stack_size_for_initializer = USED_REG_ALLOCATOR().allocateRegisters(&initalizer_tile);
 

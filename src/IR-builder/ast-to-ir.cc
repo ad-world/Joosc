@@ -359,13 +359,55 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(FieldAccess &expr) {
 
     // Special case: array length field
     if (accessed_obj_type.is_array && expr.identifier->name == "length") {
-        return MemIR::makeExpr(
-            BinOpIR::makeExpr(
-                BinOpIR::SUB,
-                convert(*expr.expression),
-                ConstIR::makeWords()
-            )
+        // Get array
+        string array_name = TempIR::generateName("array");
+        auto get_array = MoveIR::makeStmt(
+            TempIR::makeExpr(array_name),
+            std::move(convert(*expr.expression))
         );
+
+        // Non-null check
+        string error_name = LabelIR::generateName("error");
+        string non_null_name = LabelIR::generateName("nonnull");
+        auto non_null_check = CJumpIR::makeStmt(
+            // NEQ(t_a, 0)
+            BinOpIR::makeExpr(
+                BinOpIR::NEQ,
+                TempIR::makeExpr(array_name),
+                ConstIR::makeZero()
+            ),
+            non_null_name,
+            error_name
+        );
+
+        // Exception on null
+        auto error_label = LabelIR::makeStmt(error_name);
+        auto exception_call = ExpIR::makeStmt(std::move(CallIR::makeException()));
+
+        // Non-null
+        auto non_null_label = LabelIR::makeStmt(non_null_name);
+
+        vector<unique_ptr<StatementIR>> seq_vec;
+
+        seq_vec.push_back(std::move(get_array));            // Temp t_a
+        seq_vec.push_back(std::move(non_null_check));       // CJump(NEQ(t_a, 0), non_null, error)
+        seq_vec.push_back(std::move(error_label));          // error:
+        seq_vec.push_back(std::move(exception_call));       // CALL(NAME(__exception))
+        seq_vec.push_back(std::move(non_null_label));       // non_null:
+
+        auto eseq_ir = ESeqIR::makeExpr(
+            // Null check
+            SeqIR::makeStmt(std::move(seq_vec)),
+
+            // Length stored at MEM[array - 4]
+            MemIR::makeExpr(BinOpIR::makeExpr(
+                BinOpIR::SUB,
+                TempIR::makeExpr(array_name),
+                ConstIR::makeWords()
+            ))
+        );
+
+        return eseq_ir;
     }
 
     // Static field access
@@ -691,14 +733,56 @@ std::unique_ptr<ExpressionIR> IRBuilderVisitor::convert(QualifiedIdentifier &exp
     // Special case: array length field
     if (expr.refersToArrayLength()) {
         auto qid_before_length = expr.getQualifiedIdentifierWithoutLast();
-        auto array = convert(qid_before_length);
 
-        // Length stored at MEM[array - 4]
-        return MemIR::makeExpr(BinOpIR::makeExpr(
-            BinOpIR::SUB,
-            std::move(array),
-            ConstIR::makeWords()
-        ));
+        // Get array
+        string array_name = TempIR::generateName("array");
+        auto get_array = MoveIR::makeStmt(
+            TempIR::makeExpr(array_name),
+            std::move(convert(qid_before_length))
+        );
+
+        // Non-null check
+        string error_name = LabelIR::generateName("error");
+        string non_null_name = LabelIR::generateName("nonnull");
+        auto non_null_check = CJumpIR::makeStmt(
+            // NEQ(t_a, 0)
+            BinOpIR::makeExpr(
+                BinOpIR::NEQ,
+                TempIR::makeExpr(array_name),
+                ConstIR::makeZero()
+            ),
+            non_null_name,
+            error_name
+        );
+
+        // Exception on null
+        auto error_label = LabelIR::makeStmt(error_name);
+        auto exception_call = ExpIR::makeStmt(std::move(CallIR::makeException()));
+
+        // Non-null
+        auto non_null_label = LabelIR::makeStmt(non_null_name);
+
+        vector<unique_ptr<StatementIR>> seq_vec;
+
+        seq_vec.push_back(std::move(get_array));            // Temp t_a
+        seq_vec.push_back(std::move(non_null_check));       // CJump(NEQ(t_a, 0), non_null, error)
+        seq_vec.push_back(std::move(error_label));          // error:
+        seq_vec.push_back(std::move(exception_call));       // CALL(NAME(__exception))
+        seq_vec.push_back(std::move(non_null_label));       // non_null:
+
+        auto eseq_ir = ESeqIR::makeExpr(
+            // Null check
+            SeqIR::makeStmt(std::move(seq_vec)),
+
+            // Length stored at MEM[array - 4]
+            MemIR::makeExpr(BinOpIR::makeExpr(
+                BinOpIR::SUB,
+                TempIR::makeExpr(array_name),
+                ConstIR::makeWords()
+            ))
+        );
+
+        return eseq_ir;
     }
 
     // Local variable access

@@ -23,7 +23,7 @@ void IRToTilesConverter::decideIsCandidate(StatementIR& ir, Tile candidate) {
     }
 };
 
-ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abstract_reg) {
+ExpressionTile IRToTilesConverter::tile(const std::string &abstract_reg, ExpressionIR &ir) {
     if (expression_memo.count(&ir)) {
         return expression_memo[&ir].pairWith(abstract_reg);
     }
@@ -39,8 +39,8 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
             std::string operand2_reg = newAbstractRegister();
 
             generic_tile = Tile({
-                tile(node.getLeft(), operand1_reg),
-                tile(node.getRight(), operand2_reg)
+                tile(operand1_reg, node.getLeft()),
+                tile(operand2_reg, node.getRight())
             });
 
             switch (node.op) {
@@ -166,8 +166,8 @@ ExpressionTile IRToTilesConverter::tile(ExpressionIR &ir, const std::string &abs
             std::string address_reg = newAbstractRegister();
 
             generic_tile = Tile({
-                tile(node.getAddress(), address_reg),
-                Assembly::Lea(Tile::ABSTRACT_REG, Assembly::MakeAddress(address_reg))
+                tile(address_reg, node.getAddress()),
+                Assembly::Mov(Tile::ABSTRACT_REG, Assembly::MakeAddress(address_reg))
             });
         },
 
@@ -243,19 +243,25 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             std::string cond_reg = newAbstractRegister();
 
             generic_tile = Tile({
-                tile(node.getCondition(), cond_reg),
+                tile(cond_reg, node.getCondition()),
                 Assembly::Test(cond_reg, cond_reg),
                 Assembly::JumpIfNZ(node.trueLabel())
             });
         },
 
         [&](JumpIR &node) {
-            std::string target_reg = newAbstractRegister();
+            if (auto target = std::get_if<NameIR>(&node.getTarget())) {
+                generic_tile = Tile({
+                    Assembly::Jump(target->getName())
+                });
+            } else {
+                std::string target_reg = newAbstractRegister();
 
-            generic_tile = Tile({
-                tile(node.getTarget(), target_reg),
-                Assembly::Jump(target_reg)
-            });
+                generic_tile = Tile({
+                    tile(target_reg, node.getTarget()),
+                    Assembly::Jump(target_reg)
+                });
+            }
         },
 
         [&](LabelIR &node) {
@@ -272,12 +278,12 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
                         std::string temp_value_reg = newAbstractRegister();
 
                         generic_tile = Tile({
-                            tile(node.getSource(), temp_value_reg),
+                            tile(temp_value_reg, node.getSource()),
                             Assembly::Mov(Assembly::MakeAddress(target.getName()), temp_value_reg)
                         });
                     } else {
                         generic_tile = Tile({
-                            tile(node.getSource(), escapeTemporary(target.getName()))
+                            tile(escapeTemporary(target.getName()), node.getSource())
                         });
                     }
                 },
@@ -287,8 +293,8 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
                     std::string source_reg = newAbstractRegister();
 
                     generic_tile = Tile({
-                        tile(node.getSource(), source_reg),
-                        tile(target.getAddress(), address_reg),
+                        tile(source_reg, node.getSource()),
+                        tile(address_reg, target.getAddress()),
                         Assembly::Mov(Assembly::MakeAddress(address_reg), source_reg)
                     });
                 },
@@ -302,7 +308,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             if (node.getRet()) {
                 // Return a value by placing it in REG32_ACCUM
                 generic_tile.add_instructions_after({
-                    tile(*node.getRet(), Assembly::REG32_ACCUM)
+                    tile(Assembly::REG32_ACCUM, *node.getRet())
                 });
             }
             // Function epilogue
@@ -315,22 +321,41 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         },
 
         [&](CallIR &node) {
+            std::string called_function;
+            if (auto name = std::get_if<NameIR>(&node.getTarget())) {
+                called_function = name->getName();
+            } else {
+                THROW_CompilerError("Function call target is not a label"); 
+            }
+
+            // Special case : __malloc call
+            if (called_function == "__malloc") {
+                if (node.getArgs().size() != 1) {
+                    THROW_CompilerError("malloc called with " + std::to_string(node.getArgs().size()) + " args instead of 1");
+                }
+
+                generic_tile.add_instructions_after({
+                    tile(Assembly::REG32_ACCUM, *node.getArgs().front()),
+                    Assembly::Call(called_function)
+                });
+
+                return;
+            }
+
+            // Not a special case
+
             // Push arguments onto stack, in reverse order (CDECL)
             for (auto &arg : node.getArgs()) {
                 std::string argument_register = newAbstractRegister();
-                generic_tile.add_instructions_after({
-                    tile(*arg, argument_register),
+                generic_tile.add_instructions_before({
+                    tile(argument_register, *arg),
                     Assembly::Push(argument_register)
                 });
             }
             generic_tile.add_instructions_before({Assembly::Comment("Call: pushing arguments onto stack")});
 
             // Perform call instruction on function label
-            if (auto name = std::get_if<NameIR>(&node.getTarget())) {
-                generic_tile.add_instruction(Assembly::Call(name->getName()));
-            } else {
-                THROW_CompilerError("Function call target is not a label"); 
-            }
+            generic_tile.add_instruction(Assembly::Call(called_function));
 
             // Pop arguments from stack
             generic_tile.add_instruction(Assembly::Comment("Call: popping arguments off stack"));

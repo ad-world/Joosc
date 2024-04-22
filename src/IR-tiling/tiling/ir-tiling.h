@@ -4,9 +4,6 @@
 #include "tile.h"
 #include <string>
 #include <unordered_map>
-#include <list>
-
-class RegisterAllocator;
 
 // Convert Canonical IR to x86 assembly
 //
@@ -30,7 +27,7 @@ class IRToTilesConverter {
   public:
     // Tile the expression, producing the lowest cost tile
     // Generates instructions that store the result in abstract_reg
-    ExpressionTile tile(ExpressionIR& node, const std::string& abstract_reg);
+    ExpressionTile tile(const std::string& abstract_reg, ExpressionIR& node);
 
     // Tile the statement, producing the lowest cost tile
     // Generates instructions that implement the statement
