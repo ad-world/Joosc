@@ -1,105 +1,21 @@
 #pragma once
 
 #include <string>
-#include <variant>
-#include <vector>
-#include <unordered_set>
+#include "assembly-common.h"
 
-#include "utillities/overload.h"
-#include "exceptions/exceptions.h"
-
-// Available x86 addressing modes
-struct EffectiveAddress {
-    const static inline std::string EMPTY_REG = "";
-
-    std::string base_register = EMPTY_REG;
-    std::string index_register = EMPTY_REG;
-    int scale = 1;
-    int displacement = 0;
-
-    EffectiveAddress(std::string base) : base_register{base} {}
-
-    EffectiveAddress(std::string base, int dis) : 
-        base_register{base}, displacement{dis} 
-    {}
-
-    EffectiveAddress(std::string base, std::string index) : 
-        base_register{base}, index_register{index} 
-    {}
-
-    EffectiveAddress(std::string base, std::string index, int scale) : 
-        base_register{base}, index_register{index}, scale{scale} 
-    {}
-
-    EffectiveAddress(std::string base, std::string index, int scale, int dis) : 
-        base_register{base}, index_register{index}, scale{scale}, displacement{dis}
-    {}
-
-    std::string toString();
-};
-
-// Operand for x86 assembly instructions
+// File that contains the classes for each used x86 assembly instruction.
 //
-// Register (real or abstract), effective address, or immediate
-struct Operand : public std::variant<EffectiveAddress, std::string, int32_t> {
-    std::string toString() {
-        return std::visit(util::overload {
-            [&](EffectiveAddress &adr) { return adr.toString(); },
-            [&](std::string &reg) { return reg; },
-            [&](int32_t immediate) { return std::to_string(immediate); }
-        }, *this);
-    }
-};
+// Each added instruction should be added to the variant in assembly-instruction.h.
+// Each added instruction should implement toString(), and define which operands are read/written to (can be both)
 
-class AssemblyCommon {
-
-    void useOperands(std::unordered_set<std::string*> &target_set, std::vector<Operand*>& operands) {
-        for (auto op : operands) {
-            std::visit(util::overload {
-                [&](EffectiveAddress &adr) { 
-                    // In a memory access calculated using the values of registers,
-                    // registers are always read, but they themselves are not written to
-                    if (adr.base_register != EffectiveAddress::EMPTY_REG) {
-                        read_registers.insert(&adr.base_register);
-                        used_registers.insert(&adr.index_register);
-                    }
-                    if (adr.index_register != EffectiveAddress::EMPTY_REG) {
-                        read_registers.insert(&adr.index_register);
-                        used_registers.insert(&adr.index_register);
-                    }
-                },
-                [&](std::string &reg) { 
-                    target_set.insert(&reg);
-                    used_registers.insert(&reg);
-                },
-                [&](int32_t immediate) {}
-            }, *op);
-        }
-    }
-
-  protected:
-    void useWriteOperands(std::vector<Operand*> operands) {
-        useOperands(write_registers, operands);
-    }
-
-    void useReadOperands(std::vector<Operand*> operands) {
-        useOperands(read_registers, operands);
-    }
-
-  public:
-    std::unordered_set<std::string*> used_registers;    // Used (real or abstract) registers
-
-    std::unordered_set<std::string*> write_registers;   // Subset of used_registers that gets written (needs to be stored if on stack)
-    std::unordered_set<std::string*> read_registers;    // Subset of used_registers that gets read (needs to be loaded if on stack)
-};
-
+/* Assorted instructions */
 
 struct Mov : public AssemblyCommon {
     Operand dest, source;
 
     Mov(Operand dest, Operand src) : dest{dest}, source{src} {
-        useWriteOperands({&dest});
-        useReadOperands({&src});
+        useWriteOperands(this->dest);
+        useReadOperands(this->source);
     }
 
     std::string toString() {
@@ -107,33 +23,282 @@ struct Mov : public AssemblyCommon {
     }
 };
 
+struct Jump : public AssemblyCommon {
+    Operand target;
 
-// AssemblyInstruction variant, to treat instructions polymorphically without needing pointers
-
-struct AssemblyInstruction : public std::variant<Mov> {
-
-    std::unordered_set<std::string*>& getUsedRegisters() {
-        return std::visit(util::overload {
-            [&](auto &x) -> std::unordered_set<std::string*>& { return x.used_registers; }
-        }, *this);
-    }
-
-    std::unordered_set<std::string*>& getWriteRegisters() {
-        return std::visit(util::overload {
-            [&](auto &x) -> std::unordered_set<std::string*>& { return x.write_registers; }
-        }, *this);
-    }
-
-    std::unordered_set<std::string*>& getReadRegisters() {
-        return std::visit(util::overload {
-            [&](auto &x) -> std::unordered_set<std::string*>& { return x.read_registers; }
-        }, *this);
+    Jump(Operand target) : target{target} {
+        useReadOperands(this->target);
     }
 
     std::string toString() {
-        return std::visit(util::overload {
-            [&](auto &x) { return x.toString(); }
-        }, *this);
+        return "jmp " + target.toString();
+    }
+};
+
+struct Je : public AssemblyCommon {
+    Operand target;
+
+    Je(Operand target) : target{target} {
+        useReadOperands(this->target);
     }
 
+    std::string toString() {
+        return "je " + target.toString();
+    }
+};
+
+struct JumpIfNZ : public AssemblyCommon {
+    Operand target;
+
+    JumpIfNZ(Operand target) : target{target} {
+        useReadOperands(this->target);
+    }
+
+    std::string toString() {
+        return "jnz " + target.toString();
+    }
+};
+
+struct Lea : public AssemblyCommon {
+    Operand dest, source;
+
+    Lea(Operand dest, Operand src) : dest{dest}, source{src} {
+        useWriteOperands(this->dest);
+        useReadOperands(this->source);
+
+        if (!std::get_if<EffectiveAddress>(&src)) {
+            THROW_CompilerError("Lea source must be effective address!");
+        }
+    }
+
+    std::string toString() {
+        return "lea " + dest.toString() + ", " + source.toString();
+    }
+};
+
+struct Add : public AssemblyCommon {
+    Operand arg1, arg2;
+
+    Add(Operand arg1, Operand arg2) : arg1{arg1}, arg2{arg2} {
+        useWriteOperands(this->arg1);
+        useReadOperands(this->arg1, this->arg2);
+    }
+
+    std::string toString() {
+        return "add " + arg1.toString() + ", " + arg2.toString();
+    }
+};
+
+struct Sub : public AssemblyCommon {
+    Operand arg1, arg2;
+
+    Sub(Operand arg1, Operand arg2) : arg1{arg1}, arg2{arg2} {
+        useWriteOperands(this->arg1);
+        useReadOperands(this->arg1, this->arg2);
+    }
+
+    std::string toString() {
+        return "sub " + arg1.toString() + ", " + arg2.toString();
+    }
+};
+
+struct Xor : public AssemblyCommon {
+    Operand arg1, arg2;
+
+    Xor(Operand arg1, Operand arg2) : arg1{arg1}, arg2{arg2} {
+        useWriteOperands(this->arg1);
+        useReadOperands(this->arg1, this->arg2);
+    }
+
+    std::string toString() {
+        return "xor " + arg1.toString() + ", " + arg2.toString();
+    }
+};
+
+struct And : public AssemblyCommon {
+    Operand arg1, arg2;
+
+    And(Operand arg1, Operand arg2) : arg1{arg1}, arg2{arg2} {
+        useWriteOperands(this->arg1);
+        useReadOperands(this->arg1, this->arg2);
+    }
+
+    std::string toString() {
+        return "and " + arg1.toString() + ", " + arg2.toString();
+    }
+};
+
+struct Or : public AssemblyCommon {
+    Operand arg1, arg2;
+
+    Or(Operand arg1, Operand arg2) : arg1{arg1}, arg2{arg2} {
+        useWriteOperands(this->arg1);
+        useReadOperands(this->arg1, this->arg2);
+    }
+
+    std::string toString() {
+        return "or " + arg1.toString() + ", " + arg2.toString();
+    }
+};
+
+struct MovZX : public AssemblyCommon {
+    Operand arg1, arg2;
+
+    MovZX(Operand arg1, Operand arg2) : arg1{arg1}, arg2{arg2} {
+        useWriteOperands(this->arg1);
+        useReadOperands(this->arg2);
+    }
+
+    std::string toString() {
+        return "movzx " + arg1.toString() + ", " + arg2.toString();
+    }
+};
+
+struct Cmp : public AssemblyCommon {
+    Operand arg1, arg2;
+
+    Cmp(Operand arg1, Operand arg2) : arg1{arg1}, arg2{arg2} {
+        useReadOperands(this->arg1, this->arg2);
+    }
+
+    std::string toString() {
+        return "cmp " + arg1.toString() + ", " + arg2.toString();
+    }
+};
+
+struct Test : public AssemblyCommon {
+    Operand arg1, arg2;
+
+    Test(Operand arg1, Operand arg2) : arg1{arg1}, arg2{arg2} {
+        useReadOperands(this->arg1, this->arg2);
+    }
+
+    std::string toString() {
+        return "test " + arg1.toString() + ", " + arg2.toString();
+    }
+};
+
+struct Push : public AssemblyCommon {
+    Operand arg;
+
+    Push(Operand arg) : arg{arg} {
+        useReadOperands(this->arg);
+    }
+
+    std::string toString() {
+        return "push " + arg.toString();
+    }
+};
+
+struct Pop : public AssemblyCommon {
+    Operand arg;
+
+    Pop(Operand arg) : arg{arg} {
+        useWriteOperands(this->arg);
+    }
+
+    std::string toString() {
+        return "pop " + arg.toString();
+    }
+};
+
+/* Instructions without operands */
+
+struct NoOperandInstruction : public AssemblyCommon {
+    std::string static_instruction;
+
+    NoOperandInstruction(std::string static_instruction) : static_instruction{static_instruction} {}
+
+    std::string toString() {
+        return static_instruction;
+    }
+};
+
+struct Cdq : public NoOperandInstruction {
+    Cdq() : NoOperandInstruction{"cdq"} {}
+};
+
+struct Ret : public NoOperandInstruction {
+    Ret(unsigned int bytes = 0) 
+        : NoOperandInstruction{bytes > 0 ? "ret " + std::to_string(bytes) : "ret"} 
+    {}
+};
+
+struct Call : public NoOperandInstruction {
+    Call(std::string static_label) 
+        : NoOperandInstruction{"call " + static_label} 
+    {}
+};
+
+struct SysCall : public NoOperandInstruction {
+    SysCall() 
+        : NoOperandInstruction{"int 0x80"} 
+    {}
+};
+
+/* SetX instructions which set destination to 1 or 0 based on flags from Cmp */
+
+struct BoolSetInstruction : public AssemblyCommon {
+    std::string instruction_name;
+    Operand dest;
+
+    BoolSetInstruction(std::string name, Operand dest) 
+        : instruction_name{name}, dest{dest} 
+    {
+        useWriteOperands(this->dest);
+    }
+
+    std::string toString() {
+        return instruction_name + " " + dest.toString();
+    }
+};
+
+struct SetZ : public BoolSetInstruction {
+    SetZ(Operand dest) : BoolSetInstruction{"setz", dest} {}
+};
+
+struct SetNZ : public BoolSetInstruction {
+    SetNZ(Operand dest) : BoolSetInstruction{"setnz", dest} {}
+};
+
+struct SetL : public BoolSetInstruction {
+    SetL(Operand dest) : BoolSetInstruction{"setl", dest} {}
+};
+
+struct SetG : public BoolSetInstruction {
+    SetG(Operand dest) : BoolSetInstruction{"setg", dest} {}
+};
+
+struct SetLE : public BoolSetInstruction {
+    SetLE(Operand dest) : BoolSetInstruction{"setle", dest} {}
+};
+
+struct SetGE : public BoolSetInstruction {
+    SetGE(Operand dest) : BoolSetInstruction{"setge", dest} {}
+};
+
+/* IMul/IDiv */
+
+struct IMul : public AssemblyCommon {
+    Operand multiplicand;
+
+    IMul(Operand multiplicand) : multiplicand{multiplicand} {
+        useReadOperands(this->multiplicand);
+    }
+
+    std::string toString() {
+        return "imul " + multiplicand.toString();
+    }
+};
+
+struct IDiv : public AssemblyCommon {
+    Operand divisor;
+
+    IDiv(Operand divisor) : divisor{divisor} {
+        useReadOperands(this->divisor);
+    }
+
+    std::string toString() {
+        return "idiv " + divisor.toString();
+    }
 };
