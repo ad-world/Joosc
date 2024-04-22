@@ -251,11 +251,13 @@ void Simulator::leave(ExecutionFrame *frame) {
                     result = l * r;
                     break;
                 case BinOpIR::OpType::DIV:
-                    if (r == 0) THROW_SoftSimulatorError("Division by zero");
+                    if (r == 0) throw ExitSysCall(13);
+                    //THROW_SoftSimulatorError("Division by zero");
                     result = l / r;
                     break;
                 case BinOpIR::OpType::MOD:
-                    if (r == 0) THROW_SoftSimulatorError("Division by zero");
+                    if (r == 0) throw ExitSysCall(13);
+                    //THROW_SoftSimulatorError("Division by zero");
                     result = l % r;
                     break;
                 case BinOpIR::OpType::AND:

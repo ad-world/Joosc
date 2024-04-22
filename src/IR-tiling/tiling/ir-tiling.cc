@@ -250,12 +250,18 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         },
 
         [&](JumpIR &node) {
-            std::string target_reg = newAbstractRegister();
+            if (auto target = std::get_if<NameIR>(&node.getTarget())) {
+                generic_tile = Tile({
+                    Assembly::Jump(target->getName())
+                });
+            } else {
+                std::string target_reg = newAbstractRegister();
 
-            generic_tile = Tile({
-                tile(target_reg, node.getTarget()),
-                Assembly::Jump(target_reg)
-            });
+                generic_tile = Tile({
+                    tile(target_reg, node.getTarget()),
+                    Assembly::Jump(target_reg)
+                });
+            }
         },
 
         [&](LabelIR &node) {
@@ -315,10 +321,33 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
         },
 
         [&](CallIR &node) {
+            std::string called_function;
+            if (auto name = std::get_if<NameIR>(&node.getTarget())) {
+                called_function = name->getName();
+            } else {
+                THROW_CompilerError("Function call target is not a label"); 
+            }
+
+            // Special case : __malloc call
+            if (called_function == "__malloc") {
+                if (node.getArgs().size() != 1) {
+                    THROW_CompilerError("malloc called with " + std::to_string(node.getArgs().size()) + " args instead of 1");
+                }
+
+                generic_tile.add_instructions_after({
+                    tile(Assembly::REG32_ACCUM, *node.getArgs().front()),
+                    Assembly::Call(called_function)
+                });
+
+                return;
+            }
+
+            // Not a special case
+
             // Push arguments onto stack, in reverse order (CDECL)
             for (auto &arg : node.getArgs()) {
                 std::string argument_register = newAbstractRegister();
-                generic_tile.add_instructions_after({
+                generic_tile.add_instructions_before({
                     tile(argument_register, *arg),
                     Assembly::Push(argument_register)
                 });
@@ -326,11 +355,7 @@ StatementTile IRToTilesConverter::tile(StatementIR &ir) {
             generic_tile.add_instructions_before({Assembly::Comment("Call: pushing arguments onto stack")});
 
             // Perform call instruction on function label
-            if (auto name = std::get_if<NameIR>(&node.getTarget())) {
-                generic_tile.add_instruction(Assembly::Call(name->getName()));
-            } else {
-                THROW_CompilerError("Function call target is not a label"); 
-            }
+            generic_tile.add_instruction(Assembly::Call(called_function));
 
             // Pop arguments from stack
             generic_tile.add_instruction(Assembly::Comment("Call: popping arguments off stack"));
