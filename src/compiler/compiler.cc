@@ -200,6 +200,10 @@ int Compiler::run() {
         DVBuilder::assignColours();
         DVBuilder::assertColoured();
 
+        for (auto &ast: asts) {
+            // PrintDVS().visit(ast);
+        }
+
         // Code generation
         if (emit_code) {
             auto entrypoint_method = getEntryPointMethod();
