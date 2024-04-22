@@ -53,10 +53,6 @@ void DVBuilder::assignColours() {
 
         graph.colour[vertex.first] = currentColor;
     }
-
-    for (auto& vertex : graph.colour) {
-        std::cout << "Method " << vertex.first->identifier << " ---> Color " << vertex.second << std::endl;
-    }
 }
 
 void DVBuilder::resetColours() {
