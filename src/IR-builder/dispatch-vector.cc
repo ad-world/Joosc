@@ -7,7 +7,6 @@
 #include <queue>
 #include <set>
 #include <iostream>
-#include <list>
 
 void DVBuilder::addMethodsToGraph(std::set<MethodDeclarationObject*> &method_list) {
     // Sets the minimum colours to the size of each complete graph
