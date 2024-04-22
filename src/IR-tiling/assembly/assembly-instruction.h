@@ -5,7 +5,33 @@
 // AssemblyInstruction variant, to treat instructions polymorphically without needing pointers
 
 using AssemblyInstructionInheritedVariant = std::variant<
-    Mov
+    Mov,
+    Jump,
+    Je,
+    JumpIfNZ,
+    Lea,
+    Add,
+    Sub,
+    Xor,
+    And,
+    Or,
+    MovZX,
+    Cmp,
+    Test,
+    Push,
+    Pop,
+    Cdq,
+    Ret,
+    Call,
+    SysCall,
+    SetZ,
+    SetNZ,
+    SetL,
+    SetG,
+    SetLE,
+    SetGE,
+    IMul,
+    IDiv
 >;
 
 struct AssemblyInstruction : public AssemblyInstructionInheritedVariant {
