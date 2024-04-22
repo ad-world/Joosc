@@ -7,6 +7,7 @@
 #include <queue>
 #include <set>
 #include <iostream>
+#include <list>
 
 void DVBuilder::addMethodsToGraph(std::set<MethodDeclarationObject*> &method_list) {
     // Sets the minimum colours to the size of each complete graph
@@ -29,131 +30,35 @@ void DVBuilder::addMethodsToGraph(std::set<MethodDeclarationObject*> &method_lis
     }
 }
 
-std::set<MethodDeclarationObject*> DVBuilder::removeMethodFromGraph(MethodDeclarationObject* method) {
-    std::set<MethodDeclarationObject*> neighbour_list;
-    
-    graph.methods.erase(method);
-    for (auto &func: graph.methods) {
-        if (graph.neighbours[func].find(method) != graph.neighbours[func].end()) {
-            graph.neighbours[func].erase(method);
-            neighbour_list.insert(func);
-        }
-    }
-
-    return neighbour_list;
-}
-
-void DVBuilder::addMethodToGraph(MethodDeclarationObject* method, std::set<MethodDeclarationObject*> neighbour_list) {
-    graph.methods.insert(method);
-
-    for(auto &neighbour: neighbour_list) {
-        graph.neighbours[neighbour].insert(method);
-    }
-}
-
-
 void DVBuilder::assignColours() {
-    std::vector<MethodDeclarationObject*> sorted_methods(graph.methods.begin(), graph.methods.end());
-    std::sort(sorted_methods.begin(), sorted_methods.end(), [&](MethodDeclarationObject* a, MethodDeclarationObject* b) {
-        return graph.neighbours[a].size() > graph.neighbours[b].size();
-    });
+    auto firstVertex = graph.neighbours.begin()->first;
+    graph.colour[firstVertex] = 1;
 
-    for (auto method : sorted_methods) {
-        graph.colour[method] = 0;
-    }
+    std::unordered_set<int> availableColors;
 
-    std::cout << "Assigning " << sorted_methods.size() << " method" << std::endl;
-    for (auto method: sorted_methods) {
-        std::cout << "Method name: " << method->containing_type->full_qualified_name << " " <<  method->identifier << std::endl;
-        std::cout << "Method has " << graph.neighbours[method].size() << " neighbours." << std::endl;
-        int K = static_cast<int>(graph.min_colours);
-        std::cout << "K: " << K << std::endl;
-        if ( graph.neighbours[method].size() < K ) {
-            std::cout << "Method has less than K neighbours" << std::endl;
-            auto neighbour_list = DVBuilder::removeMethodFromGraph(method);
-            DVBuilder::assignColours();
-            DVBuilder::addMethodToGraph(method, neighbour_list);
+    for (auto& vertex : graph.neighbours) {
+        if (vertex.first == firstVertex) continue; 
 
-            int colour = 1;
-            bool found_available_colour = false;
+        availableColors.clear();
 
-            std::cout << "Entering while loop" << std::endl;
-            while (!found_available_colour) {
-                // Check if the current colour conflicts with any of the method's neighbors
-                bool conflict = false;
-                for (auto neighbour : graph.neighbours[method]) {
-                    if (graph.colour[neighbour] == colour) {
-                        conflict = true;
-                        break;
-                    }
-                }
-                if (!conflict) {
-                    // We found an available colour
-                    break;
-                }
-                colour++;
-                if (colour > static_cast<int>(graph.min_colours)) {
-                    // We've tried all available colours and couldn't find one
-                    graph.colour[method] = 0;
-                    return;
-                }
-            }
-            std::cout << "Assigning " << colour << " to " << method->identifier << std::endl;
-
-            graph.colour[method] = colour;
-            graph.min_colours = std::max(graph.min_colours, static_cast<size_t>(colour));   
-        } else {
-            std::cout << "Method has more than K neighbours" << std::endl;
-
-            auto neighbour_list = DVBuilder::removeMethodFromGraph(method);
-            DVBuilder::assignColours();
-            DVBuilder::addMethodToGraph(method, neighbour_list);
-
-            std::set<int> used_colours;
-            for (auto neighbour: graph.neighbours[method]) used_colours.insert(graph.colour[neighbour]);
-
-            if (used_colours.size() < K) {
-                int colour = 1;
-                while  ( used_colours.find(colour) != used_colours.end()) {
-                    colour++;
-                }
-
-                graph.colour[method] = colour;
-                graph.min_colours = std::max(graph.min_colours, static_cast<size_t>(colour));
-            } else {
-                graph.colour[method] = 0;
+        for (auto& adjacent : graph.neighbours[vertex.first]) {
+            if (graph.colour[adjacent] != 0) {
+                availableColors.insert(graph.colour[adjacent]);
             }
         }
+
+        int currentColor = 1;
+        while (availableColors.find(currentColor) != availableColors.end()) {
+            currentColor++;
+        }
+
+        graph.colour[vertex.first] = currentColor;
     }
 
+    for (auto& vertex : graph.colour) {
+        std::cout << "Method " << vertex.first->identifier << " ---> Color " << vertex.second << std::endl;
+    }
 }
-
-// void DVBuilder::assignColours() {
-//     // Basic coloring (wastes space)
-//     if ( graph.methods.empty() ) { return; }
-
-//     std::set<MethodDeclarationObject*> visited;
-//     std::queue<MethodDeclarationObject*> to_visit;
-//     to_visit.push(*graph.methods.begin());
-
-//     while ( !to_visit.empty() ) {
-//         auto node = to_visit.front();
-//         to_visit.pop();
-
-//         int max = 0;
-//         for ( auto neighbour : graph.neighbours[node] ) {
-//             if ( visited.find(neighbour) != visited.end() ) {
-//                 // Neighbour already coloured
-//                 max = std::max(max, graph.colour[neighbour]);
-//             } else {
-//                 to_visit.push(neighbour);
-//             }
-//         }
-
-//         graph.colour[node] = max + 1;
-//         visited.insert(node);
-//     }
-// }
 
 void DVBuilder::resetColours() {
     // Quick and easy way to reset colours
